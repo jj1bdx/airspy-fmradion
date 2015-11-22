@@ -1,3 +1,6 @@
+SoftFM
+======
+
 **SoftFM** is a command line software decoder for FM broadcast radio with stereo support 
 
 <h1>Introduction</h1>
@@ -28,7 +31,7 @@ SoftFM requires:
  - C++11
  - RTL-SDR library (http://sdr.osmocom.org/trac/wiki/rtl-sdr)
  - supported RTL-SDR DVB-T receiver
- - medium-fast computer (SoftFM takes 25% CPU time on my 1.6 GHz Core i3)
+ - medium-fast computer (SoftFM takes 25% CPU time on a 1.6 GHz Core i3, ~12% of one core of a Core i7 5700HQ @ 2.7 GHz)
  - medium-strong FM radio signal. However the R820T2 based dongles give much better results than the former R820T based dongles 
 
 For the latest version, see https://github.com/f4exb/softfm
