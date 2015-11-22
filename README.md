@@ -1,4 +1,4 @@
-**SoftFM** is a software decoder for FM broadcast radio with stereo support 
+**SoftFM** is a command line software decoder for FM broadcast radio with stereo support 
 
 <h1>Introduction</h1>
 

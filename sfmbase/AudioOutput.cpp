@@ -30,24 +30,23 @@
 #include "SoftFM.h"
 #include "AudioOutput.h"
 
-using namespace std;
 
 
 /* ****************  class AudioOutput  **************** */
 
 // Encode a list of samples as signed 16-bit little-endian integers.
 void AudioOutput::samplesToInt16(const SampleVector& samples,
-                                 vector<uint8_t>& bytes)
+		std::vector<uint8_t>& bytes)
 {
     bytes.resize(2 * samples.size());
 
     SampleVector::const_iterator i = samples.begin();
     SampleVector::const_iterator n = samples.end();
-    vector<uint8_t>::iterator k = bytes.begin();
+    std::vector<uint8_t>::iterator k = bytes.begin();
 
     while (i != n) {
         Sample s = *(i++);
-        s = max(Sample(-1.0), min(Sample(1.0), s));
+        s = std::max(Sample(-1.0), std::min(Sample(1.0), s));
         long v = lrint(s * 32767);
         unsigned long u = v;
         *(k++) = u & 0xff;
@@ -59,7 +58,7 @@ void AudioOutput::samplesToInt16(const SampleVector& samples,
 /* ****************  class RawAudioOutput  **************** */
 
 // Construct raw audio writer.
-RawAudioOutput::RawAudioOutput(const string& filename)
+RawAudioOutput::RawAudioOutput(const std::string& filename)
 {
     if (filename == "-") {
 
@@ -99,8 +98,8 @@ bool RawAudioOutput::write(const SampleVector& samples)
     samplesToInt16(samples, m_bytebuf);
 
     // Write data.
-    size_t p = 0;
-    size_t n = m_bytebuf.size();
+    std::size_t p = 0;
+    std::size_t n = m_bytebuf.size();
     while (p < n) {
 
         ssize_t k = ::write(m_fd, m_bytebuf.data() + p, n - p);
@@ -189,7 +188,7 @@ bool WavAudioOutput::write(const SampleVector& samples)
     samplesToInt16(samples, m_bytebuf);
 
     // Write samples to file.
-    size_t k = fwrite(m_bytebuf.data(), 1, m_bytebuf.size(), m_stream);
+    std::size_t k = fwrite(m_bytebuf.data(), 1, m_bytebuf.size(), m_stream);
     if (k != m_bytebuf.size()) {
         m_error = "write failed (";
         m_error += strerror(errno);
@@ -251,7 +250,7 @@ void WavAudioOutput::encode_chunk_id(uint8_t * ptr, const char * chunkname)
 template <typename T>
 void WavAudioOutput::set_value(uint8_t * ptr, T value)
 {
-    for (size_t i = 0; i < sizeof(T); ++i)
+    for (std::size_t i = 0; i < sizeof(T); ++i)
     {
         ptr[i] = value & 0xff;
         value >>= 8;

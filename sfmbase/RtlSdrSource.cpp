@@ -22,7 +22,6 @@
 
 #include "RtlSdrSource.h"
 
-using namespace std;
 
 
 // Open RTL-SDR device.
@@ -142,15 +141,15 @@ int RtlSdrSource::get_tuner_gain()
 
 
 // Return a list of supported tuner gain settings in units of 0.1 dB.
-vector<int> RtlSdrSource::get_tuner_gains()
+std::vector<int> RtlSdrSource::get_tuner_gains()
 {
     int num_gains = rtlsdr_get_tuner_gains(m_dev, NULL);
     if (num_gains <= 0)
-        return vector<int>();
+        return std::vector<int>();
 
-    vector<int> gains(num_gains);
+    std::vector<int> gains(num_gains);
     if (rtlsdr_get_tuner_gains(m_dev, gains.data()) != num_gains)
-        return vector<int>();
+        return std::vector<int>();
 
     return gains;
 }
@@ -164,7 +163,7 @@ bool RtlSdrSource::get_samples(IQSampleVector& samples)
     if (!m_dev)
         return false;
 
-    vector<uint8_t> buf(2 * m_block_length);
+    std::vector<uint8_t> buf(2 * m_block_length);
 
     r = rtlsdr_read_sync(m_dev, buf.data(), 2 * m_block_length, &n_read);
     if (r < 0) {
@@ -190,9 +189,9 @@ bool RtlSdrSource::get_samples(IQSampleVector& samples)
 
 
 // Return a list of supported devices.
-vector<string> RtlSdrSource::get_device_names()
+std::vector<std::string> RtlSdrSource::get_device_names()
 {
-    vector<string> result;
+	std::vector<std::string> result;
 
     int device_count = rtlsdr_get_device_count();
     if (device_count <= 0)
@@ -200,7 +199,7 @@ vector<string> RtlSdrSource::get_device_names()
 
     result.reserve(device_count);
     for (int i = 0; i < device_count; i++) {
-        result.push_back(string(rtlsdr_get_device_name(i)));
+        result.push_back(std::string(rtlsdr_get_device_name(i)));
     }
 
     return result;

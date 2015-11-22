@@ -39,11 +39,10 @@
 #include "AudioOutput.h"
 #include "MovingAverage.h"
 
-using namespace std;
 
 
 /** Flag is set on SIGINT / SIGTERM. */
-static atomic_bool stop_flag(false);
+static std::atomic_bool stop_flag(false);
 
 
 /** Buffer to move sample data between threads. */
@@ -58,10 +57,10 @@ public:
     { }
 
     /** Add samples to the queue. */
-    void push(vector<Element>&& samples)
+    void push(std::vector<Element>&& samples)
     {
         if (!samples.empty()) {
-            unique_lock<mutex> lock(m_mutex);
+            std::unique_lock<std::mutex> lock(m_mutex);
             m_qlen += samples.size();
             m_queue.push(move(samples));
             lock.unlock();
@@ -72,16 +71,16 @@ public:
     /** Mark the end of the data stream. */
     void push_end()
     {
-        unique_lock<mutex> lock(m_mutex);
+        std::unique_lock<std::mutex> lock(m_mutex);
         m_end_marked = true;
         lock.unlock();
         m_cond.notify_all();
     }
 
     /** Return number of samples in queue. */
-    size_t queued_samples()
+    std::size_t queued_samples()
     {
-        unique_lock<mutex> lock(m_mutex);
+        std::unique_lock<std::mutex> lock(m_mutex);
         return m_qlen;
     }
 
@@ -91,10 +90,10 @@ public:
      * an empty vector. If the queue is empty, wait until more data is pushed
      * or until the end marker is pushed.
      */
-    vector<Element> pull()
+    std::vector<Element> pull()
     {
-        vector<Element> ret;
-        unique_lock<mutex> lock(m_mutex);
+    	std::vector<Element> ret;
+    	std::unique_lock<std::mutex> lock(m_mutex);
         while (m_queue.empty() && !m_end_marked)
             m_cond.wait(lock);
         if (!m_queue.empty()) {
@@ -108,24 +107,24 @@ public:
     /** Return true if the end has been reached at the Pull side. */
     bool pull_end_reached()
     {
-        unique_lock<mutex> lock(m_mutex);
+    	std::unique_lock<std::mutex> lock(m_mutex);
         return m_qlen == 0 && m_end_marked;
     }
 
     /** Wait until the buffer contains minfill samples or an end marker. */
-    void wait_buffer_fill(size_t minfill)
+    void wait_buffer_fill(std::size_t minfill)
     {
-        unique_lock<mutex> lock(m_mutex);
+    	std::unique_lock<std::mutex> lock(m_mutex);
         while (m_qlen < minfill && !m_end_marked)
             m_cond.wait(lock);
     }
 
 private:
-    size_t              m_qlen;
-    bool                m_end_marked;
-    queue<vector<Element>> m_queue;
-    mutex               m_mutex;
-    condition_variable  m_cond;
+    std::size_t              m_qlen;
+    bool                     m_end_marked;
+    std::queue<std::vector<Element>> m_queue;
+    std::mutex               m_mutex;
+    std::condition_variable  m_cond;
 };
 
 
@@ -202,7 +201,7 @@ static void handle_sigterm(int sig)
 {
     stop_flag.store(true);
 
-    string msg = "\nGot signal ";
+    std::string msg = "\nGot signal ";
     msg += strsignal(sig);
     msg += ", stopping ...\n";
 
@@ -300,9 +299,9 @@ int main(int argc, char **argv)
     bool    stereo  = true;
     enum OutputMode { MODE_RAW, MODE_WAV, MODE_ALSA };
     OutputMode outmode = MODE_ALSA;
-    string  filename;
-    string  alsadev("default");
-    string  ppsfilename;
+    std::string  filename;
+    std::string  alsadev("default");
+    std::string  ppsfilename;
     FILE *  ppsfile = NULL;
     double  bufsecs = -1;
 
@@ -409,7 +408,7 @@ int main(int argc, char **argv)
         exit(1);
     }
 
-    vector<string> devnames = RtlSdrSource::get_device_names();
+    std::vector<std::string> devnames = RtlSdrSource::get_device_names();
     if (devidx < 0 || (unsigned int)devidx >= devnames.size()) {
         if (devidx != -1)
             fprintf(stderr, "ERROR: invalid device index %d\n", devidx);
@@ -455,7 +454,7 @@ int main(int argc, char **argv)
 
     // Check LNA gain.
     if (lnagain != INT_MIN) {
-        vector<int> gains = rtlsdr.get_tuner_gains();
+    	std::vector<int> gains = rtlsdr.get_tuner_gains();
         if (find(gains.begin(), gains.end(), lnagain) == gains.end()) {
             if (lnagain != INT_MIN + 1)
                 fprintf(stderr, "ERROR: LNA gain %.1f dB not supported by tuner\n", lnagain * 0.1);
@@ -494,16 +493,16 @@ int main(int argc, char **argv)
     DataBuffer<IQSample> source_buffer;
 
     // Start reading from device in separate thread.
-    thread source_thread(read_source_data, &rtlsdr, &source_buffer);
+    std::thread source_thread(read_source_data, &rtlsdr, &source_buffer);
 
     // The baseband signal is empty above 100 kHz, so we can
     // downsample to ~ 200 kS/s without loss of information.
     // This will speed up later processing stages.
-    unsigned int downsample = max(1, int(ifrate / 215.0e3));
+    unsigned int downsample = std::max(1, int(ifrate / 215.0e3));
     fprintf(stderr, "baseband downsampling factor %u\n", downsample);
 
     // Prevent aliasing at very low output sample rates.
-    double bandwidth_pcm = min(FmDecoder::default_bandwidth_pcm,
+    double bandwidth_pcm = std::min(FmDecoder::default_bandwidth_pcm,
                                0.45 * pcmrate);
     fprintf(stderr, "audio sample rate: %u Hz\n", pcmrate);
     fprintf(stderr, "audio bandwidth:   %.3f kHz\n", bandwidth_pcm * 1.0e-3);
@@ -554,7 +553,7 @@ int main(int argc, char **argv)
     }
 
     // Prepare output writer.
-    unique_ptr<AudioOutput> audio_output;
+    std::unique_ptr<AudioOutput> audio_output;
     switch (outmode) {
         case MODE_RAW:
             fprintf(stderr, "writing raw 16-bit audio samples to '%s'\n",
@@ -581,10 +580,10 @@ int main(int argc, char **argv)
 
     // If buffering enabled, start background output thread.
     DataBuffer<Sample> output_buffer;
-    thread output_thread;
+    std::thread output_thread;
     if (outputbuf_samples > 0) {
         unsigned int nchannel = stereo ? 2 : 1;
-        output_thread = thread(write_output_data,
+        output_thread = std::thread(write_output_data,
                                audio_output.get(),
                                &output_buffer,
                                outputbuf_samples * nchannel);
@@ -627,11 +626,11 @@ int main(int argc, char **argv)
         // Set nominal audio volume.
         adjust_gain(audiosamples, 0.5);
 
-		ppm_average.feed(((fm.get_tuning_offset() + delta_if) / tuner_freq) * 1.0e6);
+		ppm_average.feed(((fm.get_tuning_offset() + delta_if) / tuner_freq) * -1.0e6); // the minus factor is to show the ppm correction to make and not the one made
 
         // Show statistics.
         fprintf(stderr,
-                "\rblk=%6d  freq=%10.6fMHz  ppm=%6.2f  IF=%+5.1fdB  BB=%+5.1fdB  audio=%+5.1fdB ",
+                "\rblk=%6d  freq=%10.6fMHz  ppm=%+6.2f  IF=%+5.1fdB  BB=%+5.1fdB  audio=%+5.1fdB ",
                 block,
                 (tuner_freq + fm.get_tuning_offset()) * 1.0e-6,
                 ppm_average.average(),
@@ -641,7 +640,7 @@ int main(int argc, char **argv)
                 20*log10(audio_level) + 3.01);
         if (outputbuf_samples > 0) {
             unsigned int nchannel = stereo ? 2 : 1;
-            size_t buflen = output_buffer.queued_samples();
+            std::size_t buflen = output_buffer.queued_samples();
             fprintf(stderr,
                     " buf=%.1fs ",
                     buflen / nchannel / double(pcmrate));
@@ -664,8 +663,8 @@ int main(int argc, char **argv)
                 double ts = prev_block_time;
                 ts += ev.block_position * (block_time - prev_block_time);
                 fprintf(ppsfile, "%8s %14s %18.6f\n",
-                        to_string(ev.pps_index).c_str(),
-                        to_string(ev.sample_index).c_str(),
+                		std::to_string(ev.pps_index).c_str(),
+						std::to_string(ev.sample_index).c_str(),
                         ts);
                 fflush(ppsfile);
             }

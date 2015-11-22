@@ -24,13 +24,12 @@
 
 #include "Filter.h"
 
-using namespace std;
 
 
 /** Prepare Lanczos FIR filter coefficients. */
 template <class T>
 static void make_lanczos_coeff(unsigned int filter_order, double cutoff,
-                               vector<T>& coeff)
+		std::vector<T>& coeff)
 {
     coeff.resize(filter_order + 1);
 
@@ -342,7 +341,7 @@ void LowPassFilterRC::process_inplace(SampleVector& samples)
 LowPassFilterIir::LowPassFilterIir(double cutoff)
     : y1(0), y2(0), y3(0), y4(0)
 {
-    typedef complex<double> CDbl;
+    typedef std::complex<double> CDbl;
 
     // Angular cutoff frequency.
     double w = 2 * M_PI * cutoff;
@@ -402,7 +401,7 @@ void LowPassFilterIir::process(const SampleVector& samples_in,
 HighPassFilterIir::HighPassFilterIir(double cutoff)
     : x1(0), x2(0), y1(0), y2(0)
 {
-    typedef complex<double> CDbl;
+    typedef std::complex<double> CDbl;
 
     // Angular cutoff frequency.
     double w = 2 * M_PI * cutoff;
