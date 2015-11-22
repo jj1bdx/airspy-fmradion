@@ -1,0 +1,2 @@
+* (speedup) maybe replace high-order FIR downsampling filter with 2nd order butterworth followed by lower order FIR filter
+* (feature) implement RDS decoding

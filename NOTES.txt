@@ -1,0 +1,241 @@
+
+This file contains random notitions
+-----------------------------------
+
+
+Valid sample rates
+------------------
+
+Sample rates between 300001 Hz and 900000 Hz (inclusive) are not supported.
+They cause an invalid configuration of the RTL chip.
+
+rsamp_ratio = 28.8 MHz * 2**22 / sample_rate
+If bit 27 and bit 28 of rsamp_ratio are different, the RTL chip malfunctions.
+
+
+Behaviour of RTL and Elonics tuner
+----------------------------------
+
+The RTL chip has a configurable 32-tap FIR filter running at 28.8 MS/s.
+RTL-SDR currently configures it for cutoff at 1.2 MHz (2.4 MS/s).
+
+Casual test of ADC mismatch:
+ * DC offset in order of 1 code step
+ * I/Q gain mismatch in order of 4%
+ * I/Q phase mismatch in order of 1% of sample interval
+
+With tuner in auto-gain mode, device autonomously switches between gain
+settings during a run. The LNA gain seems to switch between ~ 24 dB
+and ~ 34 dB without intermediate steps.
+
+With RTL in AGC mode, the level of the digital sample stream is normalized
+to -6 dB FS. Unknown whether this is an analog or digital gain stage.
+
+At first I suspected that AGC mode may be a cooperation between the RTL and
+the Elonics tuner. I thought that the RTL would monitor the level and send
+digital control signals to the Elonics to dynamically change the tuner IF gain.
+However that is in fact NOT what happens. (Manually changing IF gain in AGC
+mode causes a brief level spike, while manually rewriting the same IF gain in
+AGC mode does not have any effect).
+It seems more likely that AGC is a digital gain in the downsampling filter.
+
+
+Default settings in librtlsdr
+-----------------------------
+
+Elonics LNA gain: when auto tuner gain: autonomous control with slow update
+                  otherwise gain as configured via rtlsdr_set_tuner_gain
+Elonics mixer gain: autonomous control disabled,
+                    gain depending on rtlsdr_set_tuner_gain
+Elonics IF linearity: optimize sensitivity (default), auto switch disabled
+Elonics IF gain: +6, +0, +0, +0, +9, +9 (non-standard mode)
+Elonics IF filters: matched to sample rate (note this may not be optimal)
+RTL AGC mode off
+
+
+Effect of IF signal filtering
+-----------------------------
+
+Carson bandwidth rule:
+  IF_half_bandwidth = peak_freq_devation + modulating_freq
+
+In case of broadcast FM, this is
+  75 kHz + 53 kHz = 128 kHz  (worst case)
+  19 kHz + 53 kHz =  72 kHz  (typical case)
+
+Simulations of IF filtering show:
+ * narrow IF filter reduces noise in the baseband
+ * narrow IF filter causes gain roll-off for high modulating frequencies
+ * narrow IF filter causes harmonic distortion at high modulating deviation
+
+IF filter with 100 kHz half-bandwidth:
+ * baseband gain >= -1 dB up to 75 kHz
+ * less than 0.1% distortion of modulating signal at 19 kHz peak deviation
+ * ~ 2% distortion of modulating signal at 75 kHz peak devation
+
+IF filter with 75 kHz half-bandwidth:
+ * baseband gain ~ -3 dB at 60 kHz, ~ -8 dB at 75 kHz
+ * ~ 1% distortion of modulating signal at 19 kHz peak deviation
+
+Optimal IF bandwidth is probably somewhere between 75 and 100 kHz, with
+roll-off not too steep.
+Weak stations benefit from a narrow IF filter to reduce noise.
+Strong stations benefit from a wider IF filter to reduce harmonics.
+
+
+Effect of settings on baseband SNR
+----------------------------------
+
+Note: all measurements 10 second duration
+Note: all measurements have LO frequency set to station + 250 kHz
+
+
+STATION  SRATE   LNA    IF GAIN   AGC   SOFT BW    IF LEVEL  GUARD/PILOT
+
+radio3   1 MS/s  24 dB  default   off   150 kHz     0.19      -62.6 dB/Hz
+radio3   1.5 MS  24 dB  default   off   150 kHz     0.19      -62.7 dB/Hz
+radio3   2 MS/s  24 dB  default   off   150 kHz     0.18      -62.7 dB/Hz
+
+radio3   2 MS/s  34 dB  default   off   150 kHz     0.46      -64.0 dB/Hz
+radio3   2 MS/s  34 dB  default   off    80 kHz               -64.0 dB/Hz
+radio3   2 MS/s  34 dB  default   off   150 kHz adccal        -64.0 dB/Hz
+
+radio4   2 MS/s  24 dB  default   off   150 kHz     0.04      -41.1 dB/Hz
+
+radio4   1 MS/s  34 dB  default   off   150 kHz     0.06      -43.3 dB/Hz
+radio4   1 MS/s  34 dB  default   off    80 kHz               -51.2 dB/Hz
+
+radio4   2 MS/s  34 dB  default   off   150 kHz     0.10      -42.4 dB/Hz
+radio4   2 MS/s  34 dB  default   off    80 kHz               -48.2 dB/Hz
+radio4   2 MS/s  34 dB  default   off   150 kHz adccal        -42.4 dB/Hz
+
+Conclusion: Sample rate (1 MS/s to 2 MS/s) has little effect on quality.
+Conclusion: LNA gain has little effect on quality.
+Conclusion: Narrow IF filter improves quality of weak station.
+Conclusion: ADC gain/offset calibration has no effect on quality.
+
+
+STATION  SRATE   LNA    IF GAIN   AGC   SOFT BW    IF LEVEL  GUARD/PILOT
+
+radio3   2 MS/s  34 dB 9,0,0,0,9,9   off 80 kHz     0.38      -63.2 dB/Hz
+radio3   2 MS/s  34 dB 0,0,0,0,3,3   off 80 kHz     0.03      -61.5 dB/Hz
+radio3   2 MS/s  34 dB 0,0,0,0,3,9   off 80 kHz     0.07      -61.5 dB/Hz
+radio3   2 MS/s  34 dB 0,0,0,0,3,15  off 80 kHz     0.11      -60.5 dB/Hz
+radio3   2 MS/s  34 dB 0,0,0,0,9,15  off 80 kHz     0.22      -61.0 dB/Hz
+radio3   2 MS/s  34 dB 0,0,0,0,15,15 off 80 kHz     0.36      -61.4 dB/Hz
+radio3   2 MS/s  34 dB 0,0,6,0,15,15 off 80 kHz     0.66 CLIP -63.5 dB/Hz
+radio3   2 MS/s  34 dB 0,6,0,0,3,3   off 80 kHz     0.07      -62.9 dB/Hz      
+radio3   2 MS/s  34 dB 9,3,0,0,3,3   off 80 kHz     0.14      -63.9 dB/Hz
+radio3   2 MS/s  34 dB 9,9,0,0,3,3   off 80 kHz     0.26      -64.2 dB/Hz
+radio3   2 MS/s  34 dB 9,9,3,2,3,3   off 80 kHz     0.45      -64.1 dB/Hz
+radio3   2 MS/s  34 dB 9,9,6,0,3,3   off 80 kHz     0.49      -63.7 dB/Hz
+radio3   2 MS/s  34 dB 9,9,9,0,6,3   off 80 kHz     0.77 CLIP -61.2 dB/Hz
+
+radio4   2 MS/s  34 dB 9,0,0,0,9,9   off 80 kHz     0.09      -41.5 dB/Hz
+radio4   2 MS/s  34 dB 0,0,0,0,3,3   off 80 kHz     0.01      -36.7 dB/Hz
+radio4   2 MS/s  34 dB 0,0,0,0,3,9   off 80 kHz     0.02      -39.9 dB/Hz
+radio4   2 MS/s  34 dB 0,0,0,0,3,15  off 80 kHz     0.03      -40.4 dB/Hz
+radio4   2 MS/s  34 dB 0,0,0,0,9,15  off 80 kHz     0.06      -39.9 dB/Hz
+radio4   2 MS/s  34 dB 0,0,0,0,15,15 off 80 kHz     0.09      -40.9 dB/Hz
+radio4   2 MS/s  34 dB 0,0,6,0,15,15 off 80 kHz     0.17      -38.4 dB/Hz
+radio4   2 MS/s  34 dB 0,6,0,0,3,3   off 80 kHz     0.02      -36.9 dB/Hz
+radio4   2 MS/s  34 dB 9,3,0,0,3,3   off 80 kHz     0.03      -37.5 dB/Hz
+radio4   2 MS/s  34 dB 9,9,0,0,3,3   off 80 kHz     0.07      -39.4 dB/Hz
+radio4   2 MS/s  34 dB 9,9,3,2,3,3   off 80 kHz     0.11      -38.5 dB/Hz
+radio4   2 MS/s  34 dB 9,9,6,0,3,3   off 80 kHz     0.12      -38.0 dB/Hz
+radio4   2 MS/s  34 dB 9,9,9,0,6,3   off 80 kHz     0.22      -37.5 dB/Hz
+
+Conclusion: IF gain has little effect on quality, although very low gain
+            has an adverse effect. Librtlsdr defaults look good.
+
+
+STATION  SRATE   LNA    IF GAIN   AGC   SOFT BW    IF LEVEL  GUARD/PILOT
+
+radio3   2 MS/s  34 dB  default   off    80 kHz     0.36      -62.1 dB/Hz
+radio3   2 MS/s  34 dB  default   ON     80 kHz     0.36      -61.6 dB/Hz
+
+radio4   2 MS/s  34 dB  default   off    80 kHz     0.11      -38.5 dB/Hz
+radio4   2 MS/s  34 dB  default   ON     80 kHz     0.36 CLIP -38.0 dB/Hz
+
+Conclusion: AGC mode has little effect on quality.
+
+
+Stereo pilot frequency
+----------------------
+
+Measuring 19 kHz pilot frequency vs Internet NTP (ADSL):
+
+radio2   19 kHz pilot = 18999.79 Hz +- 0.04 Hz    (7 hours measurement)
+radio3   19 kHz pilot = 18999.8  Hz +- 0.05 Hz    (5 hours measurement)
+radio538 19 kHz pilot = 18999.78 Hz +- 0.04 Hz    (6 hours measurement) 
+
+Conclusion: stereo pilot is not a reliable time source.
+
+
+Ferrites
+--------
+
+Claming a ferrite block on the USB cable, as close as possible to the DVB
+received, reduces disturbance peaks in the spectrum by ~ 6 dB.
+A second ferrite block at the PC side gives another small improvement.
+
+The ferrite causes a clearly audible improvement of weak stations.
+
+
+DIY antenna
+-----------
+
+Constructed  antenna from a vertical telescopic rod antenna (85 cm)
+and two steel wire ground radials ~ 85 cm.
+Antenna placed indoors close to window.
+Antenna connected to DVB receiver via 1.5 meter 75 Ohm coax cable.
+
+The ground radials are floppy and look ridiculous but they are essential.
+No ground radials, no reception.
+
+The DIY antenna has ~ 20 dB more signal than the basic DVB antenna.
+
+The DIY antenna causes notable improvement of weak stations.
+Radio4 reception improves from very bad to almost good.
+
+However, strong stations (radio3) sound slightly worse with the DIY antenna
+than with the basic DVB antenna.
+Theory: Distortion caused by clipping I/Q samples due to strong antenna signal.
+No, that's not it. Reducing LNA gain or IF gain does not help much;
+small DVB antenna still sounds better than DIY antenna.
+Difference only clear in stereo mode.
+Don't know what's going on here, maybe the DIY antenna is just not good.
+
+
+IF processing
+-------------
+
+Idea: Filter I/Q samples with 3rd order Butterworth filter
+instead of 10th order FIR filter.
+Implemented in branch "iirfilter".
+Speed is unchanged.
+Sound quality is not much changed for strong stations.
+Sound quality is a bit worse for weak stations (at 1 MS/s).
+Conclusion: not worthwhile.
+
+Idea: Downsample I/Q samples to ~ 250 kS/s BEFORE quadrature detection
+instead of immediately after detection. Would reduce amount of work in
+I/Q filtering for same or higher FIR filter order.
+Implemented in branch "filterif".
+CPU time reduced by ~ 25%.
+Sound quality very slightly worse.
+Conclusion: not worthwhile.
+
+
+Local radio stations
+--------------------
+
+radio2      92600000  (good)
+radio3      96800000  (good)
+radio4      94300000  (bad)
+qmusic     100700000  (medium)
+radio538   102100000  (medium)
+radio10    103800000  (bad)
+radio west  89300000  (medium)
+
+--
