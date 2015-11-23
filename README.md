@@ -1,7 +1,7 @@
 SoftFM
 ======
 
-**SoftFM** is a command line software decoder for FM broadcast radio with stereo support 
+**softfm** is a command line software decoder for FM broadcast radio with stereo support 
 
 <h1>Introduction</h1>
 
@@ -43,7 +43,7 @@ The Osmocom RTL-SDR library must be installed before you can build SoftFM.
 See http://sdr.osmocom.org/trac/wiki/rtl-sdr for more information.
 SoftFM has been tested successfully with RTL-SDR 0.5.3. Normally your distribution should provide the appropriate librtlsdr package
 
-  - `sudo apt-get install libusb-1.0-0-dev librtlsdr-dev libasound2-dev`
+  - `sudo apt-get install libusb-1.0-0-dev librtlsdr-dev libasound2-dev libboost-all-dev`
   
 <h1>Installing</h1>
 
@@ -67,36 +67,45 @@ Compile and install
  
 
 <h1>Running</h1>
- 
+
+<h2>Examples</h2>
+
 Basic usage:
 
- - `./softfm -f <radio-frequency-in-Hz>`
+ - `./softfm -c freq=96400000` Tunes to 94.6 MHz
 
 Specify gain:
 
- - `./softfm -f <radio-frequency-in-Hz> -g <gain in dB>`
+ - `./softfm -c freq=96400000,gain=22.9` Tunes to 94.6 MHz and sets gain to 22.9 dB
 
-For RTL-SDR the possible gains in dB are: 0.0, 0.9, 1.4, 2.7, 3.7, 7.7, 8.7, 12.5, 14.4, 15.7, 16.6, 19.7, 20.7, 22.9, 25.4, 28.0, 29.7, 32.8, 33.8, 36.4, 37.2, 38.6, 40.2, 42.1, 43.4, 43.9, 44.5, 48.0, 49.6 
+<h2>All options</h2>
 
-All options:
+ - `-c config` Comma separated list of configuration options as key=value pairs or just key for switches. Depends on device type (see next paragraph).
+ - `-d devidx` RTL-SDR device index, 'list' to show device list (default 0)
+ - `-r pcmrate` Audio sample rate in Hz (default 48000 Hz)
+ - `-M ` Disable stereo decoding
+ - `-R filename` Write audio data as raw S16_LE samples. Uuse filename `-` to write to stdout
+ - `-W filename` Write audio data to .WAV file
+ - `-P [device]` Play audio via ALSA device (default `default`). Use `aplay -L` to get the list of devices for your system
+ - `-T filename` Write pulse-per-second timestamps. Use filename '-' to write to stdout
+ - `-b seconds` Set audio buffer size in seconds
 
- - `-f freq`       Frequency of radio station in Hz
- - `-d devidx`     RTL-SDR device index, 'list' to show device list (default 0)
- - `-g gain`       Set LNA gain in dB, or 'auto' (default auto), see valid gains above
- - `-a`            Enable RTL AGC mode (default disabled)
- - `-s ifrate`     IF sample rate in Hz (default 1000000, valid ranges: [225001, 300000], [900001, 3200000])
- - `-r pcmrate`    Audio sample rate in Hz (default 48000 Hz)
- - `-M `           Disable stereo decoding
- - `-R filename`   Write audio data as raw S16_LE samples. Uuse filename `-` to write to stdout
- - `-W filename`   Write audio data to .WAV file
- - `-P [device]`   Play audio via ALSA device (default `default`). Use `aplay -L` to get the list of devices for your system
- - `-T filename`   Write pulse-per-second timestamps. Use filename '-' to write to stdout
- - `-b seconds`    Set audio buffer size in seconds
+<h2>Device type specific configuration options</h2>
 
+<h3>RTL-SDR</h3>
+
+  - `freq=<int>` Desired tune frequency in Hz (default `100000000`)
+  - `gain=<x>` (default `auto`)
+    - `auto` Selects gain automatically
+    - `list` Lists available gains and exit
+    - `<float>` gain in dB. Possible gains in dB are: 0.0, 0.9, 1.4, 2.7, 3.7, 7.7, 8.7, 12.5, 14.4, 15.7, 16.6, 19.7, 20.7, 22.9, 25.4, 28.0, 29.7, 32.8, 33.8, 36.4, 37.2, 38.6, 40.2, 42.1, 43.4, 43.9, 44.5, 48.0, 49.6 
+  - `srate=<int>` Device sample rate (default `1000000`)
+  - `blklen=<int>` Device block length in bytes (default RTL-SDR default i.e. 64k)
+  - `agc` Activates device AGC (default off)
 
 <h1>License</h1>
 
-softfm, copyright (C) 2015, Edouard Griffiths, F4EXB
+**softfm**, copyright (C) 2015, Edouard Griffiths, F4EXB
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by

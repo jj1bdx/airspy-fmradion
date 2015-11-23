@@ -23,10 +23,9 @@
 #include <string>
 #include <vector>
 
-#include "SoftFM.h"
+#include "Source.h"
 
-
-class RtlSdrSource
+class RtlSdrSource : public Source
 {
 public:
 
@@ -36,8 +35,40 @@ public:
     RtlSdrSource(int dev_index);
 
     /** Close RTL-SDR device. */
-    ~RtlSdrSource();
+    virtual ~RtlSdrSource();
 
+    virtual bool configure(std::string configuration);
+
+    /** Return current sample frequency in Hz. */
+    std::uint32_t get_sample_rate();
+
+    /** Return device current center frequency in Hz. */
+    std::uint32_t get_frequency();
+
+    /** Return current configured center frequency in Hz. */
+    std::uint32_t get_configured_frequency();
+
+    /**
+     * Fetch a bunch of samples from the device.
+     *
+     * This function must be called regularly to maintain streaming.
+     * Return true for success, false if an error occurred.
+     */
+    virtual bool get_samples(IQSampleVector& samples);
+
+    /** Return true if the device is OK, return false if there is an error. */
+    operator bool() const
+    {
+        return m_dev && m_error.empty();
+    }
+
+    /** Return a list of supported devices. */
+    static std::vector<std::string> get_device_names();
+
+    /** Print current parameters specific to device type */
+    void print_specific_parms();
+
+private:
     /**
      * Configure RTL-SDR tuner and prepare for streaming.
      *
@@ -54,54 +85,18 @@ public:
                    int block_length=default_block_length,
                    bool agcmode=false);
 
-    /** Return current sample frequency in Hz. */
-    std::uint32_t get_sample_rate();
-
-    /** Return current center frequency in Hz. */
-    std::uint32_t get_frequency();
+    /** Return a list of supported tuner gain settings in units of 0.1 dB. */
+    std::vector<int> get_tuner_gains();
 
     /** Return current tuner gain in units of 0.1 dB. */
     int get_tuner_gain();
 
-    /** Return a list of supported tuner gain settings in units of 0.1 dB. */
-    std::vector<int> get_tuner_gains();
-
-    /** Return name of opened RTL-SDR device. */
-    std::string get_device_name() const
-    {
-        return m_devname;
-    }
-
-    /**
-     * Fetch a bunch of samples from the device.
-     *
-     * This function must be called regularly to maintain streaming.
-     * Return true for success, false if an error occurred.
-     */
-    bool get_samples(IQSampleVector& samples);
-
-    /** Return the last error, or return an empty string if there is no error. */
-    std::string error()
-    {
-        std::string ret(m_error);
-        m_error.clear();
-        return ret;
-    }
-
-    /** Return true if the device is OK, return false if there is an error. */
-    operator bool() const
-    {
-        return m_dev && m_error.empty();
-    }
-
-    /** Return a list of supported devices. */
-    static std::vector<std::string> get_device_names();
-
-private:
     struct rtlsdr_dev * m_dev;
     int                 m_block_length;
-    std::string         m_devname;
-    std::string         m_error;
+    std::vector<int>    m_gains;
+    std::string         m_gainsStr;
+    uint32_t            m_confFreq;
+    bool                m_confAgc;
 };
 
 #endif

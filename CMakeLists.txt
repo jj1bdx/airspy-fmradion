@@ -6,6 +6,7 @@ project(SoftFM)
 find_package(Threads)
 find_package(PkgConfig)
 find_package(ALSA REQUIRED)
+find_package(Boost 1.47)
 
 # Find RTL-SDR library (for linking).
 pkg_check_modules(PKG_RTLSDR librtlsdr)
@@ -49,8 +50,12 @@ set(sfmbase_HEADERS
 	include/Filter.h
 	include/FmDecode.h
 	include/MovingAverage.h
+	include/Source.h
 	include/RtlSdrSource.h
 	include/SoftFM.h
+	include/fastatan2.h
+	include/parsekv.h
+	include/util.h
 )
 
 set(sfmbase_SOURCES

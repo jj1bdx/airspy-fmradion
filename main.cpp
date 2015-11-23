@@ -33,6 +33,7 @@
 #include <getopt.h>
 #include <sys/time.h>
 
+#include "util.h"
 #include "SoftFM.h"
 #include "RtlSdrSource.h"
 #include "FmDecode.h"
@@ -213,13 +214,10 @@ static void handle_sigterm(int sig)
 void usage()
 {
     fprintf(stderr,
-    "Usage: softfm -f freq [options]\n"
-            "  -f freq       Frequency of radio station in Hz\n"
+    "Usage: softfm [options]\n"
+    		"  -c config     Comma separated key=value configuration pairs or just key for switches\n"
+    		"                See below for valid values per device type\n"
             "  -d devidx     RTL-SDR device index, 'list' to show device list (default 0)\n"
-            "  -g gain       Set LNA gain in dB, or 'auto' (default auto)\n"
-            "  -a            Enable RTL AGC mode (default disabled)\n"
-            "  -s ifrate     IF sample rate in Hz (default 1000000)\n"
-			"                (valid ranges: [225001, 300000], [900001, 3200000]))\n"
             "  -r pcmrate    Audio sample rate in Hz (default 48000 Hz)\n"
             "  -M            Disable stereo decoding\n"
             "  -R filename   Write audio data as raw S16_LE samples\n"
@@ -229,6 +227,15 @@ void usage()
             "  -T filename   Write pulse-per-second timestamps\n"
             "                use filename '-' to write to stdout\n"
             "  -b seconds    Set audio buffer size in seconds\n"
+    		"\n"
+    		"Configuration options for RTL-SDR devices\n"
+    		"  freq=<int>    Frequency of radio station in Hz (default 100000000)\n"
+    		"  srate=<int>   IF sample rate in Hz (default 1000000)\n"
+			"                (valid ranges: [225001, 300000], [900001, 3200000]))\n"
+    		"  gain=<float>  Set LNA gain in dB, or 'auto',\n"
+    		"                or 'list' to just get a list of valid values (default auto)\n"
+    		"  blklen=<int>  Set audio buffer size in seconds (default RTL-SDR default)\n"
+    		"  agc           Enable RTL AGC mode (default disabled)\n"
             "\n");
 }
 
@@ -259,26 +266,6 @@ bool parse_int(const char *s, int& v, bool allow_unit=false)
 }
 
 
-bool parse_dbl(const char *s, double& v)
-{
-    char *endp;
-    v = strtod(s, &endp);
-    if (endp == s)
-        return false;
-    if (*endp == 'k') {
-        v *= 1.0e3;
-        endp++;
-    } else if (*endp == 'M') {
-        v *= 1.0e6;
-        endp++;
-    } else if (*endp == 'G') {
-        v *= 1.0e9;
-        endp++;
-    }
-    return (*endp == '\0');
-}
-
-
 /** Return Unix time stamp in seconds. */
 double get_time()
 {
@@ -290,11 +277,7 @@ double get_time()
 
 int main(int argc, char **argv)
 {
-    double  freq    = -1;
     int     devidx  = 0;
-    int     lnagain = INT_MIN;
-    bool    agcmode = false;
-    double  ifrate  = 1.0e6;
     int     pcmrate = 48000;
     bool    stereo  = true;
     enum OutputMode { MODE_RAW, MODE_WAV, MODE_ALSA };
@@ -304,17 +287,15 @@ int main(int argc, char **argv)
     std::string  ppsfilename;
     FILE *  ppsfile = NULL;
     double  bufsecs = -1;
+    std::string config_str;
 
     fprintf(stderr,
             "SoftFM - Software decoder for FM broadcast radio with RTL-SDR\n");
 
     const struct option longopts[] = {
-        { "freq",       1, NULL, 'f' },
+        { "config",     2, NULL, 'c' },
         { "dev",        1, NULL, 'd' },
-        { "gain",       1, NULL, 'g' },
-        { "ifrate",     1, NULL, 's' },
         { "pcmrate",    1, NULL, 'r' },
-        { "agc",        0, NULL, 'a' },
         { "mono",       0, NULL, 'M' },
         { "raw",        1, NULL, 'R' },
         { "wav",        1, NULL, 'W' },
@@ -325,43 +306,15 @@ int main(int argc, char **argv)
 
     int c, longindex;
     while ((c = getopt_long(argc, argv,
-                            "f:d:g:s:r:MR:W:P::T:b:a",
+                            "c:d:r:MR:W:P::T:b:",
                             longopts, &longindex)) >= 0) {
         switch (c) {
-            case 'f':
-                if (!parse_dbl(optarg, freq) || freq <= 0) {
-                    badarg("-f");
-                }
+            case 'c':
+            	config_str.assign(optarg);
                 break;
             case 'd':
                 if (!parse_int(optarg, devidx))
                     devidx = -1;
-                break;
-            case 'g':
-                if (strcasecmp(optarg, "auto") == 0) {
-                    lnagain = INT_MIN;
-                } else if (strcasecmp(optarg, "list") == 0) {
-                    lnagain = INT_MIN + 1;
-                } else {
-                    double tmpgain;
-                    if (!parse_dbl(optarg, tmpgain)) {
-                        badarg("-g");
-                    }
-                    long int tmpgain2 = lrint(tmpgain * 10);
-                    if (tmpgain2 <= INT_MIN || tmpgain2 >= INT_MAX) {
-                        badarg("-g");
-                    }
-                    lnagain = tmpgain2;
-                }
-                break;
-            case 's':
-                // NOTE: RTL does not support some sample rates below 900 kS/s
-                // Also, max sampling rate is 3.2 MS/s
-                if (!parse_dbl(optarg, ifrate) ||
-                     (ifrate < 225001) || (ifrate > 3200000) ||
-                     ((ifrate > 300000) && (ifrate < 900001))) {
-                    badarg("-s");
-                }
                 break;
             case 'r':
                 if (!parse_int(optarg, pcmrate, true) || pcmrate < 1) {
@@ -392,9 +345,6 @@ int main(int argc, char **argv)
                     badarg("-b");
                 }
                 break;
-            case 'a':
-                agcmode = true;
-                break;
             default:
                 usage();
                 fprintf(stderr, "ERROR: Invalid command line options\n");
@@ -402,92 +352,80 @@ int main(int argc, char **argv)
         }
     }
 
-    if (optind < argc) {
+    if (optind < argc)
+    {
         usage();
         fprintf(stderr, "ERROR: Unexpected command line options\n");
         exit(1);
     }
 
     std::vector<std::string> devnames = RtlSdrSource::get_device_names();
-    if (devidx < 0 || (unsigned int)devidx >= devnames.size()) {
+
+    if (devidx < 0 || (unsigned int)devidx >= devnames.size())
+    {
         if (devidx != -1)
+        {
             fprintf(stderr, "ERROR: invalid device index %d\n", devidx);
+        }
+
         fprintf(stderr, "Found %u devices:\n", (unsigned int)devnames.size());
-        for (unsigned int i = 0; i < devnames.size(); i++) {
+
+        for (unsigned int i = 0; i < devnames.size(); i++)
+        {
             fprintf(stderr, "%2u: %s\n", i, devnames[i].c_str());
         }
-        exit(1);
-    }
-    fprintf(stderr, "using device %d: %s\n", devidx, devnames[devidx].c_str());
 
-    if (freq <= 0) {
-        usage();
-        fprintf(stderr, "ERROR: Specify a tuning frequency\n");
         exit(1);
     }
+
+    fprintf(stderr, "using device %d: %s\n", devidx, devnames[devidx].c_str());
 
     // Catch Ctrl-C and SIGTERM
     struct sigaction sigact;
     sigact.sa_handler = handle_sigterm;
     sigemptyset(&sigact.sa_mask);
     sigact.sa_flags = SA_RESETHAND;
-    if (sigaction(SIGINT, &sigact, NULL) < 0) {
+
+    if (sigaction(SIGINT, &sigact, NULL) < 0)
+    {
         fprintf(stderr, "WARNING: can not install SIGINT handler (%s)\n",
                 strerror(errno));
     }
-    if (sigaction(SIGTERM, &sigact, NULL) < 0) {
+
+    if (sigaction(SIGTERM, &sigact, NULL) < 0)
+    {
         fprintf(stderr, "WARNING: can not install SIGTERM handler (%s)\n",
                 strerror(errno));
     }
 
-    // Intentionally tune at a higher frequency to avoid DC offset.
-    double tuner_freq = freq + 0.25 * ifrate;
-    double delta_if = 0.25 * ifrate;
-    MovingAverage<float> ppm_average(40, 0.0f);
-
     // Open RTL-SDR device.
     RtlSdrSource rtlsdr(devidx);
-    if (!rtlsdr) {
+    if (!rtlsdr)
+    {
         fprintf(stderr, "ERROR: RtlSdr: %s\n", rtlsdr.error().c_str());
         exit(1);
-    }
-
-    // Check LNA gain.
-    if (lnagain != INT_MIN) {
-    	std::vector<int> gains = rtlsdr.get_tuner_gains();
-        if (find(gains.begin(), gains.end(), lnagain) == gains.end()) {
-            if (lnagain != INT_MIN + 1)
-                fprintf(stderr, "ERROR: LNA gain %.1f dB not supported by tuner\n", lnagain * 0.1);
-            fprintf(stderr, "Supported LNA gains: ");
-            for (int g: gains)
-                fprintf(stderr, " %.1f dB ", 0.1 * g);
-            fprintf(stderr, "\n");
-            exit(1);
-        }
     }
 
     // Configure RTL-SDR device and start streaming.
-    rtlsdr.configure(ifrate, tuner_freq, lnagain,
-                     RtlSdrSource::default_block_length, agcmode);
-    if (!rtlsdr) {
-        fprintf(stderr, "ERROR: RtlSdr: %s\n", rtlsdr.error().c_str());
+    if (!rtlsdr.configure(config_str))
+    {
+        fprintf(stderr, "ERROR: RtlSdr configuration: %s\n", rtlsdr.error().c_str());
         exit(1);
     }
 
-    tuner_freq = rtlsdr.get_frequency();
+    double freq = rtlsdr.get_configured_frequency();
+    fprintf(stderr, "tuned for:         %.6f MHz\n", freq * 1.0e-6);
+
+    double tuner_freq = rtlsdr.get_frequency();
     fprintf(stderr, "device tuned for:  %.6f MHz\n", tuner_freq * 1.0e-6);
 
-    if (lnagain == INT_MIN)
-        fprintf(stderr, "LNA gain:          auto\n");
-    else
-        fprintf(stderr, "LNA gain:          %.1f dB\n",
-                0.1 * rtlsdr.get_tuner_gain());
-
-    ifrate = rtlsdr.get_sample_rate();
+    double ifrate = rtlsdr.get_sample_rate();
     fprintf(stderr, "IF sample rate:    %.0f Hz\n", ifrate);
 
-    fprintf(stderr, "RTL AGC mode:      %s\n",
-            agcmode ? "enabled" : "disabled");
+    double delta_if = tuner_freq - freq;
+    MovingAverage<float> ppm_average(40, 0.0f);
+
+    rtlsdr.print_specific_parms();
 
     // Create source data queue.
     DataBuffer<IQSample> source_buffer;
