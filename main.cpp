@@ -359,6 +359,22 @@ int main(int argc, char **argv)
         exit(1);
     }
 
+    // Catch Ctrl-C and SIGTERM
+    struct sigaction sigact;
+    sigact.sa_handler = handle_sigterm;
+    sigemptyset(&sigact.sa_mask);
+    sigact.sa_flags = SA_RESETHAND;
+
+    if (sigaction(SIGINT, &sigact, NULL) < 0)
+    {
+        fprintf(stderr, "WARNING: can not install SIGINT handler (%s)\n", strerror(errno));
+    }
+
+    if (sigaction(SIGTERM, &sigact, NULL) < 0)
+    {
+        fprintf(stderr, "WARNING: can not install SIGTERM handler (%s)\n", strerror(errno));
+    }
+
     std::vector<std::string> devnames = RtlSdrSource::get_device_names();
 
     if (devidx < 0 || (unsigned int)devidx >= devnames.size())
@@ -379,24 +395,6 @@ int main(int argc, char **argv)
     }
 
     fprintf(stderr, "using device %d: %s\n", devidx, devnames[devidx].c_str());
-
-    // Catch Ctrl-C and SIGTERM
-    struct sigaction sigact;
-    sigact.sa_handler = handle_sigterm;
-    sigemptyset(&sigact.sa_mask);
-    sigact.sa_flags = SA_RESETHAND;
-
-    if (sigaction(SIGINT, &sigact, NULL) < 0)
-    {
-        fprintf(stderr, "WARNING: can not install SIGINT handler (%s)\n",
-                strerror(errno));
-    }
-
-    if (sigaction(SIGTERM, &sigact, NULL) < 0)
-    {
-        fprintf(stderr, "WARNING: can not install SIGTERM handler (%s)\n",
-                strerror(errno));
-    }
 
     // Open RTL-SDR device.
     RtlSdrSource rtlsdr(devidx);
@@ -440,8 +438,7 @@ int main(int argc, char **argv)
     fprintf(stderr, "baseband downsampling factor %u\n", downsample);
 
     // Prevent aliasing at very low output sample rates.
-    double bandwidth_pcm = std::min(FmDecoder::default_bandwidth_pcm,
-                               0.45 * pcmrate);
+    double bandwidth_pcm = std::min(FmDecoder::default_bandwidth_pcm, 0.45 * pcmrate);
     fprintf(stderr, "audio sample rate: %u Hz\n", pcmrate);
     fprintf(stderr, "audio bandwidth:   %.3f kHz\n", bandwidth_pcm * 1.0e-3);
 
@@ -458,68 +455,78 @@ int main(int argc, char **argv)
 
     // Calculate number of samples in audio buffer.
     unsigned int outputbuf_samples = 0;
-    if (bufsecs < 0 &&
-        (outmode == MODE_ALSA || (outmode == MODE_RAW && filename == "-"))) {
+
+    if (bufsecs < 0 && (outmode == MODE_ALSA || (outmode == MODE_RAW && filename == "-")))
+    {
         // Set default buffer to 1 second for interactive output streams.
         outputbuf_samples = pcmrate;
-    } else if (bufsecs > 0) {
+    }
+    else if (bufsecs > 0)
+    {
         // Calculate nr of samples for configured buffer length.
         outputbuf_samples = (unsigned int)(bufsecs * pcmrate);
     }
-    if (outputbuf_samples > 0) {
-        fprintf(stderr, "output buffer:     %.1f seconds\n",
-                outputbuf_samples / double(pcmrate));
+
+    if (outputbuf_samples > 0)
+    {
+       fprintf(stderr, "output buffer:     %.1f seconds\n", outputbuf_samples / double(pcmrate));
     }
 
     // Open PPS file.
-    if (!ppsfilename.empty()) {
-        if (ppsfilename == "-") {
+    if (!ppsfilename.empty())
+    {
+        if (ppsfilename == "-")
+        {
             fprintf(stderr, "writing pulse-per-second markers to stdout\n");
             ppsfile = stdout;
-        } else {
-            fprintf(stderr, "writing pulse-per-second markers to '%s'\n",
-                    ppsfilename.c_str());
+        }
+        else
+        {
+            fprintf(stderr, "writing pulse-per-second markers to '%s'\n", ppsfilename.c_str());
             ppsfile = fopen(ppsfilename.c_str(), "w");
-            if (ppsfile == NULL) {
-                fprintf(stderr, "ERROR: can not open '%s' (%s)\n",
-                        ppsfilename.c_str(), strerror(errno));
+
+            if (ppsfile == NULL)
+            {
+                fprintf(stderr, "ERROR: can not open '%s' (%s)\n", ppsfilename.c_str(), strerror(errno));
                 exit(1);
             }
         }
+
         fprintf(ppsfile, "#pps_index sample_index   unix_time\n");
         fflush(ppsfile);
     }
 
     // Prepare output writer.
     std::unique_ptr<AudioOutput> audio_output;
-    switch (outmode) {
+
+    switch (outmode)
+    {
         case MODE_RAW:
-            fprintf(stderr, "writing raw 16-bit audio samples to '%s'\n",
-                    filename.c_str());
+            fprintf(stderr, "writing raw 16-bit audio samples to '%s'\n", filename.c_str());
             audio_output.reset(new RawAudioOutput(filename));
             break;
         case MODE_WAV:
-            fprintf(stderr, "writing audio samples to '%s'\n",
-                    filename.c_str());
+            fprintf(stderr, "writing audio samples to '%s'\n", filename.c_str());
             audio_output.reset(new WavAudioOutput(filename, pcmrate, stereo));
             break;
         case MODE_ALSA:
-            fprintf(stderr, "playing audio to ALSA device '%s'\n",
-                    alsadev.c_str());
+            fprintf(stderr, "playing audio to ALSA device '%s'\n", alsadev.c_str());
             audio_output.reset(new AlsaAudioOutput(alsadev, pcmrate, stereo));
             break;
     }
 
-    if (!(*audio_output)) {
-        fprintf(stderr, "ERROR: AudioOutput: %s\n",
-                        audio_output->error().c_str());
+    if (!(*audio_output))
+    {
+        fprintf(stderr, "ERROR: AudioOutput: %s\n", audio_output->error().c_str());
         exit(1);
     }
 
     // If buffering enabled, start background output thread.
     DataBuffer<Sample> output_buffer;
     std::thread output_thread;
-    if (outputbuf_samples > 0) {
+
+    if (outputbuf_samples > 0)
+    {
         unsigned int nchannel = stereo ? 2 : 1;
         output_thread = std::thread(write_output_data,
                                audio_output.get(),
@@ -535,20 +542,23 @@ int main(int argc, char **argv)
     double block_time = get_time();
 
     // Main loop.
-    for (unsigned int block = 0; !stop_flag.load(); block++) {
+    for (unsigned int block = 0; !stop_flag.load(); block++)
+    {
 
         // Check for overflow of source buffer.
-        if (!inbuf_length_warning &&
-            source_buffer.queued_samples() > 10 * ifrate) {
-            fprintf(stderr,
-                    "\nWARNING: Input buffer is growing (system too slow)\n");
+        if (!inbuf_length_warning && source_buffer.queued_samples() > 10 * ifrate)
+        {
+            fprintf(stderr, "\nWARNING: Input buffer is growing (system too slow)\n");
             inbuf_length_warning = true;
         }
 
         // Pull next block from source buffer.
         IQSampleVector iqsamples = source_buffer.pull();
+
         if (iqsamples.empty())
+        {
             break;
+        }
 
         double prev_block_time = block_time;
         block_time = get_time();
@@ -576,28 +586,36 @@ int main(int argc, char **argv)
                 20*log10(fm.get_if_level()),
                 20*log10(fm.get_baseband_level()) + 3.01,
                 20*log10(audio_level) + 3.01);
-        if (outputbuf_samples > 0) {
+
+        if (outputbuf_samples > 0)
+        {
             unsigned int nchannel = stereo ? 2 : 1;
             std::size_t buflen = output_buffer.queued_samples();
-            fprintf(stderr,
-                    " buf=%.1fs ",
-                    buflen / nchannel / double(pcmrate));
+            fprintf(stderr, " buf=%.1fs ", buflen / nchannel / double(pcmrate));
         }
+
         fflush(stderr);
 
         // Show stereo status.
-        if (fm.stereo_detected() != got_stereo) {
+        if (fm.stereo_detected() != got_stereo)
+        {
             got_stereo = fm.stereo_detected();
+
             if (got_stereo)
-                fprintf(stderr, "\ngot stereo signal (pilot level = %f)\n",
-                        fm.get_pilot_level());
+            {
+                fprintf(stderr, "\ngot stereo signal (pilot level = %f)\n", fm.get_pilot_level());
+            }
             else
+            {
                 fprintf(stderr, "\nlost stereo signal\n");
+            }
         }
 
         // Write PPS markers.
-        if (ppsfile != NULL) {
-            for (const PilotPhaseLock::PpsEvent& ev : fm.get_pps_events()) {
+        if (ppsfile != NULL)
+        {
+            for (const PilotPhaseLock::PpsEvent& ev : fm.get_pps_events())
+            {
                 double ts = prev_block_time;
                 ts += ev.block_position * (block_time - prev_block_time);
                 fprintf(ppsfile, "%8s %14s %18.6f\n",
@@ -610,25 +628,28 @@ int main(int argc, char **argv)
 
         // Throw away first block. It is noisy because IF filters
         // are still starting up.
-        if (block > 0) {
-
+        if (block > 0)
+        {
             // Write samples to output.
-            if (outputbuf_samples > 0) {
+            if (outputbuf_samples > 0)
+            {
                 // Buffered write.
                 output_buffer.push(move(audiosamples));
-            } else {
+            }
+            else
+            {
                 // Direct write.
                 audio_output->write(audiosamples);
             }
         }
-
     }
 
     fprintf(stderr, "\n");
 
     // Join background threads.
     source_thread.join();
-    if (outputbuf_samples > 0) {
+    if (outputbuf_samples > 0)
+    {
         output_buffer.push_end();
         output_thread.join();
     }

@@ -33,6 +33,21 @@ public:
      */
 	virtual bool configure(std::string configuration) = 0;
 
+    /** Return current sample frequency in Hz. */
+    virtual std::uint32_t get_sample_rate() = 0;
+
+    /** Return device current center frequency in Hz. */
+    virtual std::uint32_t get_frequency() = 0;
+
+    /** Return current configured center frequency in Hz. */
+    std::uint32_t get_configured_frequency() const
+    {
+    	return m_confFreq;
+    }
+
+    /** Print current parameters specific to device type */
+    virtual void print_specific_parms() = 0;
+
     /**
      * Fetch a bunch of samples from the device.
      *
@@ -58,6 +73,7 @@ public:
 protected:
     std::string m_devname;
     std::string m_error;
+    uint32_t    m_confFreq;
 };
 
 #endif /* INCLUDE_SOURCE_H_ */

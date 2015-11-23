@@ -40,13 +40,13 @@ public:
     virtual bool configure(std::string configuration);
 
     /** Return current sample frequency in Hz. */
-    std::uint32_t get_sample_rate();
+    virtual std::uint32_t get_sample_rate();
 
     /** Return device current center frequency in Hz. */
-    std::uint32_t get_frequency();
+    virtual std::uint32_t get_frequency();
 
-    /** Return current configured center frequency in Hz. */
-    std::uint32_t get_configured_frequency();
+    /** Print current parameters specific to device type */
+    virtual void print_specific_parms();
 
     /**
      * Fetch a bunch of samples from the device.
@@ -64,9 +64,6 @@ public:
 
     /** Return a list of supported devices. */
     static std::vector<std::string> get_device_names();
-
-    /** Print current parameters specific to device type */
-    void print_specific_parms();
 
 private:
     /**
@@ -95,7 +92,6 @@ private:
     int                 m_block_length;
     std::vector<int>    m_gains;
     std::string         m_gainsStr;
-    uint32_t            m_confFreq;
     bool                m_confAgc;
 };
 
