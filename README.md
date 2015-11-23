@@ -11,7 +11,8 @@ decoding is supported. It is written in C++.
 For the moment only RTL-SDR based (RTL2832-based) hardware is suppoeted and uses the librtlsdr library to interface with the RTL-SDR hardware.
 
 This program is mostly an experiment rather than a useful tool.
-The purposes of SoftFM are
+The purposes of SoftFM are:
+
  - experimenting with digital signal processing and software radio;
  - investigating the stability of the 19 kHz pilot;
  - doing the above while listening to my favorite radio station.
@@ -22,11 +23,13 @@ but SoftFM gets much better results than rtl_fm (bundled with RTL-SDR)
 and the few GNURadio-based FM receivers I have seen.
 
 SoftFM provides:
+
  - mono or stereo decoding of FM broadcasting stations
  - real-time playback to soundcard or dumping to file
  - command-line interface (no GUI, no visualization, nothing fancy)
 
 SoftFM requires:
+
  - Linux
  - C++11
  - RTL-SDR library (http://sdr.osmocom.org/trac/wiki/rtl-sdr)
@@ -35,6 +38,11 @@ SoftFM requires:
  - medium-strong FM radio signal. However the R820T2 based dongles give much better results than the former R820T based dongles 
 
 For the latest version, see https://github.com/f4exb/softfm
+
+Branches:
+
+  - _master_ is the "production" branch with the most stable release
+  - _dev_ is the development branch that contains current developments that will be eventually released in the master branch
 
 
 <h1>Prerequisites</h1>
@@ -72,11 +80,11 @@ Compile and install
 
 Basic usage:
 
- - `./softfm -c freq=96400000` Tunes to 94.6 MHz
+ - `./softfm -c freq=94600000` Tunes to 94.6 MHz
 
 Specify gain:
 
- - `./softfm -c freq=96400000,gain=22.9` Tunes to 94.6 MHz and sets gain to 22.9 dB
+ - `./softfm -c freq=94600000,gain=22.9` Tunes to 94.6 MHz and sets gain to 22.9 dB
 
 <h2>All options</h2>
 
@@ -98,7 +106,7 @@ Specify gain:
   - `gain=<x>` (default `auto`)
     - `auto` Selects gain automatically
     - `list` Lists available gains and exit
-    - `<float>` gain in dB. Possible gains in dB are: 0.0, 0.9, 1.4, 2.7, 3.7, 7.7, 8.7, 12.5, 14.4, 15.7, 16.6, 19.7, 20.7, 22.9, 25.4, 28.0, 29.7, 32.8, 33.8, 36.4, 37.2, 38.6, 40.2, 42.1, 43.4, 43.9, 44.5, 48.0, 49.6 
+    - `<float>` gain in dB. Possible gains in dB are: `0.0, 0.9, 1.4, 2.7, 3.7, 7.7, 8.7, 12.5, 14.4, 15.7, 16.6, 19.7, 20.7, 22.9, 25.4, 28.0, 29.7, 32.8, 33.8, 36.4, 37.2, 38.6, 40.2, 42.1, 43.4, 43.9, 44.5, 48.0, 49.6`
   - `srate=<int>` Device sample rate (default `1000000`)
   - `blklen=<int>` Device block length in bytes (default RTL-SDR default i.e. 64k)
   - `agc` Activates device AGC (default off)
