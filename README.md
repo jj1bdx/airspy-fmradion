@@ -1,32 +1,31 @@
-SoftFM
-======
+NGSoftFM
+========
 
-**SoftFM** is a command line software decoder for FM broadcast radio with stereo support 
+**NGSoftFM** is a command line software decoder for FM broadcast radio with stereo support 
 
 <h1>Introduction</h1>
 
-SoftFM is a software-defined radio receiver for FM broadcast radio. Stereo
-decoding is supported. It is written in C++. 
+NGSoftFM is a software-defined radio receiver for FM broadcast radio. Stereo
+decoding is supported. It is written in C++. It is a derivative work of SoftFM (https://github.com/jorisvr/SoftFM) with a new application design and new features.
 
 For the moment only RTL-SDR based (RTL2832-based) hardware is suppoeted and uses the librtlsdr library to interface with the RTL-SDR hardware.
 
-This program is mostly an experiment rather than a useful tool.
-The purposes of SoftFM are
+The purposes of NGSoftFM are:
  - experimenting with digital signal processing and software radio;
  - investigating the stability of the 19 kHz pilot;
  - doing the above while listening to my favorite radio station.
 
-Having said that, SoftFM actually produces pretty good stereo sound
+NGSoftFM actually produces pretty good stereo sound
 when receiving a strong radio station.  Weak stations are noisy,
-but SoftFM gets much better results than rtl_fm (bundled with RTL-SDR)
+but NGSoftFM gets much better results than rtl_fm (bundled with RTL-SDR)
 and the few GNURadio-based FM receivers I have seen.
 
-SoftFM provides:
+NGSoftFM provides:
  - mono or stereo decoding of FM broadcasting stations
  - real-time playback to soundcard or dumping to file
  - command-line interface (no GUI, no visualization, nothing fancy)
 
-SoftFM requires:
+NGSoftFM requires:
  - Linux
  - C++11
  - RTL-SDR library (http://sdr.osmocom.org/trac/wiki/rtl-sdr)
@@ -34,20 +33,20 @@ SoftFM requires:
  - medium-fast computer (SoftFM takes 25% CPU time on a 1.6 GHz Core i3, ~12% of one core of a Core i7 5700HQ @ 2.7 GHz)
  - medium-strong FM radio signal. However the R820T2 based dongles give much better results than the former R820T based dongles 
 
-For the latest version, see https://github.com/f4exb/softfm
+For the latest version, see https://github.com/f4exb/ngsoftfm
 
 
 <h1>Prerequisites</h1>
 
-The Osmocom RTL-SDR library must be installed before you can build SoftFM.
+The Osmocom RTL-SDR library must be installed before you can build NGSoftFM.
 See http://sdr.osmocom.org/trac/wiki/rtl-sdr for more information.
-SoftFM has been tested successfully with RTL-SDR 0.5.3. Normally your distribution should provide the appropriate librtlsdr package
+NGSoftFM has been tested successfully with RTL-SDR 0.5.3. Normally your distribution should provide the appropriate librtlsdr package
 
   - `sudo apt-get install libusb-1.0-0-dev librtlsdr-dev libasound2-dev`
   
 <h1>Installing</h1>
 
-To install SoftFM, download and unpack the source code and go to the
+To install NGSoftFM, download and unpack the source code and go to the
 top level directory. Then do like this:
 
  - `mkdir build`
@@ -96,7 +95,7 @@ All options:
 
 <h1>License</h1>
 
-softfm, copyright (C) 2015, Edouard Griffiths, F4EXB
+NGSoftFM, copyright (C) 2015, Edouard Griffiths, F4EXB
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
