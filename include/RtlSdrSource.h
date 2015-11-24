@@ -63,7 +63,7 @@ public:
     }
 
     /** Return a list of supported devices. */
-    static std::vector<std::string> get_device_names();
+    static void get_device_names(std::vector<std::string>& devices);
 
 private:
     /**

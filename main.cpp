@@ -215,6 +215,8 @@ void usage()
 {
     fprintf(stderr,
     "Usage: softfm [options]\n"
+    		"  -t devtype    Device type:\n"
+    		"                  - rtlsdr: RTL-SDR devices\n"
     		"  -c config     Comma separated key=value configuration pairs or just key for switches\n"
     		"                See below for valid values per device type\n"
             "  -d devidx     RTL-SDR device index, 'list' to show device list (default 0)\n"
@@ -288,11 +290,14 @@ int main(int argc, char **argv)
     FILE *  ppsfile = NULL;
     double  bufsecs = -1;
     std::string config_str;
+    std::string devtype_str;
+    std::vector<std::string> devnames;
 
     fprintf(stderr,
             "SoftFM - Software decoder for FM broadcast radio with RTL-SDR\n");
 
     const struct option longopts[] = {
+        { "devtype",    2, NULL, 't' },
         { "config",     2, NULL, 'c' },
         { "dev",        1, NULL, 'd' },
         { "pcmrate",    1, NULL, 'r' },
@@ -306,9 +311,12 @@ int main(int argc, char **argv)
 
     int c, longindex;
     while ((c = getopt_long(argc, argv,
-                            "c:d:r:MR:W:P::T:b:",
+                            "t:c:d:r:MR:W:P::T:b:",
                             longopts, &longindex)) >= 0) {
         switch (c) {
+            case 't':
+            	devtype_str.assign(optarg);
+                break;
             case 'c':
             	config_str.assign(optarg);
                 break;
@@ -375,7 +383,7 @@ int main(int argc, char **argv)
         fprintf(stderr, "WARNING: can not install SIGTERM handler (%s)\n", strerror(errno));
     }
 
-    std::vector<std::string> devnames = RtlSdrSource::get_device_names();
+    RtlSdrSource::get_device_names(devnames);
 
     if (devidx < 0 || (unsigned int)devidx >= devnames.size())
     {

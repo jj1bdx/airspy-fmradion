@@ -94,10 +94,9 @@ bool RtlSdrSource::configure(std::string configurationStr)
     }
     else
     {
-		std::cerr << "RtlSdrSource::configure: " << configurationStr << std::endl;
-
 		if (m.find("srate") != m.end())
     	{
+    		std::cerr << "RtlSdrSource::configure: srate: " << m["srate"] << std::endl;
     		sample_rate = atoi(m["srate"].c_str());
     	}
 
@@ -155,11 +154,13 @@ bool RtlSdrSource::configure(std::string configurationStr)
 
     	if (m.find("blklen") != m.end())
     	{
+    		std::cerr << "RtlSdrSource::configure: blklen: " << m["blklen"] << std::endl;
     		block_length = atoi(m["blklen"].c_str());
     	}
 
     	if (m.find("agc") != m.end())
     	{
+    		std::cerr << "RtlSdrSource::configure: agc" << std::endl;
     		agcmode = true;
     	}
 
@@ -321,20 +322,27 @@ bool RtlSdrSource::get_samples(IQSampleVector& samples)
 
 
 // Return a list of supported devices.
-std::vector<std::string> RtlSdrSource::get_device_names()
+void RtlSdrSource::get_device_names(std::vector<std::string>& devices)
 {
-	std::vector<std::string> result;
-
+	char manufacturer[256], product[256], serial[256];
     int device_count = rtlsdr_get_device_count();
-    if (device_count <= 0)
-        return result;
 
-    result.reserve(device_count);
-    for (int i = 0; i < device_count; i++) {
-        result.push_back(std::string(rtlsdr_get_device_name(i)));
+    if (device_count > 0)
+    {
+    	devices.resize(device_count);
     }
 
-    return result;
+   	devices.clear();
+
+    for (int i = 0; i < device_count; i++)
+    {
+    	if (!rtlsdr_get_device_usb_strings(i, manufacturer, product, serial))
+    	{
+    		std::ostringstream name_ostr;
+    		name_ostr << manufacturer << " " << product << " " << serial;
+        	devices.push_back(name_ostr.str());
+    	}
+    }
 }
 
 /* end */
