@@ -50,7 +50,7 @@ The Osmocom RTL-SDR library must be installed before you can build NGSoftFM.
 See http://sdr.osmocom.org/trac/wiki/rtl-sdr for more information.
 NGSoftFM has been tested successfully with RTL-SDR 0.5.3. Normally your distribution should provide the appropriate librtlsdr package
 
-  - `sudo apt-get install libusb-1.0-0-dev librtlsdr-dev libasound2-dev libboost-all-dev`
+  - `sudo apt-get install cmake pkg-config libusb-1.0-0-dev librtlsdr-dev libasound2-dev libboost-all-dev`
   
 <h1>Installing</h1>
 

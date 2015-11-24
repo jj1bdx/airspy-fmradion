@@ -39,32 +39,47 @@ set(RTLSDR_LIBRARIES    ${RTLSDR_LIBRARY} ${LIBUSB_LIBRARY})
 set(CMAKE_CXX_FLAGS "-Wall -std=c++11 -O2 -ffast-math -ftree-vectorize ${EXTRA_FLAGS}")
 
 set(sfmbase_SOURCES
-    sfmbase/RtlSdrSource.cpp
     sfmbase/Filter.cpp
     sfmbase/FmDecode.cpp
     sfmbase/AudioOutput.cpp 
 )
 
 set(sfmbase_HEADERS
-	include/AudioOutput.h
-	include/Filter.h
-	include/FmDecode.h
-	include/MovingAverage.h
-	include/Source.h
-	include/RtlSdrSource.h
-	include/SoftFM.h
-	include/fastatan2.h
-	include/parsekv.h
-	include/util.h
+    include/AudioOutput.h
+    include/Filter.h
+    include/FmDecode.h
+    include/MovingAverage.h
+    include/Source.h
+    include/SoftFM.h
+    include/fastatan2.h
+    include/parsekv.h
+    include/util.h
 )
 
 set(sfmbase_SOURCES
-	${sfmbase_SOURCES}
-	${sfmbase_HEADERS}
+    ${sfmbase_SOURCES}
+    ${sfmbase_HEADERS}
+)
+
+set(sfmrtlsdr_SOURCES
+    sfmbase/RtlSdrSource.cpp
+)
+
+set(sfmrtlsdr_HEADERS
+    include/RtlSdrSource.h
+)
+
+set(sfmrtlsdr_SOURCES
+    ${sfmrtlsdr_SOURCES}
+    ${sfmrtlsdr_HEADERS}
 )
 
 add_library(sfmbase STATIC
-	${sfmbase_SOURCES}
+    ${sfmbase_SOURCES}
+)
+
+add_library(sfmrtlsdr STATIC
+    ${sfmrtlsdr_SOURCES}
 )
 
 add_executable(softfm
@@ -72,18 +87,25 @@ add_executable(softfm
 )
 
 include_directories(
-	${CMAKE_SOURCE_DIR}/include
-    ${RTLSDR_INCLUDE_DIRS}
+    ${CMAKE_SOURCE_DIR}/include
     ${ALSA_INCLUDE_DIRS}
     ${EXTRA_INCLUDES} 
 )
 
 target_link_libraries(softfm
-	sfmbase
+    sfmbase
+    sfmrtlsdr
     ${CMAKE_THREAD_LIBS_INIT}
-    ${RTLSDR_LIBRARIES}
     ${ALSA_LIBRARIES}
     ${EXTRA_LIBS} 
+)
+
+target_include_directories(sfmrtlsdr PUBLIC
+    ${RTLSDR_INCLUDE_DIRS}
+)
+
+target_link_libraries(sfmrtlsdr
+    ${RTLSDR_LIBRARIES}
 )
 
 install(TARGETS softfm DESTINATION bin)
