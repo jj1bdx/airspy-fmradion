@@ -154,7 +154,11 @@ void read_source_data(Source *srcsdr, DataBuffer<IQSample> *buf)
 
         if (!srcsdr->get_samples(iqsamples)) {
             fprintf(stderr, "ERROR: reading from source: %s\n", srcsdr->error().c_str());
-            delete srcsdr;
+
+            if (srcsdr) {
+            	delete srcsdr;
+            }
+
             exit(1);
         }
 
@@ -210,6 +214,7 @@ static void handle_sigterm(int sig)
     if (srcsdr)
     {
     	delete srcsdr;
+    	srcsdr = 0;
     }
 
     const char *s = msg.c_str();
