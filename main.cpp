@@ -40,8 +40,6 @@
 #include "AudioOutput.h"
 #include "MovingAverage.h"
 
-Source *srcsdr = 0;
-
 /** Flag is set on SIGINT / SIGTERM. */
 static std::atomic_bool stop_flag(false);
 
@@ -146,7 +144,7 @@ void adjust_gain(SampleVector& samples, double gain)
  * Running this in a background thread ensures that the time between calls
  * to RtlSdrSource::get_samples() is very short.
  */
-void read_source_data(Source *srcsdr, DataBuffer<IQSample> *buf)
+void read_source_data(std::unique_ptr<Source> srcsdr, DataBuffer<IQSample> *buf)
 {
     IQSampleVector iqsamples;
 
@@ -154,11 +152,6 @@ void read_source_data(Source *srcsdr, DataBuffer<IQSample> *buf)
 
         if (!srcsdr->get_samples(iqsamples)) {
             fprintf(stderr, "ERROR: reading from source: %s\n", srcsdr->error().c_str());
-
-            if (srcsdr) {
-            	delete srcsdr;
-            }
-
             exit(1);
         }
 
@@ -210,12 +203,6 @@ static void handle_sigterm(int sig)
     std::string msg = "\nGot signal ";
     msg += strsignal(sig);
     msg += ", stopping ...\n";
-
-    if (srcsdr)
-    {
-    	delete srcsdr;
-    	srcsdr = 0;
-    }
 
     const char *s = msg.c_str();
     write(STDERR_FILENO, s, strlen(s));
@@ -323,12 +310,6 @@ static bool get_device(std::vector<std::string> &devnames, std::string& devtype,
 	{
 	    // Open RTL-SDR device.
 		*srcsdr = new RtlSdrSource(devidx);
-
-		if (!*(*srcsdr))
-	    {
-	        fprintf(stderr, "ERROR opening devoce: %s\n", (*srcsdr)->error().c_str());
-	        return false;
-	    }
 	}
 
     return true;
@@ -349,6 +330,7 @@ int main(int argc, char **argv)
     std::string config_str;
     std::string devtype_str;
     std::vector<std::string> devnames;
+    Source *srcsdr = 0;
 
     fprintf(stderr,
             "SoftFM - Software decoder for FM broadcast radio\n");
@@ -440,10 +422,87 @@ int main(int argc, char **argv)
         fprintf(stderr, "WARNING: can not install SIGTERM handler (%s)\n", strerror(errno));
     }
 
+    // Open PPS file.
+    if (!ppsfilename.empty())
+    {
+        if (ppsfilename == "-")
+        {
+            fprintf(stderr, "writing pulse-per-second markers to stdout\n");
+            ppsfile = stdout;
+        }
+        else
+        {
+            fprintf(stderr, "writing pulse-per-second markers to '%s'\n", ppsfilename.c_str());
+            ppsfile = fopen(ppsfilename.c_str(), "w");
+
+            if (ppsfile == NULL)
+            {
+                fprintf(stderr, "ERROR: can not open '%s' (%s)\n", ppsfilename.c_str(), strerror(errno));
+                exit(1);
+            }
+        }
+
+        fprintf(ppsfile, "#pps_index sample_index   unix_time\n");
+        fflush(ppsfile);
+    }
+
+    // Calculate number of samples in audio buffer.
+    unsigned int outputbuf_samples = 0;
+
+    if (bufsecs < 0 && (outmode == MODE_ALSA || (outmode == MODE_RAW && filename == "-")))
+    {
+        // Set default buffer to 1 second for interactive output streams.
+        outputbuf_samples = pcmrate;
+    }
+    else if (bufsecs > 0)
+    {
+        // Calculate nr of samples for configured buffer length.
+        outputbuf_samples = (unsigned int)(bufsecs * pcmrate);
+    }
+
+    if (outputbuf_samples > 0)
+    {
+       fprintf(stderr, "output buffer:     %.1f seconds\n", outputbuf_samples / double(pcmrate));
+    }
+
+    // Prepare output writer.
+    std::unique_ptr<AudioOutput> audio_output;
+
+    switch (outmode)
+    {
+        case MODE_RAW:
+            fprintf(stderr, "writing raw 16-bit audio samples to '%s'\n", filename.c_str());
+            audio_output.reset(new RawAudioOutput(filename));
+            break;
+        case MODE_WAV:
+            fprintf(stderr, "writing audio samples to '%s'\n", filename.c_str());
+            audio_output.reset(new WavAudioOutput(filename, pcmrate, stereo));
+            break;
+        case MODE_ALSA:
+            fprintf(stderr, "playing audio to ALSA device '%s'\n", alsadev.c_str());
+            audio_output.reset(new AlsaAudioOutput(alsadev, pcmrate, stereo));
+            break;
+    }
+
+    if (!(*audio_output))
+    {
+        fprintf(stderr, "ERROR: AudioOutput: %s\n", audio_output->error().c_str());
+        exit(1);
+    }
+
     if (!get_device(devnames, devtype_str, &srcsdr, devidx))
     {
     	exit(1);
     }
+
+
+	if (!(*srcsdr))
+    {
+        fprintf(stderr, "ERROR source: %s\n", srcsdr->error().c_str());
+        delete srcsdr;
+        exit(1);
+    }
+
 
     // Configure device and start streaming.
     if (!srcsdr->configure(config_str))
@@ -470,8 +529,12 @@ int main(int argc, char **argv)
     // Create source data queue.
     DataBuffer<IQSample> source_buffer;
 
+    // ownership will be transferred to thread therefore the unique_ptr with move is convenient
+    // if the pointer is to be shared with the main thread use shared_ptr (and no move) instead
+    std::unique_ptr<Source> up_srcsdr(srcsdr);
+
     // Start reading from device in separate thread.
-    std::thread source_thread(read_source_data, srcsdr, &source_buffer);
+    std::thread source_thread(read_source_data, std::move(up_srcsdr), &source_buffer);
 
     // The baseband signal is empty above 100 kHz, so we can
     // downsample to ~ 200 kS/s without loss of information.
@@ -494,76 +557,6 @@ int main(int argc, char **argv)
                  FmDecoder::default_freq_dev,       // freq_dev
                  bandwidth_pcm,                     // bandwidth_pcm
                  downsample);                       // downsample
-
-    // Calculate number of samples in audio buffer.
-    unsigned int outputbuf_samples = 0;
-
-    if (bufsecs < 0 && (outmode == MODE_ALSA || (outmode == MODE_RAW && filename == "-")))
-    {
-        // Set default buffer to 1 second for interactive output streams.
-        outputbuf_samples = pcmrate;
-    }
-    else if (bufsecs > 0)
-    {
-        // Calculate nr of samples for configured buffer length.
-        outputbuf_samples = (unsigned int)(bufsecs * pcmrate);
-    }
-
-    if (outputbuf_samples > 0)
-    {
-       fprintf(stderr, "output buffer:     %.1f seconds\n", outputbuf_samples / double(pcmrate));
-    }
-
-    // Open PPS file.
-    if (!ppsfilename.empty())
-    {
-        if (ppsfilename == "-")
-        {
-            fprintf(stderr, "writing pulse-per-second markers to stdout\n");
-            ppsfile = stdout;
-        }
-        else
-        {
-            fprintf(stderr, "writing pulse-per-second markers to '%s'\n", ppsfilename.c_str());
-            ppsfile = fopen(ppsfilename.c_str(), "w");
-
-            if (ppsfile == NULL)
-            {
-                fprintf(stderr, "ERROR: can not open '%s' (%s)\n", ppsfilename.c_str(), strerror(errno));
-                delete srcsdr;
-                exit(1);
-            }
-        }
-
-        fprintf(ppsfile, "#pps_index sample_index   unix_time\n");
-        fflush(ppsfile);
-    }
-
-    // Prepare output writer.
-    std::unique_ptr<AudioOutput> audio_output;
-
-    switch (outmode)
-    {
-        case MODE_RAW:
-            fprintf(stderr, "writing raw 16-bit audio samples to '%s'\n", filename.c_str());
-            audio_output.reset(new RawAudioOutput(filename));
-            break;
-        case MODE_WAV:
-            fprintf(stderr, "writing audio samples to '%s'\n", filename.c_str());
-            audio_output.reset(new WavAudioOutput(filename, pcmrate, stereo));
-            break;
-        case MODE_ALSA:
-            fprintf(stderr, "playing audio to ALSA device '%s'\n", alsadev.c_str());
-            audio_output.reset(new AlsaAudioOutput(alsadev, pcmrate, stereo));
-            break;
-    }
-
-    if (!(*audio_output))
-    {
-        fprintf(stderr, "ERROR: AudioOutput: %s\n", audio_output->error().c_str());
-        delete srcsdr;
-        exit(1);
-    }
 
     // If buffering enabled, start background output thread.
     DataBuffer<Sample> output_buffer;
@@ -699,7 +692,6 @@ int main(int argc, char **argv)
     }
 
     // No cleanup needed; everything handled by destructors except for dynamically allocated objects.
-   	delete srcsdr;
 
     return 0;
 }
