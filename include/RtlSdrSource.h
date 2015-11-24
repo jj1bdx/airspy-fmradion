@@ -57,7 +57,7 @@ public:
     virtual bool get_samples(IQSampleVector& samples);
 
     /** Return true if the device is OK, return false if there is an error. */
-    operator bool() const
+    virtual operator bool() const
     {
         return m_dev && m_error.empty();
     }

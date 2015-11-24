@@ -140,7 +140,6 @@ bool RtlSdrSource::configure(std::string configurationStr)
                 	else
                 	{
                 		tuner_gain = tmpgain2;
-                		std::cerr << "RtlSdrSource::configure: tuner_gain: " << tuner_gain << std::endl;
 
                         if (find(m_gains.begin(), m_gains.end(), tuner_gain) == m_gains.end())
                         {

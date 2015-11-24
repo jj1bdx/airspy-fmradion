@@ -40,7 +40,7 @@
 #include "AudioOutput.h"
 #include "MovingAverage.h"
 
-
+Source *srcsdr = 0;
 
 /** Flag is set on SIGINT / SIGTERM. */
 static std::atomic_bool stop_flag(false);
@@ -146,14 +146,15 @@ void adjust_gain(SampleVector& samples, double gain)
  * Running this in a background thread ensures that the time between calls
  * to RtlSdrSource::get_samples() is very short.
  */
-void read_source_data(RtlSdrSource *rtlsdr, DataBuffer<IQSample> *buf)
+void read_source_data(Source *srcsdr, DataBuffer<IQSample> *buf)
 {
     IQSampleVector iqsamples;
 
     while (!stop_flag.load()) {
 
-        if (!rtlsdr->get_samples(iqsamples)) {
-            fprintf(stderr, "ERROR: RtlSdr: %s\n", rtlsdr->error().c_str());
+        if (!srcsdr->get_samples(iqsamples)) {
+            fprintf(stderr, "ERROR: reading from source: %s\n", srcsdr->error().c_str());
+            delete srcsdr;
             exit(1);
         }
 
@@ -206,6 +207,11 @@ static void handle_sigterm(int sig)
     msg += strsignal(sig);
     msg += ", stopping ...\n";
 
+    if (srcsdr)
+    {
+    	delete srcsdr;
+    }
+
     const char *s = msg.c_str();
     write(STDERR_FILENO, s, strlen(s));
 }
@@ -219,7 +225,7 @@ void usage()
     		"                  - rtlsdr: RTL-SDR devices\n"
     		"  -c config     Comma separated key=value configuration pairs or just key for switches\n"
     		"                See below for valid values per device type\n"
-            "  -d devidx     RTL-SDR device index, 'list' to show device list (default 0)\n"
+            "  -d devidx     Device index, 'list' to show device list (default 0)\n"
             "  -r pcmrate    Audio sample rate in Hz (default 48000 Hz)\n"
             "  -M            Disable stereo decoding\n"
             "  -R filename   Write audio data as raw S16_LE samples\n"
@@ -276,6 +282,52 @@ double get_time()
     return tv.tv_sec + 1.0e-6 * tv.tv_usec;
 }
 
+static bool get_device(std::vector<std::string> &devnames, std::string& devtype, Source **srcsdr, int devidx)
+{
+	if (strcasecmp(devtype.c_str(), "rtlsdr") == 0)
+	{
+		RtlSdrSource::get_device_names(devnames);
+	}
+	else
+	{
+		fprintf(stderr, "ERROR: wrong device type (-t option) must be one of the following:\n");
+		fprintf(stderr, "       rtlsdr\n");
+		return false;
+	}
+
+    if (devidx < 0 || (unsigned int)devidx >= devnames.size())
+    {
+        if (devidx != -1)
+        {
+            fprintf(stderr, "ERROR: invalid device index %d\n", devidx);
+        }
+
+        fprintf(stderr, "Found %u devices:\n", (unsigned int)devnames.size());
+
+        for (unsigned int i = 0; i < devnames.size(); i++)
+        {
+            fprintf(stderr, "%2u: %s\n", i, devnames[i].c_str());
+        }
+
+        return false;
+    }
+
+    fprintf(stderr, "using device %d: %s\n", devidx, devnames[devidx].c_str());
+
+	if (strcasecmp(devtype.c_str(), "rtlsdr") == 0)
+	{
+	    // Open RTL-SDR device.
+		*srcsdr = new RtlSdrSource(devidx);
+
+		if (!*(*srcsdr))
+	    {
+	        fprintf(stderr, "ERROR opening devoce: %s\n", (*srcsdr)->error().c_str());
+	        return false;
+	    }
+	}
+
+    return true;
+}
 
 int main(int argc, char **argv)
 {
@@ -294,7 +346,7 @@ int main(int argc, char **argv)
     std::vector<std::string> devnames;
 
     fprintf(stderr,
-            "SoftFM - Software decoder for FM broadcast radio with RTL-SDR\n");
+            "SoftFM - Software decoder for FM broadcast radio\n");
 
     const struct option longopts[] = {
         { "devtype",    2, NULL, 't' },
@@ -383,61 +435,38 @@ int main(int argc, char **argv)
         fprintf(stderr, "WARNING: can not install SIGTERM handler (%s)\n", strerror(errno));
     }
 
-    RtlSdrSource::get_device_names(devnames);
-
-    if (devidx < 0 || (unsigned int)devidx >= devnames.size())
+    if (!get_device(devnames, devtype_str, &srcsdr, devidx))
     {
-        if (devidx != -1)
-        {
-            fprintf(stderr, "ERROR: invalid device index %d\n", devidx);
-        }
+    	exit(1);
+    }
 
-        fprintf(stderr, "Found %u devices:\n", (unsigned int)devnames.size());
-
-        for (unsigned int i = 0; i < devnames.size(); i++)
-        {
-            fprintf(stderr, "%2u: %s\n", i, devnames[i].c_str());
-        }
-
+    // Configure device and start streaming.
+    if (!srcsdr->configure(config_str))
+    {
+        fprintf(stderr, "ERROR: configuration: %s\n", srcsdr->error().c_str());
+        delete srcsdr;
         exit(1);
     }
 
-    fprintf(stderr, "using device %d: %s\n", devidx, devnames[devidx].c_str());
-
-    // Open RTL-SDR device.
-    RtlSdrSource rtlsdr(devidx);
-    if (!rtlsdr)
-    {
-        fprintf(stderr, "ERROR: RtlSdr: %s\n", rtlsdr.error().c_str());
-        exit(1);
-    }
-
-    // Configure RTL-SDR device and start streaming.
-    if (!rtlsdr.configure(config_str))
-    {
-        fprintf(stderr, "ERROR: RtlSdr configuration: %s\n", rtlsdr.error().c_str());
-        exit(1);
-    }
-
-    double freq = rtlsdr.get_configured_frequency();
+    double freq = srcsdr->get_configured_frequency();
     fprintf(stderr, "tuned for:         %.6f MHz\n", freq * 1.0e-6);
 
-    double tuner_freq = rtlsdr.get_frequency();
+    double tuner_freq = srcsdr->get_frequency();
     fprintf(stderr, "device tuned for:  %.6f MHz\n", tuner_freq * 1.0e-6);
 
-    double ifrate = rtlsdr.get_sample_rate();
+    double ifrate = srcsdr->get_sample_rate();
     fprintf(stderr, "IF sample rate:    %.0f Hz\n", ifrate);
 
     double delta_if = tuner_freq - freq;
     MovingAverage<float> ppm_average(40, 0.0f);
 
-    rtlsdr.print_specific_parms();
+    srcsdr->print_specific_parms();
 
     // Create source data queue.
     DataBuffer<IQSample> source_buffer;
 
     // Start reading from device in separate thread.
-    std::thread source_thread(read_source_data, &rtlsdr, &source_buffer);
+    std::thread source_thread(read_source_data, srcsdr, &source_buffer);
 
     // The baseband signal is empty above 100 kHz, so we can
     // downsample to ~ 200 kS/s without loss of information.
@@ -496,6 +525,7 @@ int main(int argc, char **argv)
             if (ppsfile == NULL)
             {
                 fprintf(stderr, "ERROR: can not open '%s' (%s)\n", ppsfilename.c_str(), strerror(errno));
+                delete srcsdr;
                 exit(1);
             }
         }
@@ -526,6 +556,7 @@ int main(int argc, char **argv)
     if (!(*audio_output))
     {
         fprintf(stderr, "ERROR: AudioOutput: %s\n", audio_output->error().c_str());
+        delete srcsdr;
         exit(1);
     }
 
@@ -662,7 +693,8 @@ int main(int argc, char **argv)
         output_thread.join();
     }
 
-    // No cleanup needed; everything handled by destructors.
+    // No cleanup needed; everything handled by destructors except for dynamically allocated objects.
+   	delete srcsdr;
 
     return 0;
 }
