@@ -21,6 +21,7 @@
 #include <iostream>
 #include <iomanip>
 #include <sstream>
+#include <thread>
 #include <rtl-sdr.h>
 
 #include "util.h"
@@ -32,7 +33,8 @@
 // Open RTL-SDR device.
 RtlSdrSource::RtlSdrSource(int dev_index) :
 	m_dev(0),
-	m_block_length(default_block_length)
+	m_block_length(default_block_length),
+	m_running(false)
 {
     int r;
 
@@ -286,14 +288,31 @@ std::vector<int> RtlSdrSource::get_tuner_gains()
     return gains;
 }
 
-bool RtlSdrSource::start(IQSampleVector* samples)
+bool RtlSdrSource::start(DataBuffer<IQSample>* buf, std::atomic_bool *stop_flag)
 {
-	m_samples = samples;
+	m_buf = buf;
+	m_stop_flag = stop_flag;
+	std::thread source_thread(run, buf);
 	return true;
 }
 
+bool RtlSdrSource::stop()
+{
+	return true;
+}
+
+void RtlSdrSource::run(DataBuffer<IQSample>* buf)
+{
+	IQSampleVector iqsamples;
+
+	while (!m_stop_flag->load() && get_samples(&iqsamples))
+	{
+		buf->push(move(iqsamples));
+	}
+}
+
 // Fetch a bunch of samples from the device.
-bool RtlSdrSource::get_samples()
+bool RtlSdrSource::get_samples(IQSampleVector *samples)
 {
     int r, n_read;
 
@@ -301,7 +320,7 @@ bool RtlSdrSource::get_samples()
         return false;
     }
 
-    if (!m_samples) {
+    if (!samples) {
     	return false;
     }
 
@@ -321,13 +340,13 @@ bool RtlSdrSource::get_samples()
         return false;
     }
 
-	m_samples->resize(m_block_length);
+    samples->resize(m_block_length);
 
     for (int i = 0; i < m_block_length; i++)
     {
         int32_t re = buf[2*i];
         int32_t im = buf[2*i+1];
-        (*m_samples)[i] = IQSample( (re - 128) / IQSample::value_type(128),
+        (*samples)[i] = IQSample( (re - 128) / IQSample::value_type(128),
                                (im - 128) / IQSample::value_type(128) );
     }
 

@@ -49,16 +49,8 @@ public:
     /** Print current parameters specific to device type */
     virtual void print_specific_parms();
 
-    /**
-     * Fetch a bunch of samples from the device.
-     *
-     * This function must be called regularly to maintain streaming.
-     * Return true for success, false if an error occurred.
-     */
-    virtual bool get_samples();
-
-    virtual bool start(IQSampleVector* samples);
-    virtual bool stop() { return true; }
+    virtual bool start(DataBuffer<IQSample>* samples, std::atomic_bool *stop_flag);
+    virtual bool stop();
 
     /** Return true if the device is OK, return false if there is an error. */
     virtual operator bool() const
@@ -92,11 +84,22 @@ private:
     /** Return current tuner gain in units of 0.1 dB. */
     int get_tuner_gain();
 
+    /**
+     * Fetch a bunch of samples from the device.
+     *
+     * This function must be called regularly to maintain streaming.
+     * Return true for success, false if an error occurred.
+     */
+    bool get_samples(IQSampleVector *samples);
+
+    static void run(DataBuffer<IQSample>* buf);
+
     struct rtlsdr_dev * m_dev;
     int                 m_block_length;
     std::vector<int>    m_gains;
     std::string         m_gainsStr;
     bool                m_confAgc;
+    bool                m_running;
 };
 
 #endif

@@ -60,6 +60,7 @@ void adjust_gain(SampleVector& samples, double gain)
  * Running this in a background thread ensures that the time between calls
  * to RtlSdrSource::get_samples() is very short.
  */
+/*
 void read_source_data(std::unique_ptr<Source> srcsdr, DataBuffer<IQSample> *buf)
 {
     IQSampleVector iqsamples;
@@ -88,7 +89,7 @@ void read_source_data(std::unique_ptr<Source> srcsdr, DataBuffer<IQSample> *buf)
         fprintf(stderr, "ERROR: stopping source: %s\n", srcsdr->error().c_str());
         exit(1);
     }
-}
+}*/
 
 
 /**
@@ -480,7 +481,8 @@ int main(int argc, char **argv)
     std::unique_ptr<Source> up_srcsdr(srcsdr);
 
     // Start reading from device in separate thread.
-    std::thread source_thread(read_source_data, std::move(up_srcsdr), &source_buffer);
+    //std::thread source_thread(read_source_data, std::move(up_srcsdr), &source_buffer);
+    up_srcsdr->start(&source_buffer, &stop_flag);
 
     // The baseband signal is empty above 100 kHz, so we can
     // downsample to ~ 200 kS/s without loss of information.

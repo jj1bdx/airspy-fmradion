@@ -52,17 +52,9 @@ public:
     /** Print current parameters specific to device type */
     virtual void print_specific_parms() = 0;
 
-    /**
-     * Fetch a bunch of samples from the device.
-     *
-     * This function must be called regularly to maintain streaming.
-     * Return true for success, false if an error occurred.
-     */
-	virtual bool get_samples() = 0;
-
 	/** start device before sampling loop.
 	 * Give it a reference to the buffer of samples */
-	virtual bool start(IQSampleVector* samples) = 0;
+	virtual bool start(DataBuffer<IQSample> *buf, std::atomic_bool *stop_flag) = 0;
 
 	/** stop device after sampling loop */
 	virtual bool stop() = 0;
@@ -85,10 +77,11 @@ public:
     }
 
 protected:
-    std::string    m_devname;
-    std::string    m_error;
-    uint32_t       m_confFreq;
-    IQSampleVector *m_samples;
+    std::string          m_devname;
+    std::string          m_error;
+    uint32_t             m_confFreq;
+    DataBuffer<IQSample> *m_buf;
+    std::atomic_bool     *m_stop_flag;
 };
 
 #endif /* INCLUDE_SOURCE_H_ */

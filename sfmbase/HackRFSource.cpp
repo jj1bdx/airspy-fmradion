@@ -20,6 +20,7 @@
 #include <sstream>
 #include <iostream>
 #include <iomanip>
+#include <thread>
 
 #include "util.h"
 #include "parsekv.h"
@@ -257,21 +258,34 @@ bool HackRFSource::configure(std::string configurationStr)
     return configure(sampleRate, tuner_freq, extAmp, biasAnt, lnaGain, vgaGain, bandwidth);
 }
 
-bool HackRFSource::start(IQSampleVector* samples)
+bool HackRFSource::start(DataBuffer<IQSample> *buf, std::atomic_bool *stop_flag)
 {
+	m_buf = buf;
+	m_stop_flag = stop_flag;
+
 	hackrf_error rc;
 
-	rc = (hackrf_error) hackrf_start_rx(m_dev, rx_callback, NULL);
+	std::thread source_thread(run, buf);
+
+	sleep(1);
+
+	return *this;
+}
+
+void HackRFSource::run(DataBuffer<IQSample> *buf)
+{
+	hackrf_error rc = (hackrf_error) hackrf_start_rx(m_dev, rx_callback, 0);
 
 	if (rc != HACKRF_SUCCESS)
 	{
 		m_error = "Cannot start Rx";
-		return false;
 	}
 	else
 	{
-		m_samples = samples;
-		return true;
+		while (!m_stop_flag->load() && (hackrf_is_streaming(m_dev) == HACKRF_TRUE))
+		{
+			sleep(1);
+		}
 	}
 }
 
@@ -292,19 +306,6 @@ bool HackRFSource::stop()
 	}
 }
 
-// Fetch a bunch of samples from the device.
-bool HackRFSource::get_samples()
-{
-	if (!m_samples)	{
-		m_error = "Sampling not started";
-		return false;
-	}
-
-	// TODO: wait for event
-	m_error = "Not implemented";
-	return false;
-}
-
 int HackRFSource::rx_callback(hackrf_transfer* transfer)
 {
 	int bytes_to_write = transfer->valid_length;
@@ -319,19 +320,16 @@ int HackRFSource::rx_callback(hackrf_transfer* transfer)
 
 void HackRFSource::callback(const char* buf, int len)
 {
-	if (!m_samples) {
-		//TODO: post event
-		return;
-	}
+	IQSampleVector iqsamples;
 
-    m_samples->resize(len/2);
+	iqsamples->resize(len/2);
 
     for (int i = 0; i < len/2; i++) {
         int32_t re = buf[2*i];
         int32_t im = buf[2*i+1];
-        (*m_samples)[i] = IQSample( (re - 128) / IQSample::value_type(128),
+        (*iqsamples)[i] = IQSample( (re - 128) / IQSample::value_type(128),
                                (im - 128) / IQSample::value_type(128) );
     }
 
-    //TODO: post event
+    m_buf->push(move(iqsamples));
 }
