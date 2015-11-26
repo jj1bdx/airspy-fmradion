@@ -24,10 +24,7 @@
 #include <cstring>
 #include <algorithm>
 #include <atomic>
-#include <condition_variable>
 #include <memory>
-#include <mutex>
-#include <queue>
 #include <thread>
 #include <unistd.h>
 #include <getopt.h>
@@ -35,96 +32,16 @@
 
 #include "util.h"
 #include "SoftFM.h"
-#include "RtlSdrSource.h"
+#include "DataBuffer.h"
 #include "FmDecode.h"
 #include "AudioOutput.h"
 #include "MovingAverage.h"
 
+#include "RtlSdrSource.h"
+#include "HackRFSource.h"
+
 /** Flag is set on SIGINT / SIGTERM. */
 static std::atomic_bool stop_flag(false);
-
-
-/** Buffer to move sample data between threads. */
-template <class Element>
-class DataBuffer
-{
-public:
-    /** Constructor. */
-    DataBuffer()
-        : m_qlen(0)
-        , m_end_marked(false)
-    { }
-
-    /** Add samples to the queue. */
-    void push(std::vector<Element>&& samples)
-    {
-        if (!samples.empty()) {
-            std::unique_lock<std::mutex> lock(m_mutex);
-            m_qlen += samples.size();
-            m_queue.push(move(samples));
-            lock.unlock();
-            m_cond.notify_all();
-        }
-    }
-
-    /** Mark the end of the data stream. */
-    void push_end()
-    {
-        std::unique_lock<std::mutex> lock(m_mutex);
-        m_end_marked = true;
-        lock.unlock();
-        m_cond.notify_all();
-    }
-
-    /** Return number of samples in queue. */
-    std::size_t queued_samples()
-    {
-        std::unique_lock<std::mutex> lock(m_mutex);
-        return m_qlen;
-    }
-
-    /**
-     * If the queue is non-empty, remove a block from the queue and
-     * return the samples. If the end marker has been reached, return
-     * an empty vector. If the queue is empty, wait until more data is pushed
-     * or until the end marker is pushed.
-     */
-    std::vector<Element> pull()
-    {
-    	std::vector<Element> ret;
-    	std::unique_lock<std::mutex> lock(m_mutex);
-        while (m_queue.empty() && !m_end_marked)
-            m_cond.wait(lock);
-        if (!m_queue.empty()) {
-            m_qlen -= m_queue.front().size();
-            swap(ret, m_queue.front());
-            m_queue.pop();
-        }
-        return ret;
-    }
-
-    /** Return true if the end has been reached at the Pull side. */
-    bool pull_end_reached()
-    {
-    	std::unique_lock<std::mutex> lock(m_mutex);
-        return m_qlen == 0 && m_end_marked;
-    }
-
-    /** Wait until the buffer contains minfill samples or an end marker. */
-    void wait_buffer_fill(std::size_t minfill)
-    {
-    	std::unique_lock<std::mutex> lock(m_mutex);
-        while (m_qlen < minfill && !m_end_marked)
-            m_cond.wait(lock);
-    }
-
-private:
-    std::size_t              m_qlen;
-    bool                     m_end_marked;
-    std::queue<std::vector<Element>> m_queue;
-    std::mutex               m_mutex;
-    std::condition_variable  m_cond;
-};
 
 
 /** Simple linear gain adjustment. */
@@ -134,7 +51,6 @@ void adjust_gain(SampleVector& samples, double gain)
         samples[i] *= gain;
     }
 }
-
 
 /**
  * Read data from source device and put it in a buffer.
@@ -148,9 +64,16 @@ void read_source_data(std::unique_ptr<Source> srcsdr, DataBuffer<IQSample> *buf)
 {
     IQSampleVector iqsamples;
 
-    while (!stop_flag.load()) {
+    if (!srcsdr->start(&iqsamples))
+    {
+        fprintf(stderr, "ERROR: starting source: %s\n", srcsdr->error().c_str());
+        exit(1);
+    }
 
-        if (!srcsdr->get_samples(iqsamples)) {
+    while (!stop_flag.load())
+    {
+        if (!srcsdr->get_samples())
+        {
             fprintf(stderr, "ERROR: reading from source: %s\n", srcsdr->error().c_str());
             exit(1);
         }
@@ -159,6 +82,12 @@ void read_source_data(std::unique_ptr<Source> srcsdr, DataBuffer<IQSample> *buf)
     }
 
     buf->push_end();
+
+    if (!srcsdr->stop())
+    {
+        fprintf(stderr, "ERROR: stopping source: %s\n", srcsdr->error().c_str());
+        exit(1);
+    }
 }
 
 
@@ -215,6 +144,7 @@ void usage()
     "Usage: softfm [options]\n"
     		"  -t devtype    Device type:\n"
     		"                  - rtlsdr: RTL-SDR devices\n"
+    		"                  - hackrf: HackRF One or Jawbreaker\n"
     		"  -c config     Comma separated key=value configuration pairs or just key for switches\n"
     		"                See below for valid values per device type\n"
             "  -d devidx     Device index, 'list' to show device list (default 0)\n"
@@ -236,6 +166,11 @@ void usage()
     		"                or 'list' to just get a list of valid values (default auto)\n"
     		"  blklen=<int>  Set audio buffer size in seconds (default RTL-SDR default)\n"
     		"  agc           Enable RTL AGC mode (default disabled)\n"
+    		"\n"
+    		"Configuration options for HackRF devices\n"
+    		"  freq=<int>    Frequency of radio station in Hz (default 100000000)\n"
+    		"  srate=<int>   IF sample rate in Hz (default 5000000)\n"
+			"                (valid ranges: [2500000,20000000]))\n"
             "\n");
 }
 
@@ -280,10 +215,15 @@ static bool get_device(std::vector<std::string> &devnames, std::string& devtype,
 	{
 		RtlSdrSource::get_device_names(devnames);
 	}
+	else if (strcasecmp(devtype.c_str(), "hackrf") == 0)
+	{
+		HackRFSource::get_device_names(devnames);
+	}
+
 	else
 	{
 		fprintf(stderr, "ERROR: wrong device type (-t option) must be one of the following:\n");
-		fprintf(stderr, "       rtlsdr\n");
+		fprintf(stderr, "       rtlsdr, hackrf\n");
 		return false;
 	}
 
@@ -311,6 +251,12 @@ static bool get_device(std::vector<std::string> &devnames, std::string& devtype,
 	    // Open RTL-SDR device.
 		*srcsdr = new RtlSdrSource(devidx);
 	}
+	else if (strcasecmp(devtype.c_str(), "hackrf") == 0)
+	{
+	    // Open HackRF device.
+		*srcsdr = new HackRFSource(devidx);
+	}
+
 
     return true;
 }

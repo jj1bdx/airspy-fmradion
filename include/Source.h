@@ -20,12 +20,16 @@
 #define INCLUDE_SOURCE_H_
 
 #include <string>
+#include <atomic>
+#include <memory>
+
 #include "SoftFM.h"
+#include "DataBuffer.h"
 
 class Source
 {
 public:
-	Source() {}
+	Source() : m_confFreq(0), m_samples(0) {}
 	virtual ~Source() {}
 
     /**
@@ -54,9 +58,16 @@ public:
      * This function must be called regularly to maintain streaming.
      * Return true for success, false if an error occurred.
      */
-	virtual bool get_samples(IQSampleVector& samples) = 0;
+	virtual bool get_samples() = 0;
 
-    /** Return true if the device is OK, return false if there is an error. */
+	/** start device before sampling loop.
+	 * Give it a reference to the buffer of samples */
+	virtual bool start(IQSampleVector* samples) = 0;
+
+	/** stop device after sampling loop */
+	virtual bool stop() = 0;
+
+	/** Return true if the device is OK, return false if there is an error. */
     virtual operator bool() const = 0;
 
     /** Return name of opened RTL-SDR device. */
@@ -74,9 +85,10 @@ public:
     }
 
 protected:
-    std::string m_devname;
-    std::string m_error;
-    uint32_t    m_confFreq;
+    std::string    m_devname;
+    std::string    m_error;
+    uint32_t       m_confFreq;
+    IQSampleVector *m_samples;
 };
 
 #endif /* INCLUDE_SOURCE_H_ */

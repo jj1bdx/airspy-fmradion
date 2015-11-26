@@ -21,7 +21,11 @@
 #include <iostream>
 #include <iomanip>
 
+#include "util.h"
+#include "parsekv.h"
 #include "HackRFSource.h"
+
+HackRFSource *HackRFSource::m_this = 0;
 
 // Open HackRF device.
 HackRFSource::HackRFSource(int dev_index) :
@@ -32,7 +36,8 @@ HackRFSource::HackRFSource(int dev_index) :
 	m_vgaGain(22),
 	m_bandwidth(2500000),
 	m_extAmp(false),
-	m_biasAnt(false)
+	m_biasAnt(false),
+	m_running(false)
 {
 	hackrf_device_list_t *hackrf_devices = hackrf_device_list();
 	hackrf_error rc;
@@ -47,10 +52,14 @@ HackRFSource::HackRFSource(int dev_index) :
 		m_error += ")";
 		m_dev = 0;
 	}
+
+	m_this = this;
 }
 
 HackRFSource::~HackRFSource()
-{}
+{
+	m_this = 0;
+}
 
 void HackRFSource::get_device_names(std::vector<std::string>& devices)
 {
@@ -205,4 +214,124 @@ bool HackRFSource::configure(uint32_t sample_rate,
 	}
 
 	return true;
+}
+
+bool HackRFSource::configure(std::string configurationStr)
+{
+	namespace qi = boost::spirit::qi;
+	std::string::iterator begin = configurationStr.begin();
+	std::string::iterator end = configurationStr.end();
+
+	uint32_t sampleRate = 5000000;
+	uint32_t frequency = 100000000;
+	int lnaGain = 16;
+	int vgaGain = 22;
+	uint32_t bandwidth = 2500000;
+	bool extAmp = false;
+	bool biasAnt = false;
+
+    parsekv::key_value_sequence<std::string::iterator> p;
+    parsekv::pairs_type m;
+
+    if (!qi::parse(begin, end, p, m))
+    {
+    	m_error = "Configuration parsing failed\n";
+    	return false;
+    }
+    else
+    {
+		if (m.find("srate") != m.end())
+    	{
+    		std::cerr << "RtlSdrSource::configure: srate: " << m["srate"] << std::endl;
+    		sampleRate = atoi(m["srate"].c_str());
+    	}
+
+    	if (m.find("freq") != m.end())
+    	{
+    		std::cerr << "RtlSdrSource::configure: freq: " << m["freq"] << std::endl;
+    		frequency = atoi(m["freq"].c_str());
+    	}
+    }
+
+    double tuner_freq = frequency + 0.25 * sampleRate;
+    return configure(sampleRate, tuner_freq, extAmp, biasAnt, lnaGain, vgaGain, bandwidth);
+}
+
+bool HackRFSource::start(IQSampleVector* samples)
+{
+	hackrf_error rc;
+
+	rc = (hackrf_error) hackrf_start_rx(m_dev, rx_callback, NULL);
+
+	if (rc != HACKRF_SUCCESS)
+	{
+		m_error = "Cannot start Rx";
+		return false;
+	}
+	else
+	{
+		m_samples = samples;
+		return true;
+	}
+}
+
+bool HackRFSource::stop()
+{
+	hackrf_error rc;
+
+	rc = (hackrf_error) hackrf_stop_rx(m_dev);
+
+	if (rc != HACKRF_SUCCESS)
+	{
+		m_error = "Cannot stop Rx";
+		return false;
+	}
+	else
+	{
+		return true;
+	}
+}
+
+// Fetch a bunch of samples from the device.
+bool HackRFSource::get_samples()
+{
+	if (!m_samples)	{
+		m_error = "Sampling not started";
+		return false;
+	}
+
+	// TODO: wait for event
+	m_error = "Not implemented";
+	return false;
+}
+
+int HackRFSource::rx_callback(hackrf_transfer* transfer)
+{
+	int bytes_to_write = transfer->valid_length;
+
+	if (m_this)
+	{
+		m_this->callback((char *) transfer->buffer, bytes_to_write);
+	}
+
+	return 0;
+}
+
+void HackRFSource::callback(const char* buf, int len)
+{
+	if (!m_samples) {
+		//TODO: post event
+		return;
+	}
+
+    m_samples->resize(len/2);
+
+    for (int i = 0; i < len/2; i++) {
+        int32_t re = buf[2*i];
+        int32_t im = buf[2*i+1];
+        (*m_samples)[i] = IQSample( (re - 128) / IQSample::value_type(128),
+                               (im - 128) / IQSample::value_type(128) );
+    }
+
+    //TODO: post event
 }

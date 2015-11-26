@@ -286,33 +286,48 @@ std::vector<int> RtlSdrSource::get_tuner_gains()
     return gains;
 }
 
+bool RtlSdrSource::start(IQSampleVector* samples)
+{
+	m_samples = samples;
+	return true;
+}
 
 // Fetch a bunch of samples from the device.
-bool RtlSdrSource::get_samples(IQSampleVector& samples)
+bool RtlSdrSource::get_samples()
 {
     int r, n_read;
 
-    if (!m_dev)
+    if (!m_dev) {
         return false;
+    }
+
+    if (!m_samples) {
+    	return false;
+    }
 
     std::vector<uint8_t> buf(2 * m_block_length);
 
     r = rtlsdr_read_sync(m_dev, buf.data(), 2 * m_block_length, &n_read);
-    if (r < 0) {
+
+    if (r < 0)
+    {
         m_error = "rtlsdr_read_sync failed";
         return false;
     }
 
-    if (n_read != 2 * m_block_length) {
+    if (n_read != 2 * m_block_length)
+    {
         m_error = "short read, samples lost";
         return false;
     }
 
-    samples.resize(m_block_length);
-    for (int i = 0; i < m_block_length; i++) {
+	m_samples->resize(m_block_length);
+
+    for (int i = 0; i < m_block_length; i++)
+    {
         int32_t re = buf[2*i];
         int32_t im = buf[2*i+1];
-        samples[i] = IQSample( (re - 128) / IQSample::value_type(128),
+        (*m_samples)[i] = IQSample( (re - 128) / IQSample::value_type(128),
                                (im - 128) / IQSample::value_type(128) );
     }
 

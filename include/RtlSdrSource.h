@@ -22,6 +22,7 @@
 #include <cstdint>
 #include <string>
 #include <vector>
+#include <thread>
 
 #include "Source.h"
 
@@ -54,7 +55,10 @@ public:
      * This function must be called regularly to maintain streaming.
      * Return true for success, false if an error occurred.
      */
-    virtual bool get_samples(IQSampleVector& samples);
+    virtual bool get_samples();
+
+    virtual bool start(IQSampleVector* samples);
+    virtual bool stop() { return true; }
 
     /** Return true if the device is OK, return false if there is an error. */
     virtual operator bool() const
