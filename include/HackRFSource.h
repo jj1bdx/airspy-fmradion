@@ -79,15 +79,23 @@ private:
      *
      * Return true for success, false if an error occurred.
      */
-    bool configure(std::uint32_t sample_rate,
-                   std::uint32_t frequency,
+    bool configure(uint32_t sample_rate,
+                   uint32_t frequency,
 				   bool ext_amp,
+				   bool bias_ant,
                    int lna_gain,
-                   int vga1_gain,
-                   int vga2_gain,
+                   int vga_gain,
+				   uint32_t bandwidth
     );
 
-    struct hackrf_device* m_dev;;
+    struct hackrf_device* m_dev;
+    uint32_t m_sampleRate;
+    uint32_t m_frequency;
+    int m_lnaGain;
+    int m_vgaGain;
+    uint32_t m_bandwidth;
+    bool m_extAmp;
+    bool m_biasAnt;
 };
 
 #endif /* INCLUDE_HACKRFSOURCE_H_ */

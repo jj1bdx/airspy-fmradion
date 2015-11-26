@@ -8,12 +8,19 @@ find_package(PkgConfig)
 find_package(ALSA REQUIRED)
 find_package(Boost 1.47)
 
-# Find RTL-SDR library (for linking).
+# Find RTL-SDR library.
 pkg_check_modules(PKG_RTLSDR librtlsdr)
 find_path(RTLSDR_INCLUDE_DIR rtl-sdr.h
           HINT ${PKG_RTLSDR_INCLUDE_DIRS})
 find_library(RTLSDR_LIBRARY librtlsdr.a
              HINT ${PKG_RTLSDR_LIBRARY_DIRS})
+
+# Find HackRF library.
+pkg_check_modules(PKG_HACKRF libhackrf)
+find_path(HACKRF_INCLUDE_DIR hackrf.h
+          HINT ${PKG_HACKRF_INCLUDE_DIRS})
+find_library(HACKRF_LIBRARY libhackrf.a
+             HINT ${PKG_HACKRF_LIBRARY_DIRS})
 
 # Find libusb
 pkg_check_modules(PKG_LIBUSB libusb-1.0)
@@ -74,12 +81,29 @@ set(sfmrtlsdr_SOURCES
     ${sfmrtlsdr_HEADERS}
 )
 
+set(sfmhackrf_SOURCES
+    sfmbase/HackRFSource.cpp
+)
+
+set(sfmhackrf_HEADERS
+    include/HackRFSource.h
+)
+
+set(sfmhackrf_SOURCES
+    ${sfmhackrf_SOURCES}
+    ${sfmhackrf_HEADERS}
+)
+
 add_library(sfmbase STATIC
     ${sfmbase_SOURCES}
 )
 
 add_library(sfmrtlsdr STATIC
     ${sfmrtlsdr_SOURCES}
+)
+
+add_library(sfmhackrf STATIC
+    ${sfmhackrf_SOURCES}
 )
 
 add_executable(softfm
@@ -95,6 +119,7 @@ include_directories(
 target_link_libraries(softfm
     sfmbase
     sfmrtlsdr
+    sfmhackrf
     ${CMAKE_THREAD_LIBS_INIT}
     ${ALSA_LIBRARIES}
     ${EXTRA_LIBS} 
@@ -106,6 +131,14 @@ target_include_directories(sfmrtlsdr PUBLIC
 
 target_link_libraries(sfmrtlsdr
     ${RTLSDR_LIBRARIES}
+)
+
+target_include_directories(sfmhackrf PUBLIC
+    ${HACKRF_INCLUDE_DIRS}
+)
+
+target_link_libraries(sfmhackrf
+    ${HACKRF_LIBRARIES}
 )
 
 install(TARGETS softfm DESTINATION bin)
