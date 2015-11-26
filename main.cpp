@@ -143,11 +143,11 @@ void usage()
 {
     fprintf(stderr,
     "Usage: softfm [options]\n"
-    		"  -t devtype    Device type:\n"
-    		"                  - rtlsdr: RTL-SDR devices\n"
-    		"                  - hackrf: HackRF One or Jawbreaker\n"
-    		"  -c config     Comma separated key=value configuration pairs or just key for switches\n"
-    		"                See below for valid values per device type\n"
+            "  -t devtype    Device type:\n"
+            "                  - rtlsdr: RTL-SDR devices\n"
+            "                  - hackrf: HackRF One or Jawbreaker\n"
+            "  -c config     Comma separated key=value configuration pairs or just key for switches\n"
+            "                See below for valid values per device type\n"
             "  -d devidx     Device index, 'list' to show device list (default 0)\n"
             "  -r pcmrate    Audio sample rate in Hz (default 48000 Hz)\n"
             "  -M            Disable stereo decoding\n"
@@ -158,20 +158,20 @@ void usage()
             "  -T filename   Write pulse-per-second timestamps\n"
             "                use filename '-' to write to stdout\n"
             "  -b seconds    Set audio buffer size in seconds\n"
-    		"\n"
-    		"Configuration options for RTL-SDR devices\n"
-    		"  freq=<int>    Frequency of radio station in Hz (default 100000000)\n"
-    		"  srate=<int>   IF sample rate in Hz (default 1000000)\n"
-			"                (valid ranges: [225001, 300000], [900001, 3200000]))\n"
-    		"  gain=<float>  Set LNA gain in dB, or 'auto',\n"
-    		"                or 'list' to just get a list of valid values (default auto)\n"
-    		"  blklen=<int>  Set audio buffer size in seconds (default RTL-SDR default)\n"
-    		"  agc           Enable RTL AGC mode (default disabled)\n"
-    		"\n"
-    		"Configuration options for HackRF devices\n"
-    		"  freq=<int>    Frequency of radio station in Hz (default 100000000)\n"
-    		"  srate=<int>   IF sample rate in Hz (default 5000000)\n"
-			"                (valid ranges: [2500000,20000000]))\n"
+            "\n"
+            "Configuration options for RTL-SDR devices\n"
+            "  freq=<int>    Frequency of radio station in Hz (default 100000000)\n"
+            "  srate=<int>   IF sample rate in Hz (default 1000000)\n"
+            "                (valid ranges: [225001, 300000], [900001, 3200000]))\n"
+            "  gain=<float>  Set LNA gain in dB, or 'auto',\n"
+            "                or 'list' to just get a list of valid values (default auto)\n"
+            "  blklen=<int>  Set audio buffer size in seconds (default RTL-SDR default)\n"
+            "  agc           Enable RTL AGC mode (default disabled)\n"
+            "\n"
+            "Configuration options for HackRF devices\n"
+            "  freq=<int>    Frequency of radio station in Hz (default 100000000)\n"
+            "  srate=<int>   IF sample rate in Hz (default 5000000)\n"
+            "                (valid ranges: [2500000,20000000]))\n"
             "\n");
 }
 
@@ -212,21 +212,21 @@ double get_time()
 
 static bool get_device(std::vector<std::string> &devnames, std::string& devtype, Source **srcsdr, int devidx)
 {
-	if (strcasecmp(devtype.c_str(), "rtlsdr") == 0)
-	{
-		RtlSdrSource::get_device_names(devnames);
-	}
-	else if (strcasecmp(devtype.c_str(), "hackrf") == 0)
-	{
-		HackRFSource::get_device_names(devnames);
-	}
+    if (strcasecmp(devtype.c_str(), "rtlsdr") == 0)
+    {
+        RtlSdrSource::get_device_names(devnames);
+    }
+    else if (strcasecmp(devtype.c_str(), "hackrf") == 0)
+    {
+        HackRFSource::get_device_names(devnames);
+    }
 
-	else
-	{
-		fprintf(stderr, "ERROR: wrong device type (-t option) must be one of the following:\n");
-		fprintf(stderr, "       rtlsdr, hackrf\n");
-		return false;
-	}
+    else
+    {
+        fprintf(stderr, "ERROR: wrong device type (-t option) must be one of the following:\n");
+        fprintf(stderr, "       rtlsdr, hackrf\n");
+        return false;
+    }
 
     if (devidx < 0 || (unsigned int)devidx >= devnames.size())
     {
@@ -247,16 +247,16 @@ static bool get_device(std::vector<std::string> &devnames, std::string& devtype,
 
     fprintf(stderr, "using device %d: %s\n", devidx, devnames[devidx].c_str());
 
-	if (strcasecmp(devtype.c_str(), "rtlsdr") == 0)
-	{
-	    // Open RTL-SDR device.
-		*srcsdr = new RtlSdrSource(devidx);
-	}
-	else if (strcasecmp(devtype.c_str(), "hackrf") == 0)
-	{
-	    // Open HackRF device.
-		*srcsdr = new HackRFSource(devidx);
-	}
+    if (strcasecmp(devtype.c_str(), "rtlsdr") == 0)
+    {
+        // Open RTL-SDR device.
+        *srcsdr = new RtlSdrSource(devidx);
+    }
+    else if (strcasecmp(devtype.c_str(), "hackrf") == 0)
+    {
+        // Open HackRF device.
+        *srcsdr = new HackRFSource(devidx);
+    }
 
 
     return true;
@@ -301,10 +301,10 @@ int main(int argc, char **argv)
                             longopts, &longindex)) >= 0) {
         switch (c) {
             case 't':
-            	devtype_str.assign(optarg);
+                devtype_str.assign(optarg);
                 break;
             case 'c':
-            	config_str.assign(optarg);
+                config_str.assign(optarg);
                 break;
             case 'd':
                 if (!parse_int(optarg, devidx))
@@ -439,11 +439,11 @@ int main(int argc, char **argv)
 
     if (!get_device(devnames, devtype_str, &srcsdr, devidx))
     {
-    	exit(1);
+        exit(1);
     }
 
 
-	if (!(*srcsdr))
+    if (!(*srcsdr))
     {
         fprintf(stderr, "ERROR source: %s\n", srcsdr->error().c_str());
         delete srcsdr;
@@ -559,7 +559,7 @@ int main(int argc, char **argv)
         // Set nominal audio volume.
         adjust_gain(audiosamples, 0.5);
 
-		ppm_average.feed(((fm.get_tuning_offset() + delta_if) / tuner_freq) * -1.0e6); // the minus factor is to show the ppm correction to make and not the one made
+        ppm_average.feed(((fm.get_tuning_offset() + delta_if) / tuner_freq) * -1.0e6); // the minus factor is to show the ppm correction to make and not the one made
 
         // Show statistics.
         fprintf(stderr,
@@ -604,8 +604,8 @@ int main(int argc, char **argv)
                 double ts = prev_block_time;
                 ts += ev.block_position * (block_time - prev_block_time);
                 fprintf(ppsfile, "%8s %14s %18.6f\n",
-                		std::to_string(ev.pps_index).c_str(),
-						std::to_string(ev.sample_index).c_str(),
+                        std::to_string(ev.pps_index).c_str(),
+                        std::to_string(ev.sample_index).c_str(),
                         ts);
                 fflush(ppsfile);
             }
@@ -632,14 +632,16 @@ int main(int argc, char **argv)
     fprintf(stderr, "\n");
 
     // Join background threads.
-    source_thread.join();
+    //source_thread.join();
+    up_srcsdr->stop();
+    
     if (outputbuf_samples > 0)
     {
         output_buffer.push_end();
         output_thread.join();
     }
 
-    // No cleanup needed; everything handled by destructors except for dynamically allocated objects.
+    // No cleanup needed; everything handled by destructors
 
     return 0;
 }

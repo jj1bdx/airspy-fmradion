@@ -90,16 +90,17 @@ private:
      * This function must be called regularly to maintain streaming.
      * Return true for success, false if an error occurred.
      */
-    bool get_samples(IQSampleVector *samples);
+    static bool get_samples(IQSampleVector *samples);
 
-    static void run(DataBuffer<IQSample>* buf);
+    static void run();
 
     struct rtlsdr_dev * m_dev;
     int                 m_block_length;
     std::vector<int>    m_gains;
     std::string         m_gainsStr;
     bool                m_confAgc;
-    bool                m_running;
+    std::thread         *m_thread;
+    static RtlSdrSource *m_this;
 };
 
 #endif

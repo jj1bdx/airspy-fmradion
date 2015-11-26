@@ -76,16 +76,16 @@ private:
      */
     bool configure(uint32_t sample_rate,
                    uint32_t frequency,
-				   bool ext_amp,
-				   bool bias_ant,
+                   bool ext_amp,
+                   bool bias_ant,
                    int lna_gain,
                    int vga_gain,
-				   uint32_t bandwidth
+                   uint32_t bandwidth
     );
 
-	void callback(const char* buf, int len);
-	static int rx_callback(hackrf_transfer* transfer);
-	static void run(DataBuffer<IQSample> *buf);
+    void callback(const char* buf, int len);
+    static int rx_callback(hackrf_transfer* transfer);
+    static void run(hackrf_device* dev, std::atomic_bool *stop_flag);
 
     struct hackrf_device* m_dev;
     uint32_t m_sampleRate;
@@ -96,6 +96,7 @@ private:
     bool m_extAmp;
     bool m_biasAnt;
     bool m_running;
+    std::thread *m_thread;
     static HackRFSource *m_this;
 };
 

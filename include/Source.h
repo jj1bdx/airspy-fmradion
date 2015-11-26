@@ -29,13 +29,13 @@
 class Source
 {
 public:
-	Source() : m_confFreq(0), m_samples(0) {}
-	virtual ~Source() {}
+    Source() : m_confFreq(0), m_buf(0) {}
+    virtual ~Source() {}
 
     /**
      * Configure device and prepare for streaming.
      */
-	virtual bool configure(std::string configuration) = 0;
+    virtual bool configure(std::string configuration) = 0;
 
     /** Return current sample frequency in Hz. */
     virtual std::uint32_t get_sample_rate() = 0;
@@ -46,20 +46,20 @@ public:
     /** Return current configured center frequency in Hz. */
     std::uint32_t get_configured_frequency() const
     {
-    	return m_confFreq;
+        return m_confFreq;
     }
 
     /** Print current parameters specific to device type */
     virtual void print_specific_parms() = 0;
 
-	/** start device before sampling loop.
-	 * Give it a reference to the buffer of samples */
-	virtual bool start(DataBuffer<IQSample> *buf, std::atomic_bool *stop_flag) = 0;
+    /** start device before sampling loop.
+     * Give it a reference to the buffer of samples */
+    virtual bool start(DataBuffer<IQSample> *buf, std::atomic_bool *stop_flag) = 0;
 
-	/** stop device after sampling loop */
-	virtual bool stop() = 0;
+    /** stop device after sampling loop */
+    virtual bool stop() = 0;
 
-	/** Return true if the device is OK, return false if there is an error. */
+    /** Return true if the device is OK, return false if there is an error. */
     virtual operator bool() const = 0;
 
     /** Return name of opened RTL-SDR device. */
