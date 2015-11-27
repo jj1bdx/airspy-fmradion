@@ -220,7 +220,6 @@ static bool get_device(std::vector<std::string> &devnames, std::string& devtype,
     {
         HackRFSource::get_device_names(devnames);
     }
-
     else
     {
         fprintf(stderr, "ERROR: wrong device type (-t option) must be one of the following:\n");
@@ -441,7 +440,6 @@ int main(int argc, char **argv)
     {
         exit(1);
     }
-
 
     if (!(*srcsdr))
     {

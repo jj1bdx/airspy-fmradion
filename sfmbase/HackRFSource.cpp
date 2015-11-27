@@ -113,6 +113,11 @@ void HackRFSource::get_device_names(std::vector<std::string>& devices)
                 hackrf_close(hackrf_ptr);
                 continue;
             }
+            else
+            {
+            	std::cerr << "HackRFSource::get_device_names: device " << i << " OK" << std::endl;
+            	hackrf_close(hackrf_ptr);
+            }
 
             uint32_t serial_msb = read_partid_serialno.serial_no[2];
             uint32_t serial_lsb = read_partid_serialno.serial_no[3];
@@ -120,6 +125,10 @@ void HackRFSource::get_device_names(std::vector<std::string>& devices)
 
             devname_ostr << "Serial " << std::hex << std::setw(8) << std::setfill('0') << serial_msb << serial_lsb;
             devices.push_back(devname_ostr.str());
+        }
+        else
+        {
+        	std::cerr << "HackRFSource::get_device_names: failed to open device " << i << std::endl;
         }
     }
 
@@ -280,6 +289,7 @@ bool HackRFSource::configure(std::string configurationStr)
         }
     }
 
+    m_confFreq = frequency;
     double tuner_freq = frequency + 0.25 * sampleRate;
     return configure(sampleRate, tuner_freq, extAmp, biasAnt, lnaGain, vgaGain, bandwidth);
 }
