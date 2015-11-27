@@ -40,18 +40,28 @@ HackRFSource::HackRFSource(int dev_index) :
     m_biasAnt(false),
     m_running(false)
 {
-    hackrf_device_list_t *hackrf_devices = hackrf_device_list();
-    hackrf_error rc;
-
-    rc = (hackrf_error) hackrf_device_list_open(hackrf_devices, dev_index, &m_dev);
+	hackrf_error rc = (hackrf_error) hackrf_init();
 
     if (rc != HACKRF_SUCCESS)
     {
-        const char *errmsg = hackrf_error_name(rc);
-        m_error = "Failed to open HackRF device (";
-        m_error += std::string(errmsg);
-        m_error += ")";
+		std::ostringstream err_ostr;
+        err_ostr << "Failed to open HackRF library (" << hackrf_error_name(rc) << ")";
+        m_error = err_ostr.str();
         m_dev = 0;
+    }
+    else
+    {
+		hackrf_device_list_t *hackrf_devices = hackrf_device_list();
+
+		rc = (hackrf_error) hackrf_device_list_open(hackrf_devices, dev_index, &m_dev);
+
+		if (rc != HACKRF_SUCCESS)
+		{
+			std::ostringstream err_ostr;
+			err_ostr << "Failed to open HackRF device " << dev_index << " (" << hackrf_error_name(rc) << ")";
+			m_error = err_ostr.str();
+			m_dev = 0;
+		}
     }
 
     m_this = this;
@@ -63,24 +73,30 @@ HackRFSource::~HackRFSource()
         hackrf_close(m_dev);
     }
     
+    hackrf_error rc = (hackrf_error) hackrf_exit();
+    std::cerr << "HackRF library exit: " << hackrf_error_name(rc) << std::endl;
+
     m_this = 0;
 }
 
 void HackRFSource::get_device_names(std::vector<std::string>& devices)
 {
-    hackrf_device_list_t *hackrf_devices = hackrf_device_list();
     hackrf_device *hackrf_ptr;
     read_partid_serialno_t read_partid_serialno;
     hackrf_error rc;
     int i;
 
-    devices.clear();
-    rc = (hackrf_error) hackrf_init();
+	rc = (hackrf_error) hackrf_init();
 
     if (rc != HACKRF_SUCCESS)
     {
-        return;
+    	std::cerr << "Failed to open HackRF library";
+    	return;
     }
+
+    hackrf_device_list_t *hackrf_devices = hackrf_device_list();
+
+    devices.clear();
 
     for (i=0; i < hackrf_devices->devicecount; i++)
     {
@@ -100,10 +116,14 @@ void HackRFSource::get_device_names(std::vector<std::string>& devices)
             uint32_t serial_lsb = read_partid_serialno.serial_no[3];
             std::ostringstream devname_ostr;
 
-            devname_ostr << "Serial " << serial_msb << ":" << serial_lsb;
+            devname_ostr << "Serial " << std::hex << std::setw(8) << std::setfill('0') << serial_msb << serial_lsb;
             devices.push_back(devname_ostr.str());
         }
     }
+
+    hackrf_device_list_free(hackrf_devices);
+    rc = (hackrf_error) hackrf_exit();
+    std::cerr << "HackRF library exit: " << hackrf_error_name(rc) << std::endl;
 }
 
 std::uint32_t HackRFSource::get_sample_rate()
