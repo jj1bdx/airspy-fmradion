@@ -45,7 +45,7 @@ HackRFSource::HackRFSource(int dev_index) :
     if (rc != HACKRF_SUCCESS)
     {
 		std::ostringstream err_ostr;
-        err_ostr << "Failed to open HackRF library (" << hackrf_error_name(rc) << ")";
+        err_ostr << "Failed to open HackRF library (" << rc << ": " << hackrf_error_name(rc) << ")";
         m_error = err_ostr.str();
         m_dev = 0;
     }
@@ -58,7 +58,7 @@ HackRFSource::HackRFSource(int dev_index) :
 		if (rc != HACKRF_SUCCESS)
 		{
 			std::ostringstream err_ostr;
-			err_ostr << "Failed to open HackRF device " << dev_index << " (" << hackrf_error_name(rc) << ")";
+			err_ostr << "Failed to open HackRF device " << dev_index << " (" << rc << ": " << hackrf_error_name(rc) << ")";
 			m_error = err_ostr.str();
 			m_dev = 0;
 		}
@@ -74,7 +74,7 @@ HackRFSource::~HackRFSource()
     }
     
     hackrf_error rc = (hackrf_error) hackrf_exit();
-    std::cerr << "HackRF library exit: " << hackrf_error_name(rc) << std::endl;
+    std::cerr << "HackRFSource::~HackRFSource: HackRF library exit: " << rc << ": " << hackrf_error_name(rc) << std::endl;
 
     m_this = 0;
 }
@@ -90,7 +90,7 @@ void HackRFSource::get_device_names(std::vector<std::string>& devices)
 
     if (rc != HACKRF_SUCCESS)
     {
-    	std::cerr << "Failed to open HackRF library";
+    	std::cerr << "HackRFSource::get_device_names: Failed to open HackRF library: " << rc << ": " << hackrf_error_name(rc) << std::endl;
     	return;
     }
 
@@ -104,10 +104,12 @@ void HackRFSource::get_device_names(std::vector<std::string>& devices)
 
         if (rc == HACKRF_SUCCESS)
         {
+        	std::cerr << "HackRFSource::get_device_names: try to get device " << i << " serial number" << std::endl;
             rc = (hackrf_error) hackrf_board_partid_serialno_read(hackrf_ptr, &read_partid_serialno);
 
             if (rc != HACKRF_SUCCESS)
             {
+            	std::cerr << "HackRFSource::get_device_names: failed to get device " << i << " serial number: " << rc << ": " << hackrf_error_name(rc) << std::endl;
                 hackrf_close(hackrf_ptr);
                 continue;
             }
@@ -123,7 +125,7 @@ void HackRFSource::get_device_names(std::vector<std::string>& devices)
 
     hackrf_device_list_free(hackrf_devices);
     rc = (hackrf_error) hackrf_exit();
-    std::cerr << "HackRF library exit: " << hackrf_error_name(rc) << std::endl;
+    std::cerr << "HackRFSource::get_device_names: HackRF library exit: " << rc << ": " << hackrf_error_name(rc) << std::endl;
 }
 
 std::uint32_t HackRFSource::get_sample_rate()
@@ -267,13 +269,13 @@ bool HackRFSource::configure(std::string configurationStr)
     {
         if (m.find("srate") != m.end())
         {
-            std::cerr << "RtlSdrSource::configure: srate: " << m["srate"] << std::endl;
+            std::cerr << "HackRFSource::configure: srate: " << m["srate"] << std::endl;
             sampleRate = atoi(m["srate"].c_str());
         }
 
         if (m.find("freq") != m.end())
         {
-            std::cerr << "RtlSdrSource::configure: freq: " << m["freq"] << std::endl;
+            std::cerr << "HackRFSource::configure: freq: " << m["freq"] << std::endl;
             frequency = atoi(m["freq"].c_str());
         }
     }
@@ -316,12 +318,12 @@ void HackRFSource::run(hackrf_device* dev, std::atomic_bool *stop_flag)
         
         if (rc != HACKRF_SUCCESS)
         {
-            std::cerr << "Cannot stop HackRF Rx: " << hackrf_error_name(rc) << std::endl;
+            std::cerr << "HackRFSource::run: Cannot stop HackRF Rx: " << rc << ": " << hackrf_error_name(rc) << std::endl;
         }
     }
     else
     {
-        std::cerr << "Cannot start HackRF Rx: " << hackrf_error_name(rc) << std::endl;
+        std::cerr << "HackRFSource::run: Cannot start HackRF Rx: " << rc << ": " << hackrf_error_name(rc) << std::endl;
     }
 }
 
