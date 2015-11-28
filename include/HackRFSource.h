@@ -89,7 +89,7 @@ private:
 
     struct hackrf_device* m_dev;
     uint32_t m_sampleRate;
-    uint32_t m_frequency;
+    uint64_t m_frequency;
     int m_lnaGain;
     int m_vgaGain;
     uint32_t m_bandwidth;
@@ -98,6 +98,12 @@ private:
     bool m_running;
     std::thread *m_thread;
     static HackRFSource *m_this;
+    static const std::vector<int> m_lgains;
+    static const std::vector<int> m_vgains;
+    static const std::vector<int> m_bwfilt;
+    std::string m_lgainsStr;
+    std::string m_vgainsStr;
+    std::string m_bwfiltStr;
 };
 
 #endif /* INCLUDE_HACKRFSOURCE_H_ */

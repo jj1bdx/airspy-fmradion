@@ -482,6 +482,11 @@ int main(int argc, char **argv)
     //std::thread source_thread(read_source_data, std::move(up_srcsdr), &source_buffer);
     up_srcsdr->start(&source_buffer, &stop_flag);
 
+    if (!up_srcsdr) {
+    	fprintf(stderr, "ERROR: source: %s\n", up_srcsdr->error().c_str());
+    	exit(1);
+    }
+
     // The baseband signal is empty above 100 kHz, so we can
     // downsample to ~ 200 kS/s without loss of information.
     // This will speed up later processing stages.

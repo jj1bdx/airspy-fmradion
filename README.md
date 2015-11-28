@@ -5,10 +5,13 @@ NGSoftFM
 
 <h1>Introduction</h1>
 
-NGSoftFM is a software-defined radio receiver for FM broadcast radio. Stereo
+**NGSoftFM** is a software-defined radio receiver for FM broadcast radio. Stereo
 decoding is supported. It is written in C++. It is a derivative work of SoftFM (https://github.com/jorisvr/SoftFM) with a new application design and new features.
 
-For the moment only RTL-SDR based (RTL2832-based) hardware is suppoeted and uses the librtlsdr library to interface with the RTL-SDR hardware.
+Hardware supported:
+
+  - **RTL-SDR** based (RTL2832-based) hardware is suppoeted and uses the librtlsdr library to interface with the RTL-SDR hardware.
+  - **HackRF** One and variants are supported with libhackrf library.
 
 The purposes of NGSoftFM are:
 
@@ -32,9 +35,10 @@ NGSoftFM requires:
  - Linux
  - C++11
  - RTL-SDR library (http://sdr.osmocom.org/trac/wiki/rtl-sdr)
- - supported RTL-SDR DVB-T receiver
+ - HackRF library (https://github.com/mossmann/hackrf/tree/master/host/libhackrf)
+ - supported RTL-SDR DVB-T receiver or HackRF Rx/Tx
  - medium-fast computer (NGSoftFM takes 25% CPU time on a 1.6 GHz Core i3, ~12% of one core of a Core i7 5700HQ @ 2.7 GHz)
- - medium-strong FM radio signal. However the R820T2 based dongles give much better results than the former R820T based dongles 
+ - medium-strong FM radio signal. However the R820T2 based dongles give much better results than the former R820T based dongles. HackRF is even better but you have to spend the buck for the bang. 
 
 For the latest version, see https://github.com/f4exb/ngsoftfm
 
@@ -46,11 +50,30 @@ Branches:
 
 <h1>Prerequisites</h1>
 
+<h2>Base requirements</h2>
+
+  - `sudo apt-get install cmake pkg-config libusb-1.0-0-dev libasound2-dev libboost-all-dev`
+
+<h2>RTL-SDR support</h2>
+
 The Osmocom RTL-SDR library must be installed before you can build NGSoftFM.
 See http://sdr.osmocom.org/trac/wiki/rtl-sdr for more information.
-NGSoftFM has been tested successfully with RTL-SDR 0.5.3. Normally your distribution should provide the appropriate librtlsdr package
+NGSoftFM has been tested successfully with RTL-SDR 0.5.3. Normally your distribution should provide the appropriate librtlsdr package.
+If you go with your own installation of librtlsdr you have to specify the include path and library path. For example if you installed it in `/opt/install/librtlsdr` you have to add `-DRTLSDR_INCLUDE_DIR=/opt/install/librtlsdr/include -DRTLSDR_LIBRARY=/opt/install/librtlsdr/lib/librtlsdr.a` to the cmake options
 
-  - `sudo apt-get install cmake pkg-config libusb-1.0-0-dev librtlsdr-dev libasound2-dev libboost-all-dev`
+To install the library from a Debian/Ubuntu installation just do: 
+
+  - `sudo apt-get install librtlsdr-dev`
+  
+<h2>HackRF support</h2>
+
+For now HackRF support must be installed even if no HackRF device is connected.
+
+If you install from source (https://github.com/mossmann/hackrf/tree/master/host/libhackrf) in your own installation path you have to specify the include path and library path. For example if you installed it in `/opt/install/libhackrf` you have to add `-DHACKRF_INCLUDE_DIR=/opt/install/libhackrf/include -DHACKRF_LIBRARY=/opt/install/libhackrf/lib/libhackrf.a` to the cmake options.
+
+To install the library from a Debian/Ubuntu installation just do: 
+
+  - `sudo apt-get install libhackrf-dev`
   
 <h1>Installing</h1>
 
@@ -79,14 +102,15 @@ Compile and install
 
 Basic usage:
 
- - `./softfm -c freq=94600000` Tunes to 94.6 MHz
+ - `./softfm -t rrtlsdr -c freq=94600000` Tunes to 94.6 MHz
 
 Specify gain:
 
- - `./softfm -c freq=94600000,gain=22.9` Tunes to 94.6 MHz and sets gain to 22.9 dB
+ - `./softfm -t rtlsdr -c freq=94600000,gain=22.9` Tunes to 94.6 MHz and sets gain to 22.9 dB
 
 <h2>All options</h2>
 
+ - `-t devtype` is mandatory and must be `rtlsdr` for RTL-SDR devices or `hackrf` for HackRF.
  - `-c config` Comma separated list of configuration options as key=value pairs or just key for switches. Depends on device type (see next paragraph).
  - `-d devidx` RTL-SDR device index, 'list' to show device list (default 0)
  - `-r pcmrate` Audio sample rate in Hz (default 48000 Hz)
@@ -101,14 +125,25 @@ Specify gain:
 
 <h3>RTL-SDR</h3>
 
-  - `freq=<int>` Desired tune frequency in Hz (default `100000000`)
+  - `freq=<int>` Desired tune frequency in Hz. Accepted range from 20M to 1.9G. (default 100M: `100000000`)
   - `gain=<x>` (default `auto`)
     - `auto` Selects gain automatically
     - `list` Lists available gains and exit
     - `<float>` gain in dB. Possible gains in dB are: `0.0, 0.9, 1.4, 2.7, 3.7, 7.7, 8.7, 12.5, 14.4, 15.7, 16.6, 19.7, 20.7, 22.9, 25.4, 28.0, 29.7, 32.8, 33.8, 36.4, 37.2, 38.6, 40.2, 42.1, 43.4, 43.9, 44.5, 48.0, 49.6`
-  - `srate=<int>` Device sample rate (default `1000000`)
+  - `srate=<int>` Device sample rate. valid values in the [225001, 300000], [900001, 3200000] ranges. (default `1000000`)
   - `blklen=<int>` Device block length in bytes (default RTL-SDR default i.e. 64k)
   - `agc` Activates device AGC (default off)
+
+<h3>HackRF</h3>
+
+  - `freq=<int>` Desired tune frequency in Hz. Valid range from 1M to 6G. (default 100M: `100000000`)
+  - `srate=<int>` Device sample rate (default `5000000`). Valid values from 1M to 20M. In fact rates lower than 10M are not specified in the datasheets of the ADC chip however a rate of `1000000` (1M) still works well with NGSoftFM.
+  - `lgain=<int>` LNA gain in dB. Valid values are: `0, 8, 16, 24, 32, 40` (default `16`)
+  - `vgain=<int>` VGA gain in dB. Valid values are: `0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40, 42, 44, 46, 48, 50, 52, 54, 56, 58, 60, 62` (default `22`)
+  - `bwfilter=<int>` RF (IF) filter bandwith in MHz. Actual value is taken as the closest to the following values: `1.75, 2.5, 3.5, 5, 5.5, 6, 7,  8, 9, 10, 12, 14, 15, 20, 24, 28` (default `2.5`)
+  - `extamp` Turn on the extra amplifier (default off)
+  - `antbias` Turn on the antenna bias for remote LNA (default off)
+  
 
 <h1>License</h1>
 

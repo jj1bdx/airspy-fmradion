@@ -21,12 +21,16 @@
 #include <iostream>
 #include <iomanip>
 #include <thread>
+#include <cstdlib>
 
 #include "util.h"
 #include "parsekv.h"
 #include "HackRFSource.h"
 
 HackRFSource *HackRFSource::m_this = 0;
+const std::vector<int> HackRFSource::m_lgains({0, 8, 16, 24, 32, 40});
+const std::vector<int> HackRFSource::m_vgains({0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40, 42, 44, 46, 48, 50, 52, 54, 56, 58, 60, 62});
+const std::vector<int> HackRFSource::m_bwfilt({1750000, 2500000, 3500000, 5000000, 5500000, 6000000, 7000000,  8000000, 9000000, 10000000, 12000000, 14000000, 15000000, 20000000, 24000000, 28000000});
 
 // Open HackRF device.
 HackRFSource::HackRFSource(int dev_index) :
@@ -38,7 +42,8 @@ HackRFSource::HackRFSource(int dev_index) :
     m_bandwidth(2500000),
     m_extAmp(false),
     m_biasAnt(false),
-    m_running(false)
+    m_running(false),
+	m_thread(0)
 {
 	hackrf_error rc = (hackrf_error) hackrf_init();
 
@@ -63,6 +68,31 @@ HackRFSource::HackRFSource(int dev_index) :
 			m_dev = 0;
 		}
     }
+
+    std::ostringstream lgains_ostr;
+
+    for (int g: m_lgains) {
+    	lgains_ostr << g << " ";
+    }
+
+    m_lgainsStr = lgains_ostr.str();
+
+    std::ostringstream vgains_ostr;
+
+    for (int g: m_vgains) {
+    	vgains_ostr << g << " ";
+    }
+
+    m_vgainsStr = vgains_ostr.str();
+
+    std::ostringstream bwfilt_ostr;
+    bwfilt_ostr << std::fixed << std::setprecision(2);
+
+    for (int b: m_bwfilt) {
+    	bwfilt_ostr << b * 1e-6 << " ";
+    }
+
+    m_bwfiltStr = bwfilt_ostr.str();
 
     m_this = this;
 }
@@ -264,7 +294,7 @@ bool HackRFSource::configure(std::string configurationStr)
     int vgaGain = 22;
     uint32_t bandwidth = 2500000;
     bool extAmp = false;
-    bool biasAnt = false;
+    bool antBias = false;
 
     parsekv::key_value_sequence<std::string::iterator> p;
     parsekv::pairs_type m;
@@ -280,18 +310,118 @@ bool HackRFSource::configure(std::string configurationStr)
         {
             std::cerr << "HackRFSource::configure: srate: " << m["srate"] << std::endl;
             sampleRate = atoi(m["srate"].c_str());
+
+            if ((sampleRate < 1000000) || (sampleRate > 20000000))
+            {
+            	m_error = "Invalid sample rate";
+            	return false;
+            }
         }
 
         if (m.find("freq") != m.end())
         {
             std::cerr << "HackRFSource::configure: freq: " << m["freq"] << std::endl;
-            frequency = atoi(m["freq"].c_str());
+            frequency = strtoll(m["freq"].c_str(), 0, 10);
+
+            if ((frequency < 1000000) || (frequency > 6000000000))
+            {
+            	m_error = "Invalid frequency";
+            	return false;
+            }
+        }
+
+        if (m.find("lgain") != m.end())
+        {
+            std::cerr << "HackRFSource::configure: lgain: " << m["lgain"] << std::endl;
+
+            if (strcasecmp(m["lgain"].c_str(), "list") == 0)
+            {
+            	m_error = "Available LNA gains (dB): " + m_lgainsStr;
+            	return false;
+            }
+
+            lnaGain = atoi(m["lgain"].c_str());
+
+            if (find(m_lgains.begin(), m_lgains.end(), lnaGain) == m_lgains.end())
+            {
+                m_error = "LNA gain not supported. Available gains (dB): " + m_lgainsStr;
+                return false;
+            }
+        }
+
+        if (m.find("vgain") != m.end())
+        {
+            std::cerr << "HackRFSource::configure: vgain: " << m["vgain"] << std::endl;
+            vgaGain = atoi(m["vgain"].c_str());
+
+            if (strcasecmp(m["vgain"].c_str(), "list") == 0)
+            {
+            	m_error = "Available VGA gains (dB): " + m_vgainsStr;
+            	return false;
+            }
+
+            if (find(m_vgains.begin(), m_vgains.end(), vgaGain) == m_vgains.end())
+            {
+                m_error = "VGA gain not supported. Available gains (dB): " + m_vgainsStr;
+                return false;
+            }
+        }
+
+        if (m.find("bwfilter") != m.end())
+        {
+            std::cerr << "HackRFSource::configure: bwfilter: " << m["bwfilter"] << std::endl;
+            bandwidth = atoi(m["bwfilter"].c_str());
+
+            if (strcasecmp(m["bwfilter"].c_str(), "list") == 0)
+            {
+            	m_error = "Available filter bandwidths (MHz): " + m_bwfiltStr;
+            	return false;
+            }
+
+            double tmpbwd;
+
+            if (!parse_dbl(m["bwfilter"].c_str(), tmpbwd))
+            {
+                m_error = "Invalid filter bandwidth";
+                return false;
+            }
+            else
+            {
+                long int tmpbwi = lrint(tmpbwd * 1000000);
+
+                if (tmpbwi <= INT_MIN || tmpbwi >= INT_MAX) {
+                    m_error = "Invalid filter bandwidth";
+                    return false;
+                }
+                else
+                {
+                	bandwidth = tmpbwi;
+
+                    if (find(m_bwfilt.begin(), m_bwfilt.end(), bandwidth) == m_bwfilt.end())
+                    {
+                        m_error = "Filter bandwidth not supported. Available bandwidths (MHz): " + m_bwfiltStr;
+                        return false;
+                    }
+                }
+            }
+        }
+
+        if (m.find("extamp") != m.end())
+        {
+            std::cerr << "RtlSdrSource::configure: extamp" << std::endl;
+            extAmp = true;
+        }
+
+        if (m.find("antbias") != m.end())
+        {
+            std::cerr << "RtlSdrSource::configure: antbias" << std::endl;
+            antBias = true;
         }
     }
 
     m_confFreq = frequency;
     double tuner_freq = frequency + 0.25 * sampleRate;
-    return configure(sampleRate, tuner_freq, extAmp, biasAnt, lnaGain, vgaGain, bandwidth);
+    return configure(sampleRate, tuner_freq, extAmp, antBias, lnaGain, vgaGain, bandwidth);
 }
 
 bool HackRFSource::start(DataBuffer<IQSample> *buf, std::atomic_bool *stop_flag)
@@ -301,6 +431,7 @@ bool HackRFSource::start(DataBuffer<IQSample> *buf, std::atomic_bool *stop_flag)
 
     if (m_thread == 0)
     {
+    	std::cerr << "HackRFSource::start: starting" << std::endl;
         m_running = true;
         m_thread = new std::thread(run, m_dev, stop_flag);
         sleep(1);
@@ -308,6 +439,7 @@ bool HackRFSource::start(DataBuffer<IQSample> *buf, std::atomic_bool *stop_flag)
     }
     else
     {
+    	std::cerr << "HackRFSource::start: error" << std::endl;
         m_error = "Source thread already started";
         return false;
     }
@@ -315,6 +447,8 @@ bool HackRFSource::start(DataBuffer<IQSample> *buf, std::atomic_bool *stop_flag)
 
 void HackRFSource::run(hackrf_device* dev, std::atomic_bool *stop_flag)
 {
+	std::cerr << "HackRFSource::run" << std::endl;
+
     hackrf_error rc = (hackrf_error) hackrf_start_rx(dev, rx_callback, 0);
 
     if (rc == HACKRF_SUCCESS)
@@ -339,6 +473,8 @@ void HackRFSource::run(hackrf_device* dev, std::atomic_bool *stop_flag)
 
 bool HackRFSource::stop()
 {
+	std::cerr << "HackRFSource::stop" << std::endl;
+
     m_thread->join();
     delete m_thread;
     return true;
