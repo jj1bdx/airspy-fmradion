@@ -43,36 +43,36 @@ HackRFSource::HackRFSource(int dev_index) :
     m_extAmp(false),
     m_biasAnt(false),
     m_running(false),
-	m_thread(0)
+    m_thread(0)
 {
-	hackrf_error rc = (hackrf_error) hackrf_init();
+    hackrf_error rc = (hackrf_error) hackrf_init();
 
     if (rc != HACKRF_SUCCESS)
     {
-		std::ostringstream err_ostr;
+        std::ostringstream err_ostr;
         err_ostr << "Failed to open HackRF library (" << rc << ": " << hackrf_error_name(rc) << ")";
         m_error = err_ostr.str();
         m_dev = 0;
     }
     else
     {
-		hackrf_device_list_t *hackrf_devices = hackrf_device_list();
+        hackrf_device_list_t *hackrf_devices = hackrf_device_list();
 
-		rc = (hackrf_error) hackrf_device_list_open(hackrf_devices, dev_index, &m_dev);
+        rc = (hackrf_error) hackrf_device_list_open(hackrf_devices, dev_index, &m_dev);
 
-		if (rc != HACKRF_SUCCESS)
-		{
-			std::ostringstream err_ostr;
-			err_ostr << "Failed to open HackRF device " << dev_index << " (" << rc << ": " << hackrf_error_name(rc) << ")";
-			m_error = err_ostr.str();
-			m_dev = 0;
-		}
+        if (rc != HACKRF_SUCCESS)
+        {
+            std::ostringstream err_ostr;
+            err_ostr << "Failed to open HackRF device " << dev_index << " (" << rc << ": " << hackrf_error_name(rc) << ")";
+            m_error = err_ostr.str();
+            m_dev = 0;
+        }
     }
 
     std::ostringstream lgains_ostr;
 
     for (int g: m_lgains) {
-    	lgains_ostr << g << " ";
+        lgains_ostr << g << " ";
     }
 
     m_lgainsStr = lgains_ostr.str();
@@ -80,7 +80,7 @@ HackRFSource::HackRFSource(int dev_index) :
     std::ostringstream vgains_ostr;
 
     for (int g: m_vgains) {
-    	vgains_ostr << g << " ";
+        vgains_ostr << g << " ";
     }
 
     m_vgainsStr = vgains_ostr.str();
@@ -89,7 +89,7 @@ HackRFSource::HackRFSource(int dev_index) :
     bwfilt_ostr << std::fixed << std::setprecision(2);
 
     for (int b: m_bwfilt) {
-    	bwfilt_ostr << b * 1e-6 << " ";
+        bwfilt_ostr << b * 1e-6 << " ";
     }
 
     m_bwfiltStr = bwfilt_ostr.str();
@@ -116,12 +116,12 @@ void HackRFSource::get_device_names(std::vector<std::string>& devices)
     hackrf_error rc;
     int i;
 
-	rc = (hackrf_error) hackrf_init();
+    rc = (hackrf_error) hackrf_init();
 
     if (rc != HACKRF_SUCCESS)
     {
-    	std::cerr << "HackRFSource::get_device_names: Failed to open HackRF library: " << rc << ": " << hackrf_error_name(rc) << std::endl;
-    	return;
+        std::cerr << "HackRFSource::get_device_names: Failed to open HackRF library: " << rc << ": " << hackrf_error_name(rc) << std::endl;
+        return;
     }
 
     hackrf_device_list_t *hackrf_devices = hackrf_device_list();
@@ -134,19 +134,19 @@ void HackRFSource::get_device_names(std::vector<std::string>& devices)
 
         if (rc == HACKRF_SUCCESS)
         {
-        	std::cerr << "HackRFSource::get_device_names: try to get device " << i << " serial number" << std::endl;
+            std::cerr << "HackRFSource::get_device_names: try to get device " << i << " serial number" << std::endl;
             rc = (hackrf_error) hackrf_board_partid_serialno_read(hackrf_ptr, &read_partid_serialno);
 
             if (rc != HACKRF_SUCCESS)
             {
-            	std::cerr << "HackRFSource::get_device_names: failed to get device " << i << " serial number: " << rc << ": " << hackrf_error_name(rc) << std::endl;
+                std::cerr << "HackRFSource::get_device_names: failed to get device " << i << " serial number: " << rc << ": " << hackrf_error_name(rc) << std::endl;
                 hackrf_close(hackrf_ptr);
                 continue;
             }
             else
             {
-            	std::cerr << "HackRFSource::get_device_names: device " << i << " OK" << std::endl;
-            	hackrf_close(hackrf_ptr);
+                std::cerr << "HackRFSource::get_device_names: device " << i << " OK" << std::endl;
+                hackrf_close(hackrf_ptr);
             }
 
             uint32_t serial_msb = read_partid_serialno.serial_no[2];
@@ -158,7 +158,7 @@ void HackRFSource::get_device_names(std::vector<std::string>& devices)
         }
         else
         {
-        	std::cerr << "HackRFSource::get_device_names: failed to open device " << i << std::endl;
+            std::cerr << "HackRFSource::get_device_names: failed to open device " << i << std::endl;
         }
     }
 
@@ -313,8 +313,8 @@ bool HackRFSource::configure(std::string configurationStr)
 
             if ((sampleRate < 1000000) || (sampleRate > 20000000))
             {
-            	m_error = "Invalid sample rate";
-            	return false;
+                m_error = "Invalid sample rate";
+                return false;
             }
         }
 
@@ -325,8 +325,8 @@ bool HackRFSource::configure(std::string configurationStr)
 
             if ((frequency < 1000000) || (frequency > 6000000000))
             {
-            	m_error = "Invalid frequency";
-            	return false;
+                m_error = "Invalid frequency";
+                return false;
             }
         }
 
@@ -336,8 +336,8 @@ bool HackRFSource::configure(std::string configurationStr)
 
             if (strcasecmp(m["lgain"].c_str(), "list") == 0)
             {
-            	m_error = "Available LNA gains (dB): " + m_lgainsStr;
-            	return false;
+                m_error = "Available LNA gains (dB): " + m_lgainsStr;
+                return false;
             }
 
             lnaGain = atoi(m["lgain"].c_str());
@@ -356,8 +356,8 @@ bool HackRFSource::configure(std::string configurationStr)
 
             if (strcasecmp(m["vgain"].c_str(), "list") == 0)
             {
-            	m_error = "Available VGA gains (dB): " + m_vgainsStr;
-            	return false;
+                m_error = "Available VGA gains (dB): " + m_vgainsStr;
+                return false;
             }
 
             if (find(m_vgains.begin(), m_vgains.end(), vgaGain) == m_vgains.end())
@@ -374,8 +374,8 @@ bool HackRFSource::configure(std::string configurationStr)
 
             if (strcasecmp(m["bwfilter"].c_str(), "list") == 0)
             {
-            	m_error = "Available filter bandwidths (MHz): " + m_bwfiltStr;
-            	return false;
+                m_error = "Available filter bandwidths (MHz): " + m_bwfiltStr;
+                return false;
             }
 
             double tmpbwd;
@@ -395,7 +395,7 @@ bool HackRFSource::configure(std::string configurationStr)
                 }
                 else
                 {
-                	bandwidth = tmpbwi;
+                    bandwidth = tmpbwi;
 
                     if (find(m_bwfilt.begin(), m_bwfilt.end(), bandwidth) == m_bwfilt.end())
                     {
@@ -431,7 +431,7 @@ bool HackRFSource::start(DataBuffer<IQSample> *buf, std::atomic_bool *stop_flag)
 
     if (m_thread == 0)
     {
-    	std::cerr << "HackRFSource::start: starting" << std::endl;
+        std::cerr << "HackRFSource::start: starting" << std::endl;
         m_running = true;
         m_thread = new std::thread(run, m_dev, stop_flag);
         sleep(1);
@@ -439,7 +439,7 @@ bool HackRFSource::start(DataBuffer<IQSample> *buf, std::atomic_bool *stop_flag)
     }
     else
     {
-    	std::cerr << "HackRFSource::start: error" << std::endl;
+        std::cerr << "HackRFSource::start: error" << std::endl;
         m_error = "Source thread already started";
         return false;
     }
@@ -447,7 +447,7 @@ bool HackRFSource::start(DataBuffer<IQSample> *buf, std::atomic_bool *stop_flag)
 
 void HackRFSource::run(hackrf_device* dev, std::atomic_bool *stop_flag)
 {
-	std::cerr << "HackRFSource::run" << std::endl;
+    std::cerr << "HackRFSource::run" << std::endl;
 
     hackrf_error rc = (hackrf_error) hackrf_start_rx(dev, rx_callback, 0);
 
@@ -473,7 +473,7 @@ void HackRFSource::run(hackrf_device* dev, std::atomic_bool *stop_flag)
 
 bool HackRFSource::stop()
 {
-	std::cerr << "HackRFSource::stop" << std::endl;
+    std::cerr << "HackRFSource::stop" << std::endl;
 
     m_thread->join();
     delete m_thread;

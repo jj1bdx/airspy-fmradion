@@ -104,12 +104,26 @@ bool RtlSdrSource::configure(std::string configurationStr)
         {
             std::cerr << "RtlSdrSource::configure: srate: " << m["srate"] << std::endl;
             sample_rate = atoi(m["srate"].c_str());
+
+            if ((sample_rate < 225001)
+                    || ((sample_rate > 300000) && (sample_rate < 900001))
+                    || (sample_rate > 3200000))
+            {
+                m_error = "Invalid sample rate";
+                return false;
+            }
         }
 
         if (m.find("freq") != m.end())
         {
             std::cerr << "RtlSdrSource::configure: freq: " << m["freq"] << std::endl;
             frequency = atoi(m["freq"].c_str());
+
+            if ((frequency < 10000000) || (frequency > 2200000000))
+            {
+                m_error = "Invalid frequency";
+                return false;
+            }
         }
 
         if (m.find("gain") != m.end())

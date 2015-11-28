@@ -36,7 +36,7 @@
 
 // Encode a list of samples as signed 16-bit little-endian integers.
 void AudioOutput::samplesToInt16(const SampleVector& samples,
-		std::vector<uint8_t>& bytes)
+        std::vector<uint8_t>& bytes)
 {
     bytes.resize(2 * samples.size());
 

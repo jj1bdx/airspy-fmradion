@@ -29,7 +29,7 @@
 /** Prepare Lanczos FIR filter coefficients. */
 template <class T>
 static void make_lanczos_coeff(unsigned int filter_order, double cutoff,
-		std::vector<T>& coeff)
+        std::vector<T>& coeff)
 {
     coeff.resize(filter_order + 1);
 

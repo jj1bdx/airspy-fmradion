@@ -71,8 +71,8 @@ public:
      */
     std::vector<Element> pull()
     {
-    	std::vector<Element> ret;
-    	std::unique_lock<std::mutex> lock(m_mutex);
+        std::vector<Element> ret;
+        std::unique_lock<std::mutex> lock(m_mutex);
         while (m_queue.empty() && !m_end_marked)
             m_cond.wait(lock);
         if (!m_queue.empty()) {
@@ -86,14 +86,14 @@ public:
     /** Return true if the end has been reached at the Pull side. */
     bool pull_end_reached()
     {
-    	std::unique_lock<std::mutex> lock(m_mutex);
+        std::unique_lock<std::mutex> lock(m_mutex);
         return m_qlen == 0 && m_end_marked;
     }
 
     /** Wait until the buffer contains minfill samples or an end marker. */
     void wait_buffer_fill(std::size_t minfill)
     {
-    	std::unique_lock<std::mutex> lock(m_mutex);
+        std::unique_lock<std::mutex> lock(m_mutex);
         while (m_qlen < minfill && !m_end_marked)
             m_cond.wait(lock);
     }

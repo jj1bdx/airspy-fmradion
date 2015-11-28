@@ -125,7 +125,7 @@ Specify gain:
 
 <h3>RTL-SDR</h3>
 
-  - `freq=<int>` Desired tune frequency in Hz. Accepted range from 20M to 1.9G. (default 100M: `100000000`)
+  - `freq=<int>` Desired tune frequency in Hz. Accepted range from 10M to 2.2G. (default 100M: `100000000`)
   - `gain=<x>` (default `auto`)
     - `auto` Selects gain automatically
     - `list` Lists available gains and exit
