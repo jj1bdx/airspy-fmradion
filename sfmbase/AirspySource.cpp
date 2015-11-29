@@ -41,6 +41,8 @@ AirspySource::AirspySource(int dev_index) :
     m_mixGain(8),
     m_vgaGain(8),
     m_biasAnt(false),
+	m_lnaAGC(false),
+	m_mixAGC(false),
     m_running(false),
     m_thread(0)
 {
@@ -110,6 +112,13 @@ AirspySource::AirspySource(int dev_index) :
         }
 
         m_sratesStr = srates_ostr.str();
+
+    	rc = (airspy_error) airspy_set_sample_type(m_dev, AIRSPY_SAMPLE_INT16_IQ);
+
+    	if (rc != AIRSPY_SUCCESS)
+    	{
+    		m_error = "AirspyInput::start: could not set sample type to INT16_IQ";
+    	}
     }
 
     std::ostringstream lgains_ostr;
@@ -224,6 +233,8 @@ void AirspySource::print_specific_parms()
     fprintf(stderr, "Mixer gain:        %d\n", m_mixGain);
     fprintf(stderr, "VGA gain:          %d\n", m_vgaGain);
     fprintf(stderr, "Antenna bias       %s\n", m_biasAnt ? "enabled" : "disabled");
+    fprintf(stderr, "LNA AGC            %s\n", m_lnaAGC ? "enabled" : "disabled");
+    fprintf(stderr, "Mixer AGC          %s\n", m_mixAGC ? "enabled" : "disabled");
 }
 
 bool AirspySource::configure(int sampleRateIndex,
@@ -231,7 +242,9 @@ bool AirspySource::configure(int sampleRateIndex,
         bool bias_ant,
         int lna_gain,
         int mix_gain,
-        int vga_gain
+        int vga_gain,
+		bool lna_agc,
+		bool mix_agc
 )
 {
     m_frequency = frequency;
@@ -239,6 +252,8 @@ bool AirspySource::configure(int sampleRateIndex,
     m_lnaGain = lna_gain;
     m_mixGain = mix_gain;
     m_vgaGain = vga_gain;
+    m_lnaAGC = lna_agc;
+    m_mixAGC = mix_agc;
 
     airspy_error rc;
 
@@ -310,6 +325,26 @@ bool AirspySource::configure(int sampleRateIndex,
         return false;
     }
 
+    rc = (airspy_error) airspy_set_lna_agc(m_dev, (m_lnaAGC ? 1 : 0));
+
+    if (rc != AIRSPY_SUCCESS)
+    {
+        std::ostringstream err_ostr;
+        err_ostr << "Could not set LNA AGC to " << m_lnaAGC;
+        m_error = err_ostr.str();
+        return false;
+    }
+
+    rc = (airspy_error) airspy_set_mixer_agc(m_dev, (m_mixAGC ? 1 : 0));
+
+    if (rc != AIRSPY_SUCCESS)
+    {
+        std::ostringstream err_ostr;
+        err_ostr << "Could not set mixer AGC to " << m_mixAGC;
+        m_error = err_ostr.str();
+        return false;
+    }
+
     return true;
 }
 
@@ -325,6 +360,8 @@ bool AirspySource::configure(std::string configurationStr)
     int mixGain = 8;
     int vgaGain = 8;
     bool antBias = false;
+    bool lnaAGC = false;
+    bool mixAGC = false;
 
     parsekv::key_value_sequence<std::string::iterator> p;
     parsekv::pairs_type m;
@@ -432,11 +469,23 @@ bool AirspySource::configure(std::string configurationStr)
             std::cerr << "AirspySource::configure: antbias" << std::endl;
             antBias = true;
         }
+
+        if (m.find("lagc") != m.end())
+        {
+            std::cerr << "AirspySource::configure: lagc" << std::endl;
+            lnaAGC = true;
+        }
+
+        if (m.find("magc") != m.end())
+        {
+            std::cerr << "AirspySource::configure: magc" << std::endl;
+            mixAGC = true;
+        }
     }
 
     m_confFreq = frequency;
     double tuner_freq = frequency + 0.25 * m_srates[sampleRateIndex];
-    return configure(sampleRateIndex, tuner_freq, antBias, lnaGain, mixGain, vgaGain);
+    return configure(sampleRateIndex, tuner_freq, antBias, lnaGain, mixGain, vgaGain, lnaAGC, mixAGC);
 }
 
 bool AirspySource::start(DataBuffer<IQSample> *buf, std::atomic_bool *stop_flag)
@@ -497,28 +546,28 @@ bool AirspySource::stop()
 
 int AirspySource::rx_callback(airspy_transfer_t* transfer)
 {
-    int samples_to_write = transfer->sample_count;
+    int len = transfer->sample_count * 2; // interleaved I/Q samples
 
     if (m_this)
     {
-        m_this->callback((short *) transfer->samples, samples_to_write);
+        m_this->callback((short *) transfer->samples, len);
     }
 
     return 0;
 }
 
-void AirspySource::callback(const short* buf, int samples_to_write)
+void AirspySource::callback(const short* buf, int len)
 {
     IQSampleVector iqsamples;
 
-    iqsamples.resize(samples_to_write/2);
+    iqsamples.resize(len/2);
 
-    for (int i = 0; i < samples_to_write/2; i++)
+    for (int i = 0, j = 0; i < len; i+=2, j++)
     {
-        int32_t re = buf[2*i];
-        int32_t im = buf[2*i+1];
-        iqsamples[i] = IQSample((re / IQSample::value_type(1<<11)), // 12 bits samples signed
-                               (im / IQSample::value_type(1<11)) );
+        int32_t re = buf[i];
+        int32_t im = buf[i+1];
+        iqsamples[j] = IQSample( re / IQSample::value_type(1<<11),   // 12 bits samples
+                                 im / IQSample::value_type(1<<11) );
     }
 
     m_buf->push(move(iqsamples));

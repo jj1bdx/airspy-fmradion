@@ -71,6 +71,8 @@ private:
      * lna_gain        :: desired LNA gain: 0 to 14 dB.
      * mix_gain        :: desired mixer gain: 0 to 15 dB.
      * vga_gain        :: desired VGA gain: 0 to 15 dB
+     * lna_agc         :: LNA AGC
+     * mix_agc         :: Mixer AGC
      *
      * Return true for success, false if an error occurred.
      */
@@ -79,10 +81,12 @@ private:
                    bool bias_ant,
                    int lna_gain,
                    int mix_gain,
-                   int vga_gain
+                   int vga_gain,
+				   bool lna_agc,
+				   bool mix_agc
     );
 
-    void callback(const short* buf, int samples_to_write);
+    void callback(const short* buf, int len);
     static int rx_callback(airspy_transfer_t* transfer);
     static void run(airspy_device* dev, std::atomic_bool *stop_flag);
 
@@ -93,6 +97,8 @@ private:
     int m_mixGain;
     int m_vgaGain;
     bool m_biasAnt;
+    bool m_lnaAGC;
+    bool m_mixAGC;
     bool m_running;
     std::thread *m_thread;
     static AirspySource *m_this;

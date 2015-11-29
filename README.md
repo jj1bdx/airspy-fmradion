@@ -164,6 +164,8 @@ Specify gain:
   - `mgain=<x>` Mixer gain in dB. Valid values are: `0, 1, 2, 3, 4, 5, 6, 7, 8 ,9 ,10, 11 12, 13, 14, 15, list`. `list` lists valid values and exits. (default `8`)
   - `vgain=<x>` VGA gain in dB. Valid values are: `0, 1, 2, 3, 4, 5, 6, 7, 8 ,9 ,10, 11 12, 13, 14, 15, list`. `list` lists valid values and exits. (default `8`)  
   - `antbias` Turn on the antenna bias for remote LNA (default off)
+  - `lagc` Turn on the LNA AGC (default off)
+  - `magc` Turn on the mixer AGC (default off)
   
 
 <h1>License</h1>

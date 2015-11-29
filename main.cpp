@@ -147,6 +147,8 @@ void usage()
             "  mgain=<int>    Mixer gain in dB. 'list' to just get a list of valid values: (default 8)\n"
             "  vgain=<int>    VGA gain in dB. 'list' to just get a list of valid values: (default 8)\n"
             "  antbias        Enable antemma bias (default disabled)\n"
+            "  lagc           Enable LNA AGC (default disabled)\n"
+            "  magc           Enable mixer AGC (default disabled)\n"
             "\n");
 }
 
