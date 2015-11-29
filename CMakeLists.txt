@@ -22,6 +22,13 @@ find_path(HACKRF_INCLUDE_DIR hackrf.h
 find_library(HACKRF_LIBRARY libhackrf.a
              HINT ${PKG_HACKRF_LIBRARY_DIRS})
 
+# Find Airspy library.
+pkg_check_modules(PKG_AIRSPY libairspy)
+find_path(AIRSPY_INCLUDE_DIR airspy.h
+          HINT ${PKG_AIRSPY_INCLUDE_DIRS})
+find_library(AIRSPY_LIBRARY libairspy.a
+             HINT ${PKG_AIRSPY_LIBRARY_DIRS})
+
 # Find libusb
 pkg_check_modules(PKG_LIBUSB libusb-1.0)
 find_path(LIBUSB_INCLUDE_DIR libusb.h
@@ -45,6 +52,9 @@ set(RTLSDR_LIBRARIES    ${RTLSDR_LIBRARY} ${LIBUSB_LIBRARY})
 set(HACKRF_INCLUDE_DIRS ${HACKRF_INCLUDE_DIR} ${LIBUSB_INCLUDE_DIR})
 set(HACKRF_LIBRARIES    ${HACKRF_LIBRARY} ${LIBUSB_LIBRARY})
 
+set(AIRSPY_INCLUDE_DIRS ${AIRSPY_INCLUDE_DIR} ${LIBUSB_INCLUDE_DIR})
+set(AIRSPY_LIBRARIES    ${AIRSPY_LIBRARY} ${LIBUSB_LIBRARY})
+
 # Compiler flags.
 set(CMAKE_CXX_FLAGS "-Wall -std=c++11 -O2 -ffast-math -ftree-vectorize ${EXTRA_FLAGS}")
 
@@ -67,10 +77,14 @@ set(sfmbase_HEADERS
     include/util.h
 )
 
+# Base sources
+
 set(sfmbase_SOURCES
     ${sfmbase_SOURCES}
     ${sfmbase_HEADERS}
 )
+
+# RTL-SDR sources
 
 set(sfmrtlsdr_SOURCES
     sfmbase/RtlSdrSource.cpp
@@ -85,6 +99,8 @@ set(sfmrtlsdr_SOURCES
     ${sfmrtlsdr_HEADERS}
 )
 
+# HackRF sources
+
 set(sfmhackrf_SOURCES
     sfmbase/HackRFSource.cpp
 )
@@ -98,6 +114,23 @@ set(sfmhackrf_SOURCES
     ${sfmhackrf_HEADERS}
 )
 
+# Airspy sources
+
+set(sfmairspy_SOURCES
+    sfmbase/AirspySource.cpp
+)
+
+set(sfmairspy_HEADERS
+    include/AirspySource.h
+)
+
+set(sfmairspy_SOURCES
+    ${sfmairspy_SOURCES}
+    ${sfmairspy_HEADERS}
+)
+
+# Libraries
+
 add_library(sfmbase STATIC
     ${sfmbase_SOURCES}
 )
@@ -108,6 +141,10 @@ add_library(sfmrtlsdr STATIC
 
 add_library(sfmhackrf STATIC
     ${sfmhackrf_SOURCES}
+)
+
+add_library(sfmairspy STATIC
+    ${sfmairspy_SOURCES}
 )
 
 add_executable(softfm
@@ -124,6 +161,7 @@ target_link_libraries(softfm
     sfmbase
     sfmrtlsdr
     sfmhackrf
+    sfmairspy
     ${CMAKE_THREAD_LIBS_INIT}
     ${ALSA_LIBRARIES}
     ${EXTRA_LIBS} 
@@ -141,5 +179,9 @@ target_link_libraries(sfmhackrf
     ${HACKRF_LIBRARIES}
 )
 
+target_link_libraries(sfmairspy
+    ${AIRSPY_LIBRARIES}
+)
+
 install(TARGETS softfm DESTINATION bin)
-install(TARGETS sfmbase DESTINATION lib)
+install(TARGETS sfmbase sfmrtlsdr sfmhackrf sfmairspy DESTINATION lib)

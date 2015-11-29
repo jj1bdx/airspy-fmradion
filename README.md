@@ -112,7 +112,7 @@ Specify gain:
 
  - `-t devtype` is mandatory and must be `rtlsdr` for RTL-SDR devices or `hackrf` for HackRF.
  - `-c config` Comma separated list of configuration options as key=value pairs or just key for switches. Depends on device type (see next paragraph).
- - `-d devidx` RTL-SDR device index, 'list' to show device list (default 0)
+ - `-d devidx` Device index, 'list' to show device list (default 0)
  - `-r pcmrate` Audio sample rate in Hz (default 48000 Hz)
  - `-M ` Disable stereo decoding
  - `-R filename` Write audio data as raw S16_LE samples. Uuse filename `-` to write to stdout
