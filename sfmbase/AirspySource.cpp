@@ -39,7 +39,7 @@ AirspySource::AirspySource(int dev_index) :
     m_frequency(100000000),
     m_lnaGain(8),
     m_mixGain(8),
-    m_vgaGain(8),
+    m_vgaGain(0),
     m_biasAnt(false),
 	m_lnaAGC(false),
 	m_mixAGC(false),
@@ -358,7 +358,7 @@ bool AirspySource::configure(std::string configurationStr)
     uint32_t frequency = 100000000;
     int lnaGain = 8;
     int mixGain = 8;
-    int vgaGain = 8;
+    int vgaGain = 0;
     bool antBias = false;
     bool lnaAGC = false;
     bool mixAGC = false;
@@ -376,6 +376,13 @@ bool AirspySource::configure(std::string configurationStr)
         if (m.find("srate") != m.end())
         {
             std::cerr << "AirspySource::configure: srate: " << m["srate"] << std::endl;
+
+            if (strcasecmp(m["srate"].c_str(), "list") == 0)
+            {
+                m_error = "Available sample rates (Hz): " + m_sratesStr;
+                return false;
+            }
+
             m_sampleRate = atoi(m["srate"].c_str());
             uint32_t i;
 
