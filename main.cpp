@@ -39,6 +39,7 @@
 
 #include "RtlSdrSource.h"
 #include "HackRFSource.h"
+#include "AirspySource.h"
 
 /** Flag is set on SIGINT / SIGTERM. */
 static std::atomic_bool stop_flag(false);
@@ -51,46 +52,6 @@ void adjust_gain(SampleVector& samples, double gain)
         samples[i] *= gain;
     }
 }
-
-/**
- * Read data from source device and put it in a buffer.
- *
- * This code runs in a separate thread.
- * The RTL-SDR library is not capable of buffering large amounts of data.
- * Running this in a background thread ensures that the time between calls
- * to RtlSdrSource::get_samples() is very short.
- */
-/*
-void read_source_data(std::unique_ptr<Source> srcsdr, DataBuffer<IQSample> *buf)
-{
-    IQSampleVector iqsamples;
-
-    if (!srcsdr->start(&iqsamples))
-    {
-        fprintf(stderr, "ERROR: starting source: %s\n", srcsdr->error().c_str());
-        exit(1);
-    }
-
-    while (!stop_flag.load())
-    {
-        if (!srcsdr->get_samples())
-        {
-            fprintf(stderr, "ERROR: reading from source: %s\n", srcsdr->error().c_str());
-            exit(1);
-        }
-
-        buf->push(move(iqsamples));
-    }
-
-    buf->push_end();
-
-    if (!srcsdr->stop())
-    {
-        fprintf(stderr, "ERROR: stopping source: %s\n", srcsdr->error().c_str());
-        exit(1);
-    }
-}*/
-
 
 /**
  * Get data from output buffer and write to output stream.
@@ -169,9 +130,23 @@ void usage()
             "  agc           Enable RTL AGC mode (default disabled)\n"
             "\n"
             "Configuration options for HackRF devices\n"
-            "  freq=<int>    Frequency of radio station in Hz (default 100000000)\n"
-            "  srate=<int>   IF sample rate in Hz (default 5000000)\n"
-            "                (valid ranges: [2500000,20000000]))\n"
+            "  freq=<int>     Frequency of radio station in Hz (default 100000000)\n"
+            "  srate=<int>    IF sample rate in Hz (default 5000000)\n"
+            "                 (valid ranges: [2500000,20000000]))\n"
+            "  lgain=<int>    LNA gain in dB. 'list' to just get a list of valid values: (default 16)\n"
+            "  vgain=<int>    VGA gain in dB. 'list' to just get a list of valid values: (default 22)\n"
+            "  bwfilter=<int> Filter bandwidth in MHz. 'list' to just get a list of valid values: (default 2.5)\n"
+            "  extamp         Enable extra RF amplifier (default disabled)\n"
+            "  antbias        Enable antemma bias (default disabled)\n"
+            "\n"
+            "Configuration options for Airspy devices\n"
+            "  freq=<int>     Frequency of radio station in Hz (default 100000000)\n"
+            "  srate=<int>    IF sample rate in Hz. Depends on Airspy firmware and libairspy support\n"
+    		"                 Airspy firmware and library must support dynamic sample rate query. (default 10000000)\n"
+            "  lgain=<int>    LNA gain in dB. 'list' to just get a list of valid values: (default 8)\n"
+            "  mgain=<int>    Mixer gain in dB. 'list' to just get a list of valid values: (default 8)\n"
+            "  vgain=<int>    VGA gain in dB. 'list' to just get a list of valid values: (default 8)\n"
+            "  antbias        Enable antemma bias (default disabled)\n"
             "\n");
 }
 
@@ -220,10 +195,14 @@ static bool get_device(std::vector<std::string> &devnames, std::string& devtype,
     {
         HackRFSource::get_device_names(devnames);
     }
+    else if (strcasecmp(devtype.c_str(), "airspy") == 0)
+    {
+        AirspySource::get_device_names(devnames);
+    }
     else
     {
         fprintf(stderr, "ERROR: wrong device type (-t option) must be one of the following:\n");
-        fprintf(stderr, "       rtlsdr, hackrf\n");
+        fprintf(stderr, "       rtlsdr, hackrf, airspy\n");
         return false;
     }
 
@@ -256,7 +235,11 @@ static bool get_device(std::vector<std::string> &devnames, std::string& devtype,
         // Open HackRF device.
         *srcsdr = new HackRFSource(devidx);
     }
-
+    else if (strcasecmp(devtype.c_str(), "airspy") == 0)
+    {
+        // Open Airspy device.
+        *srcsdr = new AirspySource(devidx);
+    }
 
     return true;
 }

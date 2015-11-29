@@ -10,8 +10,9 @@ decoding is supported. It is written in C++. It is a derivative work of SoftFM (
 
 Hardware supported:
 
-  - **RTL-SDR** based (RTL2832-based) hardware is suppoeted and uses the librtlsdr library to interface with the RTL-SDR hardware.
-  - **HackRF** One and variants are supported with libhackrf library.
+  - **RTL-SDR** based (RTL2832-based) hardware is suppoeted and uses the _librtlsdr_ library to interface with the RTL-SDR hardware.
+  - **HackRF** One and variants are supported with _libhackrf_ library.
+  - **Airspy** is supported with _libairspy_ library.
 
 The purposes of NGSoftFM are:
 
@@ -36,6 +37,7 @@ NGSoftFM requires:
  - C++11
  - RTL-SDR library (http://sdr.osmocom.org/trac/wiki/rtl-sdr)
  - HackRF library (https://github.com/mossmann/hackrf/tree/master/host/libhackrf)
+ - Airspy library (https://github.com/airspy/host/tree/master/libairspy)
  - supported RTL-SDR DVB-T receiver or HackRF Rx/Tx
  - medium-fast computer (NGSoftFM takes 25% CPU time on a 1.6 GHz Core i3, ~12% of one core of a Core i7 5700HQ @ 2.7 GHz)
  - medium-strong FM radio signal. However the R820T2 based dongles give much better results than the former R820T based dongles. HackRF is even better but you have to spend the buck for the bang. 
@@ -74,6 +76,16 @@ If you install from source (https://github.com/mossmann/hackrf/tree/master/host/
 To install the library from a Debian/Ubuntu installation just do: 
 
   - `sudo apt-get install libhackrf-dev`
+  
+<h2>Airspy support</h2>
+
+For now Airspy support must be installed even if no Airspy device is connected.
+
+If you install from source (https://github.com/airspy/host/tree/master/libairspy) in your own installation path you have to specify the include path and library path. For example if you installed it in `/opt/install/libairspy` you have to add `-DAIRSPY_INCLUDE_DIR=/opt/install/libairspy/include -DHACKRF_LIBRARY=/opt/install/libairspy/lib/libairspy.a` to the cmake options.
+
+To install the library from a Debian/Ubuntu installation just do: 
+
+  - `sudo apt-get install libairspy-dev`
   
 <h1>Installing</h1>
 
@@ -142,6 +154,15 @@ Specify gain:
   - `vgain=<x>` VGA gain in dB. Valid values are: `0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40, 42, 44, 46, 48, 50, 52, 54, 56, 58, 60, 62, list`. `list` lists valid values and exits. (default `22`)
   - `bwfilter=<x>` RF (IF) filter bandwith in MHz. Actual value is taken as the closest to the following values: `1.75, 2.5, 3.5, 5, 5.5, 6, 7,  8, 9, 10, 12, 14, 15, 20, 24, 28, list`. `list` lists valid values and exits. (default `2.5`)
   - `extamp` Turn on the extra amplifier (default off)
+  - `antbias` Turn on the antenna bias for remote LNA (default off)
+  
+<h3>Airspy</h3>
+
+  - `freq=<int>` Desired tune frequency in Hz. Valid range from 1M to 6G. (default 100M: `100000000`)
+  - `srate=<int>` Device sample rate (default `10000000`). Valid values depend on the Airspy firmware. Airspy firmware and library must support dynamic sample rate query. 
+  - `lgain=<x>` LNA gain in dB. Valid values are: `0, 1, 2, 3, 4, 5, 6, 7, 8 ,9 ,10, 11 12, 13, 14, list`. `list` lists valid values and exits. (default `8`)
+  - `mgain=<x>` Mixer gain in dB. Valid values are: `0, 1, 2, 3, 4, 5, 6, 7, 8 ,9 ,10, 11 12, 13, 14, 15, list`. `list` lists valid values and exits. (default `8`)
+  - `vgain=<x>` VGA gain in dB. Valid values are: `0, 1, 2, 3, 4, 5, 6, 7, 8 ,9 ,10, 11 12, 13, 14, 15, list`. `list` lists valid values and exits. (default `8`)  
   - `antbias` Turn on the antenna bias for remote LNA (default off)
   
 
