@@ -408,13 +408,13 @@ bool HackRFSource::configure(std::string configurationStr)
 
         if (m.find("extamp") != m.end())
         {
-            std::cerr << "RtlSdrSource::configure: extamp" << std::endl;
+            std::cerr << "HackRFSource::configure: extamp" << std::endl;
             extAmp = true;
         }
 
         if (m.find("antbias") != m.end())
         {
-            std::cerr << "RtlSdrSource::configure: antbias" << std::endl;
+            std::cerr << "HackRFSource::configure: antbias" << std::endl;
             antBias = true;
         }
     }
