@@ -41,12 +41,12 @@ AirspySource::AirspySource(int dev_index) :
     m_mixGain(8),
     m_vgaGain(0),
     m_biasAnt(false),
-	m_lnaAGC(false),
-	m_mixAGC(false),
+    m_lnaAGC(false),
+    m_mixAGC(false),
     m_running(false),
     m_thread(0)
 {
-	airspy_error rc = (airspy_error) airspy_init();
+    airspy_error rc = (airspy_error) airspy_init();
 
     if (rc != AIRSPY_SUCCESS)
     {
@@ -57,68 +57,68 @@ AirspySource::AirspySource(int dev_index) :
     }
     else
     {
-    	for (int i = 0; i < AIRSPY_MAX_DEVICE; i++)
-    	{
-    		rc = (airspy_error) airspy_open(&m_dev);
+        for (int i = 0; i < AIRSPY_MAX_DEVICE; i++)
+        {
+            rc = (airspy_error) airspy_open(&m_dev);
 
-    		if (rc == AIRSPY_SUCCESS)
-    		{
-    			if (i == dev_index)
-    			{
-    				break;
-    			}
-    		}
-    		else
-    		{
-    			std::ostringstream err_ostr;
-    			err_ostr << "Failed to open Airspy device at sequence " << i;
-    			m_error = err_ostr.str();
-    			m_dev = 0;
-    		}
-    	}
+            if (rc == AIRSPY_SUCCESS)
+            {
+                if (i == dev_index)
+                {
+                    break;
+                }
+            }
+            else
+            {
+                std::ostringstream err_ostr;
+                err_ostr << "Failed to open Airspy device at sequence " << i;
+                m_error = err_ostr.str();
+                m_dev = 0;
+            }
+        }
     }
 
     if (m_dev)
     {
-    	uint32_t nbSampleRates;
-    	uint32_t *sampleRates;
+        uint32_t nbSampleRates;
+        uint32_t *sampleRates;
 
-    	airspy_get_samplerates(m_dev, &nbSampleRates, 0);
+        airspy_get_samplerates(m_dev, &nbSampleRates, 0);
 
-    	sampleRates = new uint32_t[nbSampleRates];
+        sampleRates = new uint32_t[nbSampleRates];
 
-    	airspy_get_samplerates(m_dev, sampleRates, nbSampleRates);
+        airspy_get_samplerates(m_dev, sampleRates, nbSampleRates);
 
-    	if (nbSampleRates == 0)
-    	{
-    		m_error = "Failed to get Airspy device sample rate list";
-    		airspy_close(m_dev);
-    		m_dev = 0;
-    	}
-    	else
-    	{
-    		for (uint32_t i=0; i<nbSampleRates; i++)
-    		{
-    			m_srates.push_back(sampleRates[i]);
-    		}
-    	}
+        if (nbSampleRates == 0)
+        {
+            m_error = "Failed to get Airspy device sample rate list";
+            airspy_close(m_dev);
+            m_dev = 0;
+        }
+        else
+        {
+            for (uint32_t i=0; i<nbSampleRates; i++)
+            {
+                m_srates.push_back(sampleRates[i]);
+            }
+        }
 
-    	delete[] sampleRates;
+        delete[] sampleRates;
 
         std::ostringstream srates_ostr;
 
         for (int s: m_srates) {
-        	srates_ostr << s << " ";
+            srates_ostr << s << " ";
         }
 
         m_sratesStr = srates_ostr.str();
 
-    	rc = (airspy_error) airspy_set_sample_type(m_dev, AIRSPY_SAMPLE_INT16_IQ);
+        rc = (airspy_error) airspy_set_sample_type(m_dev, AIRSPY_SAMPLE_INT16_IQ);
 
-    	if (rc != AIRSPY_SUCCESS)
-    	{
-    		m_error = "AirspyInput::start: could not set sample type to INT16_IQ";
-    	}
+        if (rc != AIRSPY_SUCCESS)
+        {
+            m_error = "AirspyInput::start: could not set sample type to INT16_IQ";
+        }
     }
 
     std::ostringstream lgains_ostr;
@@ -154,7 +154,7 @@ AirspySource::AirspySource(int dev_index) :
 AirspySource::~AirspySource()
 {
     if (m_dev) {
-    	airspy_close(m_dev);
+        airspy_close(m_dev);
     }
     
     airspy_error rc = (airspy_error) airspy_exit();
@@ -167,8 +167,8 @@ void AirspySource::get_device_names(std::vector<std::string>& devices)
 {
     airspy_device *airspy_ptr;
     airspy_read_partid_serialno_t read_partid_serialno;
-	uint32_t serial_msb = 0;
-	uint32_t serial_lsb = 0;
+    uint32_t serial_msb = 0;
+    uint32_t serial_lsb = 0;
     airspy_error rc;
     int i;
 
@@ -180,40 +180,40 @@ void AirspySource::get_device_names(std::vector<std::string>& devices)
         return;
     }
 
-	for (i=0; i < AIRSPY_MAX_DEVICE; i++)
-	{
-		rc = (airspy_error) airspy_open(&airspy_ptr);
-		std::cerr << "AirspySource::get_device_names: try to get device " << i << " serial number" << std::endl;
+    for (i=0; i < AIRSPY_MAX_DEVICE; i++)
+    {
+        rc = (airspy_error) airspy_open(&airspy_ptr);
+        std::cerr << "AirspySource::get_device_names: try to get device " << i << " serial number" << std::endl;
 
-		if (rc == AIRSPY_SUCCESS)
-		{
+        if (rc == AIRSPY_SUCCESS)
+        {
             std::cerr << "AirspySource::get_device_names: device " << i << " open OK" << std::endl;
 
             rc = (airspy_error) airspy_board_partid_serialno_read(airspy_ptr, &read_partid_serialno);
 
             if (rc == AIRSPY_SUCCESS)
             {
-				serial_msb = read_partid_serialno.serial_no[2];
-				serial_lsb = read_partid_serialno.serial_no[3];
-				std::ostringstream devname_ostr;
-				devname_ostr << "Serial " << std::hex << std::setw(8) << std::setfill('0') << serial_msb << serial_lsb;
-				devices.push_back(devname_ostr.str());
+                serial_msb = read_partid_serialno.serial_no[2];
+                serial_lsb = read_partid_serialno.serial_no[3];
+                std::ostringstream devname_ostr;
+                devname_ostr << "Serial " << std::hex << std::setw(8) << std::setfill('0') << serial_msb << serial_lsb;
+                devices.push_back(devname_ostr.str());
             }
             else
             {
-            	std::cerr << "AirspySource::get_device_names: failed to get device " << i << " serial number: " << rc << ": " << airspy_error_name(rc) << std::endl;
+                std::cerr << "AirspySource::get_device_names: failed to get device " << i << " serial number: " << rc << ": " << airspy_error_name(rc) << std::endl;
             }
 
             airspy_close(airspy_ptr);
-		}
-		else
-		{
+        }
+        else
+        {
             std::cerr << "AirspySource::get_device_names: enumerated " << i << " Airspy devices: " << airspy_error_name(rc) << std::endl;
             break; // finished
-		}
-	}
+        }
+    }
 
-	rc = (airspy_error) airspy_exit();
+    rc = (airspy_error) airspy_exit();
     std::cerr << "AirspySource::get_device_names: Airspy library exit: " << rc << ": " << airspy_error_name(rc) << std::endl;
 }
 
@@ -243,8 +243,8 @@ bool AirspySource::configure(int sampleRateIndex,
         int lna_gain,
         int mix_gain,
         int vga_gain,
-		bool lna_agc,
-		bool mix_agc
+        bool lna_agc,
+        bool mix_agc
 )
 {
     m_frequency = frequency;
@@ -282,7 +282,7 @@ bool AirspySource::configure(int sampleRateIndex,
     }
     else
     {
-    	m_sampleRate = m_srates[sampleRateIndex];
+        m_sampleRate = m_srates[sampleRateIndex];
     }
 
     rc = (airspy_error) airspy_set_lna_gain(m_dev, m_lnaGain);
@@ -388,11 +388,11 @@ bool AirspySource::configure(std::string configurationStr)
 
             for (i = 0; i < m_srates.size(); i++)
             {
-            	if (m_srates[i] == static_cast<int>(m_sampleRate))
-            	{
-            		sampleRateIndex = i;
-            		break;
-            	}
+                if (m_srates[i] == static_cast<int>(m_sampleRate))
+                {
+                    sampleRateIndex = i;
+                    break;
+                }
             }
 
             if (i == m_srates.size())

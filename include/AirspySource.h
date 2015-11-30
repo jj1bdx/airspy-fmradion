@@ -33,7 +33,7 @@ class AirspySource : public Source
 public:
 
     /** Open Airspy device. */
-	AirspySource(int dev_index);
+    AirspySource(int dev_index);
 
     /** Close Airspy device. */
     virtual ~AirspySource();
@@ -82,8 +82,8 @@ private:
                    int lna_gain,
                    int mix_gain,
                    int vga_gain,
-				   bool lna_agc,
-				   bool mix_agc
+                   bool lna_agc,
+                   bool mix_agc
     );
 
     void callback(const short* buf, int len);

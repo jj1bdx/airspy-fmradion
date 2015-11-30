@@ -37,104 +37,104 @@ const std::vector<int> BladeRFSource::m_halfbw({750000, 875000, 1250000, 1375000
 // Open BladeRF device.
 BladeRFSource::BladeRFSource(const char *serial) :
     m_dev(0),
-	m_sampleRate(1000000),
-	m_actualSampleRate(1000000),
-	m_frequency(300000000),
-	m_minFrequency(300000000),
-	m_bandwidth(1500000),
-	m_actualBandwidth(1500000),
-	m_lnaGain(3),
-	m_vga1Gain(6),
-	m_vga2Gain(5),
+    m_sampleRate(1000000),
+    m_actualSampleRate(1000000),
+    m_frequency(300000000),
+    m_minFrequency(300000000),
+    m_bandwidth(1500000),
+    m_actualBandwidth(1500000),
+    m_lnaGain(3),
+    m_vga1Gain(6),
+    m_vga2Gain(5),
     m_thread(0)
 {
     int status;
-    struct bladerf *dev;
     struct bladerf_devinfo info;
 
     bladerf_init_devinfo(&info);
 
     if (serial != 0)
     {
-		strncpy(info.serial, serial, BLADERF_SERIAL_LENGTH - 1);
-		info.serial[BLADERF_SERIAL_LENGTH - 1] = '\0';
+        strncpy(info.serial, serial, BLADERF_SERIAL_LENGTH - 1);
+        info.serial[BLADERF_SERIAL_LENGTH - 1] = '\0';
     }
 
-    status = bladerf_open_with_devinfo(&dev, &info);
+    status = bladerf_open_with_devinfo(&m_dev, &info);
 
     if (status == BLADERF_ERR_NODEV)
     {
-    	std::ostringstream err_ostr;
-    	err_ostr << "No devices available with serial=" << serial;
-    	m_error = err_ostr.str();
-    	m_dev = 0;
+        std::ostringstream err_ostr;
+        err_ostr << "No devices available with serial=" << serial;
+        m_error = err_ostr.str();
+        m_dev = 0;
     }
     else if (status != 0)
     {
-    	std::ostringstream err_ostr;
-    	err_ostr << "Failed to open device with serial=" << serial;
-    	m_error = err_ostr.str();
-    	m_dev = 0;
+        std::ostringstream err_ostr;
+        err_ostr << "Failed to open device with serial=" << serial;
+        m_error = err_ostr.str();
+        m_dev = 0;
     }
     else
     {
-    	int fpga_loaded = bladerf_is_fpga_configured(m_dev);
+        int fpga_loaded = bladerf_is_fpga_configured(m_dev);
 
-    	if (fpga_loaded < 0)
-    	{
-        	std::ostringstream err_ostr;
-        	err_ostr << "Failed to check FPGA state: " << bladerf_strerror(fpga_loaded);
-        	m_error = err_ostr.str();
-        	m_dev = 0;
-    	}
-    	else if (fpga_loaded == 0)
-    	{
-    		m_error = "The device's FPGA is not loaded.";
-    		m_dev = 0;
-    	}
-    	else
-    	{
-    		if ((status = bladerf_sync_config(m_dev, BLADERF_MODULE_RX, BLADERF_FORMAT_SC16_Q11, 64, 8192, 32, 10000)) < 0)
-    		{
-    			std::ostringstream err_ostr;
-    			err_ostr << "bladerf_sync_config failed with return code " << status;
-            	m_error = err_ostr.str();
-            	m_dev = 0;
-    		}
-    		else
-    		{
-    		    if ((status = bladerf_enable_module(m_dev, BLADERF_MODULE_RX, true)) < 0)
-    		    {
-        			std::ostringstream err_ostr;
-        			err_ostr << "bladerf_enable_module failed with return code " << status;
-                	m_error = err_ostr.str();
-                	m_dev = 0;
-    		    }
-    		    else
-    		    {
-    				if (bladerf_expansion_attach(m_dev, BLADERF_XB_200) == 0)
-    				{
-    					std::cerr << "BladeRFSource::BladeRFSource: Attached XB200 extension" << std::endl;
+        if (fpga_loaded < 0)
+        {
+            std::ostringstream err_ostr;
+            err_ostr << "Failed to check FPGA state: " << bladerf_strerror(fpga_loaded);
+            m_error = err_ostr.str();
+            m_dev = 0;
+        }
+        else if (fpga_loaded == 0)
+        {
+            m_error = "The device's FPGA is not loaded.";
+            m_dev = 0;
+        }
+        else
+        {
+            if ((status = bladerf_sync_config(m_dev, BLADERF_MODULE_RX, BLADERF_FORMAT_SC16_Q11, 64, 8192, 32, 10000)) < 0)
+            {
+                std::ostringstream err_ostr;
+                err_ostr << "bladerf_sync_config failed with return code " << status;
+                m_error = err_ostr.str();
+                m_dev = 0;
+            }
+            else
+            {
+                if ((status = bladerf_enable_module(m_dev, BLADERF_MODULE_RX, true)) < 0)
+                {
+                    std::ostringstream err_ostr;
+                    err_ostr << "bladerf_enable_module failed with return code " << status;
+                    m_error = err_ostr.str();
+                    m_dev = 0;
+                }
+                else
+                {
+                    if (bladerf_expansion_attach(m_dev, BLADERF_XB_200) == 0)
+                    {
+                        std::cerr << "BladeRFSource::BladeRFSource: Attached XB200 extension" << std::endl;
 
-    					if ((status = bladerf_xb200_set_path(m_dev, BLADERF_MODULE_RX, BLADERF_XB200_MIX)) != 0)
-    					{
-    						std::cerr << "BladeRFSource::BladeRFSource: bladerf_xb200_set_path failed with return code " << status << std::endl;
-    					}
-    					else
-    					{
-    						if ((status = bladerf_xb200_set_filterbank(m_dev, BLADERF_MODULE_RX, BLADERF_XB200_AUTO_1DB)) != 0)
-    						{
-        						std::cerr << "BladeRFSource::BladeRFSource: bladerf_xb200_set_filterbank failed with return code " << status << std::endl;
-    						}
-    						else
-    						{
-    							m_minFrequency = 100000;
-    						}
-    					}
-    				}
-    		    }
-    		}
-    	}
+                        if ((status = bladerf_xb200_set_path(m_dev, BLADERF_MODULE_RX, BLADERF_XB200_MIX)) != 0)
+                        {
+                            std::cerr << "BladeRFSource::BladeRFSource: bladerf_xb200_set_path failed with return code " << status << std::endl;
+                        }
+                        else
+                        {
+                            if ((status = bladerf_xb200_set_filterbank(m_dev, BLADERF_MODULE_RX, BLADERF_XB200_AUTO_1DB)) != 0)
+                            {
+                                std::cerr << "BladeRFSource::BladeRFSource: bladerf_xb200_set_filterbank failed with return code " << status << std::endl;
+                            }
+                            else
+                            {
+                                std::cerr << "BladeRFSource::BladeRFSource: XB200 configured. Min freq set to 100kHz" << std::endl;
+                                m_minFrequency = 100000;
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     std::ostringstream lgains_ostr;
@@ -148,7 +148,7 @@ BladeRFSource::BladeRFSource(const char *serial) :
     std::ostringstream v1gains_ostr;
 
     for (int g: m_vga1Gains) {
-    	v1gains_ostr << g << " ";
+        v1gains_ostr << g << " ";
     }
 
     m_vga1GainsStr = v1gains_ostr.str();
@@ -156,7 +156,7 @@ BladeRFSource::BladeRFSource(const char *serial) :
     std::ostringstream v2gains_ostr;
 
     for (int g: m_vga2Gains) {
-    	v2gains_ostr << g << " ";
+        v2gains_ostr << g << " ";
     }
 
     m_vga2GainsStr = v2gains_ostr.str();
@@ -164,10 +164,12 @@ BladeRFSource::BladeRFSource(const char *serial) :
     std::ostringstream bw_ostr;
 
     for (int b: m_halfbw) {
-    	bw_ostr << 2*b << " ";
+        bw_ostr << 2*b << " ";
     }
 
     m_bwfiltStr = bw_ostr.str();
+
+    m_this = this;
 }
 
 
@@ -175,7 +177,7 @@ BladeRFSource::BladeRFSource(const char *serial) :
 BladeRFSource::~BladeRFSource()
 {
     if (m_dev) {
-    	bladerf_close(m_dev);
+        bladerf_close(m_dev);
     }
         
     m_this = 0;
@@ -188,7 +190,7 @@ bool BladeRFSource::configure(std::string configurationStr)
     std::string::iterator end = configurationStr.end();
 
     uint32_t sample_rate = 1000000;
-    uint64_t frequency = 300000000;
+    uint32_t frequency = 300000000;
     uint32_t bandwidth = 1500000;
     int lnaGainIndex = 2; // 3 dB
     int vga1Gain = 20;
@@ -242,8 +244,8 @@ bool BladeRFSource::configure(std::string configurationStr)
 
             if (bandwidth < 0)
             {
-            	m_error = "Invalid bandwidth";
-            	return false;
+                m_error = "Invalid bandwidth";
+                return false;
             }
         }
 
@@ -295,22 +297,21 @@ bool BladeRFSource::configure(std::string configurationStr)
                 return false;
             }
 
-            m_lnaGain = atoi(m["lgain"].c_str());
+            int lnaGain = atoi(m["lgain"].c_str());
             uint32_t i;
 
             for (i = 0; i < m_lnaGains.size(); i++)
             {
-            	if (m_lnaGains[i] == static_cast<int>(m_lnaGain))
-            	{
-            		lnaGainIndex = i+1;
-            		break;
-            	}
+                if (m_lnaGains[i] == lnaGain)
+                {
+                    lnaGainIndex = i+1;
+                    break;
+                }
             }
 
             if (i == m_lnaGains.size())
             {
                 m_error = "Invalid LNA gain";
-                m_lnaGain = 0;
                 return false;
             }
         }
@@ -325,49 +326,54 @@ bool BladeRFSource::configure(std::string configurationStr)
 
 // Configure RTL-SDR tuner and prepare for streaming.
 bool BladeRFSource::configure(uint32_t sample_rate,
-        uint64_t frequency,
-		uint32_t bandwidth,
+        uint32_t frequency,
+        uint32_t bandwidth,
         int lna_gainIndex,
         int vga1_gain,
         int vga2_gain)
 {
-	if (bladerf_set_sample_rate(m_dev, BLADERF_MODULE_RX, sample_rate, &m_actualSampleRate) < 0)
-	{
-		m_error = "Cannot set sample rate";
-		return false;
-	}
+    m_frequency = frequency;
+    m_vga1Gain = vga1_gain;
+    m_vga2Gain = vga2_gain;
+    m_lnaGain = m_lnaGains[lna_gainIndex-1];
 
-	if (bladerf_set_frequency( m_dev, BLADERF_MODULE_RX, frequency ) != 0)
-	{
-		m_error = "Cannot set Rx frequency";
-		return false;
-	}
+    if (bladerf_set_sample_rate(m_dev, BLADERF_MODULE_RX, sample_rate, &m_actualSampleRate) < 0)
+    {
+        m_error = "Cannot set sample rate";
+        return false;
+    }
 
-	if (bladerf_set_bandwidth(m_dev, BLADERF_MODULE_RX, bandwidth, &m_actualBandwidth) < 0)
-	{
-		m_error = "Cannot set Rx bandwidth";
-		return false;
-	}
+    if (bladerf_set_frequency( m_dev, BLADERF_MODULE_RX, frequency ) != 0)
+    {
+        m_error = "Cannot set Rx frequency";
+        return false;
+    }
 
-	if (bladerf_set_lna_gain(m_dev, static_cast<bladerf_lna_gain>(lna_gainIndex)) != 0)
-	{
-		m_error = "Cannot set LNA gain";
-		return false;
-	}
+    if (bladerf_set_bandwidth(m_dev, BLADERF_MODULE_RX, bandwidth, &m_actualBandwidth) < 0)
+    {
+        m_error = "Cannot set Rx bandwidth";
+        return false;
+    }
 
-	if (bladerf_set_rxvga1(m_dev, vga1_gain) != 0)
-	{
-		m_error = "Cannot set VGA1 gain";
-		return false;
-	}
+    if (bladerf_set_lna_gain(m_dev, static_cast<bladerf_lna_gain>(lna_gainIndex)) != 0)
+    {
+        m_error = "Cannot set LNA gain";
+        return false;
+    }
 
-	if (bladerf_set_rxvga2(m_dev, vga2_gain) != 0)
-	{
-		m_error = "Cannot set VGA2 gain";
-		return false;
-	}
+    if (bladerf_set_rxvga1(m_dev, vga1_gain) != 0)
+    {
+        m_error = "Cannot set VGA1 gain";
+        return false;
+    }
 
-	return true;
+    if (bladerf_set_rxvga2(m_dev, vga2_gain) != 0)
+    {
+        m_error = "Cannot set VGA2 gain";
+        return false;
+    }
+
+    return true;
 }
 
 
@@ -433,14 +439,14 @@ void BladeRFSource::run()
 // Fetch a bunch of samples from the device.
 bool BladeRFSource::get_samples(IQSampleVector *samples)
 {
-	int res;
-	std::vector<int16_t> buf(2*m_blockSize);
+    int res;
+    std::vector<int16_t> buf(2*m_blockSize);
 
-	if ((res = bladerf_sync_rx(m_this->m_dev, buf.data(), m_blockSize, 0, 10000)) < 0)
-	{
+    if ((res = bladerf_sync_rx(m_this->m_dev, buf.data(), m_blockSize, 0, 10000)) < 0)
+    {
         m_this->m_error = "bladerf_sync_rx failed";
         return false;
-	}
+    }
 
     samples->resize(m_blockSize);
 
@@ -459,19 +465,19 @@ bool BladeRFSource::get_samples(IQSampleVector *samples)
 // Return a list of supported devices.
 void BladeRFSource::get_device_names(std::vector<std::string>& devices)
 {
-	struct bladerf_devinfo *devinfo = 0;
+    struct bladerf_devinfo *devinfo = 0;
 
-	int count = bladerf_get_device_list(&devinfo);
+    int count = bladerf_get_device_list(&devinfo);
 
-	for (int i = 0; i < count; i++)
-	{
-		devices.push_back(std::string(devinfo[i].serial));
-	}
+    for (int i = 0; i < count; i++)
+    {
+        devices.push_back(std::string(devinfo[i].serial));
+    }
 
-	if (devinfo)
-	{
-		bladerf_free_device_list(devinfo);
-	}
+    if (devinfo)
+    {
+        bladerf_free_device_list(devinfo);
+    }
 }
 
 /* end */

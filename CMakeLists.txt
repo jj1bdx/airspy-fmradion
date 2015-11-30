@@ -191,6 +191,7 @@ target_link_libraries(softfm
     sfmrtlsdr
     sfmhackrf
     sfmairspy
+    sfmbladerf
     ${CMAKE_THREAD_LIBS_INIT}
     ${ALSA_LIBRARIES}
     ${EXTRA_LIBS} 

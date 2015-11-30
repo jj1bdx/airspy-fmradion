@@ -32,7 +32,7 @@ class BladeRFSource : public Source
 public:
 
     /** Open BladeRF device. */
-	BladeRFSource(const char *serial);
+    BladeRFSource(const char *serial);
 
     /** Close BladeRF device. */
     virtual ~BladeRFSource();
@@ -74,8 +74,8 @@ private:
      * Return true for success, false if an error occurred.
      */
     bool configure(uint32_t sample_rate,
-                   uint64_t frequency,
-				   uint32_t bandwidth,
+                   uint32_t frequency,
+                   uint32_t bandwidth,
                    int lna_gainIndex,
                    int vga1_gain,
                    int vga2_gain);
@@ -93,8 +93,8 @@ private:
     struct bladerf *m_dev;
     uint32_t m_sampleRate;
     uint32_t m_actualSampleRate;
-    uint64_t m_frequency;
-    uint64_t m_minFrequency;
+    uint32_t m_frequency;
+    uint32_t m_minFrequency;
     uint32_t m_bandwidth;
     uint32_t m_actualBandwidth;
     int m_lnaGain;
