@@ -307,7 +307,7 @@ FmDecoder::FmDecoder(double sample_rate_if,
     // Construct PilotPhaseLock
     , m_pilotpll(pilot_freq / m_sample_rate_baseband,       // freq
                  50 / m_sample_rate_baseband,               // bandwidth
-                 0.04)                                      // minsignal
+                 0.01)                                      // minsignal (was 0.04)
 
     // Construct DownsampleFilter for mono channel
     , m_resample_mono(
