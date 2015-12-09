@@ -332,7 +332,7 @@ void LowPassFilterRC::process_interleaved(const SampleVector& samples_in, Sample
     Sample y0 = m_y0_1;
     Sample y1 = m_y1_1;
 
-    for (unsigned int i = 0; i < n; i+=2)
+    for (unsigned int i = 0; i < n-1; i+=2)
     {
         Sample x0 = samples_in[i];
         y0 = m_b0 * x0 - m_a1 * y0;
@@ -373,7 +373,7 @@ void LowPassFilterRC::process_interleaved_inplace(SampleVector& samples)
     Sample y0 = m_y0_1;
     Sample y1 = m_y1_1;
 
-    for (unsigned int i = 0; i < n; i+=2)
+    for (unsigned int i = 0; i < n-1; i+=2)
     {
         Sample x0 = samples[i];
         y0 = m_b0 * x0 - m_a1 * y0;

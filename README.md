@@ -6,7 +6,7 @@ NGSoftFM
 <h1>Introduction</h1>
 
 **NGSoftFM** is a software-defined radio receiver for FM broadcast radio. Stereo
-decoding is supported. It is written in C++. It is a derivative work of SoftFM (https://github.com/jorisvr/SoftFM) with a new application design and new features.
+decoding is supported. It is written in C++. It is a derivative work of SoftFM (https://github.com/jorisvr/SoftFM) with a new application design and new features. It also corrects wrong de-emphasis scheme for stereo signals.
 
 Hardware supported:
 
