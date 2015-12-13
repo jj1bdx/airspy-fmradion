@@ -417,14 +417,14 @@ void FmDecoder::demod_stereo(const SampleVector& samples_baseband,
                              SampleVector& samples_rawstereo)
 {
     // Just multiply the baseband signal with the double-frequency pilot.
-    // And multiply by two to get the full amplitude.
+    // And multiply by 1.17 to get the full amplitude.
     // That's all.
 
     unsigned int n = samples_baseband.size();
     assert(n == samples_rawstereo.size());
 
     for (unsigned int i = 0; i < n; i++) {
-        samples_rawstereo[i] *= 2 * samples_baseband[i];
+        samples_rawstereo[i] *= 1.17 * samples_baseband[i];
     }
 }
 
