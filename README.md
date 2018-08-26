@@ -127,7 +127,7 @@ Compile and install
 
 Basic usage:
 
- - `./softfm -t rrtlsdr -c freq=94600000` Tunes to 94.6 MHz
+ - `./softfm -t rtlsdr -c freq=94600000` Tunes to 94.6 MHz
 
 Specify gain:
 
