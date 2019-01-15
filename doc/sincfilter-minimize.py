@@ -43,9 +43,9 @@ def sincfitting_test(x, f):
 
 def minimizer(freq):
     return optimize.minimize(sincfitting_test,
-            [1.5, 0.5], args=(freq,), method="Nelder-Mead")
+            [1.334, 0.334], args=(freq,), method="Nelder-Mead")
 
-for freq in range(120000, 4800001, 120000):
+for freq in range(120000, 5000001, 10000):
     result = minimizer(freq)
     staticgain = result.x[0]
     fitlevel = result.x[1]
