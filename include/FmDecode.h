@@ -97,7 +97,7 @@ public:
      * Process samples and extract 19 kHz pilot tone.
      * Generate phase-locked 38 kHz tone with unit amplitude.
      */
-    void process(const SampleVector& samples_in, SampleVector& samples_out);
+    void process(SampleVector& samples_in, SampleVector& samples_out);
 
     /** Return true if the phase-locked loop is locked. */
     bool locked() const

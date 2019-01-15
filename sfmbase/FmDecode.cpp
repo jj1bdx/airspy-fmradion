@@ -184,8 +184,9 @@ PilotPhaseLock::PilotPhaseLock(double freq, double bandwidth, double minsignal)
 }
 
 
-// Process samples.
-void PilotPhaseLock::process(const SampleVector& samples_in,
+// Process samples and generate the 38kHz locked tone;
+// remove remained locked 19kHz tone from samples_in if locked.
+void PilotPhaseLock::process(SampleVector& samples_in,
                              SampleVector& samples_out)
 {
     unsigned int n = samples_in.size();
@@ -226,18 +227,8 @@ void PilotPhaseLock::process(const SampleVector& samples_in,
         m_phasor_q1 = phasor_q;
 
         // Convert I/Q ratio to estimate of phase error.
-        Sample phase_err;
-        if (phasor_i > abs(phasor_q)) {
-            // We are within +/- 45 degrees from lock.
-            // Use simple linear approximation of arctan.
-            phase_err = phasor_q / phasor_i;
-        } else if (phasor_q > 0) {
-            // We are lagging more than 45 degrees behind the input.
-            phase_err = 1;
-        } else {
-            // We are more than 45 degrees ahead of the input.
-            phase_err = -1;
-        }
+        // float <-> double conversion error exists, but anyway...
+        Sample phase_err = fastatan2(phasor_q, phasor_i);
 
         // Detect pilot level (conservative).
         m_pilot_level = std::min(m_pilot_level, phasor_i);
@@ -268,6 +259,11 @@ void PilotPhaseLock::process(const SampleVector& samples_in,
                     m_pps_cnt++;
                 }
             }
+        }
+
+        // Remove detected 19kHz tone from samples_in if locked.
+        if (was_locked) {
+            samples_in[i] -= psin * m_pilot_level * 2.0;
         }
     }
 
