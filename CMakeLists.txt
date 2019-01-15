@@ -39,6 +39,12 @@ if (CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
     find_library(AIRSPY_LIBRARY libairspy.so
              HINT /usr/local/lib ${PKG_AIRSPY_LIBRARY_DIRS})
     set(AIRSPY_INCLUDE_OPTION "-I/usr/local/include")
+elseif (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    find_path(AIRSPY_INCLUDE_DIR airspy.h
+             HINT /usr/local/include/libairspy ${PKG_AIRSPY_INCLUDE_DIRS})
+    find_library(AIRSPY_LIBRARY libairspy.a
+             HINT /usr/local/lib ${PKG_AIRSPY_LIBRARY_DIRS})
+    set(AIRSPY_INCLUDE_OPTION "-I/usr/local/include")
 else()
     find_path(AIRSPY_INCLUDE_DIR airspy.h
              HINT ${PKG_AIRSPY_INCLUDE_DIRS})
