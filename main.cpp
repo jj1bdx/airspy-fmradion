@@ -116,6 +116,7 @@ void usage() {
       "  -T filename    Write pulse-per-second timestamps\n"
       "                 use filename '-' to write to stdout\n"
       "  -b seconds     Set audio buffer size in seconds\n"
+      "  -X            Shift pilot phase (for Quadrature Multipath Monitor)\n"
       "\n"
       "Configuration options for RTL-SDR devices\n"
       "  freq=<int>     Frequency of radio station in Hz (default 100000000)\n"
@@ -250,6 +251,7 @@ int main(int argc, char **argv) {
   std::string filename("-");
 #endif // USE_ALSA
   std::string alsadev("default");
+  bool quietmode = false;
   std::string ppsfilename;
   FILE *ppsfile = NULL;
   double bufsecs = -1;
@@ -267,10 +269,11 @@ int main(int argc, char **argv) {
       {"wav", 1, NULL, 'W'},     
       {"play", 2, NULL, 'P'},
       {"pps", 1, NULL, 'T'},     {"buffer", 1, NULL, 'b'},
+      {"quiet", 1, NULL, 'q'},
       {NULL, 0, NULL, 0}};
 
   int c, longindex;
-  while ((c = getopt_long(argc, argv, "t:c:d:r:MR:W:P::T:b:", longopts,
+  while ((c = getopt_long(argc, argv, "t:c:d:r:MR:W:P::T:b:q", longopts,
                           &longindex)) >= 0) {
     switch (c) {
     case 't':
@@ -311,6 +314,9 @@ int main(int argc, char **argv) {
       if (!parse_dbl(optarg, bufsecs) || bufsecs < 0) {
         badarg("-b");
       }
+      break;
+    case 'q':
+      quietmode = true;
       break;
     default:
       usage();
@@ -547,7 +553,8 @@ int main(int argc, char **argv) {
                               // to make and not the one made
 
     // Show statistics.
-    fprintf(stderr,
+    if (!quietmode) {
+      fprintf(stderr,
             "\rblk=%6d  freq=%10.6fMHz  ppm=%+6.2f  IF=%+5.1fdB  BB=%+5.1fdB  "
             "audio=%+5.1fdB ",
             block, (tuner_freq + fm.get_tuning_offset()) * 1.0e-6,
@@ -557,23 +564,24 @@ int main(int argc, char **argv) {
             20 * log10(fm.get_baseband_level()) + 3.01,
             20 * log10(audio_level) + 3.01);
 
-    if (outputbuf_samples > 0) {
-      unsigned int nchannel = stereo ? 2 : 1;
-      std::size_t buflen = output_buffer.queued_samples();
-      fprintf(stderr, " buf=%.1fs ", buflen / nchannel / double(pcmrate));
-    }
+      if (outputbuf_samples > 0) {
+        unsigned int nchannel = stereo ? 2 : 1;
+        std::size_t buflen = output_buffer.queued_samples();
+        fprintf(stderr, " buf=%.1fs ", buflen / nchannel / double(pcmrate));
+      }
 
-    fflush(stderr);
+      fflush(stderr);
 
-    // Show stereo status.
-    if (fm.stereo_detected() != got_stereo) {
-      got_stereo = fm.stereo_detected();
+      // Show stereo status.
+      if (fm.stereo_detected() != got_stereo) {
+        got_stereo = fm.stereo_detected();
 
-      if (got_stereo) {
-        fprintf(stderr, "\ngot stereo signal (pilot level = %f)\n",
-                fm.get_pilot_level());
-      } else {
-        fprintf(stderr, "\nlost stereo signal\n");
+        if (got_stereo) {
+          fprintf(stderr, "\ngot stereo signal (pilot level = %f)\n",
+                  fm.get_pilot_level());
+        } else {
+          fprintf(stderr, "\nlost stereo signal\n");
+        }
       }
     }
 

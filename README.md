@@ -12,11 +12,11 @@
 * Remove 19kHz pilot signal when the stereo PLL is locked
 * Add equalizer to compensate 0th-hold aperture effect of phase discriminator output (with fixed parameter for 240kHz/960kHz sampling rates)
 * Increase the number of FineTuner table size from 64 to 256
+* Add quiet mode `-q`
 
 ### modifications not yet implemented
 
 * TODO: Add option `-U` to set deemphasis timing to 75 microseconds for North America (default: 50 microseconds for Europe/Japan)
-* TODO: Add quiet mode `-q`
 * TODO: Add option `-X` for [Quadratic Multipath Monitor (QMM)](http://ham-radio.com/k6sti/qmm.htm)
 * TODO: Add D/U ratio estimation based on I/F level: see <https://github.com/jj1bdx/rtl_power-fm-multipath> (this requires 960kHz sampling rate)
 * TODO: Set default sample rate to 960kHz (use `-L` to set to 240kHz), `-s` option removed
