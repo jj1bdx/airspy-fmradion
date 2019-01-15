@@ -45,10 +45,11 @@ def minimizer(freq):
     return optimize.minimize(sincfitting_test,
             [1.334, 0.334], args=(freq,), method="Nelder-Mead")
 
+print("#maxfreq, staticgain, fitlevel, absmax")
 for freq in range(120000, 5000001, 10000):
     result = minimizer(freq)
     staticgain = result.x[0]
     fitlevel = result.x[1]
     absmax = sincfitting(freq, staticgain, fitlevel)[1]
-    print(freq, staticgain, fitlevel, absmax)
+    print(freq, staticgain, fitlevel, absmax, sep = ",")
 
