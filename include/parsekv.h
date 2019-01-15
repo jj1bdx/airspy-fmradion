@@ -1,7 +1,8 @@
 /******************************************************************************
  SoftFM - Software decoder for FM broadcast radio with stereo support
 
- Key-Value parser (http://www.boost.org/doc/libs/1_47_0/libs/spirit/example/qi/key_value_sequence.cpp)
+ Key-Value parser
+(http://www.boost.org/doc/libs/1_47_0/libs/spirit/example/qi/key_value_sequence.cpp)
 
  Usage:
 
@@ -55,36 +56,29 @@
 #ifndef INCLUDE_PARSEKV_H_
 #define INCLUDE_PARSEKV_H_
 
+#include <boost/fusion/include/std_pair.hpp>
+#include <boost/spirit/include/qi.hpp>
 #include <iostream>
 #include <map>
-#include <boost/spirit/include/qi.hpp>
-#include <boost/fusion/include/std_pair.hpp>
 
-namespace parsekv
-{
-    namespace qi = boost::spirit::qi;
+namespace parsekv {
+namespace qi = boost::spirit::qi;
 
-    typedef std::map<std::string, std::string> pairs_type;
+typedef std::map<std::string, std::string> pairs_type;
 
-    template <typename Iterator>
-    struct key_value_sequence
-      : qi::grammar<Iterator, pairs_type()>
-    {
-        key_value_sequence()
-          : key_value_sequence::base_type(query)
-        {
-            query =  pair >> *((qi::lit(',') | '&') >> pair);
-            pair  =  key >> -('=' >> value);
-            key   =  qi::char_("a-zA-Z_") >> *qi::char_("a-zA-Z_0-9");
-            value = +qi::char_("a-zA-Z_0-9.");
-        }
+template <typename Iterator>
+struct key_value_sequence : qi::grammar<Iterator, pairs_type()> {
+  key_value_sequence() : key_value_sequence::base_type(query) {
+    query = pair >> *((qi::lit(',') | '&') >> pair);
+    pair = key >> -('=' >> value);
+    key = qi::char_("a-zA-Z_") >> *qi::char_("a-zA-Z_0-9");
+    value = +qi::char_("a-zA-Z_0-9.");
+  }
 
-        qi::rule<Iterator, pairs_type()> query;
-        qi::rule<Iterator, std::pair<std::string, std::string>()> pair;
-        qi::rule<Iterator, std::string()> key, value;
-    };
-}
-
-
+  qi::rule<Iterator, pairs_type()> query;
+  qi::rule<Iterator, std::pair<std::string, std::string>()> pair;
+  qi::rule<Iterator, std::string()> key, value;
+};
+} // namespace parsekv
 
 #endif /* INCLUDE_PARSEKV_H_ */
