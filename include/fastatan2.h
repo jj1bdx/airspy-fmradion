@@ -1,4 +1,3 @@
-// SoftFM - Software decoder for FM broadcast radio with stereo support
 //
 // Copyright (C) 2018 Kenji Rikitake, JJ1BDX
 //
