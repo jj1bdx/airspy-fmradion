@@ -10,7 +10,7 @@ endif(COMMAND cmake_policy)
 
 find_package(Threads)
 find_package(PkgConfig)
-find_package(ALSA REQUIRED)
+find_package(ALSA)
 find_package(Boost 1.47)
 
 # Find RTL-SDR library.
@@ -55,6 +55,12 @@ endif()
 find_library(LIBUSB_LIBRARY ${LIBUSB_NAME}
              HINTS /usr /usr/local /opt ${PKG_LIBUSB_LIBRARY_DIRS})
 
+if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    set(ALSA_OPTION "-DUSE_ALSA")
+else ()
+    set(ALSA_OPTION "")
+endif()
+
 if(RTLSDR_INCLUDE_DIR AND RTLSDR_LIBRARY)
     message(STATUS "Found librtlsdr: ${RTLSDR_INCLUDE_DIR}, ${RTLSDR_LIBRARY}")
 else()
@@ -75,7 +81,7 @@ set(AIRSPY_LIBRARIES    ${AIRSPY_LIBRARY} ${LIBUSB_LIBRARY})
 
 # Compiler flags.
 # Enable speed-based optimization
-set(CMAKE_CXX_FLAGS "-Wall -std=c++11 -O3 -ffast-math -ftree-vectorize -march=native ${EXTRA_FLAGS}")
+set(CMAKE_CXX_FLAGS "-Wall -std=c++11 -O3 -ffast-math -ftree-vectorize -march=native ${ALSA_OPTION} ${EXTRA_FLAGS}")
 # Use conservative options when failed to run
 #set(CMAKE_CXX_FLAGS "-Wall -std=c++11 -O2 ${EXTRA_FLAGS}")
 
