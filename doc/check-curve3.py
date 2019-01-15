@@ -44,5 +44,5 @@ fitlevel = 0.3364
     
 print("#maxfreq, staticgain, fitlevel, absmax")
 for freq in range(850000, 5000001, 10000):
-    absmax = sincfitting(freq, staticgain, fitlevel)[0]
+    absmax = sincfitting(freq, staticgain, fitlevel)[1]
     print(freq, staticgain, fitlevel, absmax, sep = ",")
