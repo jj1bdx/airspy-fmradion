@@ -96,7 +96,8 @@ static void handle_sigterm(int sig)
     msg += ", stopping ...\n";
 
     const char *s = msg.c_str();
-    write(STDERR_FILENO, s, strlen(s));
+    ssize_t size = write(STDERR_FILENO, s, strlen(s));
+    size++; // dummy
 }
 
 
@@ -460,6 +461,19 @@ int main(int argc, char **argv)
 
     srcsdr->print_specific_parms();
 
+    double ifeq_static_gain;
+    double ifeq_fit_factor;
+
+    if (ifrate < 300000) {
+        // for ifrate = 240000;
+        ifeq_static_gain = 1.47112063;
+        ifeq_fit_factor = 0.48567701;
+    } else {
+        // for ifrate = 960000;
+        ifeq_static_gain = 1.3412962;
+        ifeq_fit_factor = 0.34135089;
+    }
+
     // Create source data queue.
     DataBuffer<IQSample> source_buffer;
 
@@ -489,6 +503,8 @@ int main(int argc, char **argv)
 
     // Prepare decoder.
     FmDecoder fm(ifrate,                            // sample_rate_if
+                 ifeq_static_gain,                  // ifeq_static_gain
+                 ifeq_fit_factor,                   // ifeq_fit_factor
                  freq - tuner_freq,                 // tuning_offset
                  pcmrate,                           // sample_rate_pcm
                  stereo,                            // stereo

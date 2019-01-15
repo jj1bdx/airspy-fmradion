@@ -52,6 +52,20 @@ private:
     IQSample     m_last2_sample;
 };
 
+class DiscriminatorEqualizer {
+public:
+  // Construct equalizer for phase discriminator.
+  DiscriminatorEqualizer(double ifeq_static_gain, double ifeq_fit_factor);
+
+  // process samples.
+  // Output is a sequence of equalized output.
+  void process(const SampleVector &samples_in, SampleVector &samples_out);
+
+private:
+  double m_static_gain;
+  double m_fit_factor;
+  double m_last1_sample;
+};
 
 /** Phase-locked loop for stereo pilot. */
 class PilotPhaseLock
@@ -126,15 +140,18 @@ class FmDecoder
 {
 public:
     static constexpr double default_deemphasis    =     50;
-    static constexpr double default_bandwidth_if  = 100000;
+    static constexpr double default_bandwidth_if  =  96000;
     static constexpr double default_freq_dev      =  75000;
     static constexpr double default_bandwidth_pcm =  15000;
     static constexpr double pilot_freq            =  19000;
+    static constexpr unsigned int finetuner_table_size = 256;
 
     /**
      * Construct FM decoder.
      *
      * sample_rate_if   :: IQ sample rate in Hz.
+     * ifeq_static_gain :: IF DiscriminatorEqualizer static_gain
+     * ifeq_fit_factor  :: IF DiscriminatorEqualizer fit_factor
      * tuning_offset    :: Frequency offset in Hz of radio station with respect
      *                     to receiver LO frequency (positive value means
      *                     station is at higher frequency than LO).
@@ -152,6 +169,8 @@ public:
      *                     Set to 1 to disable.
      */
     FmDecoder(double sample_rate_if,
+              double ifeq_static_gain,
+              double ifeq_fit_factor,
               double tuning_offset,
               double sample_rate_pcm,
               bool   stereo=true,
@@ -240,12 +259,14 @@ private:
     IQSampleVector  m_buf_iftuned;
     IQSampleVector  m_buf_iffiltered;
     SampleVector    m_buf_baseband;
+    SampleVector    m_buf_baseband_raw;
     SampleVector    m_buf_mono;
     SampleVector    m_buf_rawstereo;
     SampleVector    m_buf_stereo;
 
     FineTuner           m_finetuner;
     LowPassFilterFirIQ  m_iffilter;
+    DiscriminatorEqualizer m_disceq;
     PhaseDiscriminator  m_phasedisc;
     DownsampleFilter    m_resample_baseband;
     PilotPhaseLock      m_pilotpll;

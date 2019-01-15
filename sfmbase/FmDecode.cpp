@@ -98,6 +98,30 @@ void PhaseDiscriminator::process(const IQSampleVector& samples_in,
 }
 
 
+// class DiscriminatorEqualizer
+
+// Construct equalizer for phase discriminator.
+// TODO: value optimized for 960kHz sampling rate
+DiscriminatorEqualizer::DiscriminatorEqualizer(double ifeq_static_gain,
+                                               double ifeq_fit_factor)
+    : m_static_gain(ifeq_static_gain), m_fit_factor(ifeq_fit_factor),
+      m_last1_sample(0.0) {}
+
+void DiscriminatorEqualizer::process(const SampleVector &samples_in,
+                                     SampleVector &samples_out) {
+  unsigned int n = samples_in.size();
+  Sample s0 = m_last1_sample;
+  samples_out.resize(n);
+
+  for (unsigned int i = 0; i < n; i++) {
+    Sample s1 = samples_in[i];
+    Sample mov1 = (s0 + s1) / 2.0;
+    samples_out[i] = m_static_gain * s1 - m_fit_factor * mov1;
+    s0 = s1;
+  }
+  m_last1_sample = s0;
+}
+
 /* ****************  class PilotPhaseLock  **************** */
 
 // Construct phase-locked loop.
@@ -270,6 +294,8 @@ void PilotPhaseLock::process(const SampleVector& samples_in,
 /* ****************  class FmDecoder  **************** */
 
 FmDecoder::FmDecoder(double sample_rate_if,
+                     double ifeq_static_gain,
+                     double ifeq_fit_factor,
                      double tuning_offset,
                      double sample_rate_pcm,
                      bool   stereo,
@@ -282,8 +308,9 @@ FmDecoder::FmDecoder(double sample_rate_if,
     // Initialize member fields
     : m_sample_rate_if(sample_rate_if)
     , m_sample_rate_baseband(sample_rate_if / downsample)
-    , m_tuning_table_size(64)
-    , m_tuning_shift(lrint(-64.0 * tuning_offset / sample_rate_if))
+    , m_tuning_table_size(finetuner_table_size)
+    , m_tuning_shift(lrint(-double(finetuner_table_size) * tuning_offset /
+                           sample_rate_if))
     , m_freq_dev(freq_dev)
     , m_downsample(downsample)
     , m_stereo_enabled(stereo)
@@ -297,6 +324,9 @@ FmDecoder::FmDecoder(double sample_rate_if,
 
     // Construct LowPassFilterFirIQ
     , m_iffilter(10, bandwidth_if / sample_rate_if)
+
+    // Construct DiscriminatorEqualizer
+    , m_disceq(ifeq_static_gain, ifeq_fit_factor)
 
     // Construct PhaseDiscriminator
     , m_phasedisc(freq_dev / sample_rate_if)
@@ -352,7 +382,12 @@ void FmDecoder::process(const IQSampleVector& samples_in,
     m_if_level = 0.95 * m_if_level + 0.05 * if_rms;
 
     // Extract carrier frequency.
-    m_phasedisc.process(m_buf_iffiltered, m_buf_baseband);
+    m_phasedisc.process(m_buf_iffiltered, m_buf_baseband_raw);
+
+    // Compensate 0th-hold aperture effect
+    // by applying the equalizer to the discriminator output.
+    m_disceq.process(m_buf_baseband_raw, m_buf_baseband);
+
 
     // Downsample baseband signal to reduce processing.
     if (m_downsample > 1) {
@@ -417,14 +452,14 @@ void FmDecoder::demod_stereo(const SampleVector& samples_baseband,
                              SampleVector& samples_rawstereo)
 {
     // Just multiply the baseband signal with the double-frequency pilot.
-    // And multiply by 1.17 to get the full amplitude.
+    // And multiply by 2.00 to get the full amplitude.
     // That's all.
 
     unsigned int n = samples_baseband.size();
     assert(n == samples_rawstereo.size());
 
     for (unsigned int i = 0; i < n; i++) {
-        samples_rawstereo[i] *= 1.17 * samples_baseband[i];
+        samples_rawstereo[i] *= 2.00 * samples_baseband[i];
     }
 }
 
