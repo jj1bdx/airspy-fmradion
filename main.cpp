@@ -244,10 +244,11 @@ int main(int argc, char **argv) {
   enum OutputMode { MODE_RAW, MODE_WAV, MODE_ALSA };
 #ifdef USE_ALSA
   OutputMode outmode = MODE_ALSA;
+  std::string filename;
 #else // !USE_ALSA
   OutputMode outmode = MODE_RAW;
+  std::string filename("-");
 #endif // USE_ALSA
-  std::string filename;
   std::string alsadev("default");
   std::string ppsfilename;
   FILE *ppsfile = NULL;
