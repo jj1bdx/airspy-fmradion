@@ -40,7 +40,6 @@
 #include "RtlSdrSource.h"
 #include "HackRFSource.h"
 #include "AirspySource.h"
-#include "BladeRFSource.h"
 
 /** Flag is set on SIGINT / SIGTERM. */
 static std::atomic_bool stop_flag(false);
@@ -109,7 +108,6 @@ void usage()
             "                   - rtlsdr: RTL-SDR devices\n"
             "                   - hackrf: HackRF One or Jawbreaker\n"
             "                   - airspy: Airspy\n"
-            "                   - bladerf: BladeRF\n"
             "  -c config      Comma separated key=value configuration pairs or just key for switches\n"
             "                 See below for valid values per device type\n"
             "  -d devidx      Device index, 'list' to show device list (default 0)\n"
@@ -155,16 +153,6 @@ void usage()
             "  antbias        Enable antemma bias (default disabled)\n"
             "  lagc           Enable LNA AGC (default disabled)\n"
             "  magc           Enable mixer AGC (default disabled)\n"
-            "\n"
-            "Configuration options for BladeRF devices\n"
-            "  freq=<int>     Frequency of radio station in Hz (default 300000000)\n"
-    		"                 valid values (with XB200): 100k to 3.8G\n"
-    		"                 valid values (without XB200): 300M to 3.8G\n"
-            "  srate=<int>    IF sample rate in Hz. Valid values: 48k to 40M (default 1000000)\n"
-            "  bw=<int>       Bandwidth in Hz. 'list' to just get a list of valid values: (default 1500000)\n"
-            "  lgain=<int>    LNA gain in dB. 'list' to just get a list of valid values: (default 3)\n"
-            "  v1gain=<int>   VGA1 gain in dB. 'list' to just get a list of valid values: (default 20)\n"
-            "  v2gain=<int>   VGA2 gain in dB. 'list' to just get a list of valid values: (default 9)\n"
             "\n");
 }
 
@@ -217,14 +205,10 @@ static bool get_device(std::vector<std::string> &devnames, std::string& devtype,
     {
         AirspySource::get_device_names(devnames);
     }
-    else if (strcasecmp(devtype.c_str(), "bladerf") == 0)
-    {
-        BladeRFSource::get_device_names(devnames);
-    }
     else
     {
         fprintf(stderr, "ERROR: wrong device type (-t option) must be one of the following:\n");
-        fprintf(stderr, "       rtlsdr, hackrf, airspy, bladerf\n");
+        fprintf(stderr, "       rtlsdr, hackrf, airspy\n");
         return false;
     }
 
@@ -261,11 +245,6 @@ static bool get_device(std::vector<std::string> &devnames, std::string& devtype,
     {
         // Open Airspy device.
         *srcsdr = new AirspySource(devidx);
-    }
-    else if (strcasecmp(devtype.c_str(), "bladerf") == 0)
-    {
-        // Open BladeRF device.
-        *srcsdr = new BladeRFSource(devnames[devidx].c_str());
     }
 
     return true;

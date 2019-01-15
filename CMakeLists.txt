@@ -29,13 +29,6 @@ find_path(AIRSPY_INCLUDE_DIR airspy.h
 find_library(AIRSPY_LIBRARY libairspy.a
              HINT ${PKG_AIRSPY_LIBRARY_DIRS})
 
-# Find BladeRF library.
-pkg_check_modules(PKG_BLADERF libbladerf)
-find_path(BLADERF_INCLUDE_DIR libbladeRF.h
-          HINT ${PKG_BLADERF_INCLUDE_DIRS})
-find_library(BLADERF_LIBRARY libbladeRF.so
-             HINT ${PKG_BLADERF_LIBRARY_DIRS})
-
 # Find libusb
 pkg_check_modules(PKG_LIBUSB libusb-1.0)
 find_path(LIBUSB_INCLUDE_DIR libusb.h
@@ -61,9 +54,6 @@ set(HACKRF_LIBRARIES    ${HACKRF_LIBRARY} ${LIBUSB_LIBRARY})
 
 set(AIRSPY_INCLUDE_DIRS ${AIRSPY_INCLUDE_DIR} ${LIBUSB_INCLUDE_DIR})
 set(AIRSPY_LIBRARIES    ${AIRSPY_LIBRARY} ${LIBUSB_LIBRARY})
-
-set(BLADERF_INCLUDE_DIRS ${BLADERF_INCLUDE_DIR} ${LIBUSB_INCLUDE_DIR})
-set(BLADERF_LIBRARIES    ${BLADERF_LIBRARY} ${LIBUSB_LIBRARY})
 
 # Compiler flags.
 set(CMAKE_CXX_FLAGS "-Wall -std=c++11 -O2 -ffast-math -ftree-vectorize ${EXTRA_FLAGS}")
@@ -139,21 +129,6 @@ set(sfmairspy_SOURCES
     ${sfmairspy_HEADERS}
 )
 
-# BLadeRF sources
-
-set(sfmbladerf_SOURCES
-    sfmbase/BladeRFSource.cpp
-)
-
-set(sfmbladerf_HEADERS
-    include/BladeRFSource.h
-)
-
-set(sfmbladerf_SOURCES
-    ${sfmbladerf_SOURCES}
-    ${sfmbladerf_HEADERS}
-)
-
 # Libraries
 
 add_library(sfmbase STATIC
@@ -172,10 +147,6 @@ add_library(sfmairspy STATIC
     ${sfmairspy_SOURCES}
 )
 
-add_library(sfmbladerf STATIC
-    ${sfmbladerf_SOURCES}
-)
-
 add_executable(softfm
 	main.cpp
 )
@@ -191,7 +162,6 @@ target_link_libraries(softfm
     sfmrtlsdr
     sfmhackrf
     sfmairspy
-    sfmbladerf
     ${CMAKE_THREAD_LIBS_INIT}
     ${ALSA_LIBRARIES}
     ${EXTRA_LIBS} 
@@ -213,9 +183,5 @@ target_link_libraries(sfmairspy
     ${AIRSPY_LIBRARIES}
 )
 
-target_link_libraries(sfmbladerf
-    ${BLADERF_LIBRARIES}
-)
-
 install(TARGETS softfm DESTINATION bin)
-install(TARGETS sfmbase sfmrtlsdr sfmhackrf sfmairspy sfmbladerf DESTINATION lib)
+install(TARGETS sfmbase sfmrtlsdr sfmhackrf sfmairspy DESTINATION lib)
