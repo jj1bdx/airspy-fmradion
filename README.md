@@ -116,11 +116,11 @@ Compile and install
 
 Basic usage:
 
- - `./softfm -t rtlsdr -c freq=94600000` Tunes to 94.6 MHz
+ - `./ngsoftfm -t rtlsdr -c freq=94600000` Tunes to 94.6 MHz
 
 Specify gain:
 
- - `./softfm -t rtlsdr -c freq=94600000,gain=22.9` Tunes to 94.6 MHz and sets gain to 22.9 dB
+ - `./ngsoftfm -t rtlsdr -c freq=94600000,gain=22.9` Tunes to 94.6 MHz and sets gain to 22.9 dB
 
 ### All options
 
