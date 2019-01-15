@@ -36,7 +36,7 @@ def sincfitting(maxfreq, staticgain, fitfactor):
         if (absmax < math.fabs(logratio)):
             absmax = logratio
         sqsum += logratio * logratio
-    return (sqsum, logratio)
+    return (sqsum, absmax)
 
 def sincfitting_test(x, f):
     return sincfitting(f, x[0], x[1])[0]
