@@ -151,7 +151,7 @@ PilotPhaseLock::PilotPhaseLock(double freq, double bandwidth,
 // Process samples and generate the 38kHz locked tone;
 // remove remained locked 19kHz tone from samples_in if locked.
 void PilotPhaseLock::process(SampleVector &samples_in,
-                             SampleVector &samples_out) {
+                             SampleVector &samples_out, bool pilot_shift) {
   unsigned int n = samples_in.size();
 
   samples_out.resize(n);
@@ -169,8 +169,15 @@ void PilotPhaseLock::process(SampleVector &samples_in,
     Sample pcos = cos(m_phase);
 
     // Generate double-frequency output.
-    // sin(2*x) = 2 * sin(x) * cos(x)
-    samples_out[i] = 2 * psin * pcos;
+    if (pilot_shift) {
+      // Use cos(2*x) to shift phase for pi/4 (90 degrees)
+      // cos(2*x) = 2 * cos(x) * cos(x) - 1
+      samples_out[i] = 2 * pcos * pcos - 1;
+    } else {
+      // Proper phase: not shifted
+      // sin(2*x) = 2 * sin(x) * cos(x)
+      samples_out[i] = 2 * psin * pcos;
+    }
 
     // Multiply locked tone with input.
     Sample x = samples_in[i];
@@ -252,7 +259,7 @@ FmDecoder::FmDecoder(double sample_rate_if, double ifeq_static_gain,
                      double ifeq_fit_factor, double tuning_offset,
                      double sample_rate_pcm, bool stereo, double deemphasis,
                      double bandwidth_if, double freq_dev, double bandwidth_pcm,
-                     unsigned int downsample)
+                     unsigned int downsample, bool pilot_shift)
 
     // Initialize member fields
     : m_sample_rate_if(sample_rate_if),
@@ -260,7 +267,8 @@ FmDecoder::FmDecoder(double sample_rate_if, double ifeq_static_gain,
       m_tuning_table_size(finetuner_table_size),
       m_tuning_shift(lrint(-double(finetuner_table_size) * tuning_offset /
                            sample_rate_if)),
-      m_freq_dev(freq_dev), m_downsample(downsample), m_stereo_enabled(stereo),
+      m_freq_dev(freq_dev), m_downsample(downsample),
+      m_pilot_shift(pilot_shift), m_stereo_enabled(stereo),
       m_stereo_detected(false), m_if_level(0), m_baseband_mean(0),
       m_baseband_level(0)
 
@@ -357,8 +365,9 @@ void FmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
   m_dcblock_mono.process_inplace(m_buf_mono);
 
   if (m_stereo_enabled) {
-    // Lock on stereo pilot.
-    m_pilotpll.process(m_buf_baseband, m_buf_rawstereo);
+    // Lock on stereo pilot,
+    // and remove locked 19kHz tone from the composite signal.
+    m_pilotpll.process(m_buf_baseband, m_buf_rawstereo, m_pilot_shift);
     m_stereo_detected = m_pilotpll.locked();
 
     // Demodulate stereo signal.
@@ -374,14 +383,26 @@ void FmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
     m_dcblock_stereo.process_inplace(m_buf_stereo);
 
     if (m_stereo_detected) {
-      // Extract left/right channels from (L+R) / (L-R) signals.
-      stereo_to_left_right(m_buf_mono, m_buf_stereo, audio);
-      m_deemph_stereo.process_interleaved_inplace(
-          audio); // L and R de-emphasis.
+      if (m_pilot_shift) {
+        // Duplicate L-R shifted output in left/right channels.
+        // No deemphasis
+        mono_to_left_right(m_buf_stereo, audio);
+      } else {
+        // Extract left/right channels from (L+R) / (L-R) signals.
+        stereo_to_left_right(m_buf_mono, m_buf_stereo, audio);
+        // L and R de-emphasis.
+        m_deemph_stereo.process_interleaved_inplace(audio);
+      }
     } else {
-      m_deemph_mono.process_inplace(m_buf_mono); //  De-emphasis.
-      // Duplicate mono signal in left/right channels.
-      mono_to_left_right(m_buf_mono, audio);
+      if (m_pilot_shift) {
+        // Fill zero output in left/right channels.
+        zero_to_left_right(m_buf_stereo, audio);
+      } else {
+        // De-emphasis.
+        m_deemph_mono.process_inplace(m_buf_mono);
+        // Duplicate mono signal in left/right channels.
+        mono_to_left_right(m_buf_mono, audio);
+      }
     }
   } else {
     m_deemph_mono.process_inplace(m_buf_mono); //  De-emphasis.
@@ -431,6 +452,19 @@ void FmDecoder::stereo_to_left_right(const SampleVector &samples_mono,
     Sample s = samples_stereo[i];
     audio[2 * i] = m + s;
     audio[2 * i + 1] = m - s;
+  }
+}
+
+// Fill zero signal in left/right channels.
+// (samples_mono used for the size determination only)
+void FmDecoder::zero_to_left_right(const SampleVector &samples_mono,
+                                   SampleVector &audio) {
+  unsigned int n = samples_mono.size();
+
+  audio.resize(2 * n);
+  for (unsigned int i = 0; i < n; i++) {
+    audio[2 * i] = 0.0;
+    audio[2 * i + 1] = 0.0;
   }
 }
 

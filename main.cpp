@@ -116,13 +116,14 @@ void usage() {
       "  -T filename    Write pulse-per-second timestamps\n"
       "                 use filename '-' to write to stdout\n"
       "  -b seconds     Set audio buffer size in seconds\n"
-      "  -X            Shift pilot phase (for Quadrature Multipath Monitor)\n"
+      "  -X             Shift pilot phase (for Quadrature Multipath Monitor)\n"
+      "                 (-X is ignored under mono mode (-M))\n"
       "\n"
       "Configuration options for RTL-SDR devices\n"
       "  freq=<int>     Frequency of radio station in Hz (default 100000000)\n"
       "                 valid values: 10M to 2.2G (working range depends on "
       "device)\n"
-      "  srate=<int>    IF sample rate in Hz (default 1000000)\n"
+      "  srate=<int>    IF sample rate in Hz (default 960000)\n"
       "                 (valid ranges: [225001, 300000], [900001, 3200000]))\n"
       "  gain=<float>   Set LNA gain in dB, or 'auto',\n"
       "                 or 'list' to just get a list of valid values (default "
@@ -255,6 +256,7 @@ int main(int argc, char **argv) {
   std::string ppsfilename;
   FILE *ppsfile = NULL;
   double bufsecs = -1;
+  bool pilot_shift = false;
   std::string config_str;
   std::string devtype_str;
   std::vector<std::string> devnames;
@@ -269,11 +271,11 @@ int main(int argc, char **argv) {
       {"wav", 1, NULL, 'W'},     
       {"play", 2, NULL, 'P'},
       {"pps", 1, NULL, 'T'},     {"buffer", 1, NULL, 'b'},
-      {"quiet", 1, NULL, 'q'},
+      {"quiet", 1, NULL, 'q'},   {"pilotshift", 0, NULL, 'X'},
       {NULL, 0, NULL, 0}};
 
   int c, longindex;
-  while ((c = getopt_long(argc, argv, "t:c:d:r:MR:W:P::T:b:q", longopts,
+  while ((c = getopt_long(argc, argv, "t:c:d:r:MR:W:P::T:b:qX", longopts,
                           &longindex)) >= 0) {
     switch (c) {
     case 't':
@@ -317,6 +319,9 @@ int main(int argc, char **argv) {
       break;
     case 'q':
       quietmode = true;
+      break;
+    case 'X':
+      pilot_shift = true;
       break;
     default:
       usage();
@@ -499,7 +504,8 @@ int main(int argc, char **argv) {
                FmDecoder::default_bandwidth_if, // bandwidth_if
                FmDecoder::default_freq_dev,     // freq_dev
                bandwidth_pcm,                   // bandwidth_pcm
-               downsample);                     // downsample
+               downsample,                      // downsample
+               pilot_shift);                    // pilot_shift
 
   // If buffering enabled, start background output thread.
   DataBuffer<Sample> output_buffer;

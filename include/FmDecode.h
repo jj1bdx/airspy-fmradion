@@ -78,18 +78,22 @@ public:
   /**
    * Construct phase-locked loop.
    *
-   * freq       :: 19 kHz center frequency relative to sample freq
-   *               (0.5 is Nyquist)
-   * bandwidth  :: bandwidth relative to sample frequency
-   * minsignal  :: minimum pilot amplitude
+   * freq        :: 19 kHz center frequency relative to sample freq
+   *                (0.5 is Nyquist)
+   * bandwidth   :: bandwidth relative to sample frequency
+   * minsignal   :: minimum pilot amplitude
    */
   PilotPhaseLock(double freq, double bandwidth, double minsignal);
 
   /**
    * Process samples and extract 19 kHz pilot tone.
    * Generate phase-locked 38 kHz tone with unit amplitude.
+   * pilot_shift :: true to shift pilot phase
+   *             :: (use cos(2*x) instead of sin (2*x))
+   *             :: (for multipath distortion detection)
    */
-  void process(SampleVector &samples_in, SampleVector &samples_out);
+  void process(SampleVector &samples_in, SampleVector &samples_out,
+       bool pilot_shift);
 
   /** Return true if the phase-locked loop is locked. */
   bool locked() const { return m_lock_cnt >= m_lock_delay; }
@@ -148,6 +152,9 @@ public:
    *                     (15 kHz for broadcast FM)
    * downsample       :: Downsampling factor to apply after FM demodulation.
    *                     Set to 1 to disable.
+   * pilot_shift      :: True to shift pilot signal phase
+   *                  :: (use cos(2*x) instead of sin (2*x))
+   *                  :: (for multipath distortion detection)
    */
   FmDecoder(double sample_rate_if, double ifeq_static_gain,
             double ifeq_fit_factor, double tuning_offset,
@@ -155,7 +162,7 @@ public:
             double bandwidth_if = default_bandwidth_if,
             double freq_dev = default_freq_dev,
             double bandwidth_pcm = default_bandwidth_pcm,
-            unsigned int downsample = 1);
+            unsigned int downsample = 1, bool pilot_shift = false);
 
   /**
    * Process IQ samples and return audio samples.
@@ -205,6 +212,11 @@ private:
                             const SampleVector &samples_stereo,
                             SampleVector &audio);
 
+  // Fill zero signal in left/right channels.
+  // (samples_mono used for the size determination only)
+  void zero_to_left_right(const SampleVector &samples_mono,
+                          SampleVector &audio);
+
   // Data members.
   const double m_sample_rate_if;
   const double m_sample_rate_baseband;
@@ -212,6 +224,7 @@ private:
   const int m_tuning_shift;
   const double m_freq_dev;
   const unsigned int m_downsample;
+  const bool m_pilot_shift;
   const bool m_stereo_enabled;
   bool m_stereo_detected;
   double m_if_level;

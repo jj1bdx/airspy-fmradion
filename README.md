@@ -14,11 +14,11 @@
 * Increase the number of FineTuner table size from 64 to 256
 * Add quiet mode `-q`
 * Set default sample rate for RTL-SDR to 960kHz
+* Add option `-X` for [Quadratic Multipath Monitor (QMM)](http://ham-radio.com/k6sti/qmm.htm) (This option is not effective in monaural mode (`-M` option))
 
 ### modifications not yet implemented
 
 * TODO: Add option `-U` to set deemphasis timing to 75 microseconds for North America (default: 50 microseconds for Europe/Japan)
-* TODO: Add option `-X` for [Quadratic Multipath Monitor (QMM)](http://ham-radio.com/k6sti/qmm.htm)
 * TODO: Add D/U ratio estimation based on I/F level: see <https://github.com/jj1bdx/rtl_power-fm-multipath> (this requires 960kHz sampling rate)
 
 ## Introduction
