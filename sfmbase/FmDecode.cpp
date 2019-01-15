@@ -1,3 +1,4 @@
+// NGSoftFM - Software decoder for FM broadcast radio with RTL-SDR
 //
 // Copyright (C) 2015 Edouard Griffiths, F4EXB
 // Copyright (C) 2018 Kenji Rikitake, JJ1BDX
