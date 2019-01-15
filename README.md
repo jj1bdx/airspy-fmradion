@@ -106,6 +106,14 @@ To install the library from a Debian/Ubuntu installation just do:
 
   - `sudo apt-get install libairspy-dev`
   
+### FreeBSD
+
+* Install Port `comms/rtl-sdr`, `comms/hackrf`, `comms/airspy`
+
+### macOS
+
+* Install HomeBrew `rtl-sdr`, `hackrf`, `airspy`
+
 ## Installing
 
 To install NGSoftFM, download and unpack the source code and go to the
