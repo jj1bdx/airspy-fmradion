@@ -10,8 +10,12 @@ endif(COMMAND cmake_policy)
 
 find_package(Threads)
 find_package(PkgConfig)
-find_package(ALSA)
 find_package(Boost 1.47)
+
+# Require ALSA only for Linux
+if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    find_package(ALSA REQUIRED)
+endif()
 
 # Find RTL-SDR library.
 pkg_check_modules(PKG_RTLSDR librtlsdr)
