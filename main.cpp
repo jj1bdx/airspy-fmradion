@@ -42,6 +42,8 @@
 #include "HackRFSource.h"
 #include "RtlSdrSource.h"
 
+#define NGSOFTFM_VERSION "0.1.2"
+
 /** Flag is set on SIGINT / SIGTERM. */
 static std::atomic_bool stop_flag(false);
 
@@ -298,7 +300,7 @@ int main(int argc, char **argv) {
   Source *srcsdr = 0;
 
   fprintf(stderr, "NGSoftFM - Software decoder for FM broadcast radio\n");
-  fprintf(stderr, "ngsoftfm-jj1bdx 0.1.1\n");
+  fprintf(stderr, "ngsoftfm-jj1bdx " NGSOFTFM_VERSION "\n");
 
   const struct option longopts[] = {
       {"devtype", 2, NULL, 't'}, {"config", 2, NULL, 'c'},
