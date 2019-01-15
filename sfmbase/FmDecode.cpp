@@ -359,17 +359,17 @@ void FmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
   m_baseband_mean = 0.95 * m_baseband_mean + 0.05 * baseband_mean;
   m_baseband_level = 0.95 * m_baseband_level + 0.05 * baseband_rms;
 
+  // Lock on stereo pilot,
+  // and remove locked 19kHz tone from the composite signal.
+  m_pilotpll.process(m_buf_baseband, m_buf_rawstereo, m_pilot_shift);
+  m_stereo_detected = m_pilotpll.locked();
+
   // Extract mono audio signal.
   m_resample_mono.process(m_buf_baseband, m_buf_mono);
-
   // DC blocking
   m_dcblock_mono.process_inplace(m_buf_mono);
 
   if (m_stereo_enabled) {
-    // Lock on stereo pilot,
-    // and remove locked 19kHz tone from the composite signal.
-    m_pilotpll.process(m_buf_baseband, m_buf_rawstereo, m_pilot_shift);
-    m_stereo_detected = m_pilotpll.locked();
 
     // Demodulate stereo signal.
     demod_stereo(m_buf_baseband, m_buf_rawstereo);
