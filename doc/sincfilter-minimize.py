@@ -19,6 +19,7 @@ def mov1(x):
 
 def sincfitting(maxfreq, staticgain, fitfactor):
     sqsum = 0
+    absmax = 0
     difflimit = 10.0 ** (-0.05) # -0.1dB
     if staticgain - fitfactor < difflimit:
         return 99999999.0
@@ -32,15 +33,22 @@ def sincfitting(maxfreq, staticgain, fitfactor):
         # output[n] = staticgain * input[n] - fitfactor * mov1[n]
         fitlevel = staticgain - (fitfactor * mov1(2 * theta))
         logratio = math.log10(compensate / fitlevel)
+        if (absmax < math.fabs(logratio)):
+            absmax = logratio
         sqsum += logratio * logratio
-    return sqsum
+    return (sqsum, logratio)
 
 def sincfitting_test(x, f):
-    return sincfitting(f, x[0], x[1])
+    return sincfitting(f, x[0], x[1])[0]
 
-print(optimize.minimize(
-        sincfitting_test, [1.5, 0.5], args=(120000.0,),
-        method="Nelder-Mead"))
-print(optimize.minimize(
-        sincfitting_test, [1.1, 0.095], args=(480000.0,),
-        method="Nelder-Mead"))
+def minimizer(freq):
+    return optimize.minimize(sincfitting_test,
+            [1.5, 0.5], args=(freq,), method="Nelder-Mead")
+
+for freq in range(120000, 4800001, 120000):
+    result = minimizer(freq)
+    staticgain = result.x[0]
+    fitlevel = result.x[1]
+    absmax = sincfitting(freq, staticgain, fitlevel)[1]
+    print(freq, staticgain, fitlevel, absmax)
+
