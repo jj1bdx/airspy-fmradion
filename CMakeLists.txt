@@ -33,10 +33,19 @@ find_library(HACKRF_LIBRARY libhackrf.a
 
 # Find Airspy library.
 pkg_check_modules(PKG_AIRSPY libairspy)
-find_path(AIRSPY_INCLUDE_DIR airspy.h
-          HINT ${PKG_AIRSPY_INCLUDE_DIRS})
-find_library(AIRSPY_LIBRARY libairspy.a
+if (CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
+    find_path(AIRSPY_INCLUDE_DIR airspy.h
+             HINT /usr/local/include/libairspy ${PKG_AIRSPY_INCLUDE_DIRS})
+    find_library(AIRSPY_LIBRARY libairspy.so
+             HINT /usr/local/lib ${PKG_AIRSPY_LIBRARY_DIRS})
+    set(AIRSPY_INCLUDE_OPTION "-I/usr/local/include")
+else()
+    find_path(AIRSPY_INCLUDE_DIR airspy.h
+             HINT ${PKG_AIRSPY_INCLUDE_DIRS})
+    find_library(AIRSPY_LIBRARY libairspy.a
              HINT ${PKG_AIRSPY_LIBRARY_DIRS})
+    set(AIRSPY_INCLUDE_OPTION "")
+endif()
 
 # Find libusb
 # See https://github.com/texane/stlink/blob/master/cmake/modules/FindLibUSB.cmake
@@ -85,7 +94,7 @@ set(AIRSPY_LIBRARIES    ${AIRSPY_LIBRARY} ${LIBUSB_LIBRARY})
 
 # Compiler flags.
 # Enable speed-based optimization
-set(CMAKE_CXX_FLAGS "-Wall -std=c++11 -O3 -ffast-math -ftree-vectorize -march=native ${ALSA_OPTION} ${EXTRA_FLAGS}")
+set(CMAKE_CXX_FLAGS "-Wall -std=c++11 -O3 -ffast-math -ftree-vectorize -march=native ${ALSA_OPTION} ${AIRSPY_INCLUDE_OPTION} ${EXTRA_FLAGS}")
 # Use conservative options when failed to run
 #set(CMAKE_CXX_FLAGS "-Wall -std=c++11 -O2 ${EXTRA_FLAGS}")
 
