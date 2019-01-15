@@ -269,7 +269,7 @@ int main(int argc, char **argv)
     Source *srcsdr = 0;
 
     fprintf(stderr,
-            "SoftFM - Software decoder for FM broadcast radio\n");
+            "NGSoftFM - Software decoder for FM broadcast radio\n");
 
     const struct option longopts[] = {
         { "devtype",    2, NULL, 't' },
