@@ -99,7 +99,7 @@ static void handle_sigterm(int sig) {
 void usage() {
   fprintf(
       stderr,
-      "Usage: softfm [options]\n"
+      "Usage: ngsoftfm [options]\n"
       "  -t devtype     Device type:\n"
       "                   - rtlsdr: RTL-SDR devices\n"
       "                   - hackrf: HackRF One or Jawbreaker\n"
@@ -266,6 +266,7 @@ int main(int argc, char **argv) {
   Source *srcsdr = 0;
 
   fprintf(stderr, "NGSoftFM - Software decoder for FM broadcast radio\n");
+  fprintf(stderr, "ngsoftfm-jj1bdx 0.1.0\n");
 
   const struct option longopts[] = {
       {"devtype", 2, NULL, 't'}, {"config", 2, NULL, 'c'},
