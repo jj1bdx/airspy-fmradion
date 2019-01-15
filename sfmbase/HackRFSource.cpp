@@ -297,7 +297,10 @@ bool HackRFSource::configure(std::string configurationStr) {
       std::cerr << "HackRFSource::configure: freq: " << m["freq"] << std::endl;
       frequency = strtoll(m["freq"].c_str(), 0, 10);
 
-      if ((frequency < 1000000) || (frequency > 6000000000)) {
+      // TODO: frequency should be uint64_t
+      // originally: if ((frequency < 1000000) || (frequency > 6000000000))
+      // 
+      if (frequency < 1000000) {
         m_error = "Invalid frequency";
         return false;
       }
