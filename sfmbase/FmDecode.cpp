@@ -1,50 +1,25 @@
-///////////////////////////////////////////////////////////////////////////////////
-// SoftFM - Software decoder for FM broadcast radio with stereo support //
-//                                                                               //
-// Copyright (C) 2015 Edouard Griffiths, F4EXB //
-//                                                                               //
-// This program is free software; you can redistribute it and/or modify // it
-// under the terms of the GNU General Public License as published by          //
-// the Free Software Foundation as version 3 of the License, or //
-//                                                                               //
-// This program is distributed in the hope that it will be useful, // but
-// WITHOUT ANY WARRANTY; without even the implied warranty of                //
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the // GNU General
-// Public License V3 for more details.                               //
-//                                                                               //
-// You should have received a copy of the GNU General Public License // along
-// with this program. If not, see <http://www.gnu.org/licenses/>.          //
-///////////////////////////////////////////////////////////////////////////////////
+//
+// Copyright (C) 2015 Edouard Griffiths, F4EXB
+// Copyright (C) 2018 Kenji Rikitake, JJ1BDX
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <cassert>
 #include <cmath>
 
 #include "FmDecode.h"
 #include "fastatan2.h"
-
-/** Fast approximation of atan function. */
-static inline Sample fast_atan(Sample x) {
-  // http://stackoverflow.com/questions/7378187/approximating-inverse-trigonometric-funcions
-
-  Sample y = 1;
-  Sample p = 0;
-
-  if (x < 0) {
-    x = -x;
-    y = -1;
-  }
-
-  if (x > 1) {
-    p = y;
-    y = -y;
-    x = 1 / x;
-  }
-
-  const Sample b = 0.596227;
-  y *= (b * x + x * x) / (1 + 2 * b * x + x * x);
-
-  return (y + p) * Sample(M_PI_2);
-}
 
 /** Compute RMS level over a small prefix of the specified sample vector. */
 static IQSample::value_type rms_level_approx(const IQSampleVector &samples) {
