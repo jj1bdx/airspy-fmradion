@@ -13,7 +13,6 @@ Hardware supported:
   - **RTL-SDR** based (RTL2832-based) hardware is suppoeted and uses the _librtlsdr_ library to interface with the RTL-SDR hardware.
   - **HackRF** One and variants are supported with _libhackrf_ library.
   - **Airspy** is supported with _libairspy_ library.
-  - **BladeRF** is supported with _libbladerf_ library.
 
 The purposes of NGSoftFM are:
 
@@ -41,7 +40,7 @@ NGSoftFM requires:
  - Airspy library (https://github.com/airspy/host/tree/master/libairspy)
  - supported RTL-SDR DVB-T receiver or HackRF Rx/Tx
  - medium-fast computer (NGSoftFM takes 25% CPU time on a 1.6 GHz Core i3, ~12% of one core of a Core i7 5700HQ @ 2.7 GHz)
- - medium-strong FM radio signal. However the R820T2 based dongles give better results than the former R820T based dongles. HackRF, Airspy or BladeRF are usually even better but you have to spend the buck for the bang. 
+ - medium-strong FM radio signal. However the R820T2 based dongles give better results than the former R820T based dongles. HackRF, or Airspy are usually even better but you have to spend the buck for the bang. 
 
 For the latest version, see https://github.com/f4exb/ngsoftfm
 
@@ -87,18 +86,6 @@ If you install from source (https://github.com/airspy/host/tree/master/libairspy
 To install the library from a Debian/Ubuntu installation just do: 
 
   - `sudo apt-get install libairspy-dev`
-  
-<h2>BladeRF support</h2>
-
-For now BladeRF support must be installed even if no Airspy device is connected.
-
-If you install from source (https://github.com/Nuand/bladeRF) in your own installation path you have to specify the include path and library path. For example if you installed it in `/opt/install/libbladerf` you have to add `-DBLADERF_INCLUDE_DIR=/opt/install/libbladerf/include -DBLADERF_LIBRARY=/opt/install/libbladerf/lib/libbladeRF.so` to the cmake options.
-
-To install the library from a Debian/Ubuntu installation just do: 
-
-  - `sudo apt-get install libbladerf-dev`
-  
-Note: for the BladeRF to work effectively on FM broadcast frequencies you have to fit it with the XB200 extension board.
   
 <h1>Installing</h1>
 
@@ -180,18 +167,6 @@ Specify gain:
   - `lagc` Turn on the LNA AGC (default off)
   - `magc` Turn on the mixer AGC (default off)
   
-<h3>BladeRF</h3>
-
-  - `freq=<int>` Desired tune frequency in Hz. Valid range low boundary depends whether the XB200 extension board is fitted (default `300000000`). 
-    - XB200 fitted: 100kHz to 3,8 GHz
-    - XB200 not fitted: 300 MHZ to 3.8 GHz.
-  - `srate=<int>` Device sample rate in Hz. Valid range is 48kHZ to 40MHz. (default `1000000`).
-  - `bw=<int>` IF filter bandwidth in Hz. `list` lists valid values and exits. (default `1500000`).
-  - `lgain=<x>` LNA gain in dB. Valid values are: `0, 3, 6, list`. `list` lists valid values and exits. (default `3`)
-  - `v1gain=<x>` VGA1 gain in dB. Valid values are: `5, 6, 7, 8 ,9 ,10, 11 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, list`. `list` lists valid values and exits. (default `20`)  
-  - `v2gain=<x>` VGA2 gain in dB. Valid values are: `0, 3, 6, 9, 12, 15, 18, 21, 24, 27, 30, list`. `list` lists valid values and exits. (default `9`)  
-
-
 <h1>License</h1>
 
 **NGSoftFM**, copyright (C) 2015, Edouard Griffiths, F4EXB
