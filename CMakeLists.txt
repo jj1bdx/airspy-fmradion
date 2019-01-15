@@ -1,7 +1,12 @@
 # CMake definitions for SoftFM
 
 cmake_minimum_required(VERSION 3.0.2)
-project(SoftFM)
+project(NGSoftFM)
+
+# Workaround for the compilation warning
+if(COMMAND cmake_policy)
+  cmake_policy(SET CMP0003 NEW)
+endif(COMMAND cmake_policy)
 
 find_package(Threads)
 find_package(PkgConfig)
@@ -30,12 +35,25 @@ find_library(AIRSPY_LIBRARY libairspy.a
              HINT ${PKG_AIRSPY_LIBRARY_DIRS})
 
 # Find libusb
+# See https://github.com/texane/stlink/blob/master/cmake/modules/FindLibUSB.cmake
 pkg_check_modules(PKG_LIBUSB libusb-1.0)
-find_path(LIBUSB_INCLUDE_DIR libusb.h
-          HINT ${PKG_LIBUSB_INCLUDE_DIRS}
-          PATH_SUFFIXES libusb-1.0)
-find_library(LIBUSB_LIBRARY usb-1.0
-             HINT ${PKG_LIBUSB_LIBRARY_DIRS})
+if (CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
+    find_path(LIBUSB_INCLUDE_DIR libusb.h
+        HINTS /usr/include ${PKG_LIBUSB_INCLUDE_DIRS}
+    )
+else ()
+    find_path(LIBUSB_INCLUDE_DIR libusb.h
+        HINTS /usr /usr/local /opt ${PKG_LIBUSB_INCLUDE_DIRS}
+        PATH_SUFFIXES libusb-1.0
+    )
+endif()
+if (CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
+    set(LIBUSB_NAME usb)
+else ()
+    set(LIBUSB_NAME usb-1.0)
+endif()
+find_library(LIBUSB_LIBRARY ${LIBUSB_NAME}
+             HINTS /usr /usr/local /opt ${PKG_LIBUSB_LIBRARY_DIRS})
 
 if(RTLSDR_INCLUDE_DIR AND RTLSDR_LIBRARY)
     message(STATUS "Found librtlsdr: ${RTLSDR_INCLUDE_DIR}, ${RTLSDR_LIBRARY}")
@@ -150,7 +168,7 @@ add_library(sfmairspy STATIC
     ${sfmairspy_SOURCES}
 )
 
-add_executable(softfm
+add_executable(ngsoftfm
 	main.cpp
 )
 
@@ -160,7 +178,7 @@ include_directories(
     ${EXTRA_INCLUDES} 
 )
 
-target_link_libraries(softfm
+target_link_libraries(ngsoftfm
     sfmbase
     sfmrtlsdr
     sfmhackrf
@@ -186,5 +204,5 @@ target_link_libraries(sfmairspy
     ${AIRSPY_LIBRARIES}
 )
 
-install(TARGETS softfm DESTINATION bin)
+install(TARGETS ngsoftfm DESTINATION bin)
 install(TARGETS sfmbase sfmrtlsdr sfmhackrf sfmairspy DESTINATION lib)
