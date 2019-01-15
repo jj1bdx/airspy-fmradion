@@ -241,6 +241,38 @@ static bool get_device(std::vector<std::string> &devnames, std::string &devtype,
   return true;
 }
 
+// Compute DisciminatorEqualizer parameters.
+
+double compute_staticgain(double ifrate) {
+    double f = ifrate / 2.0;
+    if ((f >= 100000.0) && (f <= 150000.0)) {
+        return (2.1371215170745265e-11 * f * f) +
+            (-7.5114705705846736e-06 * f) +
+            2.064680196929797;
+    } else if ((f >= 450000.0) && (f <= 850000.0)) {
+        return (5.120643488879952e-14 * f * f) +
+            (-8.132704637710758e-08 * f) +
+            1.3687758269772277;
+    } else {
+        return 1.3364;
+    }
+}
+
+double compute_fitlevel(double ifrate) {
+    double f = ifrate / 2.0;
+    if ((f >= 100000.0) && (f <= 150000.0)) {
+        return (2.6649367052814292e-11 * f * f) +
+            (-9.223362008760662e-06 * f) +
+            1.208661569029465;
+    } else if ((f >= 450000.0) && (f <= 850000.0)) {
+        return (5.2143880840762905e-14 * f * f) +
+            (-8.267464191320395e-08 * f) +
+            0.3692684802187844;
+    } else {
+        return 0.3364;
+    }
+}
+
 int main(int argc, char **argv) {
   int devidx = 0;
   int pcmrate = 48000;
@@ -266,7 +298,7 @@ int main(int argc, char **argv) {
   Source *srcsdr = 0;
 
   fprintf(stderr, "NGSoftFM - Software decoder for FM broadcast radio\n");
-  fprintf(stderr, "ngsoftfm-jj1bdx 0.1.0\n");
+  fprintf(stderr, "ngsoftfm-jj1bdx 0.1.1\n");
 
   const struct option longopts[] = {
       {"devtype", 2, NULL, 't'}, {"config", 2, NULL, 'c'},
@@ -458,18 +490,8 @@ int main(int argc, char **argv) {
 
   srcsdr->print_specific_parms();
 
-  double ifeq_static_gain;
-  double ifeq_fit_factor;
-
-  if (ifrate < 300000) {
-    // for ifrate = 240000;
-    ifeq_static_gain = 1.47112063;
-    ifeq_fit_factor = 0.48567701;
-  } else {
-    // for ifrate = 960000;
-    ifeq_static_gain = 1.3412962;
-    ifeq_fit_factor = 0.34135089;
-  }
+  double ifeq_static_gain = compute_staticgain(ifrate);
+  double ifeq_fit_factor = compute_fitlevel(ifrate);
 
   // Create source data queue.
   DataBuffer<IQSample> source_buffer;
@@ -507,6 +529,8 @@ int main(int argc, char **argv) {
   fprintf(stderr, "audio sample rate: %u Hz\n", pcmrate);
   fprintf(stderr, "audio bandwidth:   %.3f kHz\n", bandwidth_pcm * 1.0e-3);
   fprintf(stderr, "deemphasis:        %.1f microseconds\n", deemphasis);
+  fprintf(stderr, "ifeq_static_gain:  %.6f\n", ifeq_static_gain);
+  fprintf(stderr, "ifeq_fit_factor:   %.6f\n", ifeq_fit_factor);
 
   // Prepare decoder.
   FmDecoder fm(ifrate,                          // sample_rate_if
