@@ -130,6 +130,8 @@ public:
   static constexpr double default_bandwidth_pcm = 15000;
   static constexpr double pilot_freq = 19000;
   static constexpr unsigned int finetuner_table_size = 256;
+  static constexpr double default_deemphasis_eu = 50; // Europe and Japan
+  static constexpr double default_deemphasis_na = 75; // USA/Canada
 
   /**
    * Construct FM decoder.

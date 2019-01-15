@@ -118,6 +118,7 @@ void usage() {
       "  -b seconds     Set audio buffer size in seconds\n"
       "  -X             Shift pilot phase (for Quadrature Multipath Monitor)\n"
       "                 (-X is ignored under mono mode (-M))\n"
+      "  -U             Set deemphasis to 75 microseconds (default: 50)\n"
       "\n"
       "Configuration options for RTL-SDR devices\n"
       "  freq=<int>     Frequency of radio station in Hz (default 100000000)\n"
@@ -257,6 +258,7 @@ int main(int argc, char **argv) {
   FILE *ppsfile = NULL;
   double bufsecs = -1;
   bool pilot_shift = false;
+  bool deemphasis_na = false;
   std::string config_str;
   std::string devtype_str;
   std::vector<std::string> devnames;
@@ -272,10 +274,11 @@ int main(int argc, char **argv) {
       {"play", 2, NULL, 'P'},
       {"pps", 1, NULL, 'T'},     {"buffer", 1, NULL, 'b'},
       {"quiet", 1, NULL, 'q'},   {"pilotshift", 0, NULL, 'X'},
+      {"usa", 0, NULL, 'U'},
       {NULL, 0, NULL, 0}};
 
   int c, longindex;
-  while ((c = getopt_long(argc, argv, "t:c:d:r:MR:W:P::T:b:qX", longopts,
+  while ((c = getopt_long(argc, argv, "t:c:d:r:MR:W:P::T:b:qXU", longopts,
                           &longindex)) >= 0) {
     switch (c) {
     case 't':
@@ -322,6 +325,9 @@ int main(int argc, char **argv) {
       break;
     case 'X':
       pilot_shift = true;
+      break;
+    case 'U':
+      deemphasis_na = true;
       break;
     default:
       usage();
@@ -481,17 +487,24 @@ int main(int argc, char **argv) {
     exit(1);
   }
 
-  // The baseband signal is empty above 100 kHz, so we can
-  // downsample to ~ 200 kS/s without loss of information.
+  // We can downsample to the (default_bandwidth_if * 2) * 1.1
+  // without loss of information.
   // This will speed up later processing stages.
-  unsigned int downsample = std::max(1, int(ifrate / 215.0e3));
-  fprintf(stderr, "baseband downsampling factor %u\n", downsample);
+  double downsample_target = FmDecoder::default_bandwidth_if * 2.2;
+  unsigned int downsample = std::max(1, int(ifrate / downsample_target));
+
 
   // Prevent aliasing at very low output sample rates.
   double bandwidth_pcm =
       std::min(FmDecoder::default_bandwidth_pcm, 0.45 * pcmrate);
+  double deemphasis = deemphasis_na ?
+                      FmDecoder::default_deemphasis_na :
+                      FmDecoder::default_deemphasis_eu;
+
+  fprintf(stderr, "if -> baseband:    %u (downsampled by)\n", downsample);
   fprintf(stderr, "audio sample rate: %u Hz\n", pcmrate);
   fprintf(stderr, "audio bandwidth:   %.3f kHz\n", bandwidth_pcm * 1.0e-3);
+  fprintf(stderr, "deemphasis:        %.1f microseconds\n", deemphasis);
 
   // Prepare decoder.
   FmDecoder fm(ifrate,                          // sample_rate_if
@@ -500,7 +513,7 @@ int main(int argc, char **argv) {
                freq - tuner_freq,               // tuning_offset
                pcmrate,                         // sample_rate_pcm
                stereo,                          // stereo
-               FmDecoder::default_deemphasis,   // deemphasis,
+               deemphasis,                      // deemphasis,
                FmDecoder::default_bandwidth_if, // bandwidth_if
                FmDecoder::default_freq_dev,     // freq_dev
                bandwidth_pcm,                   // bandwidth_pcm
