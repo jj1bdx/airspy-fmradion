@@ -3,7 +3,9 @@ NGSoftFM
 
 **NGSoftFM** is a command line software decoder for FM broadcast radio with stereo support 
 
-<h1>Introduction</h1>
+*Note: F4EXB no longer maintains this code.*
+
+## Introduction
 
 **NGSoftFM** is a software-defined radio receiver for FM broadcast radio. Stereo
 decoding is supported. It is written in C++. It is a derivative work of SoftFM (https://github.com/jorisvr/SoftFM) with a new application design and new features. It also corrects wrong de-emphasis scheme for stereo signals.
@@ -42,7 +44,7 @@ NGSoftFM requires:
  - medium-fast computer (NGSoftFM takes 25% CPU time on a 1.6 GHz Core i3, ~12% of one core of a Core i7 5700HQ @ 2.7 GHz)
  - medium-strong FM radio signal. However the R820T2 based dongles give better results than the former R820T based dongles. HackRF, or Airspy are usually even better but you have to spend the buck for the bang. 
 
-For the latest version, see https://github.com/f4exb/ngsoftfm
+For the latest version, see https://github.com/jj1bdx/ngsoftfm-jj1bdx
 
 Branches:
 
@@ -50,13 +52,13 @@ Branches:
   - _dev_ is the development branch that contains current developments that will be eventually released in the master branch
 
 
-<h1>Prerequisites</h1>
+## Prerequisites
 
-<h2>Base requirements</h2>
+### Base requirements
 
   - `sudo apt-get install cmake pkg-config libusb-1.0-0-dev libasound2-dev libboost-all-dev`
 
-<h2>RTL-SDR support</h2>
+### RTL-SDR support
 
 The Osmocom RTL-SDR library must be installed before you can build NGSoftFM.
 See http://sdr.osmocom.org/trac/wiki/rtl-sdr for more information.
@@ -67,7 +69,7 @@ To install the library from a Debian/Ubuntu installation just do:
 
   - `sudo apt-get install librtlsdr-dev`
   
-<h2>HackRF support</h2>
+### HackRF support
 
 For now HackRF support must be installed even if no HackRF device is connected.
 
@@ -77,7 +79,7 @@ To install the library from a Debian/Ubuntu installation just do:
 
   - `sudo apt-get install libhackrf-dev`
   
-<h2>Airspy support</h2>
+### Airspy support
 
 For now Airspy support must be installed even if no Airspy device is connected.
 
@@ -87,7 +89,7 @@ To install the library from a Debian/Ubuntu installation just do:
 
   - `sudo apt-get install libairspy-dev`
   
-<h1>Installing</h1>
+## Installing
 
 To install NGSoftFM, download and unpack the source code and go to the
 top level directory. Then do like this:
@@ -108,9 +110,9 @@ Compile and install
  - `make install`
  
 
-<h1>Running</h1>
+## Running
 
-<h2>Examples</h2>
+### Examples
 
 Basic usage:
 
@@ -120,7 +122,7 @@ Specify gain:
 
  - `./softfm -t rtlsdr -c freq=94600000,gain=22.9` Tunes to 94.6 MHz and sets gain to 22.9 dB
 
-<h2>All options</h2>
+### All options
 
  - `-t devtype` is mandatory and must be `rtlsdr` for RTL-SDR devices or `hackrf` for HackRF.
  - `-c config` Comma separated list of configuration options as key=value pairs or just key for switches. Depends on device type (see next paragraph).
@@ -133,9 +135,9 @@ Specify gain:
  - `-T filename` Write pulse-per-second timestamps. Use filename '-' to write to stdout
  - `-b seconds` Set audio buffer size in seconds
 
-<h2>Device type specific configuration options</h2>
+### Device type specific configuration options
 
-<h3>RTL-SDR</h3>
+#### RTL-SDR
 
   - `freq=<int>` Desired tune frequency in Hz. Accepted range from 10M to 2.2G. (default 100M: `100000000`)
   - `gain=<x>` (default `auto`)
@@ -146,7 +148,7 @@ Specify gain:
   - `blklen=<int>` Device block length in bytes (default RTL-SDR default i.e. 64k)
   - `agc` Activates device AGC (default off)
 
-<h3>HackRF</h3>
+#### HackRF
 
   - `freq=<int>` Desired tune frequency in Hz. Valid range from 1M to 6G. (default 100M: `100000000`)
   - `srate=<int>` Device sample rate (default `5000000`). Valid values from 1M to 20M. In fact rates lower than 10M are not specified in the datasheets of the ADC chip however a rate of `1000000` (1M) still works well with NGSoftFM.
@@ -156,7 +158,7 @@ Specify gain:
   - `extamp` Turn on the extra amplifier (default off)
   - `antbias` Turn on the antenna bias for remote LNA (default off)
   
-<h3>Airspy</h3>
+#### Airspy
 
   - `freq=<int>` Desired tune frequency in Hz. Valid range from 1M to 1.8G. (default 100M: `100000000`)
   - `srate=<int>` Device sample rate. `list` lists valid values and exits. (default `10000000`). Valid values depend on the Airspy firmware. Airspy firmware and library must support dynamic sample rate query. 
@@ -167,19 +169,13 @@ Specify gain:
   - `lagc` Turn on the LNA AGC (default off)
   - `magc` Turn on the mixer AGC (default off)
   
-<h1>License</h1>
+## Authors
 
-**NGSoftFM**, copyright (C) 2015, Edouard Griffiths, F4EXB
+* Joris van Rantwijk
+* Edouard Griffiths, F4EXB
+* Kenji Rikitake, JJ1BDX
 
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 2 of the License, or
-(at your option) any later version.
+## License
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License along
-with this program; if not, see http://www.gnu.org/licenses/gpl-2.0.html
+* As a whole package: GPLv3 (and later). See [LICENSE](LICENSE).
+* Some source code files are stating GPL "v2 and later" license.
