@@ -568,10 +568,9 @@ int main(int argc, char **argv) {
 
     // Show statistics.
     if (!quietmode) {
-      fprintf(
-          stderr,
-          "\rblk=%6d  freq=%10.6fMHz  ppm=%+6.2f  IF=%+5.1fdB  BB=%+5.1fdB  "
-          "audio=%+5.1fdB ",
+         fprintf(stderr,
+              "\rblk=%6d:f=%8.4fMHz:ppm=%+6.2f:IF=%+6.2fdB:"
+              "BB=%+5.1fdB:AF=%+5.1fdB",
           block, (tuner_freq + fm.get_tuning_offset()) * 1.0e-6,
           ppm_average.average(),
           //((fm.get_tuning_offset() + delta_if) / tuner_freq) * 1.0e6,
@@ -582,7 +581,7 @@ int main(int argc, char **argv) {
       if (outputbuf_samples > 0) {
         unsigned int nchannel = stereo ? 2 : 1;
         std::size_t buflen = output_buffer.queued_samples();
-        fprintf(stderr, " buf=%.1fs ", buflen / nchannel / double(pcmrate));
+        fprintf(stderr, ":buf=%.1fs", buflen / nchannel / double(pcmrate));
       }
 
       fflush(stderr);
