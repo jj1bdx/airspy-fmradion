@@ -22,7 +22,7 @@ def sincfitting(maxfreq, staticgain, fitfactor):
     absmax = 0
     difflimit = 10.0 ** (-0.05) # -0.1dB
     if staticgain - fitfactor < difflimit:
-        return 99999999.0
+        return (99999999.0, 99999999.0)
     for freq in range(50,57001,50):
         theta = 2 * math.pi * freq / maxfreq;
         compensate = 1.0 / aperture(theta)
@@ -46,7 +46,7 @@ def minimizer(freq):
             [1.334, 0.334], args=(freq,), method="Nelder-Mead")
 
 print("#maxfreq, staticgain, fitlevel, absmax")
-for freq in range(120000, 5000001, 10000):
+for freq in range(100000, 5000001, 1000):
     result = minimizer(freq)
     staticgain = result.x[0]
     fitlevel = result.x[1]
