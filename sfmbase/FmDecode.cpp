@@ -37,6 +37,21 @@ static IQSample::value_type rms_level_approx(const IQSampleVector &samples) {
   return sqrt(level / n);
 }
 
+// Compute peak level over a small prefix of the specified sample vector.
+static IQSample::value_type peak_level_approx(const IQSampleVector &samples) {
+  unsigned int n = samples.size();
+  n = (n + 63) / 64;
+
+  IQSample::value_type peak_level = 0;
+  for (unsigned int i = 0; i < n; i++) {
+    const IQSample &s = samples[i];
+    IQSample::value_type re = s.real(), im = s.imag();
+    peak_level = std::max(peak_level, re * re + im * im);
+  }
+
+  return sqrt(peak_level);
+}
+
 /* ****************  class PhaseDiscriminator  **************** */
 
 // Construct phase discriminator.
@@ -339,6 +354,9 @@ void FmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
   // Measure IF level.
   double if_rms = rms_level_approx(m_buf_iffiltered);
   m_if_level = 0.95 * m_if_level + 0.05 * if_rms;
+
+  // Measure IF peak level.
+  m_if_peak_level = peak_level_approx(m_buf_iffiltered);
 
   // Extract carrier frequency.
   m_phasedisc.process(m_buf_iffiltered, m_buf_baseband_raw);

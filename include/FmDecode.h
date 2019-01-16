@@ -190,6 +190,9 @@ public:
   /** Return RMS IF level (where full scale IQ signal is 1.0). */
   double get_if_level() const { return m_if_level; }
 
+  /** Return Peak IF level (where full scale IQ signal is 1.0). */
+  double get_if_peak_level() const { return m_if_peak_level; }
+
   /** Return RMS baseband signal level (where nominal level is 0.707). */
   double get_baseband_level() const { return m_baseband_level; }
 
@@ -231,6 +234,7 @@ private:
   const bool m_stereo_enabled;
   bool m_stereo_detected;
   double m_if_level;
+  double m_if_peak_level;
   double m_baseband_mean;
   double m_baseband_level;
 
