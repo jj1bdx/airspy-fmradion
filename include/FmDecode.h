@@ -94,7 +94,7 @@ public:
    *             :: (for multipath distortion detection)
    */
   void process(SampleVector &samples_in, SampleVector &samples_out,
-       bool pilot_shift);
+               bool pilot_shift);
 
   /** Return true if the phase-locked loop is locked. */
   bool locked() const { return m_lock_cnt >= m_lock_delay; }

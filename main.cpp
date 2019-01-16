@@ -245,38 +245,6 @@ static bool get_device(std::vector<std::string> &devnames, std::string &devtype,
   return true;
 }
 
-// Compute DisciminatorEqualizer parameters.
-
-double compute_staticgain(double ifrate) {
-    double f = ifrate / 2.0;
-    if ((f >= 100000.0) && (f <= 150000.0)) {
-        return (2.1371215170745265e-11 * f * f) +
-            (-7.5114705705846736e-06 * f) +
-            2.064680196929797;
-    } else if ((f >= 450000.0) && (f <= 850000.0)) {
-        return (5.120643488879952e-14 * f * f) +
-            (-8.132704637710758e-08 * f) +
-            1.3687758269772277;
-    } else {
-        return 1.3364;
-    }
-}
-
-double compute_fitlevel(double ifrate) {
-    double f = ifrate / 2.0;
-    if ((f >= 100000.0) && (f <= 150000.0)) {
-        return (2.6649367052814292e-11 * f * f) +
-            (-9.223362008760662e-06 * f) +
-            1.208661569029465;
-    } else if ((f >= 450000.0) && (f <= 850000.0)) {
-        return (5.2143880840762905e-14 * f * f) +
-            (-8.267464191320395e-08 * f) +
-            0.3692684802187844;
-    } else {
-        return 0.3364;
-    }
-}
-
 int main(int argc, char **argv) {
   int devidx = 0;
   int pcmrate = 48000;
@@ -285,7 +253,7 @@ int main(int argc, char **argv) {
 #ifdef USE_ALSA
   OutputMode outmode = MODE_ALSA;
   std::string filename;
-#else // !USE_ALSA
+#else  // !USE_ALSA
   OutputMode outmode = MODE_RAW;
   std::string filename("-");
 #endif // USE_ALSA
@@ -308,12 +276,10 @@ int main(int argc, char **argv) {
       {"devtype", 2, NULL, 't'}, {"config", 2, NULL, 'c'},
       {"dev", 1, NULL, 'd'},     {"pcmrate", 1, NULL, 'r'},
       {"mono", 0, NULL, 'M'},    {"raw", 1, NULL, 'R'},
-      {"wav", 1, NULL, 'W'},     
-      {"play", 2, NULL, 'P'},
+      {"wav", 1, NULL, 'W'},     {"play", 2, NULL, 'P'},
       {"pps", 1, NULL, 'T'},     {"buffer", 1, NULL, 'b'},
       {"quiet", 1, NULL, 'q'},   {"pilotshift", 0, NULL, 'X'},
-      {"usa", 0, NULL, 'U'},
-      {NULL, 0, NULL, 0}};
+      {"usa", 0, NULL, 'U'},     {NULL, 0, NULL, 0}};
 
   int c, longindex;
   while ((c = getopt_long(argc, argv, "t:c:d:r:MR:W:P::T:b:qXU", longopts,
@@ -452,7 +418,7 @@ int main(int argc, char **argv) {
     fprintf(stderr, "playing audio to ALSA device '%s'\n", alsadev.c_str());
     audio_output.reset(new AlsaAudioOutput(alsadev, pcmrate, stereo));
     break;
-#else // !USE_ALSA
+#else  // !USE_ALSA
     fprintf(stderr, "ALSA not implemented\n");
     exit(1);
 #endif // USE_ALSA
@@ -522,13 +488,11 @@ int main(int argc, char **argv) {
   double downsample_target = FmDecoder::default_bandwidth_if * 2.2;
   unsigned int downsample = std::max(1, int(ifrate / downsample_target));
 
-
   // Prevent aliasing at very low output sample rates.
   double bandwidth_pcm =
       std::min(FmDecoder::default_bandwidth_pcm, 0.45 * pcmrate);
-  double deemphasis = deemphasis_na ?
-                      FmDecoder::default_deemphasis_na :
-                      FmDecoder::default_deemphasis_eu;
+  double deemphasis = deemphasis_na ? FmDecoder::default_deemphasis_na
+                                    : FmDecoder::default_deemphasis_eu;
 
   fprintf(stderr, "if -> baseband:    %u (downsampled by)\n", downsample);
   fprintf(stderr, "audio sample rate: %u Hz\n", pcmrate);
@@ -604,15 +568,16 @@ int main(int argc, char **argv) {
 
     // Show statistics.
     if (!quietmode) {
-      fprintf(stderr,
-            "\rblk=%6d  freq=%10.6fMHz  ppm=%+6.2f  IF=%+5.1fdB  BB=%+5.1fdB  "
-            "audio=%+5.1fdB ",
-            block, (tuner_freq + fm.get_tuning_offset()) * 1.0e-6,
-            ppm_average.average(),
-            //((fm.get_tuning_offset() + delta_if) / tuner_freq) * 1.0e6,
-            20 * log10(fm.get_if_level()),
-            20 * log10(fm.get_baseband_level()) + 3.01,
-            20 * log10(audio_level) + 3.01);
+      fprintf(
+          stderr,
+          "\rblk=%6d  freq=%10.6fMHz  ppm=%+6.2f  IF=%+5.1fdB  BB=%+5.1fdB  "
+          "audio=%+5.1fdB ",
+          block, (tuner_freq + fm.get_tuning_offset()) * 1.0e-6,
+          ppm_average.average(),
+          //((fm.get_tuning_offset() + delta_if) / tuner_freq) * 1.0e6,
+          20 * log10(fm.get_if_level()),
+          20 * log10(fm.get_baseband_level()) + 3.01,
+          20 * log10(audio_level) + 3.01);
 
       if (outputbuf_samples > 0) {
         unsigned int nchannel = stereo ? 2 : 1;
