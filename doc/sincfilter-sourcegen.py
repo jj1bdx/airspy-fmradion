@@ -66,14 +66,14 @@ print("double freq_initial =", freq_initial)
 print("double freq_step =", freq_step)
 
 freq = freq_initial
-print("std::vector<double> vector_staticgain{")
+print("std::vector<double> vector_staticgain {")
 for x in vector_staticgain:
     print("   ", x , "//", freq, "Hz")
     freq += freq_step
 print("    };")
 
 freq = freq_initial
-print("std::vector<double> vector_fitlevel{")
+print("std::vector<double> vector_fitlevel {")
 for x in vector_fitlevel:
     print("   ", x , "//", freq, "Hz")
     freq += freq_step
