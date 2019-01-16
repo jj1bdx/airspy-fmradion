@@ -512,7 +512,7 @@ EqParameters::EqParameters()
           1.3334210096899723, // 4990000.0 Hz
           1.3334210096899723, // 5000000.0 Hz
       }),
-        m_vector_fitlevel({
+      m_vector_fitlevel({
           0.5711387820919492,  // 100000.0 Hz
           0.5210719504091612,  // 110000.0 Hz
           0.48570203095904574, // 120000.0 Hz
@@ -1004,35 +1004,32 @@ EqParameters::EqParameters()
           0.3333803222675218,  // 4980000.0 Hz
           0.33342102465862944, // 4990000.0 Hz
           0.33342102465862944, // 5000000.0 Hz
-     }),
-     m_staticgain(
-        boost::math::cubic_b_spline<double>(m_vector_staticgain.data(),
-                                                 m_vector_staticgain.size(),
-                                                 m_freq_initial, m_freq_step)),
-     m_fitlevel(
-        boost::math::cubic_b_spline<double>(m_vector_fitlevel.data(),
-                                                 m_vector_fitlevel.size(),
-                                                 m_freq_initial, m_freq_step))
-    {}
+      }),
+      m_staticgain(boost::math::cubic_b_spline<double>(
+          m_vector_staticgain.data(), m_vector_staticgain.size(),
+          m_freq_initial, m_freq_step)),
+      m_fitlevel(boost::math::cubic_b_spline<double>(
+          m_vector_fitlevel.data(), m_vector_fitlevel.size(), m_freq_initial,
+          m_freq_step)) {}
 
-const double EqParameters::compute_staticgain(const double ifrate) {
+const double
+EqParameters::fitting(double ifrate, double low_limit, double high_limit,
+                      const boost::math::cubic_b_spline<double> &spline) {
   if (ifrate < 200000.0) {
-    return 1.541;
+    return low_limit;
   } else if (ifrate > 10000000.0) {
-    return 1.33338;
+    return high_limit;
   } else {
-    return m_staticgain(ifrate / 2.0);
+    return spline(ifrate / 2.0);
   }
 };
 
+const double EqParameters::compute_staticgain(const double ifrate) {
+  return EqParameters::fitting(ifrate, 1.541, 1.33338, m_staticgain);
+}
+
 const double EqParameters::compute_fitlevel(const double ifrate) {
-  if (ifrate < 200000.0) {
-    return 0.572;
-  } else if (ifrate > 10000000.0) {
-    return 0.33338;
-  } else {
-    return m_fitlevel(ifrate / 2.0);
-  }
+  return EqParameters::fitting(ifrate, 0.572, 0.33338, m_fitlevel);
 };
 
 // end

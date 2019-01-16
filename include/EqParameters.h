@@ -18,8 +18,8 @@
 #ifndef SOFTFM_EQPARAMETERS_H
 #define SOFTFM_EQPARAMETERS_H
 
-#include <boost/math/interpolators/cubic_b_spline.hpp>
 #include "SoftFM.h"
+#include <boost/math/interpolators/cubic_b_spline.hpp>
 
 class EqParameters {
 
@@ -37,6 +37,8 @@ private:
   const std::vector<double> m_vector_fitlevel;
   const boost::math::cubic_b_spline<double> m_staticgain;
   const boost::math::cubic_b_spline<double> m_fitlevel;
+  const double fitting(double ifrate, double low_limit, double high_limit,
+                       const boost::math::cubic_b_spline<double> &spline);
 };
 
 #endif // SOFTFM_EQPARAMETERS_H
