@@ -32,15 +32,15 @@ def sincfitting(maxfreq, staticgain, fitfactor):
         fitlevel = staticgain - (fitfactor * mov1(2 * theta))
         logratio = math.log10(compensate / fitlevel)
         if (absmax < math.fabs(logratio)):
-            absmax = logratio
+            absmax = math.fabs(logratio)
         sqsum += logratio * logratio
     return (sqsum, absmax)
 
 def sincfitting_test(x, f):
     return sincfitting(f, x[0], x[1])[0]
 
-staticgain = 1.3364
-fitlevel = 0.3364
+staticgain = 1.336
+fitlevel = 0.336
     
 print("#maxfreq, staticgain, fitlevel, absmax")
 for freq in range(850000, 5000001, 10000):

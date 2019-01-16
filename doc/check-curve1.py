@@ -34,7 +34,7 @@ def sincfitting(maxfreq, staticgain, fitfactor):
         fitlevel = staticgain - (fitfactor * mov1(2 * theta))
         logratio = math.log10(compensate / fitlevel)
         if (absmax < math.fabs(logratio)):
-            absmax = logratio
+            absmax = math.fabs(logratio)
         sqsum += logratio * logratio
     return (sqsum, absmax)
 
