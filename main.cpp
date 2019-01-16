@@ -494,8 +494,9 @@ int main(int argc, char **argv) {
 
   srcsdr->print_specific_parms();
 
-  double ifeq_static_gain = spline_compute_staticgain(ifrate);
-  double ifeq_fit_factor = spline_compute_fitlevel(ifrate);
+  EqParameters eqparams;
+  double ifeq_static_gain = eqparams.compute_staticgain(ifrate);
+  double ifeq_fit_factor = eqparams.compute_fitlevel(ifrate);
 
   // Create source data queue.
   DataBuffer<IQSample> source_buffer;

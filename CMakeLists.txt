@@ -108,6 +108,7 @@ set(sfmbase_SOURCES
     sfmbase/Filter.cpp
     sfmbase/FmDecode.cpp
     sfmbase/AudioOutput.cpp 
+    sfmbase/EqParameters.cpp
 )
 
 set(sfmbase_HEADERS
@@ -121,6 +122,7 @@ set(sfmbase_HEADERS
     include/fastatan2.h
     include/parsekv.h
     include/util.h
+    include/EqParameters.h
 )
 
 # Base sources
