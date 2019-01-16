@@ -42,7 +42,7 @@ Measured result of no-sound period and 880Hz time report tone of NHK-FM Osaka (8
 
 ### 16-JAN-2019
 
-Listening to softfm-jj1bdx and ngsoftfm-jj1bdx showed ngsoftfm-jj1bdx had much better stereo separation and phase alignment. (Reason still unknown, but this is the reason why I migrated from SoftFM to NGSoftFM.)
+Listening to softfm-jj1bdx and ngsoftfm-jj1bdx showed ngsoftfm-jj1bdx had much better stereo separation and phase alignment. Reason: softfm-jj1bdx pre-0.2.3 bug missing stereo *interleaving* deemphasis. Fixed in softfm-jj1bdx 0.2.3 (final).
 
 ## Quadratic Multipath Monitor (QMM)
 

@@ -1,8 +1,14 @@
 # softfm-jj1bdx: Software decoder for FM broadcast radio with RTL-SDR (for MacOS and Linux)
 
-* Version 0.2.1, 13-JAN-2019
+**Use [NGSoftFM](https://github.com/jj1bdx/ngsoftfm-jj1bdx/) instead.**
+
+*The development of this software is terminated.*
+
+* Version 0.2.3, 16-JAN-2019: this is the final release
 * This repository is forked from [SoftFM](https://github.com/jorisvr/SoftFM)
 * SoftFM is an SDR of FM radio for RTL-SDR
+
+* *Note: pre-0.2.3 code has a bug of not doing stereo interleave deemphasis; use this version if you want to stick to the traditional softfm.*
 
 ## Modification of this fork from the original SoftFM
 
