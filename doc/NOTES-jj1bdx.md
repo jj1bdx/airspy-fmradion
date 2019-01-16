@@ -40,6 +40,10 @@ Measured result of no-sound period and 880Hz time report tone of NHK-FM Osaka (8
 * Noise level of the no-sound period: ~ -57dBFS (Two beat signals at ~9kHz and ~10kHz, reason unknown)
 * THD+N level of the 880Hz tone: ~ 1.07% (multipath distortion possible) +- 0.3%
 
+### 16-JAN-2019
+
+Listening to softfm-jj1bdx and ngsoftfm-jj1bdx showed ngsoftfm-jj1bdx had much better stereo separation and phase alignment. (Reason still unknown, but this is the reason why I migrated from SoftFM to NGSoftFM.)
+
 ## Quadratic Multipath Monitor (QMM)
 
 ### 16-DEC-2018
@@ -111,6 +115,10 @@ Here are the results for 240kHz Sample rate:
 ![logratio curve for 240kHz rate](NOTES-logratio-240kHz.png)
 
 The results show the differences between the required compensation curve and the fitted filter models are below <0.0006dB for 960kHz; and for 240kHz the maximum difference is far wider (~0.18dB on 53kHz).
+
+### 16-JAN-2019
+
+Extended DiscriminatorEqualizer by EqParameters class, using Boost Cubic B-Spline Interpolation.
 
 ## References
 
