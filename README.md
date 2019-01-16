@@ -1,6 +1,6 @@
 # ngsoftfm-jj1bdx
 
-* Version 0.1.3, 16-JAN-2019
+* Version 0.1.5, 16-JAN-2019
 * Software decoder for FM broadcast radio with RTL-SDR, AirSpy, and HackRF
 * For MacOS, Linux, and FreeBSD
 * This repository is forked from [NGSoftFM](https://github.com/f4exb/ngsoftfm)
