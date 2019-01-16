@@ -21,22 +21,28 @@
 #include "SoftFM.h"
 #include <boost/math/interpolators/cubic_b_spline.hpp>
 
+// Class for calculating DiscriminatorEqualizer parameters
+// based on pre-calculated tables with Boost Cubic B Spline interpolation.
 class EqParameters {
 
 public:
   // Constructor
   EqParameters();
 
+  // Compute staticgain from ifrate.
   const double compute_staticgain(double ifrate);
+  // Compute fitlevel from ifrate.
   const double compute_fitlevel(double ifrate);
 
 private:
+  // Parameters for pre-calculated tables.
   const double m_freq_initial;
   const double m_freq_step;
   const std::vector<double> m_vector_staticgain;
   const std::vector<double> m_vector_fitlevel;
   const boost::math::cubic_b_spline<double> m_staticgain;
   const boost::math::cubic_b_spline<double> m_fitlevel;
+  // Private function to decide whether to apply interpolation or not.
   const double fitting(double ifrate, double low_limit, double high_limit,
                        const boost::math::cubic_b_spline<double> &spline);
 };

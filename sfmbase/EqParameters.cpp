@@ -17,6 +17,11 @@
 
 #include "EqParameters.h"
 
+// Class for calculating DiscriminatorEqualizer parameters
+// based on pre-calculated tables with Boost Cubic B Spline interpolation.
+
+// Constructor.
+// Do nothing but initializing the private member variables.
 EqParameters::EqParameters()
     : m_freq_initial(100000.0), m_freq_step(10000.0),
       m_vector_staticgain({
@@ -1010,8 +1015,14 @@ EqParameters::EqParameters()
           m_freq_initial, m_freq_step)),
       m_fitlevel(boost::math::cubic_b_spline<double>(
           m_vector_fitlevel.data(), m_vector_fitlevel.size(), m_freq_initial,
-          m_freq_step)) {}
+          m_freq_step))
+// Do nothing in the constructor.
+{}
 
+// Private function to decide whether to apply interpolation or not.
+// The interpolation will be applied when ifrate is
+// between 200kHz to 10MHz only.
+// Table frequency (Nyquist frequency): 100kHz to 5MHz.
 const double
 EqParameters::fitting(double ifrate, double low_limit, double high_limit,
                       const boost::math::cubic_b_spline<double> &spline) {
@@ -1024,10 +1035,12 @@ EqParameters::fitting(double ifrate, double low_limit, double high_limit,
   }
 };
 
+// Compute staticgain from ifrate.
 const double EqParameters::compute_staticgain(const double ifrate) {
   return EqParameters::fitting(ifrate, 1.541, 1.33338, m_staticgain);
 }
 
+// Compute fitlevel from ifrate.
 const double EqParameters::compute_fitlevel(const double ifrate) {
   return EqParameters::fitting(ifrate, 0.572, 0.33338, m_fitlevel);
 };
