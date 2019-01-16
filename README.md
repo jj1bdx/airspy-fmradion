@@ -5,10 +5,10 @@
 * For MacOS, Linux, and FreeBSD
 * This repository is forked from [NGSoftFM](https://github.com/f4exb/ngsoftfm)
 * *Note: F4EXB no longer maintains this code.*
+* Code merged from [softfm-jj1bdx](https://github.com/jj1bdx/softfm-jj1bdx)
 
 ## Modification by @jj1bdx
 
-* Ongoing: merge [softfm-jj1bdx](https://github.com/jj1bdx/softfm-jj1bdx) code
 * IF bandwidth: 192kHz (+-96kHz)
 * Remove 19kHz pilot signal when the stereo PLL is locked
 * Add equalizer to compensate 0th-hold aperture effect of phase discriminator output
@@ -18,10 +18,7 @@
 * Set default sample rate for RTL-SDR to 960kHz
 * Add option `-X` for [Quadratic Multipath Monitor (QMM)](http://ham-radio.com/k6sti/qmm.htm) (This option is not effective in monaural mode (`-M` option))
 * Add option `-U` to set deemphasis timing to 75 microseconds for North America (default: 50 microseconds for Europe/Japan)
-
-### modifications not yet implemented
-
-* TODO: Add D/U ratio estimation based on I/F level: see <https://github.com/jj1bdx/rtl_power-fm-multipath> (this requires 960kHz sampling rate)
+* Add D/U ratio estimation based on I/F level: see <https://github.com/jj1bdx/rtl_power-fm-multipath> (this requires higher sampling rate above 900kHz)
 
 ## Introduction
 
