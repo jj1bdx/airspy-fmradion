@@ -62,20 +62,20 @@ while freq <= freq_maximum:
     vector_fitlevel.append(fitlevel)
     freq += freq_step
 
-print("double freq_initial =", freq_initial)
-print("double freq_step =", freq_step)
+print("double freq_initial = ", freq_initial, ";", sep="")
+print("double freq_step = ", freq_step, ";", sep="")
 
 freq = freq_initial
 print("std::vector<double> vector_staticgain {")
 for x in vector_staticgain:
-    print("   ", x , "//", freq, "Hz")
+    print("    ", x , ", // ", freq, " Hz", sep="")
     freq += freq_step
 print("    };")
 
 freq = freq_initial
 print("std::vector<double> vector_fitlevel {")
 for x in vector_fitlevel:
-    print("   ", x , "//", freq, "Hz")
+    print("    ", x , ", // ", freq, " Hz", sep="")
     freq += freq_step
 print("    };")
 
