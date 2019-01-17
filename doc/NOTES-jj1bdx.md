@@ -122,7 +122,7 @@ Extended DiscriminatorEqualizer by EqParameters class, using Boost Cubic B-Splin
 
 ### 17-JAN-2019
 
-Tried to implement FIR adaptive multipath filter for the sampled input before the phase discriminator, but failed. See branch `failed-multipathfilter`. I will put this for the record only. Computational burden: x2 or x3, not really worth trying for. The coefficients were not stable and did not converge. TODO: learn the basics again.
+Tried to implement FIR adaptive multipath filter for the sampled input before the phase discriminator, but failed. See the tag `failed-multipathfilter`. I will put this for the record only. Computational burden: x2 or x3, not really worth trying for. The coefficients were not stable and did not converge. TODO: learn the basics again.
 
 ## References
 
