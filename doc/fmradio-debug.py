@@ -18,7 +18,7 @@ if argc != 2:
     quit()
 freq = int(float(argvs[1]) * 1000000)
 command = "ngsoftfm -t rtlsdr -c freq=" + str(freq) + \
-           ",gain=16.6,srate=1100000 -b 0.5 -R - | " + \
+           ",gain=14.4 -b 0.5 -R - | " + \
           "play -t raw -esigned-integer -b16 -r 48000 -c 2 -q -"
 print("command =", command)
 subprocess.run(command, shell=True, check=True)
