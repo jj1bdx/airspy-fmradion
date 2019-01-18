@@ -40,8 +40,7 @@
     {
         std::cout << "Parsing succeeded, found entries:\n";
         parsekv::pairs_type::iterator end = m.end();
-        for (parsekv::pairs_type::iterator it = m.begin(); it != end; ++it)
-        {
+        for (parsekv::pairs_type::iterator it = m.begin(); it != end; ++it) {
             std::cout << (*it).first;
             if (!(*it).second.empty()) {
                 std::cout << "=" << (*it).second;

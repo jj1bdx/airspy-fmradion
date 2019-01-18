@@ -31,8 +31,9 @@ public:
 
   void resize(int historySize, Type initial) {
     m_history.resize(historySize);
-    for (size_t i = 0; i < m_history.size(); i++)
+    for (size_t i = 0; i < m_history.size(); i++) {
       m_history[i] = initial;
+    }
     m_sum = (float)m_history.size() * initial;
     m_ptr = 0;
   }
@@ -48,8 +49,9 @@ public:
   }
 
   void fill(Type value) {
-    for (size_t i = 0; i < m_history.size(); i++)
+    for (size_t i = 0; i < m_history.size(); i++) {
       m_history[i] = value;
+    }
     m_sum = (float)m_history.size() * value;
   }
 
