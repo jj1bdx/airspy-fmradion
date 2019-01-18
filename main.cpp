@@ -44,7 +44,7 @@
 
 #include "EqParameters.h"
 
-#define NGSOFTFM_VERSION "0.1.5"
+#define NGSOFTFM_VERSION "0.1.6"
 
 /** Flag is set on SIGINT / SIGTERM. */
 static std::atomic_bool stop_flag(false);
