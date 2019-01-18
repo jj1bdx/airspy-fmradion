@@ -35,8 +35,9 @@ RtlSdrSource::RtlSdrSource(int dev_index)
   int r;
 
   const char *devname = rtlsdr_get_device_name(dev_index);
-  if (devname != NULL)
+  if (devname != NULL) {
     m_devname = devname;
+  }
 
   r = rtlsdr_open(&m_dev, dev_index);
 
@@ -62,8 +63,9 @@ RtlSdrSource::RtlSdrSource(int dev_index)
 
 // Close RTL-SDR device.
 RtlSdrSource::~RtlSdrSource() {
-  if (m_dev)
+  if (m_dev) {
     rtlsdr_close(m_dev);
+  }
 
   m_this = 0;
 }
@@ -170,8 +172,9 @@ bool RtlSdrSource::configure(uint32_t sample_rate, uint32_t frequency,
                              int tuner_gain, int block_length, bool agcmode) {
   int r;
 
-  if (!m_dev)
+  if (!m_dev) {
     return false;
+  }
 
   r = rtlsdr_set_sample_rate(m_dev, sample_rate);
   if (r < 0) {
@@ -239,10 +242,12 @@ uint32_t RtlSdrSource::get_frequency() { return rtlsdr_get_center_freq(m_dev); }
 void RtlSdrSource::print_specific_parms() {
   int lnagain = get_tuner_gain();
 
-  if (lnagain == INT_MIN)
+  if (lnagain == INT_MIN) {
     fprintf(stderr, "LNA gain:          auto\n");
-  else
+  }
+  else {
     fprintf(stderr, "LNA gain:          %.1f dB\n", 0.1 * lnagain);
+  }
 
   fprintf(stderr, "RTL AGC mode:      %s\n",
           m_confAgc ? "enabled" : "disabled");
@@ -254,12 +259,14 @@ int RtlSdrSource::get_tuner_gain() { return rtlsdr_get_tuner_gain(m_dev); }
 // Return a list of supported tuner gain settings in units of 0.1 dB.
 std::vector<int> RtlSdrSource::get_tuner_gains() {
   int num_gains = rtlsdr_get_tuner_gains(m_dev, NULL);
-  if (num_gains <= 0)
+  if (num_gains <= 0) {
     return std::vector<int>();
+  }
 
   std::vector<int> gains(num_gains);
-  if (rtlsdr_get_tuner_gains(m_dev, gains.data()) != num_gains)
+  if (rtlsdr_get_tuner_gains(m_dev, gains.data()) != num_gains) {
     return std::vector<int>();
+  }
 
   return gains;
 }

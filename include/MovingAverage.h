@@ -42,8 +42,9 @@ public:
     m_history[m_ptr] = value;
     m_sum += value;
     m_ptr++;
-    if (m_ptr >= m_history.size())
+    if (m_ptr >= m_history.size()) {
       m_ptr = 0;
+    }
   }
 
   void fill(Type value) {

@@ -165,8 +165,9 @@ void PilotPhaseLock::process(SampleVector &samples_in,
   bool was_locked = (m_lock_cnt >= m_lock_delay);
   m_pps_events.clear();
 
-  if (n > 0)
+  if (n > 0) {
     m_pilot_level = 1000.0;
+  }
 
   for (unsigned int i = 0; i < n; i++) {
 
@@ -242,8 +243,9 @@ void PilotPhaseLock::process(SampleVector &samples_in,
 
   // Update lock status.
   if (2 * m_pilot_level > m_minsignal) {
-    if (m_lock_cnt < m_lock_delay)
+    if (m_lock_cnt < m_lock_delay) {
       m_lock_cnt += n;
+    }
   } else {
     m_lock_cnt = 0;
   }

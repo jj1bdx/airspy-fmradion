@@ -33,8 +33,7 @@
     parsekv::key_value_sequence<std::string::iterator> p;
     parsekv::pairs_type m;
 
-    if (!qi::parse(begin, end, p, m))
-    {
+    if (!qi::parse(begin, end, p, m)) {
         std::cout << "Parsing failed\n";
     }
     else
@@ -44,8 +43,9 @@
         for (parsekv::pairs_type::iterator it = m.begin(); it != end; ++it)
         {
             std::cout << (*it).first;
-            if (!(*it).second.empty())
+            if (!(*it).second.empty()) {
                 std::cout << "=" << (*it).second;
+            }
             std::cout << std::endl;
         }
     }

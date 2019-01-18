@@ -81,8 +81,9 @@ RawAudioOutput::~RawAudioOutput() {
 
 // Write audio data.
 bool RawAudioOutput::write(const SampleVector &samples) {
-  if (m_fd < 0)
+  if (m_fd < 0) {
     return false;
+  }
 
   // Convert samples to bytes.
   samplesToInt16(samples, m_bytebuf);
@@ -162,8 +163,9 @@ WavAudioOutput::~WavAudioOutput() {
 
 // Write audio data.
 bool WavAudioOutput::write(const SampleVector &samples) {
-  if (m_zombie)
+  if (m_zombie) {
     return false;
+  }
 
   // Convert samples to bytes.
   samplesToInt16(samples, m_bytebuf);
@@ -275,8 +277,9 @@ AlsaAudioOutput::~AlsaAudioOutput() {
 
 // Write audio data.
 bool AlsaAudioOutput::write(const SampleVector &samples) {
-  if (m_zombie)
+  if (m_zombie) {
     return false;
+  }
 
   // Convert samples to bytes.
   samplesToInt16(samples, m_bytebuf);

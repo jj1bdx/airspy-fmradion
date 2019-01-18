@@ -180,14 +180,16 @@ void badarg(const char *label) {
 bool parse_int(const char *s, int &v, bool allow_unit = false) {
   char *endp;
   long t = strtol(s, &endp, 10);
-  if (endp == s)
+  if (endp == s) {
     return false;
+  }
   if (allow_unit && *endp == 'k' && t > INT_MIN / 1000 && t < INT_MAX / 1000) {
     t *= 1000;
     endp++;
   }
-  if (*endp != '\0' || t < INT_MIN || t > INT_MAX)
+  if (*endp != '\0' || t < INT_MIN || t > INT_MAX) {
     return false;
+  }
   v = t;
   return true;
 }
@@ -292,8 +294,9 @@ int main(int argc, char **argv) {
       config_str.assign(optarg);
       break;
     case 'd':
-      if (!parse_int(optarg, devidx))
+      if (!parse_int(optarg, devidx)) {
         devidx = -1;
+      }
       break;
     case 'r':
       if (!parse_int(optarg, pcmrate, true) || pcmrate < 1) {
@@ -313,8 +316,9 @@ int main(int argc, char **argv) {
       break;
     case 'P':
       outmode = MODE_ALSA;
-      if (optarg != NULL)
+      if (optarg != NULL) {
         alsadev = optarg;
+      }
       break;
     case 'T':
       ppsfilename = optarg;

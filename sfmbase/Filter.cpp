@@ -85,8 +85,9 @@ void FineTuner::process(const IQSampleVector &samples_in,
   for (unsigned int i = 0; i < n; i++) {
     samples_out[i] = samples_in[i] * m_table[tblidx];
     tblidx++;
-    if (tblidx == tblsiz)
+    if (tblidx == tblsiz) {
       tblidx = 0;
+    }
   }
 
   m_index = tblidx;
@@ -108,8 +109,9 @@ void LowPassFilterFirIQ::process(const IQSampleVector &samples_in,
 
   samples_out.resize(n);
 
-  if (n == 0)
+  if (n == 0) {
     return;
+  }
 
   // NOTE: We use m_coeff the wrong way around because it is slightly
   // faster to scan forward through the array. The result is still correct
@@ -249,8 +251,9 @@ void DownsampleFilter::process(const SampleVector &samples_in,
     // Update fractional index of start position in text sample block.
     // Limit to 0 to avoid catastrophic results of rounding errors.
     m_pos_frac = pf - n;
-    if (m_pos_frac < 0)
+    if (m_pos_frac < 0) {
       m_pos_frac = 0;
+    }
   }
 
   // Update m_state.
