@@ -119,10 +119,12 @@ void LowPassFilterFirIQ::process(const IQSampleVector &samples_in,
   unsigned int i = 0;
   for (; i < n && i < order; i++) {
     IQSample y = 0;
-    for (unsigned int j = 0; j < order - i; j++)
+    for (unsigned int j = 0; j < order - i; j++) {
       y += m_state[i + j] * m_coeff[j];
-    for (unsigned int j = order - i; j <= order; j++)
+    }
+    for (unsigned int j = order - i; j <= order; j++) {
       y += samples_in[i - order + j] * m_coeff[j];
+    }
     samples_out[i] = y;
   }
 
@@ -130,8 +132,9 @@ void LowPassFilterFirIQ::process(const IQSampleVector &samples_in,
   for (; i < n; i++) {
     IQSample y = 0;
     IQSampleVector::const_iterator inp = samples_in.begin() + i - order;
-    for (unsigned int j = 0; j <= order; j++)
+    for (unsigned int j = 0; j <= order; j++) {
       y += inp[j] * m_coeff[j];
+    }
     samples_out[i] = y;
   }
 
@@ -183,18 +186,21 @@ void DownsampleFilter::process(const SampleVector &samples_in,
     unsigned int i = 0;
     for (; p < n && p < order; p += pstep, i++) {
       Sample y = 0;
-      for (unsigned int j = 1; j <= p; j++)
+      for (unsigned int j = 1; j <= p; j++) {
         y += samples_in[p - j] * m_coeff[j];
-      for (unsigned int j = p + 1; j <= order; j++)
+      }
+      for (unsigned int j = p + 1; j <= order; j++) {
         y += m_state[order + p - j] * m_coeff[j];
+      }
       samples_out[i] = y;
     }
 
     // Remaining samples only need data from samples_in.
     for (; p < n; p += pstep, i++) {
       Sample y = 0;
-      for (unsigned int j = 1; j <= order; j++)
+      for (unsigned int j = 1; j <= order; j++) {
         y += samples_in[p - j] * m_coeff[j];
+      }
       samples_out[i] = y;
     }
 
