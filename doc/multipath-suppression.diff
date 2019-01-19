@@ -1,0 +1,54 @@
+A simple multipath suppression scheme by Moir and Pettigrew.
+This method reduces the discriminator output when IF I^2+Q^2 is extremely small.
+This method is effective only for the mobile use,
+but is documented here for reference.
+
+Kenji Rikitake
+19-JAN-2019
+
+* See the following paper for the details:
+  Moir, Thomas J., and Pettigrew, Archibald M.:
+  A Multiplicative Cancellation Approach to Multipath Suppression in FM Radio,
+  Wireless Pers Commun (2014) 75:755-819,
+  DOI 10.1007/s11277-013-1932-5
+
+diff --git a/main.cpp b/main.cpp
+index 2a133e1..aa0a209 100644
+--- a/main.cpp
++++ b/main.cpp
+@@ -44,7 +44,7 @@
+ 
+ #include "EqParameters.h"
+ 
+-#define NGSOFTFM_VERSION "0.1.6"
++#define NGSOFTFM_VERSION "0.1.7-rc0"
+ 
+ /** Flag is set on SIGINT / SIGTERM. */
+ static std::atomic_bool stop_flag(false);
+diff --git a/sfmbase/FmDecode.cpp b/sfmbase/FmDecode.cpp
+index d03b4cf..927df14 100644
+--- a/sfmbase/FmDecode.cpp
++++ b/sfmbase/FmDecode.cpp
+@@ -53,15 +53,19 @@ void PhaseDiscriminator::process(const IQSampleVector &samples_in,
+                                  SampleVector &samples_out) {
+   unsigned int n = samples_in.size();
+   IQSample s0 = m_last1_sample;
++  const IQSample::value_type delta = 0.000018;
+ 
+   samples_out.resize(n);
+ 
+   for (unsigned int i = 0; i < n; i++) {
+     IQSample s1(samples_in[i]);
+     IQSample d(conj(s0) * s1);
+-    // Sample w = atan2(d.imag(), d.real());
+-    Sample w = fastatan2(d.imag(), d.real()); // fast approximation of atan2
+-    samples_out[i] = w * m_freq_scale_factor;
++
++    IQSample::value_type re = d.real(), im = d.imag();
++    IQSample::value_type sqsum = re * re + im * im;
++    IQSample::value_type correct = sqsum / (sqsum + delta);
++    Sample w = fastatan2(d.imag(), d.real());
++    samples_out[i] = w * m_freq_scale_factor * correct;
+     s0 = s1;
+   }
+ 
