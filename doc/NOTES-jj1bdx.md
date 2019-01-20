@@ -128,6 +128,12 @@ Tried to implement FIR adaptive multipath filter for the sampled input before th
 
 Tried another algorithm to reduce multipath distortion. This algorighm does not diverge by nature (no feedback), but unable to decide the optimal point. See the branch `distortion-reduction`. I will put this for the record only. Computational burden: x2, not really worth trying for.
 
+## Profiling the functions
+
+### 19-JAN-2019
+
+Profiled the function execution time. ~80% of the calculation time were spent by the calculations of FIR and IIR filters. I put back the libm atan2() to PhaseDiscriminator, though this may increase the overall execution time to +5% or so, for the accuracy of the discriminator output. fastatan2() in PilotPhaseLock will not affect much.
+
 ## References
 
 (Including Japanese books here with Japanese titles)
