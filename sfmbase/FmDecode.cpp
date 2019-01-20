@@ -57,7 +57,12 @@ void PhaseDiscriminator::process(const IQSampleVector &samples_in,
   samples_out.resize(n);
 
   for (unsigned int i = 0; i < n; i++) {
-    IQSample s1(samples_in[i]);
+    IQSample s_in(samples_in[i]);
+
+    // Envelope limiter
+    Sample r(sqrt(s_in.imag() * s_in.imag() + s_in.real() * s_in.real()) + 0.000001);
+    IQSample s1(IQSample(s_in.real() / r, s_in.imag() / r));
+
     IQSample d(conj(s0) * s1);
     Sample w = atan2(d.imag(), d.real());
     // Sample w = fastatan2(d.imag(), d.real()); // fast approximation of atan2
@@ -309,7 +314,8 @@ FmDecoder::FmDecoder(double sample_rate_if, double ifeq_static_gain,
       // Construct DownsampleFilter for mono channel
       ,
       m_resample_mono(int(m_sample_rate_baseband / 1000.0),     // filter_order
-                      bandwidth_pcm / m_sample_rate_baseband,   // cutoff
+                      22000.0 / m_sample_rate_baseband,   // cutoff
+                      // bandwidth_pcm / m_sample_rate_baseband,   // cutoff
                       m_sample_rate_baseband / sample_rate_pcm, // downsample
                       false) // integer_factor
 
