@@ -103,6 +103,9 @@ set(AIRSPY_LIBRARIES    ${AIRSPY_LIBRARY} ${LIBUSB_LIBRARY})
 set(CMAKE_CXX_FLAGS "-Wall -std=c++11 -O3 -ffast-math -ftree-vectorize -march=native ${ALSA_OPTION} ${AIRSPY_INCLUDE_OPTION} ${EXTRA_FLAGS}")
 # Use conservative options when failed to run
 #set(CMAKE_CXX_FLAGS "-Wall -std=c++11 -O2 ${ALSA_OPTION} ${AIRSPY_INCLUDE_OPTION} ${EXTRA_FLAGS}")
+# For clang profiling
+# set(CMAKE_CXX_FLAGS "-Wall -std=c++11 -g -fprofile-instr-generate -fcoverage-mapping ${ALSA_OPTION} ${AIRSPY_INCLUDE_OPTION} ${EXTRA_FLAGS}")
+# SET(CMAKE_EXE_LINKER_FLAGS "-fprofile-instr-generate")
 
 set(sfmbase_SOURCES
     sfmbase/Filter.cpp
