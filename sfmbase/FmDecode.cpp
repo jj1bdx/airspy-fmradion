@@ -59,8 +59,8 @@ void PhaseDiscriminator::process(const IQSampleVector &samples_in,
   for (unsigned int i = 0; i < n; i++) {
     IQSample s1(samples_in[i]);
     IQSample d(conj(s0) * s1);
-    // Sample w = atan2(d.imag(), d.real());
-    Sample w = fastatan2(d.imag(), d.real()); // fast approximation of atan2
+    Sample w = atan2(d.imag(), d.real());
+    // Sample w = fastatan2(d.imag(), d.real()); // fast approximation of atan2
     samples_out[i] = w * m_freq_scale_factor;
     s0 = s1;
   }
