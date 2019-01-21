@@ -75,7 +75,7 @@ bool RtlSdrSource::configure(std::string configurationStr) {
   std::string::iterator begin = configurationStr.begin();
   std::string::iterator end = configurationStr.end();
 
-  uint32_t sample_rate = 960000;
+  uint32_t sample_rate = 1000000;
   uint32_t frequency = 100000000;
   int tuner_gain = INT_MIN;
   int block_length = default_block_length;
