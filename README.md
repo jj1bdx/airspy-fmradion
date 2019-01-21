@@ -1,24 +1,24 @@
 # ngsoftfm-jj1bdx
 
-* Version 0.1.7, 20-JAN-2019
+* Version 0.1.8, 21-JAN-2019
 * Software decoder for FM broadcast radio with RTL-SDR, AirSpy, and HackRF
 * For MacOS, Linux, and FreeBSD
 * This repository is forked from [NGSoftFM](https://github.com/f4exb/ngsoftfm)
 * *Note: F4EXB no longer maintains this code.*
 * Code merged from [softfm-jj1bdx](https://github.com/jj1bdx/softfm-jj1bdx)
+* The same as original NGSoftFM: IF bandwidth: 200kHz (+-100kHz), default sample rate for RTL-SDR to 1000kHz
 
 ## Modification by @jj1bdx
 
-* IF bandwidth: 192kHz (+-96kHz)
 * Remove 19kHz pilot signal when the stereo PLL is locked
 * Add equalizer to compensate 0th-hold aperture effect of phase discriminator output
 * The compensation equalizer output parameters are pre-calculated and interpolated from 200kHz ~ 10MHz sampling rates
 * Increase the number of FineTuner table size from 64 to 256
 * Add quiet mode `-q`
-* Set default sample rate for RTL-SDR to 960kHz
 * Add option `-X` for [Quadratic Multipath Monitor (QMM)](http://ham-radio.com/k6sti/qmm.htm) (This option is not effective in monaural mode (`-M` option))
 * Add option `-U` to set deemphasis timing to 75 microseconds for North America (default: 50 microseconds for Europe/Japan)
 * Add D/U ratio estimation based on I/F level: see <https://github.com/jj1bdx/rtl_power-fm-multipath> (this requires higher sampling rate above 900kHz)
+* Add envelope limiter in the phase discriminator
 
 ## Introduction
 
