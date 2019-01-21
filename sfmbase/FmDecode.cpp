@@ -314,8 +314,7 @@ FmDecoder::FmDecoder(double sample_rate_if, double ifeq_static_gain,
       // Construct DownsampleFilter for mono channel
       ,
       m_resample_mono(int(m_sample_rate_baseband / 1000.0),     // filter_order
-                      22000.0 / m_sample_rate_baseband,   // cutoff
-                      // bandwidth_pcm / m_sample_rate_baseband,   // cutoff
+                      bandwidth_pcm / m_sample_rate_baseband,   // cutoff
                       m_sample_rate_baseband / sample_rate_pcm, // downsample
                       false) // integer_factor
 
