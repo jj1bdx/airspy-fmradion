@@ -130,7 +130,11 @@ Tried another algorithm to reduce multipath distortion. This algorighm does not 
 
 ### 21-JAN-2019
 
-Envelope limiter, which aligns the envelope level of the IF signal to a constant, is introduced. This will affect very little on the strong signals. See the branch `envelope-limiter` for the code (merged to `dev`).
+<del>Envelope limiter, which aligns the envelope level of the IF signal to a constant, is introduced. This will affect very little on the strong signals. See the branch `envelope-limiter` for the code (merged to `dev`).</del>
+
+### 22-JAN-2019
+
+Envelope limiter disabled due to unexpected distortion when the modulation level of L-R signal was high.
 
 ## Profiling the functions
 
