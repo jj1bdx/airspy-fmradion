@@ -140,7 +140,12 @@ Envelope limiter disabled due to unexpected distortion when the modulation level
 
 ### 20-JAN-2019
 
-Profiled the function execution time. ~80% of the calculation time were spent by the calculations of FIR and IIR filters. I put back the libm atan2() to PhaseDiscriminator, though this may increase the overall execution time to +5% or so, for the accuracy of the discriminator output. fastatan2() in PilotPhaseLock will not affect much.
+Profiled the function execution time. ~80% of the calculation time were spent by the calculations of FIR and IIR filters. <del>I put back the libm atan2() to PhaseDiscriminator, though this may increase the overall execution time to +5% or so, for the accuracy of the discriminator output. fastatan2() in PilotPhaseLock will not affect much.</del> <- Reverted back to use fastatan2() for PhaseDiscriminator in 0.1.10.
+
+### 23-JAN-2019
+
+* Reverted back to fastatan2() for PhaseDiscriminator.
+* Reverted back to simpler linear arctan approximation for PilotPhaseLock. See git commit 90d7685911b75644b7de6df5eda62187b441f88b for the details.
 
 ## Airspy R2
 

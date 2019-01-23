@@ -24,8 +24,8 @@
 
 // Compute RMS and peak levels
 // over a small prefix of the specified sample vector.
-void rms_peak_level_approx(const IQSampleVector &samples,
-        double &rms, double &peak) {
+void rms_peak_level_approx(const IQSampleVector &samples, double &rms,
+                           double &peak) {
   unsigned int n = samples.size();
   n = (n + 63) / 64;
 
@@ -59,8 +59,8 @@ void PhaseDiscriminator::process(const IQSampleVector &samples_in,
   for (unsigned int i = 0; i < n; i++) {
     IQSample s1(samples_in[i]);
     IQSample d(conj(s0) * s1);
-    Sample w = atan2(d.imag(), d.real());
-    // Sample w = fastatan2(d.imag(), d.real()); // fast approximation of atan2
+    // Sample w = atan2(d.imag(), d.real());
+    Sample w = fastatan2(d.imag(), d.real()); // fast approximation of atan2
     samples_out[i] = w * m_freq_scale_factor;
     s0 = s1;
   }
@@ -202,8 +202,21 @@ void PilotPhaseLock::process(SampleVector &samples_in,
     m_phasor_q1 = phasor_q;
 
     // Convert I/Q ratio to estimate of phase error.
-    // float <-> double conversion error exists, but anyway...
-    Sample phase_err = fastatan2(phasor_q, phasor_i);
+    // Maximum phase error during the locked state is
+    // +- 0.02 radian, so the atan2() function can be
+    // substituted without problem by a division.
+    Sample phase_err;
+    if (phasor_i > abs(phasor_q)) {
+      // We are within +/- 45 degrees from lock.
+      // Use simple linear approximation of arctan.
+      phase_err = phasor_q / phasor_i;
+    } else if (phasor_q > 0) {
+      // We are lagging more than 45 degrees behind the input.
+      phase_err = 1;
+    } else {
+      // We are more than 45 degrees ahead of the input.
+      phase_err = -1;
+    }
 
     // Detect pilot level (conservative).
     m_pilot_level = std::min(m_pilot_level, phasor_i);
