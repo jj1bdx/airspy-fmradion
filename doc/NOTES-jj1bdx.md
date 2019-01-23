@@ -142,6 +142,16 @@ Envelope limiter disabled due to unexpected distortion when the modulation level
 
 Profiled the function execution time. ~80% of the calculation time were spent by the calculations of FIR and IIR filters. I put back the libm atan2() to PhaseDiscriminator, though this may increase the overall execution time to +5% or so, for the accuracy of the discriminator output. fastatan2() in PilotPhaseLock will not affect much.
 
+## Airspy R2
+
+### 23-JAN-2019
+
+Initial test results for Airspy R2:
+
+* Sampling rates: 2.5MHz and 10MHz only. 10MHz looks overkill.
+* Default gain values of lgain and mgain (both 8dB) looks OK. Control IF level by vgain.
+* Stability and quality: at least as good as RTL-SDR V3 for 76 ~ 95MHz.
+
 ## References
 
 (Including Japanese books here with Japanese titles)
