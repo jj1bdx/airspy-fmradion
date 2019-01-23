@@ -146,6 +146,7 @@ Profiled the function execution time. ~80% of the calculation time were spent by
 
 * Reverted back to fastatan2() for PhaseDiscriminator.
 * Reverted back to simpler linear arctan approximation for PilotPhaseLock. See git commit 90d7685911b75644b7de6df5eda62187b441f88b for the details.
+* CPU load on Intel NUC DN2820FYKH Celeron N2830 / Ubuntu 18.04 using Airspy R2 with 2.5MHz sample rate was reduced from ~98% to ~82%.
 
 ## Airspy R2
 
