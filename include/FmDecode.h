@@ -45,7 +45,6 @@ public:
 private:
   const Sample m_freq_scale_factor;
   IQSample m_last1_sample;
-  IQSample m_last2_sample;
 };
 
 class DiscriminatorEqualizer {

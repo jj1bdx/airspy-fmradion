@@ -49,48 +49,75 @@ PhaseDiscriminator::PhaseDiscriminator(double max_freq_dev)
     : m_freq_scale_factor(1.0 / (max_freq_dev * 2.0 * M_PI)) {}
 
 // Process samples.
-void PhaseDiscriminator::process(const IQSampleVector &samples_in,
-                                 SampleVector &samples_out) {
+// A batch quadratic discrimination algorithm written by
+// Andras Retzler, HA7ILM
+// is used here, as
+// presented in https://github.com/simonyiszk/csdr/blob/master/libcsdr.c
+// as fmdemod_quadri_cf().
+inline void PhaseDiscriminator::process(const IQSampleVector &samples_in,
+                                        SampleVector &samples_out) {
   unsigned int n = samples_in.size();
-  IQSample s0 = m_last1_sample;
-
   samples_out.resize(n);
 
+  // Made static for speeding up processing.
+  static SampleVector temp(n);
+  static std::vector<IQSample::value_type> temp_dq(n);
+  static std::vector<IQSample::value_type> temp_di(n);
+
+  // Compute dq.
+  temp_dq[0] = samples_in[0].real() - m_last1_sample.real();
+  for (unsigned int i = 1; i < n; i++) {
+    temp_dq[i] = samples_in[i].real() - samples_in[i - 1].real();
+  }
+  // Compute di.
+  temp_di[0] = samples_in[0].imag() - m_last1_sample.imag();
+  for (unsigned int i = 1; i < n; i++) {
+    temp_di[i] = samples_in[i].imag() - samples_in[i - 1].imag();
+  }
+  // Compute output numerator.
   for (unsigned int i = 0; i < n; i++) {
-    IQSample s1(samples_in[i]);
-    IQSample d(conj(s0) * s1);
-    // Sample w = atan2(d.imag(), d.real());
-    Sample w = fastatan2(d.imag(), d.real()); // fast approximation of atan2
-    samples_out[i] = w * m_freq_scale_factor;
-    s0 = s1;
+    samples_out[i] = (samples_in[i].imag() * temp_dq[i]) -
+                     (samples_in[i].real() * temp_di[i]);
+  }
+  // Compute output denominator.
+  for (unsigned int i = 0; i < n; i++) {
+    temp[i] = (samples_in[i].imag() * samples_in[i].imag()) +
+              (samples_in[i].real() * samples_in[i].real());
+  }
+  // Scale output.
+  for (unsigned int i = 0; i < n; i++) {
+    samples_out[i] =
+        (temp[i]) ? m_freq_scale_factor * samples_out[i] / temp[i] : 0;
   }
 
-  m_last2_sample = m_last1_sample;
-  m_last1_sample = s0;
+  m_last1_sample = samples_in[n - 1];
 }
 
 // class DiscriminatorEqualizer
 
 // Construct equalizer for phase discriminator.
-// TODO: value optimized for 960kHz sampling rate
 DiscriminatorEqualizer::DiscriminatorEqualizer(double ifeq_static_gain,
                                                double ifeq_fit_factor)
     : m_static_gain(ifeq_static_gain), m_fit_factor(ifeq_fit_factor),
       m_last1_sample(0.0) {}
 
-void DiscriminatorEqualizer::process(const SampleVector &samples_in,
-                                     SampleVector &samples_out) {
+// Process samples.
+inline void DiscriminatorEqualizer::process(const SampleVector &samples_in,
+                                            SampleVector &samples_out) {
   unsigned int n = samples_in.size();
-  Sample s0 = m_last1_sample;
   samples_out.resize(n);
 
-  for (unsigned int i = 0; i < n; i++) {
-    Sample s1 = samples_in[i];
-    Sample mov1 = (s0 + s1) / 2.0;
-    samples_out[i] = m_static_gain * s1 - m_fit_factor * mov1;
-    s0 = s1;
+  // Enhance high frequency.
+  // Max gain: m_static_gain,
+  // deduced by m_fit_factor for the lower frequencies.
+  samples_out[0] = (m_static_gain * samples_in[0]) -
+                   (m_fit_factor * ((samples_in[0] + m_last1_sample) / 2.0));
+  for (unsigned int i = 1; i < n; i++) {
+    samples_out[i] =
+        (m_static_gain * samples_in[i]) -
+        (m_fit_factor * ((samples_in[i] + samples_in[i - 1]) / 2.0));
   }
-  m_last1_sample = s0;
+  m_last1_sample = samples_in[n - 1];
 }
 
 /* ****************  class PilotPhaseLock  **************** */
