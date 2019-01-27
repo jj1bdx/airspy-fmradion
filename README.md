@@ -1,6 +1,6 @@
 # ngsoftfm-jj1bdx
 
-* Version 0.1.10, 23-JAN-2019
+* Version 0.1.11, 27-JAN-2019
 * Software decoder for FM broadcast radio with RTL-SDR, AirSpy, and HackRF
 * For MacOS, Linux, and FreeBSD
 * This repository is forked from [NGSoftFM](https://github.com/f4exb/ngsoftfm)
@@ -18,6 +18,26 @@
 * Add option `-X` for [Quadratic Multipath Monitor (QMM)](http://ham-radio.com/k6sti/qmm.htm) (This option is not effective in monaural mode (`-M` option))
 * Add option `-U` to set deemphasis timing to 75 microseconds for North America (default: 50 microseconds for Europe/Japan)
 * Add D/U ratio estimation based on I/F level: see <https://github.com/jj1bdx/rtl_power-fm-multipath> (this requires higher sampling rate above 900kHz)
+
+### Usage examples
+
+For RTL-SDR:
+
+```sh
+ngsoftfm -q -t rtlsdr \
+    -c freq=88100000,gain=14.4 -r 48000 \
+    -b 0.5 -R - | \
+    play -t raw -esigned-integer -b16 -r 48000 -c 2 -q -
+```
+
+For Airspy:
+
+```sh
+ngsoftfm -q -t airspy \
+    -c freq=88100000,srate=2500000,mgain=14,lgain=14,vgain=1 \
+    -b 0.5 -R - | \
+    play -t raw -esigned-integer -b16 -r 48000 -c 2 -q -
+```
 
 ## Introduction
 
