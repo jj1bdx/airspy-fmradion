@@ -1,7 +1,7 @@
 // NGSoftFM - Software decoder for FM broadcast radio with RTL-SDR
 //
 // Copyright (C) 2015 Edouard Griffiths, F4EXB
-// Copyright (C) 2018 Kenji Rikitake, JJ1BDX
+// Copyright (C) 2019 Kenji Rikitake, JJ1BDX
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -48,9 +48,8 @@ PhaseDiscriminator::PhaseDiscriminator(double max_freq_dev)
     : m_freq_scale_factor(1.0 / (max_freq_dev * 2.0 * M_PI)) {}
 
 // Process samples.
-// A batch quadratic discrimination algorithm written by
-// Andras Retzler, HA7ILM
-// is used here, as
+// A vectorized quadratic discrimination algorithm written by
+// András Retzler, HA7ILM, is used here, as
 // presented in https://github.com/simonyiszk/csdr/blob/master/libcsdr.c
 // as fmdemod_quadri_cf().
 inline void PhaseDiscriminator::process(const IQSampleVector &samples_in,

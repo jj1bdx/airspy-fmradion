@@ -136,7 +136,7 @@ Tried another algorithm to reduce multipath distortion. This algorighm does not 
 
 Envelope limiter disabled due to unexpected distortion when the modulation level of L-R signal was high.
 
-## Profiling the functions
+## Profiling the calculation functions
 
 ### 20-JAN-2019
 
@@ -147,6 +147,10 @@ Profiled the function execution time. ~80% of the calculation time were spent by
 * Reverted back to fastatan2() for PhaseDiscriminator.
 * Reverted back to simpler linear arctan approximation for PilotPhaseLock. See git commit 90d7685911b75644b7de6df5eda62187b441f88b for the details.
 * CPU load on Intel NUC DN2820FYKH Celeron N2830 / Ubuntu 18.04 using Airspy R2 with 2.5MHz sample rate was reduced from ~98% to ~82%.
+
+### 27-JAN-2019
+
+* Eliminated fastatan2() and replaced it by a quadratic discriminator without atan2() function written by András Retzler, HA7ILM, as described in https://github.com/simonyiszk/csdr/blob/master/libcsdr.c as the function `fmdemod_quadri_cf()`. Also loop optimized for vectorization.
 
 ## Airspy R2
 
