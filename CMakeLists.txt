@@ -101,6 +101,8 @@ set(AIRSPY_LIBRARIES    ${AIRSPY_LIBRARY} ${LIBUSB_LIBRARY})
 # Compiler flags.
 # Enable speed-based optimization
 set(CMAKE_CXX_FLAGS "-Wall -std=c++11 -O3 -ffast-math -ftree-vectorize -march=native ${ALSA_OPTION} ${AIRSPY_INCLUDE_OPTION} ${EXTRA_FLAGS}")
+# For vectorization analisys (in Clang only)
+#set(CMAKE_CXX_FLAGS "-Wall -std=c++11 -O3 -ffast-math -ftree-vectorize -march=native -Rpass-missed=loop-vectorize -Rpass-analysis=loop-vectorize ${ALSA_OPTION} ${AIRSPY_INCLUDE_OPTION} ${EXTRA_FLAGS}")
 # Use conservative options when failed to run
 #set(CMAKE_CXX_FLAGS "-Wall -std=c++11 -O2 ${ALSA_OPTION} ${AIRSPY_INCLUDE_OPTION} ${EXTRA_FLAGS}")
 # For clang profiling
@@ -122,7 +124,6 @@ set(sfmbase_HEADERS
     include/Source.h
     include/SoftFM.h
     include/DataBuffer.h
-    include/fastatan2.h
     include/parsekv.h
     include/util.h
     include/EqParameters.h

@@ -20,7 +20,6 @@
 #include <cmath>
 
 #include "FmDecode.h"
-#include "fastatan2.h"
 
 // Compute RMS and peak levels
 // over a small prefix of the specified sample vector.
