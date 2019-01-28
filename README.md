@@ -1,23 +1,11 @@
 # ngsoftfm-jj1bdx
 
-* Version 0.1.11, 27-JAN-2019
+* Version 0.1.12, 29-JAN-2019
 * Software decoder for FM broadcast radio with RTL-SDR, AirSpy, and HackRF
 * For MacOS, Linux, and FreeBSD
 * This repository is forked from [NGSoftFM](https://github.com/f4exb/ngsoftfm)
-* *Note: F4EXB no longer maintains this code.*
 * Code merged from [softfm-jj1bdx](https://github.com/jj1bdx/softfm-jj1bdx)
-* The same as original NGSoftFM: IF bandwidth: 200kHz (+-100kHz), default sample rate for RTL-SDR to 1000kHz
-
-## Modification by @jj1bdx
-
-* Remove 19kHz pilot signal when the stereo PLL is locked
-* Add equalizer to compensate 0th-hold aperture effect of phase discriminator output
-* The compensation equalizer output parameters are pre-calculated and interpolated from 200kHz ~ 10MHz sampling rates
-* Increase the number of FineTuner table size from 64 to 256
-* Add quiet mode `-q`
-* Add option `-X` for [Quadratic Multipath Monitor (QMM)](http://ham-radio.com/k6sti/qmm.htm) (This option is not effective in monaural mode (`-M` option))
-* Add option `-U` to set deemphasis timing to 75 microseconds for North America (default: 50 microseconds for Europe/Japan)
-* Add D/U ratio estimation based on I/F level: see <https://github.com/jj1bdx/rtl_power-fm-multipath> (this requires higher sampling rate above 900kHz)
+* *Note: F4EXB no longer maintains this code.*
 
 ## Usage examples
 
@@ -159,12 +147,30 @@ Compile and install
  - `-c config` Comma separated list of configuration options as key=value pairs or just key for switches. Depends on device type (see next paragraph).
  - `-d devidx` Device index, 'list' to show device list (default 0)
  - `-r pcmrate` Audio sample rate in Hz (default 48000 Hz)
- - `-M ` Disable stereo decoding
+ - `-M` Disable stereo decoding
  - `-R filename` Write audio data as raw S16_LE samples. Uuse filename `-` to write to stdout
  - `-W filename` Write audio data to .WAV file
  - `-P [device]` Play audio via ALSA device (default `default`). Use `aplay -L` to get the list of devices for your system
  - `-T filename` Write pulse-per-second timestamps. Use filename '-' to write to stdout
  - `-b seconds` Set audio buffer size in seconds
+ - `-X` Shift pilot phase (for Quadrature Multipath Monitor) (-X is ignored under mono mode (-M))
+ - `-U` Set deemphasis to 75 microseconds (default: 50)
+
+## Modification by @jj1bdx
+
+* Remove 19kHz pilot signal when the stereo PLL is locked
+* Add equalizer to compensate 0th-hold aperture effect of phase discriminator output
+* The compensation equalizer output parameters are pre-calculated and interpolated from 200kHz ~ 10MHz sampling rates
+* Increase the number of FineTuner table size from 64 to 256
+* Add quiet mode `-q`
+* Add option `-X` for [Quadratic Multipath Monitor (QMM)](http://ham-radio.com/k6sti/qmm.htm) (This option is not effective in monaural mode (`-M` option))
+* Add option `-U` to set deemphasis timing to 75 microseconds for North America (default: 50 microseconds for Europe/Japan)
+* Add D/U ratio estimation based on I/F level: see <https://github.com/jj1bdx/rtl_power-fm-multipath> (this requires higher sampling rate above 900kHz)
+
+## Features remaining same as the original NGSoftFM
+
+* IF bandwidth: 200kHz (+-100kHz)
+* Default sample rate for RTL-SDR: 1000kHz
 
 ## Device type specific configuration options
 

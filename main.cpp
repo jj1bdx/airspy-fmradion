@@ -33,6 +33,7 @@
 
 #include "AudioOutput.h"
 #include "DataBuffer.h"
+#include "EqParameters.h"
 #include "FmDecode.h"
 #include "MovingAverage.h"
 #include "SoftFM.h"
@@ -42,9 +43,7 @@
 #include "HackRFSource.h"
 #include "RtlSdrSource.h"
 
-#include "EqParameters.h"
-
-#define NGSOFTFM_VERSION "0.1.11"
+#define NGSOFTFM_VERSION "0.1.12"
 
 /** Flag is set on SIGINT / SIGTERM. */
 static std::atomic_bool stop_flag(false);
