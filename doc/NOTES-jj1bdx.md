@@ -56,6 +56,10 @@ The QMM output has the following characteristics: (quote from the Brian's page)
 
 I've implemented the QMM function as `-X` option, and with the variable `pilot_shift`. This option shifts the phase of regenerated subcarrier for decoding the L-R DSB signal from the original `sin(2*x)` (where x represents the 19kHz pilot frequency) to `cos(2*x)`.
 
+### 28-JAN-2019
+
+Generating in-phase (L-R) and shifted-phase (QMM) signals are possible and experimentally implemented in the branch `phase-distortion-removal`, though this method seems practically of no value. Not really worth trying for.
+
 ## Phase error of 19kHz PLL
 
 ### 1-JAN-2019
