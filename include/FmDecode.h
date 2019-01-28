@@ -88,8 +88,8 @@ public:
   /**
    * Process samples and extract 19 kHz pilot tone.
    * Generate phase-locked 38 kHz tone with unit amplitude.
-   * pilot_shift :: true to shift pilot phase
-   *             :: (use cos(2*x) instead of sin (2*x))
+   * pilot_shift :: true to shift pilot phase by
+   *             :: using cos(2*x) instead of sin (2*x)
    *             :: (for multipath distortion detection)
    */
   void process(SampleVector &samples_in, SampleVector &samples_out,
