@@ -62,7 +62,7 @@ public:
 protected:
   std::vector<Type> m_history;
   Type m_sum;
-  uint m_ptr;
+  unsigned int m_ptr;
 };
 
 #endif // INCLUDE_MOVINGAVERAGE_H
