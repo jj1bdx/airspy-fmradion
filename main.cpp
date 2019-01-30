@@ -547,9 +547,6 @@ int main(int argc, char **argv) {
 
   double block_time = get_time();
 
-  double if_peak_level_max = 0;
-  double if_peak_level_min = 10;
-
   // Main loop.
   for (unsigned int block = 0; !stop_flag.load(); block++) {
 
@@ -587,24 +584,14 @@ int main(int argc, char **argv) {
     // Show statistics.
     if (!quietmode) {
 
-      // Estimate D/U ratio, skip first 10 blocks.
-      double if_peak_level = fm.get_if_peak_level();
-      double du_ratio = 2;
-      if_peak_level_max = std::max(if_peak_level_max, if_peak_level);
-      if_peak_level_min = std::min(if_peak_level_min, if_peak_level);
-      if (block > 10) {
-        double ratio = if_peak_level_max / if_peak_level_min;
-        du_ratio = (ratio + 1) / (ratio - 1);
-      }
-
       fprintf(stderr,
-              "\rblk=%6d:f=%8.4fMHz:ppm=%+6.2f:IF=%+6.2fdB,%+6.2fdBpp:"
-              "DU=%6.2fdB:BB=%+5.1fdB:AF=%+5.1fdB",
+              "\rblk=%6d:f=%8.4fMHz:ppm=%+6.2f:IF=%+5.1fdB:"
+              "BB=%+5.1fdB:AF=%+5.1fdB",
               block, (tuner_freq + fm.get_tuning_offset()) * 1.0e-6,
               ppm_average.average(),
               //((fm.get_tuning_offset() + delta_if) / tuner_freq) * 1.0e6,
-              20 * log10(fm.get_if_level()), 20 * log10(if_peak_level),
-              20 * log10(du_ratio), 20 * log10(fm.get_baseband_level()) + 3.01,
+              20 * log10(fm.get_if_level()),
+              20 * log10(fm.get_baseband_level()) + 3.01,
               20 * log10(audio_level) + 3.01);
 
       if (outputbuf_samples > 0) {
@@ -640,9 +627,10 @@ int main(int argc, char **argv) {
       }
     }
 
-    // Throw away first block. It is noisy because IF filters
-    // are still starting up.
-    if (block > 0) {
+    // Throw away first 4 blocks.
+    // They are noisy because IF filters are still starting up.
+    // (Increased from one to support high sampling rates)
+    if (block > 4) {
       // Write samples to output.
       if (outputbuf_samples > 0) {
         // Buffered write.

@@ -158,6 +158,8 @@ Compile and install
 
 ## Modification by @jj1bdx
 
+See [doc/NOTES-jj1bdx.md](doc/NOTES-jj1bdx.md) for the details of the modification.
+
 * Remove 19kHz pilot signal when the stereo PLL is locked
 * Add equalizer to compensate 0th-hold aperture effect of phase discriminator output
 * The compensation equalizer output parameters are pre-calculated and interpolated from 200kHz ~ 10MHz sampling rates
@@ -165,7 +167,6 @@ Compile and install
 * Add quiet mode `-q`
 * Add option `-X` for [Quadratic Multipath Monitor (QMM)](http://ham-radio.com/k6sti/qmm.htm) (This option is not effective in monaural mode (`-M` option))
 * Add option `-U` to set deemphasis timing to 75 microseconds for North America (default: 50 microseconds for Europe/Japan)
-* Add D/U ratio estimation based on I/F level: see <https://github.com/jj1bdx/rtl_power-fm-multipath> (this requires higher sampling rate above 900kHz)
 
 ## Features remaining same as the original NGSoftFM
 

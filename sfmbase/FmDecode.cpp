@@ -21,24 +21,20 @@
 
 #include "FmDecode.h"
 
-// Compute RMS and peak levels
-// over a small prefix of the specified sample vector.
-void rms_peak_level_approx(const IQSampleVector &samples, double &rms,
-                           double &peak) {
+// Compute RMS over a small prefix of the specified sample vector.
+double rms_level_approx(const IQSampleVector &samples) {
   unsigned int n = samples.size();
   n = (n + 63) / 64;
 
   IQSample::value_type level = 0;
-  IQSample::value_type peak_level = 0;
   for (unsigned int i = 0; i < n; i++) {
     const IQSample &s = samples[i];
     IQSample::value_type re = s.real(), im = s.imag();
     IQSample::value_type sqsum = re * re + im * im;
     level += sqsum;
-    peak_level = std::max(peak_level, sqsum);
   }
-  rms = sqrt(level / n);
-  peak = sqrt(peak_level);
+  // Return RMS level
+  return sqrt(level / n);
 }
 
 /* ****************  class PhaseDiscriminator  **************** */
@@ -382,8 +378,7 @@ void FmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
   m_iffilter.process(m_buf_iftuned, m_buf_iffiltered);
 
   // Measure IF level.
-  double if_rms;
-  rms_peak_level_approx(m_buf_iffiltered, if_rms, m_if_peak_level);
+  double if_rms = rms_level_approx(m_buf_iffiltered);
   m_if_level = 0.95 * m_if_level + 0.05 * (double)if_rms;
 
   // Extract carrier frequency.

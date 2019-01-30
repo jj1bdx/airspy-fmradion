@@ -166,6 +166,17 @@ Initial test results for Airspy R2:
 * Default gain values of lgain and mgain (both 8dB) looks OK. Control IF level by vgain.
 * Stability and quality: at least as good as RTL-SDR V3 for 76 ~ 95MHz.
 
+### 30-JAN-2019
+
+* Use `doc/airspy-linearity-gain.py` for calculating optimal Airspy gain parameters for maintaining the linearity.
+
+## D/U radio estimation deprecated
+
+### 30-JAN-2019
+
+Estimation code of D/U ratio is removed, since it no longer works on higher sampling rates (for 2.5MHz/10MHz).
+See [my repository on the multipath estimation](https://github.com/jj1bdx/rtl_power-fm-multipath) for the further details.
+
 ## References
 
 (Including Japanese books here with Japanese titles)
