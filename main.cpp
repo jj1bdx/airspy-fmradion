@@ -247,7 +247,8 @@ static bool get_device(std::vector<std::string> &devnames, std::string &devtype,
 }
 
 // static constants in FmDecoder must be declared here
-// See https://gcc.gnu.org/wiki/VerboseDiagnostics#missing_static_const_definition
+// See
+// https://gcc.gnu.org/wiki/VerboseDiagnostics#missing_static_const_definition
 
 constexpr double FmDecoder::default_deemphasis;
 constexpr double FmDecoder::default_bandwidth_if;

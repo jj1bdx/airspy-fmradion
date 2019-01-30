@@ -244,8 +244,7 @@ void RtlSdrSource::print_specific_parms() {
 
   if (lnagain == INT_MIN) {
     fprintf(stderr, "LNA gain:          auto\n");
-  }
-  else {
+  } else {
     fprintf(stderr, "LNA gain:          %.1f dB\n", 0.1 * lnagain);
   }
 
