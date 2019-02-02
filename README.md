@@ -2,7 +2,7 @@
 
 * Version 0.1.13, 2-FEB-2019
 * Software decoder for FM broadcast radio with RTL-SDR, AirSpy, and HackRF
-* For MacOS, Linux, and FreeBSD
+* For MacOS and Linux
 * This repository is forked from [NGSoftFM](https://github.com/f4exb/ngsoftfm)
 * Code merged from [softfm-jj1bdx](https://github.com/jj1bdx/softfm-jj1bdx)
 * *Note: F4EXB no longer maintains this code.*
@@ -57,7 +57,7 @@ and the few GNURadio-based FM receivers I have seen.
 
 ### NGSoftFM requires
 
- - Linux / macOS / FreeBSD
+ - Linux / macOS
  - C++11 (gcc, clang/llvm)
  - [RTL-SDR library](http://sdr.osmocom.org/trac/wiki/rtl-sdr)
  - [HackRF library](https://github.com/mossmann/hackrf/tree/master/host/libhackrf)
@@ -112,10 +112,6 @@ If you install from source (https://github.com/airspy/host/tree/master/libairspy
 To install the library from a Debian/Ubuntu installation just do:
 
   - `sudo apt-get install libairspy-dev`
-
-### FreeBSD
-
-* Install Port `comms/rtl-sdr`, `comms/hackrf`, `comms/airspy`
 
 ### macOS
 
