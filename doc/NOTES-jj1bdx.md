@@ -44,6 +44,14 @@ Measured result of no-sound period and 880Hz time report tone of NHK-FM Osaka (8
 
 Listening to softfm-jj1bdx and ngsoftfm-jj1bdx showed ngsoftfm-jj1bdx had much better stereo separation and phase alignment. Reason: softfm-jj1bdx pre-0.2.3 bug missing stereo *interleaving* deemphasis. Fixed in softfm-jj1bdx 0.2.3 (final).
 
+### 2-FEB-2019
+
+For RTL-SDR v3, 1MHz sampling rate, and *300kHz* (+- 150kHz) IF sampling rate:
+
+* THD+N level of the 880Hz tone: Lch: ~ 0.69%, Rch: ~ 0.92%
+
+I'm not sure widening the IF sampling rate from 200kHz to 300kHz is worth trying for yet.
+
 ## Quadratic Multipath Monitor (QMM)
 
 ### 16-DEC-2018
