@@ -29,33 +29,26 @@ ngsoftfm -q -t airspy \
 
 ## Introduction
 
-**NGSoftFM** is a software-defined radio receiver for FM broadcast radio. Stereo
-decoding is supported. It is written in C++. It is a derivative work of SoftFM (https://github.com/jorisvr/SoftFM) with a new application design and new features. It also corrects wrong de-emphasis scheme for stereo signals.
+**ngsoftfm-jj1bdx** is a software-defined radio receiver for FM broadcast radio. It is a derivative work of [SoftFM](https://github.com/jorisvr/SoftFM) and [NGSoftFM](https://github.com/f4exb/ngsoftfm) with a new application design and new features.
 
 ### Hardware supported
 
-  - **RTL-SDR** based (RTL2832-based) hardware is suppoeted and uses the _librtlsdr_ library to interface with the RTL-SDR hardware.
+  - **RTL-SDR** based (RTL2832-based) hardware is supported and uses the _librtlsdr_ library to interface with the RTL-SDR hardware.
   - **HackRF** One and variants are supported with _libhackrf_ library.
   - **Airspy** is supported with _libairspy_ library.
 
-### Purposes of NGSoftFM
+### Purposes of ngsoftfm-jj1bdx
 
- - experimenting with digital signal processing and software radio;
- - investigating the stability of the 19 kHz pilot;
- - doing the above while listening to my favorite radio station.
+Experimenting with digital signal processing and software radio while listening to my favorite radio station. ngsoftfm-jj1bdx actually produces pretty good stereo sound
+when receiving a strong radio station. :)
 
-NGSoftFM actually produces pretty good stereo sound
-when receiving a strong radio station.  Weak stations are noisy,
-but NGSoftFM gets much better results than rtl\_fm (bundled with RTL-SDR)
-and the few GNURadio-based FM receivers I have seen.
-
-### NGSoftFM provides
+### ngsoftfm-jj1bdx provides
 
  - mono or stereo decoding of FM broadcasting stations
- - real-time playback to soundcard or dumping to file
- - command-line interface (no GUI, no visualization, nothing fancy)
+ - buffered real-time playback to soundcard or dumping to file
+ - command-line interface (*only*)
 
-### NGSoftFM requires
+### ngsoftfm-jj1bdx requires
 
  - Linux / macOS
  - C++11 (gcc, clang/llvm)
@@ -84,9 +77,9 @@ For the latest version, see https://github.com/jj1bdx/ngsoftfm-jj1bdx
 
 ### RTL-SDR support
 
-The Osmocom RTL-SDR library must be installed before you can build NGSoftFM.
-See http://sdr.osmocom.org/trac/wiki/rtl-sdr for more information.
-NGSoftFM has been tested successfully with RTL-SDR 0.5.3. Normally your distribution should provide the appropriate librtlsdr package.
+The Osmocom RTL-SDR library must be installed before you can build ngsoftfm-jj1bdx.
+See <http://sdr.osmocom.org/trac/wiki/rtl-sdr> for more information.
+ngsoftfm-jj1bdx has been tested successfully with RTL-SDR 0.5.3. Normally your distribution should provide the appropriate librtlsdr package.
 If you go with your own installation of librtlsdr you have to specify the include path and library path. For example if you installed it in `/opt/install/librtlsdr` you have to add `-DRTLSDR_INCLUDE_DIR=/opt/install/librtlsdr/include -DRTLSDR_LIBRARY=/opt/install/librtlsdr/lib/librtlsdr.a` to the cmake options
 
 To install the library from a Debian/Ubuntu installation just do:
@@ -119,7 +112,7 @@ To install the library from a Debian/Ubuntu installation just do:
 
 ## Installing
 
-To install NGSoftFM, download and unpack the source code and go to the
+To install ngsoftfm-jj1bdx, download and unpack the source code and go to the
 top level directory. Then do like this:
 
  - `mkdir build`
