@@ -578,35 +578,36 @@ int main(int argc, char **argv) {
     // Set nominal audio volume.
     adjust_gain(audiosamples, 0.5);
 
+    // the minus factor is to show the ppm correction
+    // to make and not the one made
     ppm_average.feed(((fm.get_tuning_offset() + delta_if) / tuner_freq) *
-                     -1.0e6); // the minus factor is to show the ppm correction
-                              // to make and not the one made
+                     -1.0e6);
+    double ppm_error = (tuner_freq + fm.get_tuning_offset()) * 1.0e-6;
+    double ppm_value_average = ppm_average.average();
+    double if_level_db = 20 * log10(fm.get_if_level());
+    double baseband_level_db = 20 * log10(fm.get_baseband_level()) + 3.01;
+    double audio_level_db = 20 * log10(audio_level) + 3.01;
 
-    // Show statistics.
+    double buflen_sec;
+    if (outputbuf_samples > 0) {
+      unsigned int nchannel = stereo ? 2 : 1;
+      std::size_t buflen = output_buffer.queued_samples();
+      buflen_sec = buflen / nchannel / double(pcmrate);
+    } else {
+      buflen_sec = -1.0;
+    }
+
+    // Show status messages for each block if not in quiet mode.
     if (!quietmode) {
-
+      // Show per-block statistics.
       fprintf(stderr,
               "\rblk=%6d:f=%8.4fMHz:ppm=%+6.2f:IF=%+5.1fdB:"
-              "BB=%+5.1fdB:AF=%+5.1fdB",
-              block, (tuner_freq + fm.get_tuning_offset()) * 1.0e-6,
-              ppm_average.average(),
-              //((fm.get_tuning_offset() + delta_if) / tuner_freq) * 1.0e6,
-              20 * log10(fm.get_if_level()),
-              20 * log10(fm.get_baseband_level()) + 3.01,
-              20 * log10(audio_level) + 3.01);
-
-      if (outputbuf_samples > 0) {
-        unsigned int nchannel = stereo ? 2 : 1;
-        std::size_t buflen = output_buffer.queued_samples();
-        fprintf(stderr, ":buf=%.1fs", buflen / nchannel / double(pcmrate));
-      }
-
-      fflush(stderr);
-
+              "BB=%+5.1fdB:AF=%+5.1fdB:buf=%.1fs",
+              block, ppm_error, ppm_value_average, if_level_db,
+              baseband_level_db, audio_level_db, buflen_sec);
       // Show stereo status.
       if (fm.stereo_detected() != got_stereo) {
         got_stereo = fm.stereo_detected();
-
         if (got_stereo) {
           fprintf(stderr, "\ngot stereo signal (pilot level = %f)\n",
                   fm.get_pilot_level());
@@ -614,6 +615,7 @@ int main(int argc, char **argv) {
           fprintf(stderr, "\nlost stereo signal\n");
         }
       }
+      fflush(stderr);
     }
 
     // Write PPS markers.
