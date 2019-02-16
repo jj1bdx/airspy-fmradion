@@ -43,7 +43,7 @@
 #include "HackRFSource.h"
 #include "RtlSdrSource.h"
 
-#define NGSOFTFM_VERSION "0.1.13"
+#define NGSOFTFM_VERSION "0.1.14-dev"
 
 /** Flag is set on SIGINT / SIGTERM. */
 static std::atomic_bool stop_flag(false);
