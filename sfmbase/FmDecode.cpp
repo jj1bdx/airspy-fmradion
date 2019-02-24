@@ -297,8 +297,7 @@ void PilotPhaseLock::process(SampleVector &samples_in,
 
 /* ****************  class FmDecoder  **************** */
 
-FmDecoder::FmDecoder(double sample_rate_if, double ifeq_static_gain,
-                     double ifeq_fit_factor, double tuning_offset,
+FmDecoder::FmDecoder(double sample_rate_if, double tuning_offset,
                      double sample_rate_pcm, bool stereo, double deemphasis,
                      double bandwidth_if, double freq_dev, double bandwidth_pcm,
                      unsigned int downsample, bool pilot_shift)
@@ -322,9 +321,14 @@ FmDecoder::FmDecoder(double sample_rate_if, double ifeq_static_gain,
       ,
       m_iffilter(10, bandwidth_if / sample_rate_if)
 
+      // Construct EqParams
+      ,
+      m_eqparams()
+
       // Construct DiscriminatorEqualizer
       ,
-      m_disceq(ifeq_static_gain, ifeq_fit_factor)
+      m_disceq(m_eqparams.compute_staticgain(sample_rate_if),
+               m_eqparams.compute_fitlevel(sample_rate_if))
 
       // Construct PhaseDiscriminator
       ,

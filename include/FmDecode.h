@@ -22,6 +22,7 @@
 #include <cstdint>
 #include <vector>
 
+#include "EqParameters.h"
 #include "Filter.h"
 #include "SoftFM.h"
 
@@ -138,8 +139,6 @@ public:
    * Construct FM decoder.
    *
    * sample_rate_if   :: IQ sample rate in Hz.
-   * ifeq_static_gain :: IF DiscriminatorEqualizer static_gain
-   * ifeq_fit_factor  :: IF DiscriminatorEqualizer fit_factor
    * tuning_offset    :: Frequency offset in Hz of radio station with respect
    *                     to receiver LO frequency (positive value means
    *                     station is at higher frequency than LO).
@@ -159,9 +158,8 @@ public:
    *                  :: (use cos(2*x) instead of sin (2*x))
    *                  :: (for multipath distortion detection)
    */
-  FmDecoder(double sample_rate_if, double ifeq_static_gain,
-            double ifeq_fit_factor, double tuning_offset,
-            double sample_rate_pcm, bool stereo = true, double deemphasis = 50,
+  FmDecoder(double sample_rate_if, double tuning_offset, double sample_rate_pcm,
+            bool stereo = true, double deemphasis = 50,
             double bandwidth_if = default_bandwidth_if,
             double freq_dev = default_freq_dev,
             double bandwidth_pcm = default_bandwidth_pcm,
@@ -244,6 +242,7 @@ private:
 
   FineTuner m_finetuner;
   LowPassFilterFirIQ m_iffilter;
+  EqParameters m_eqparams;
   DiscriminatorEqualizer m_disceq;
   PhaseDiscriminator m_phasedisc;
   DownsampleFilter m_resample_baseband;

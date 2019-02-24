@@ -33,7 +33,6 @@
 
 #include "AudioOutput.h"
 #include "DataBuffer.h"
-#include "EqParameters.h"
 #include "FmDecode.h"
 #include "MovingAverage.h"
 #include "SoftFM.h"
@@ -476,10 +475,6 @@ int main(int argc, char **argv) {
 
   srcsdr->print_specific_parms();
 
-  EqParameters eqparams;
-  double ifeq_static_gain = eqparams.compute_staticgain(ifrate);
-  double ifeq_fit_factor = eqparams.compute_fitlevel(ifrate);
-
   // Create source data queue.
   DataBuffer<IQSample> source_buffer;
 
@@ -514,13 +509,9 @@ int main(int argc, char **argv) {
   fprintf(stderr, "audio sample rate: %u Hz\n", pcmrate);
   fprintf(stderr, "audio bandwidth:   %.3f kHz\n", bandwidth_pcm * 1.0e-3);
   fprintf(stderr, "deemphasis:        %.1f microseconds\n", deemphasis);
-  fprintf(stderr, "ifeq_static_gain:  %.6f\n", ifeq_static_gain);
-  fprintf(stderr, "ifeq_fit_factor:   %.6f\n", ifeq_fit_factor);
 
   // Prepare decoder.
   FmDecoder fm(ifrate,                          // sample_rate_if
-               ifeq_static_gain,                // ifeq_static_gain
-               ifeq_fit_factor,                 // ifeq_fit_factor
                freq - tuner_freq,               // tuning_offset
                pcmrate,                         // sample_rate_pcm
                stereo,                          // stereo
