@@ -162,12 +162,16 @@ void AirspySource::get_device_names(std::vector<std::string> &devices) {
 
   for (i = 0; i < AIRSPY_MAX_DEVICE; i++) {
     rc = (airspy_error)airspy_open(&airspy_ptr);
+#ifdef DEBUG_AIRSPYSOURCE
     std::cerr << "AirspySource::get_device_names: try to get device " << i
               << " serial number" << std::endl;
+#endif
 
     if (rc == AIRSPY_SUCCESS) {
+#ifdef DEBUG_AIRSPYSOURCE
       std::cerr << "AirspySource::get_device_names: device " << i << " open OK"
                 << std::endl;
+#endif
 
       rc = (airspy_error)airspy_board_partid_serialno_read(
           airspy_ptr, &read_partid_serialno);
@@ -187,8 +191,10 @@ void AirspySource::get_device_names(std::vector<std::string> &devices) {
 
       airspy_close(airspy_ptr);
     } else {
+#ifdef DEBUG_AIRSPYSOURCE
       std::cerr << "AirspySource::get_device_names: enumerated " << i
                 << " Airspy devices: " << airspy_error_name(rc) << std::endl;
+#endif
       break; // finished
     }
   }
