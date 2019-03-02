@@ -1,27 +1,12 @@
-# ngsoftfm-jj1bdx
+# airspy-fmradion
 
 * Version 0.1.14, 24-FEB-2019
-* Software decoder for FM broadcast radio with RTL-SDR, AirSpy, and HackRF
+* Software decoder for FM broadcast radio with AirSpy
 * For MacOS and Linux
-* This repository is forked from [NGSoftFM](https://github.com/f4exb/ngsoftfm)
-* Code merged from [softfm-jj1bdx](https://github.com/jj1bdx/softfm-jj1bdx)
-* *Note: F4EXB no longer maintains this code.*
-
-## Usage examples
-
-For RTL-SDR:
+* This repository is forked from [ngsoftfm-jj1bdx](https://github.com/jj1bdx/ngsoftfm-jj1bdx)
 
 ```sh
-ngsoftfm -q -t rtlsdr \
-    -c freq=88100000,gain=14.4 -r 48000 \
-    -b 0.5 -R - | \
-    play -t raw -esigned-integer -b16 -r 48000 -c 2 -q -
-```
-
-For Airspy:
-
-```sh
-ngsoftfm -q -t airspy \
+airspy-fmradion -q -t airspy \
     -c freq=88100000,srate=2500000,mgain=14,lgain=14,vgain=1 \
     -b 0.5 -R - | \
     play -t raw -esigned-integer -b16 -r 48000 -c 2 -q -
@@ -29,38 +14,33 @@ ngsoftfm -q -t airspy \
 
 ## Introduction
 
-**ngsoftfm-jj1bdx** is a software-defined radio receiver for FM broadcast radio. It is a derivative work of [SoftFM](https://github.com/jorisvr/SoftFM) and [NGSoftFM](https://github.com/f4exb/ngsoftfm) with a new application design and new features.
+**airspy-fmradion** is a software-defined radio receiver for FM broadcast radio, specifically designed for Airspy R2, forked from [ngsoftfm-jj1bdx](https://github.com/jj1bdx/ngsoftfm-jj1bdx).
 
 ### Hardware supported
 
-  - **RTL-SDR** based (RTL2832-based) hardware is supported and uses the _librtlsdr_ library to interface with the RTL-SDR hardware.
-  - **HackRF** One and variants are supported with _libhackrf_ library.
   - **Airspy** is supported with _libairspy_ library.
 
-### Purposes of ngsoftfm-jj1bdx
+### Purposes of airspy-fmradion
 
-Experimenting with digital signal processing and software radio while listening to my favorite radio station. ngsoftfm-jj1bdx actually produces pretty good stereo sound
-when receiving a strong radio station. :)
+Experimenting with digital signal processing and software radio, with a simpler profile than ngsoftfm-jj1bdx.
 
-### ngsoftfm-jj1bdx provides
+### airspy-fmradion provides
 
  - mono or stereo decoding of FM broadcasting stations
  - buffered real-time playback to soundcard or dumping to file
  - command-line interface (*only*)
 
-### ngsoftfm-jj1bdx requires
+### airspy-fmradion requires
 
  - Linux / macOS
  - C++11 (gcc, clang/llvm)
- - [RTL-SDR library](http://sdr.osmocom.org/trac/wiki/rtl-sdr)
- - [HackRF library](https://github.com/mossmann/hackrf/tree/master/host/libhackrf)
  - [Airspy library](https://github.com/airspy/host/tree/master/libairspy)
  - [sox](http://sox.sourceforge.net/)
- - supported RTL-SDR DVB-T receiver, Airspy, or HackRF Rx/Tx
- - medium-fast computer for RTL-SDR, faster computer for Airspy and HackRF
- - medium-strong FM radio signal. However the R820T2 based dongles give better results than the former R820T based dongles. HackRF, or Airspy are usually even better but you have to spend more for the devices.
+ - tested: Airspy R2
+ - Fast computer for Airspy
+ - medium-strong FM radio signal.
 
-For the latest version, see https://github.com/jj1bdx/ngsoftfm-jj1bdx
+For the latest version, see https://github.com/jj1bdx/airspy-fmradion
 
 ### Branches and tags
 
@@ -75,30 +55,7 @@ For the latest version, see https://github.com/jj1bdx/ngsoftfm-jj1bdx
 
   - `sudo apt-get install cmake pkg-config libusb-1.0-0-dev libasound2-dev libboost-all-dev`
 
-### RTL-SDR support
-
-The Osmocom RTL-SDR library must be installed before you can build ngsoftfm-jj1bdx.
-See <http://sdr.osmocom.org/trac/wiki/rtl-sdr> for more information.
-ngsoftfm-jj1bdx has been tested successfully with RTL-SDR 0.5.3. Normally your distribution should provide the appropriate librtlsdr package.
-If you go with your own installation of librtlsdr you have to specify the include path and library path. For example if you installed it in `/opt/install/librtlsdr` you have to add `-DRTLSDR_INCLUDE_DIR=/opt/install/librtlsdr/include -DRTLSDR_LIBRARY=/opt/install/librtlsdr/lib/librtlsdr.a` to the cmake options
-
-To install the library from a Debian/Ubuntu installation just do:
-
-  - `sudo apt-get install librtlsdr-dev`
-
-### HackRF support
-
-For now HackRF support must be installed even if no HackRF device is connected.
-
-If you install from source (https://github.com/mossmann/hackrf/tree/master/host/libhackrf) in your own installation path you have to specify the include path and library path. For example if you installed it in `/opt/install/libhackrf` you have to add `-DHACKRF_INCLUDE_DIR=/opt/install/libhackrf/include -DHACKRF_LIBRARY=/opt/install/libhackrf/lib/libhackrf.a` to the cmake options.
-
-To install the library from a Debian/Ubuntu installation just do:
-
-  - `sudo apt-get install libhackrf-dev`
-
 ### Airspy support
-
-For now Airspy support must be installed even if no Airspy device is connected.
 
 If you install from source (https://github.com/airspy/host/tree/master/libairspy) in your own installation path you have to specify the include path and library path. For example if you installed it in `/opt/install/libairspy` you have to add `-DAIRSPY_INCLUDE_DIR=/opt/install/libairspy/include -DHACKRF_LIBRARY=/opt/install/libairspy/lib/libairspy.a` to the cmake options.
 
@@ -108,11 +65,11 @@ To install the library from a Debian/Ubuntu installation just do:
 
 ### macOS
 
-* Install HomeBrew `rtl-sdr`, `hackrf`, `airspy`
+* Install HomeBrew `airspy`
 
 ## Installing
 
-To install ngsoftfm-jj1bdx, download and unpack the source code and go to the
+To install airspy-fmradion, download and unpack the source code and go to the
 top level directory. Then do like this:
 
  - `mkdir build`
@@ -164,17 +121,6 @@ See [doc/NOTES-jj1bdx.md](doc/NOTES-jj1bdx.md) for the details of the modificati
 
 ## Device type specific configuration options
 
-### RTL-SDR
-
-  - `freq=<int>` Desired tune frequency in Hz. Accepted range from 10M to 2.2G. (default 100M: `100000000`)
-  - `gain=<x>` (default `auto`)
-    - `auto` Selects gain automatically
-    - `list` Lists available gains and exit
-    - `<float>` gain in dB. Possible gains in dB are: `0.0, 0.9, 1.4, 2.7, 3.7, 7.7, 8.7, 12.5, 14.4, 15.7, 16.6, 19.7, 20.7, 22.9, 25.4, 28.0, 29.7, 32.8, 33.8, 36.4, 37.2, 38.6, 40.2, 42.1, 43.4, 43.9, 44.5, 48.0, 49.6`
-  - `srate=<int>` Device sample rate. valid values in the [225001, 300000], [900001, 3200000] ranges. (default `1000000`)
-  - `blklen=<int>` Device block length in bytes (default RTL-SDR default i.e. 64k)
-  - `agc` Activates device AGC (default off)
-
 ### Airspy
 
   - `freq=<int>` Desired tune frequency in Hz. Valid range from 1M to 1.8G. (default 100M: `100000000`)
@@ -185,18 +131,6 @@ See [doc/NOTES-jj1bdx.md](doc/NOTES-jj1bdx.md) for the details of the modificati
   - `antbias` Turn on the antenna bias for remote LNA (default off)
   - `lagc` Turn on the LNA AGC (default off)
   - `magc` Turn on the mixer AGC (default off)
-
-### HackRF
-
-(Note: @jj1bdx hasn't tested HackRF yet)
-
-  - `freq=<int>` Desired tune frequency in Hz. Valid range from 1M to 6G. (default 100M: `100000000`)
-  - `srate=<int>` Device sample rate (default `5000000`). Valid values from 1M to 20M. In fact rates lower than 10M are not specified in the datasheets of the ADC chip however a rate of `1000000` (1M) still works well with NGSoftFM.
-  - `lgain=<x>` LNA gain in dB. Valid values are: `0, 8, 16, 24, 32, 40, list`. `list` lists valid values and exits. (default `16`)
-  - `vgain=<x>` VGA gain in dB. Valid values are: `0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40, 42, 44, 46, 48, 50, 52, 54, 56, 58, 60, 62, list`. `list` lists valid values and exits. (default `22`)
-  - `bwfilter=<x>` RF (IF) filter bandwith in MHz. Actual value is taken as the closest to the following values: `1.75, 2.5, 3.5, 5, 5.5, 6, 7,  8, 9, 10, 12, 14, 15, 20, 24, 28, list`. `list` lists valid values and exits. (default `2.5`)
-  - `extamp` Turn on the extra amplifier (default off)
-  - `antbias` Turn on the antenna bias for remote LNA (default off)
 
 ## Authors
 

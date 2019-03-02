@@ -39,8 +39,6 @@
 #include "util.h"
 
 #include "AirspySource.h"
-#include "HackRFSource.h"
-#include "RtlSdrSource.h"
 
 #define NGSOFTFM_VERSION "0.1.14"
 
@@ -101,11 +99,7 @@ static void handle_sigterm(int sig) {
 void usage() {
   fprintf(
       stderr,
-      "Usage: ngsoftfm [options]\n"
-      "  -t devtype     Device type:\n"
-      "                   - rtlsdr: RTL-SDR devices\n"
-      "                   - hackrf: HackRF One or Jawbreaker\n"
-      "                   - airspy: Airspy\n"
+      "Usage: airspy-fmradion [options]\n"
       "  -c config      Comma separated key=value configuration pairs or just "
       "key for switches\n"
       "                 See below for valid values per device type\n"
@@ -123,34 +117,7 @@ void usage() {
       "                 (-X is ignored under mono mode (-M))\n"
       "  -U             Set deemphasis to 75 microseconds (default: 50)\n"
       "\n"
-      "Configuration options for RTL-SDR devices\n"
-      "  freq=<int>     Frequency of radio station in Hz (default 100000000)\n"
-      "                 valid values: 10M to 2.2G (working range depends on "
-      "device)\n"
-      "  srate=<int>    IF sample rate in Hz (default 960000)\n"
-      "                 (valid ranges: [225001, 300000], [900001, 3200000]))\n"
-      "  gain=<float>   Set LNA gain in dB, or 'auto',\n"
-      "                 or 'list' to just get a list of valid values (default "
-      "auto)\n"
-      "  blklen=<int>   Set audio buffer size in seconds (default RTL-SDR "
-      "default)\n"
-      "  agc            Enable RTL AGC mode (default disabled)\n"
-      "\n"
-      "Configuration options for HackRF devices\n"
-      "  freq=<int>     Frequency of radio station in Hz (default 100000000)\n"
-      "                 valid values: 1M to 6G\n"
-      "  srate=<int>    IF sample rate in Hz (default 5000000)\n"
-      "                 (valid ranges: [2500000,20000000]))\n"
-      "  lgain=<int>    LNA gain in dB. 'list' to just get a list of valid "
-      "values: (default 16)\n"
-      "  vgain=<int>    VGA gain in dB. 'list' to just get a list of valid "
-      "values: (default 22)\n"
-      "  bwfilter=<int> Filter bandwidth in MHz. 'list' to just get a list of "
-      "valid values: (default 2.5)\n"
-      "  extamp         Enable extra RF amplifier (default disabled)\n"
-      "  antbias        Enable antemma bias (default disabled)\n"
-      "\n"
-      "Configuration options for Airspy devices\n"
+      "Configuration options for Airspy devices:\n"
       "  freq=<int>     Frequency of radio station in Hz (default 100000000)\n"
       "                 valid values: 24M to 1.8G\n"
       "  srate=<int>    IF sample rate in Hz. Depends on Airspy firmware and "
@@ -199,21 +166,10 @@ double get_time() {
   return tv.tv_sec + 1.0e-6 * tv.tv_usec;
 }
 
-static bool get_device(std::vector<std::string> &devnames, std::string &devtype,
-                       Source **srcsdr, int devidx) {
-  if (strcasecmp(devtype.c_str(), "rtlsdr") == 0) {
-    RtlSdrSource::get_device_names(devnames);
-  } else if (strcasecmp(devtype.c_str(), "hackrf") == 0) {
-    HackRFSource::get_device_names(devnames);
-  } else if (strcasecmp(devtype.c_str(), "airspy") == 0) {
-    AirspySource::get_device_names(devnames);
-  } else {
-    fprintf(
-        stderr,
-        "ERROR: wrong device type (-t option) must be one of the following:\n");
-    fprintf(stderr, "       rtlsdr, hackrf, airspy\n");
-    return false;
-  }
+static bool get_device(std::vector<std::string> &devnames,
+		Source **srcsdr, int devidx) {
+
+  AirspySource::get_device_names(devnames);
 
   if (devidx < 0 || (unsigned int)devidx >= devnames.size()) {
     if (devidx != -1) {
@@ -231,16 +187,8 @@ static bool get_device(std::vector<std::string> &devnames, std::string &devtype,
 
   fprintf(stderr, "using device %d: %s\n", devidx, devnames[devidx].c_str());
 
-  if (strcasecmp(devtype.c_str(), "rtlsdr") == 0) {
-    // Open RTL-SDR device.
-    *srcsdr = new RtlSdrSource(devidx);
-  } else if (strcasecmp(devtype.c_str(), "hackrf") == 0) {
-    // Open HackRF device.
-    *srcsdr = new HackRFSource(devidx);
-  } else if (strcasecmp(devtype.c_str(), "airspy") == 0) {
-    // Open Airspy device.
-    *srcsdr = new AirspySource(devidx);
-  }
+  // Open Airspy device.
+  *srcsdr = new AirspySource(devidx);
 
   return true;
 }
@@ -278,7 +226,6 @@ int main(int argc, char **argv) {
   bool pilot_shift = false;
   bool deemphasis_na = false;
   std::string config_str;
-  std::string devtype_str;
   std::vector<std::string> devnames;
   Source *srcsdr = 0;
 
@@ -286,7 +233,7 @@ int main(int argc, char **argv) {
   fprintf(stderr, "ngsoftfm-jj1bdx " NGSOFTFM_VERSION "\n");
 
   const struct option longopts[] = {
-      {"devtype", 2, NULL, 't'}, {"config", 2, NULL, 'c'},
+      {"config", 2, NULL, 'c'},
       {"dev", 1, NULL, 'd'},     {"pcmrate", 1, NULL, 'r'},
       {"mono", 0, NULL, 'M'},    {"raw", 1, NULL, 'R'},
       {"wav", 1, NULL, 'W'},     {"play", 2, NULL, 'P'},
@@ -295,12 +242,9 @@ int main(int argc, char **argv) {
       {"usa", 0, NULL, 'U'},     {NULL, 0, NULL, 0}};
 
   int c, longindex;
-  while ((c = getopt_long(argc, argv, "t:c:d:r:MR:W:P::T:b:qXU", longopts,
+  while ((c = getopt_long(argc, argv, "c:d:r:MR:W:P::T:b:qXU", longopts,
                           &longindex)) >= 0) {
     switch (c) {
-    case 't':
-      devtype_str.assign(optarg);
-      break;
     case 'c':
       config_str.assign(optarg);
       break;
@@ -444,7 +388,7 @@ int main(int argc, char **argv) {
     exit(1);
   }
 
-  if (!get_device(devnames, devtype_str, &srcsdr, devidx)) {
+  if (!get_device(devnames, &srcsdr, devidx)) {
     exit(1);
   }
 
