@@ -5,10 +5,12 @@
 * For MacOS and Linux
 * This repository is forked from [ngsoftfm-jj1bdx](https://github.com/jj1bdx/ngsoftfm-jj1bdx) 0.1.14
 
+## Usage
+
 ```sh
-airspy-fmradion -q -t airspy \
-    -c freq=88100000,srate=2500000,mgain=14,lgain=14,vgain=1 \
-    -b 0.5 -R - | \
+airspy-fmradion -q \
+    -c freq=88100000,srate=10000000,lgain=2,mgain=0,vgain=10 \
+    -b 1.0 -R - | \
     play -t raw -esigned-integer -b16 -r 48000 -c 2 -q -
 ```
 
