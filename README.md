@@ -1,9 +1,9 @@
 # airspy-fmradion
 
-* Version 0.1.14, 24-FEB-2019
+* Version v0.1.0, 2-MAR-2019
 * Software decoder for FM broadcast radio with AirSpy
 * For MacOS and Linux
-* This repository is forked from [ngsoftfm-jj1bdx](https://github.com/jj1bdx/ngsoftfm-jj1bdx)
+* This repository is forked from [ngsoftfm-jj1bdx](https://github.com/jj1bdx/ngsoftfm-jj1bdx) 0.1.14
 
 ```sh
 airspy-fmradion -q -t airspy \
@@ -36,9 +36,9 @@ Experimenting with digital signal processing and software radio, with a simpler 
  - C++11 (gcc, clang/llvm)
  - [Airspy library](https://github.com/airspy/host/tree/master/libairspy)
  - [sox](http://sox.sourceforge.net/)
- - tested: Airspy R2
- - Fast computer for Airspy
- - medium-strong FM radio signal.
+ - Tested: Airspy R2
+ - Fast computer
+ - Medium-strong FM radio signal
 
 For the latest version, see https://github.com/jj1bdx/airspy-fmradion
 

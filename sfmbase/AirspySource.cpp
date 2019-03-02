@@ -320,10 +320,9 @@ bool AirspySource::configure(int sampleRateIndex, uint32_t frequency,
   // See <https://twitter.com/lambdaprog/status/1101500018618523659>
   // and <https://twitter.com/lambdaprog/status/1101456999743717376>
 
-  const int16_t halfband_kernel[7] = 
-	{ -1033, 0, 9225, 16384, 9225, 0, -1033 };
-  rc = (airspy_error)airspy_set_conversion_filter_int16(m_dev,
-		  halfband_kernel, 7);
+  const int16_t halfband_kernel[7] = {-1033, 0, 9225, 16384, 9225, 0, -1033};
+  rc = (airspy_error)airspy_set_conversion_filter_int16(m_dev, halfband_kernel,
+                                                        7);
 
   if (rc != AIRSPY_SUCCESS) {
     std::ostringstream err_ostr;

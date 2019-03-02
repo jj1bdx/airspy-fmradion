@@ -40,7 +40,7 @@
 
 #include "AirspySource.h"
 
-#define NGSOFTFM_VERSION "0.1.14"
+#define AIRSPY_FMRADION_VERSION "v0.1.0"
 
 /** Flag is set on SIGINT / SIGTERM. */
 static std::atomic_bool stop_flag(false);
@@ -166,8 +166,8 @@ double get_time() {
   return tv.tv_sec + 1.0e-6 * tv.tv_usec;
 }
 
-static bool get_device(std::vector<std::string> &devnames,
-		Source **srcsdr, int devidx) {
+static bool get_device(std::vector<std::string> &devnames, Source **srcsdr,
+                       int devidx) {
 
   AirspySource::get_device_names(devnames);
 
@@ -229,17 +229,22 @@ int main(int argc, char **argv) {
   std::vector<std::string> devnames;
   Source *srcsdr = 0;
 
-  fprintf(stderr, "NGSoftFM - Software decoder for FM broadcast radio\n");
-  fprintf(stderr, "ngsoftfm-jj1bdx " NGSOFTFM_VERSION "\n");
+  fprintf(stderr, "airspy-fmradion " AIRSPY_FMRADION_VERSION "\n");
+  fprintf(stderr, "Software decoder for FM broadcast radio with Airspy\n");
 
-  const struct option longopts[] = {
-      {"config", 2, NULL, 'c'},
-      {"dev", 1, NULL, 'd'},     {"pcmrate", 1, NULL, 'r'},
-      {"mono", 0, NULL, 'M'},    {"raw", 1, NULL, 'R'},
-      {"wav", 1, NULL, 'W'},     {"play", 2, NULL, 'P'},
-      {"pps", 1, NULL, 'T'},     {"buffer", 1, NULL, 'b'},
-      {"quiet", 1, NULL, 'q'},   {"pilotshift", 0, NULL, 'X'},
-      {"usa", 0, NULL, 'U'},     {NULL, 0, NULL, 0}};
+  const struct option longopts[] = {{"config", 2, NULL, 'c'},
+                                    {"dev", 1, NULL, 'd'},
+                                    {"pcmrate", 1, NULL, 'r'},
+                                    {"mono", 0, NULL, 'M'},
+                                    {"raw", 1, NULL, 'R'},
+                                    {"wav", 1, NULL, 'W'},
+                                    {"play", 2, NULL, 'P'},
+                                    {"pps", 1, NULL, 'T'},
+                                    {"buffer", 1, NULL, 'b'},
+                                    {"quiet", 1, NULL, 'q'},
+                                    {"pilotshift", 0, NULL, 'X'},
+                                    {"usa", 0, NULL, 'U'},
+                                    {NULL, 0, NULL, 0}};
 
   int c, longindex;
   while ((c = getopt_long(argc, argv, "c:d:r:MR:W:P::T:b:qXU", longopts,
@@ -536,7 +541,7 @@ int main(int argc, char **argv) {
     if (!quietmode) {
       // Show per-block statistics.
       fprintf(stderr,
-              "\rblk=%6d:f=%8.4fMHz:ppm=%+6.2f:IF=%+5.1fdB:"
+              "\rblk=%7d:f=%8.4fMHz:ppm=%+6.2f:IF=%+5.1fdB:"
               "BB=%+5.1fdB:AF=%+5.1fdB:buf=%.1fs",
               block, ppm_error, ppm_value_average, if_level_db,
               baseband_level_db, audio_level_db, buflen_sec);
