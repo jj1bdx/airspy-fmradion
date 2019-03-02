@@ -111,18 +111,16 @@ void LowPassFilterFirIQ::process(const IQSampleVector &samples_in,
   unsigned int order = m_state.size();
   unsigned int n = samples_in.size();
 
-  samples_out.resize(n);
-
-  if (n == 0) {
-    return;
-  }
-
   // Integer downsample factor, no linear interpolation.
 
   unsigned int p = m_pos;
   unsigned int pstep = m_downsample;
 
   samples_out.resize((n - p + pstep - 1) / pstep);
+
+  if (n == 0) {
+    return;
+  }
 
   // The first few samples need data from m_state.
   unsigned int i = 0;
