@@ -108,14 +108,14 @@ Compile and install
 
 In airspy-fmradion, the following conversion process is implemented:
 
-* An integer downsampler is added to the first-stage LowPassFilterFirIQ
-* Input -> LowPassFilterFirIQ with decimator -> PhaseDiscriminator
-* The filter order of LowPassFilterFirIQ is increased to (downsample rate * 8)
+* Downsampling factor is split into two stages
+* An integer downsampler is added to the first-stage LowPassFilterFirIQ (LPFIQ)
+* Input -> LPFIQ 1st -> LPFIQ 2nd -> PhaseDiscriminator
+* The filter order of LPFIQ is set to (downsample rate * 8)
 * This reduces CPU usage on Mac mini 2018 from ~51% to ~36% in 10Msps
 * Finetuner is now not activated unless `USE_FINETUNER` compile-time flag is set
 * Not using the finetuner resulted in another 3~4% of CPU usage reduction
-* CPU usage: ~51% -> ~32%
-
+* CPU usage: ~51% -> ~29% (on Mac mini 2018, with debug output on)
 
 ## Airspy configuration options
 
