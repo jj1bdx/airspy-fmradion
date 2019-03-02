@@ -100,6 +100,7 @@ void usage() {
   fprintf(
       stderr,
       "Usage: airspy-fmradion [options]\n"
+      "  -q             Quiet mode\n"
       "  -c config      Comma separated key=value configuration pairs or just "
       "key for switches\n"
       "                 See below for valid values per device type\n"
