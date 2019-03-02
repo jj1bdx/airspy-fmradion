@@ -320,7 +320,7 @@ FmDecoder::FmDecoder(double sample_rate_if, unsigned int first_downsample,
 
       // Construct LowPassFilterFirIQ
       ,
-      m_iffilter(10, bandwidth_if / sample_rate_if, m_first_downsample)
+      m_iffilter(8 * m_first_downsample, bandwidth_if / sample_rate_if, m_first_downsample)
 
       // Construct EqParams
       ,
