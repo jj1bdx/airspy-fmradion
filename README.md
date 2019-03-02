@@ -18,13 +18,9 @@ airspy-fmradion -q \
 
 **airspy-fmradion** is a software-defined radio receiver for FM broadcast radio, specifically designed for Airspy R2, forked from [ngsoftfm-jj1bdx](https://github.com/jj1bdx/ngsoftfm-jj1bdx).
 
-### Hardware supported
-
-  - **Airspy** is supported with _libairspy_ library.
-
 ### Purposes of airspy-fmradion
 
-Experimenting with digital signal processing and software radio, with a simpler profile than ngsoftfm-jj1bdx.
+Experimenting with digital signal processing and software radio specifically designed for Airspy R2, with a simpler profile than ngsoftfm-jj1bdx.
 
 ### airspy-fmradion provides
 
@@ -91,6 +87,7 @@ Compile and install
 
 ## Basic command options
 
+ - `-q` Quiet mode.
  - `-c config` Comma separated list of configuration options as key=value pairs or just key for switches. Depends on device type (see next paragraph).
  - `-d devidx` Device index, 'list' to show device list (default 0)
  - `-r pcmrate` Audio sample rate in Hz (default 48000 Hz)
