@@ -2,6 +2,7 @@
 // Software decoder for FM broadcast radio with Airspy
 //
 // Copyright (C) 2015 Edouard Griffiths, F4EXB
+// Copyright (C) 2019 Kenji Rikitake, JJ1BDX
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -53,8 +54,10 @@ public:
    * filter_order :: FIR filter order.
    * cutoff       :: Cutoff frequency relative to the full sample rate
    *                 (valid range 0.0 ... 0.5).
+   * downsample   :: Integer downsampling rate (>= 1)
    */
-  LowPassFilterFirIQ(unsigned int filter_order, double cutoff);
+  LowPassFilterFirIQ(unsigned int filter_order, double cutoff,
+                     unsigned int downsample);
 
   /** Process samples. */
   void process(const IQSampleVector &samples_in, IQSampleVector &samples_out);
@@ -62,6 +65,8 @@ public:
 private:
   std::vector<IQSample::value_type> m_coeff;
   IQSampleVector m_state;
+  unsigned int m_downsample;
+  unsigned int m_pos;
 };
 
 /**

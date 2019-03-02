@@ -140,6 +140,8 @@ public:
    * Construct FM decoder.
    *
    * sample_rate_if   :: IQ sample rate in Hz.
+   * first_downsample :: Integer first stage downsampling rate (>= 1)
+   *                     (applied BEFORE FM demodulation)
    * tuning_offset    :: Frequency offset in Hz of radio station with respect
    *                     to receiver LO frequency (positive value means
    *                     station is at higher frequency than LO).
@@ -153,18 +155,17 @@ public:
    *                     (75 kHz for broadcast FM)
    * bandwidth_pcm    :: Half bandwidth of audio signal in Hz
    *                     (15 kHz for broadcast FM)
-   * downsample       :: Downsampling factor to apply after FM demodulation.
-   *                     Set to 1 to disable.
    * pilot_shift      :: True to shift pilot signal phase
    *                  :: (use cos(2*x) instead of sin (2*x))
    *                  :: (for multipath distortion detection)
    */
-  FmDecoder(double sample_rate_if, double tuning_offset, double sample_rate_pcm,
+  FmDecoder(double sample_rate_if, unsigned int first_downsample = 1,
+            double tuning_offset = 0.0, double sample_rate_pcm = 48000,
             bool stereo = true, double deemphasis = 50,
             double bandwidth_if = default_bandwidth_if,
             double freq_dev = default_freq_dev,
             double bandwidth_pcm = default_bandwidth_pcm,
-            unsigned int downsample = 1, bool pilot_shift = false);
+            bool pilot_shift = false);
 
   /**
    * Process IQ samples and return audio samples.
@@ -221,11 +222,11 @@ private:
 
   // Data members.
   const double m_sample_rate_if;
-  const double m_sample_rate_baseband;
+  const double m_sample_rate_fmdemod;
   const int m_tuning_table_size;
   const int m_tuning_shift;
   const double m_freq_dev;
-  const unsigned int m_downsample;
+  const unsigned int m_first_downsample;
   const bool m_pilot_shift;
   const bool m_stereo_enabled;
   bool m_stereo_detected;
@@ -246,7 +247,6 @@ private:
   EqParameters m_eqparams;
   DiscriminatorEqualizer m_disceq;
   PhaseDiscriminator m_phasedisc;
-  DownsampleFilter m_resample_baseband;
   PilotPhaseLock m_pilotpll;
   DownsampleFilter m_resample_mono;
   DownsampleFilter m_resample_stereo;

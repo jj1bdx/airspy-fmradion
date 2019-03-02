@@ -40,7 +40,7 @@
 
 #include "AirspySource.h"
 
-#define AIRSPY_FMRADION_VERSION "v0.1.0"
+#define AIRSPY_FMRADION_VERSION "v0.2.0"
 
 /** Flag is set on SIGINT / SIGTERM. */
 static std::atomic_bool stop_flag(false);
@@ -417,7 +417,32 @@ int main(int argc, char **argv) {
   fprintf(stderr, "device tuned for:  %.6f MHz\n", tuner_freq * 1.0e-6);
 
   double ifrate = srcsdr->get_sample_rate();
+  unsigned int first_downsample;
+
+  if (ifrate == 10000000.0) {
+    // 312.5kHz = +-156.25kHz
+    first_downsample = 32;
+  } else if (ifrate == 2500000.0) {
+    // 312.5kHz = +-156.25kHz
+    first_downsample = 8;
+  } else if (ifrate == 6000000.0) {
+    // 300kHz = +-150kHz
+    first_downsample = 20;
+  } else if (ifrate == 3000000.0) {
+    // 300kHz = +-150kHz
+    first_downsample = 10;
+  } else {
+    fprintf(stderr, "Sample rate unsupported\n");
+    fprintf(stderr, "Supported rate:\n");
+    fprintf(stderr, "Airspy R2: 2500000, 10000000\n");
+    fprintf(stderr, "Airspy Mini: 3000000, 6000000\n");
+    delete srcsdr;
+    exit(1);
+  }
+
   fprintf(stderr, "IF sample rate:    %.0f Hz\n", ifrate);
+  fprintf(stderr, "First downsample:  %u (downsampled by)\n", first_downsample);
+  fprintf(stderr, "Downsampled rate:  %.0f Hz\n", ifrate / first_downsample);
 
   double delta_if = tuner_freq - freq;
   MovingAverage<float> ppm_average(40, 0.0f);
@@ -442,25 +467,19 @@ int main(int argc, char **argv) {
     exit(1);
   }
 
-  // We can downsample to the (default_bandwidth_if * 2) * 1.1
-  // without loss of information.
-  // This will speed up later processing stages.
-  double downsample_target = FmDecoder::default_bandwidth_if * 2.2;
-  unsigned int downsample = std::max(1, int(ifrate / downsample_target));
-
   // Prevent aliasing at very low output sample rates.
   double bandwidth_pcm =
       std::min(FmDecoder::default_bandwidth_pcm, 0.45 * pcmrate);
   double deemphasis = deemphasis_na ? FmDecoder::default_deemphasis_na
                                     : FmDecoder::default_deemphasis_eu;
 
-  fprintf(stderr, "if -> baseband:    %u (downsampled by)\n", downsample);
   fprintf(stderr, "audio sample rate: %u Hz\n", pcmrate);
   fprintf(stderr, "audio bandwidth:   %.3f kHz\n", bandwidth_pcm * 1.0e-3);
   fprintf(stderr, "deemphasis:        %.1f microseconds\n", deemphasis);
 
   // Prepare decoder.
   FmDecoder fm(ifrate,                          // sample_rate_if
+               first_downsample,                // first_downsample
                freq - tuner_freq,               // tuning_offset
                pcmrate,                         // sample_rate_pcm
                stereo,                          // stereo
@@ -468,7 +487,6 @@ int main(int argc, char **argv) {
                FmDecoder::default_bandwidth_if, // bandwidth_if
                FmDecoder::default_freq_dev,     // freq_dev
                bandwidth_pcm,                   // bandwidth_pcm
-               downsample,                      // downsample
                pilot_shift);                    // pilot_shift
 
   // If buffering enabled, start background output thread.

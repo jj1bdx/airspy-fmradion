@@ -298,18 +298,18 @@ void PilotPhaseLock::process(SampleVector &samples_in,
 
 /* ****************  class FmDecoder  **************** */
 
-FmDecoder::FmDecoder(double sample_rate_if, double tuning_offset,
-                     double sample_rate_pcm, bool stereo, double deemphasis,
-                     double bandwidth_if, double freq_dev, double bandwidth_pcm,
-                     unsigned int downsample, bool pilot_shift)
+FmDecoder::FmDecoder(double sample_rate_if, unsigned int first_downsample,
+                     double tuning_offset, double sample_rate_pcm, bool stereo,
+                     double deemphasis, double bandwidth_if, double freq_dev,
+                     double bandwidth_pcm, bool pilot_shift)
 
     // Initialize member fields
     : m_sample_rate_if(sample_rate_if),
-      m_sample_rate_baseband(sample_rate_if / downsample),
+      m_sample_rate_fmdemod(sample_rate_if / first_downsample),
       m_tuning_table_size(finetuner_table_size),
       m_tuning_shift(lrint(-double(finetuner_table_size) * tuning_offset /
                            sample_rate_if)),
-      m_freq_dev(freq_dev), m_downsample(downsample),
+      m_freq_dev(freq_dev), m_first_downsample(first_downsample),
       m_pilot_shift(pilot_shift), m_stereo_enabled(stereo),
       m_stereo_detected(false), m_if_level(0), m_baseband_mean(0),
       m_baseband_level(0)
@@ -320,7 +320,7 @@ FmDecoder::FmDecoder(double sample_rate_if, double tuning_offset,
 
       // Construct LowPassFilterFirIQ
       ,
-      m_iffilter(10, bandwidth_if / sample_rate_if)
+      m_iffilter(10, bandwidth_if / sample_rate_if, m_first_downsample)
 
       // Construct EqParams
       ,
@@ -328,35 +328,31 @@ FmDecoder::FmDecoder(double sample_rate_if, double tuning_offset,
 
       // Construct DiscriminatorEqualizer
       ,
-      m_disceq(m_eqparams.compute_staticgain(sample_rate_if),
-               m_eqparams.compute_fitlevel(sample_rate_if))
+      m_disceq(m_eqparams.compute_staticgain(m_sample_rate_fmdemod),
+               m_eqparams.compute_fitlevel(m_sample_rate_fmdemod))
 
       // Construct PhaseDiscriminator
       ,
-      m_phasedisc(freq_dev / sample_rate_if)
-
-      // Construct DownsampleFilter for baseband
-      ,
-      m_resample_baseband(8 * downsample, 0.4 / downsample, downsample, true)
+      m_phasedisc(freq_dev / m_sample_rate_fmdemod)
 
       // Construct PilotPhaseLock
       ,
-      m_pilotpll(pilot_freq / m_sample_rate_baseband, // freq
-                 50 / m_sample_rate_baseband,         // bandwidth
-                 0.01)                                // minsignal (was 0.04)
+      m_pilotpll(pilot_freq / m_sample_rate_fmdemod, // freq
+                 50 / m_sample_rate_fmdemod,         // bandwidth
+                 0.01)                               // minsignal (was 0.04)
 
       // Construct DownsampleFilter for mono channel
       ,
-      m_resample_mono(int(m_sample_rate_baseband / 1000.0),     // filter_order
-                      bandwidth_pcm / m_sample_rate_baseband,   // cutoff
-                      m_sample_rate_baseband / sample_rate_pcm, // downsample
-                      false) // integer_factor
+      m_resample_mono(int(m_sample_rate_fmdemod / 1000.0),     // filter_order
+                      bandwidth_pcm / m_sample_rate_fmdemod,   // cutoff
+                      m_sample_rate_fmdemod / sample_rate_pcm, // downsample
+                      false)                                   // integer_factor
 
       // Construct DownsampleFilter for stereo channel
       ,
-      m_resample_stereo(int(m_sample_rate_baseband / 1000.0),   // filter_order
-                        bandwidth_pcm / m_sample_rate_baseband, // cutoff
-                        m_sample_rate_baseband / sample_rate_pcm, // downsample
+      m_resample_stereo(int(m_sample_rate_fmdemod / 1000.0),     // filter_order
+                        bandwidth_pcm / m_sample_rate_fmdemod,   // cutoff
+                        m_sample_rate_fmdemod / sample_rate_pcm, // downsample
                         false) // integer_factor
 
       // Construct HighPassFilterIir
@@ -379,7 +375,8 @@ void FmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
   // Fine tuning.
   m_finetuner.process(samples_in, m_buf_iftuned);
 
-  // Low pass filter to isolate station.
+  // Low pass filter to isolate station,
+  // and perform first stage decimation.
   m_iffilter.process(m_buf_iftuned, m_buf_iffiltered);
 
   // Measure IF level.
@@ -392,12 +389,6 @@ void FmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
   // Compensate 0th-hold aperture effect
   // by applying the equalizer to the discriminator output.
   m_disceq.process(m_buf_baseband_raw, m_buf_baseband);
-
-  // Downsample baseband signal to reduce processing.
-  if (m_downsample > 1) {
-    SampleVector tmp(move(m_buf_baseband));
-    m_resample_baseband.process(tmp, m_buf_baseband);
-  }
 
   // Measure baseband level.
   double baseband_mean, baseband_rms;
