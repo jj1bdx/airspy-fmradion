@@ -82,7 +82,7 @@ inline void PhaseDiscriminator::process(const IQSampleVector &samples_in,
   // Compute output denominator.
   for (unsigned int i = 0; i < n; i++) {
     m_temp[i] = (samples_in[i].imag() * samples_in[i].imag()) +
-              (samples_in[i].real() * samples_in[i].real());
+                (samples_in[i].real() * samples_in[i].real());
   }
   // Scale output.
   for (unsigned int i = 0; i < n; i++) {
@@ -304,20 +304,21 @@ void PilotPhaseLock::process(SampleVector &samples_in,
 /* ****************  class FmDecoder  **************** */
 
 FmDecoder::FmDecoder(double sample_rate_if, unsigned int first_downsample,
-                     double tuning_offset, double sample_rate_pcm, bool stereo,
-                     double deemphasis, double freq_dev, double bandwidth_pcm,
-                     bool pilot_shift)
+                     unsigned int second_downsample, double tuning_offset,
+                     double sample_rate_pcm, bool stereo, double deemphasis,
+                     double freq_dev, double bandwidth_pcm, bool pilot_shift)
 
     // Initialize member fields
     : m_sample_rate_if(sample_rate_if),
-      m_sample_rate_fmdemod(sample_rate_if / first_downsample),
+      m_sample_rate_firstout(m_sample_rate_if / first_downsample),
+      m_sample_rate_fmdemod(m_sample_rate_firstout / second_downsample),
       m_tuning_table_size(finetuner_table_size),
       m_tuning_shift(lrint(-double(finetuner_table_size) * tuning_offset /
                            sample_rate_if)),
       m_freq_dev(freq_dev), m_first_downsample(first_downsample),
-      m_pilot_shift(pilot_shift), m_stereo_enabled(stereo),
-      m_stereo_detected(false), m_if_level(0), m_baseband_mean(0),
-      m_baseband_level(0)
+      m_second_downsample(second_downsample), m_pilot_shift(pilot_shift),
+      m_stereo_enabled(stereo), m_stereo_detected(false), m_if_level(0),
+      m_baseband_mean(0), m_baseband_level(0)
 
       // Construct FineTuner
       ,
@@ -325,8 +326,10 @@ FmDecoder::FmDecoder(double sample_rate_if, unsigned int first_downsample,
 
       // Construct LowPassFilterFirIQ
       ,
-      m_iffilter(8 * m_first_downsample, 0.45 / m_first_downsample,
-                 m_first_downsample)
+      m_iffilter_first(8 * m_first_downsample, 0.45 / m_first_downsample,
+                       m_first_downsample),
+      m_iffilter_second(8 * m_second_downsample, 0.45 / m_second_downsample,
+                        m_second_downsample)
 
       // Construct EqParams
       ,
@@ -377,6 +380,7 @@ FmDecoder::FmDecoder(double sample_rate_if, unsigned int first_downsample,
   // Reservation of std::vector objects in the class
   const unsigned int vector_size = 131072;
   m_buf_iftuned.reserve(vector_size);
+  m_buf_iffirstout.reserve(vector_size);
   m_buf_iffiltered.reserve(vector_size);
   m_buf_baseband.reserve(vector_size);
   m_buf_baseband_raw.reserve(vector_size);
@@ -394,14 +398,17 @@ void FmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
   // Fine tuning.
   m_finetuner.process(samples_in, m_buf_iftuned);
 
-  // Low pass filter to isolate station,
+  // First stage of the low pass filters to isolate station,
   // and perform first stage decimation.
-  m_iffilter.process(m_buf_iftuned, m_buf_iffiltered);
+  m_iffilter_first.process(m_buf_iftuned, m_buf_iffirstout);
 #else
-  // Low pass filter to isolate station,
+  // First stage of the low pass filters to isolate station,
   // and perform first stage decimation.
-  m_iffilter.process(samples_in, m_buf_iffiltered);
+  m_iffilter_first.process(samples_in, m_buf_iffirstout);
 #endif
+
+  // Second stage of the low pass filters to isolate station,
+  m_iffilter_second.process(m_buf_iffirstout, m_buf_iffiltered);
 
   // Measure IF level.
   double if_rms = rms_level_approx(m_buf_iffiltered);

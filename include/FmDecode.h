@@ -144,8 +144,12 @@ public:
    * sample_rate_if   :: IQ sample rate in Hz.
    * first_downsample :: Integer first stage downsampling rate (>= 1)
    *                     (applied BEFORE FM demodulation)
-   *                     If signal half bandwidth is automatically defined
-   *                     as 0.45 * (sample_rate_if / first_downsample)
+   * second_downsample:: Integer second stage downsampling rate (>= 1)
+   *                     (applied BEFORE FM demodulation)
+   *                     Signal half bandwidth is automatically defined
+   *                     as 0.45 *
+   *                        (sample_rate_if / first_downsample /
+   *                         second_downsample)
    * tuning_offset    :: Frequency offset in Hz of radio station with respect
    *                     to receiver LO frequency (positive value means
    *                     station is at higher frequency than LO).
@@ -162,9 +166,9 @@ public:
    *                  :: (for multipath distortion detection)
    */
   FmDecoder(double sample_rate_if, unsigned int first_downsample = 1,
-            double tuning_offset = 0.0, double sample_rate_pcm = 48000,
-            bool stereo = true, double deemphasis = 50,
-            double freq_dev = default_freq_dev,
+            unsigned int second_downsample = 1, double tuning_offset = 0.0,
+            double sample_rate_pcm = 48000, bool stereo = true,
+            double deemphasis = 50, double freq_dev = default_freq_dev,
             double bandwidth_pcm = default_bandwidth_pcm,
             bool pilot_shift = false);
 
@@ -223,11 +227,13 @@ private:
 
   // Data members.
   const double m_sample_rate_if;
+  const double m_sample_rate_firstout;
   const double m_sample_rate_fmdemod;
   const int m_tuning_table_size;
   const int m_tuning_shift;
   const double m_freq_dev;
   const unsigned int m_first_downsample;
+  const unsigned int m_second_downsample;
   const bool m_pilot_shift;
   const bool m_stereo_enabled;
   bool m_stereo_detected;
@@ -236,6 +242,7 @@ private:
   double m_baseband_level;
 
   IQSampleVector m_buf_iftuned;
+  IQSampleVector m_buf_iffirstout;
   IQSampleVector m_buf_iffiltered;
   SampleVector m_buf_baseband;
   SampleVector m_buf_baseband_raw;
@@ -244,7 +251,8 @@ private:
   SampleVector m_buf_stereo;
 
   FineTuner m_finetuner;
-  LowPassFilterFirIQ m_iffilter;
+  LowPassFilterFirIQ m_iffilter_first;
+  LowPassFilterFirIQ m_iffilter_second;
   EqParameters m_eqparams;
   DiscriminatorEqualizer m_disceq;
   PhaseDiscriminator m_phasedisc;

@@ -418,19 +418,28 @@ int main(int argc, char **argv) {
 
   double ifrate = srcsdr->get_sample_rate();
   unsigned int first_downsample;
+  unsigned int second_downsample;
 
   if (ifrate == 10000000.0) {
-    // 312.5kHz = +-156.25kHz
-    first_downsample = 32;
-  } else if (ifrate == 2500000.0) {
+    // decimation rate: 32 = 8 * 4
     // 312.5kHz = +-156.25kHz
     first_downsample = 8;
+    second_downsample = 4;
+  } else if (ifrate == 2500000.0) {
+    // decimation rate: 8 = 4 * 2
+    // 312.5kHz = +-156.25kHz
+    first_downsample = 4;
+    second_downsample = 2;
   } else if (ifrate == 6000000.0) {
+    // decimation rate: 20 = 5 * 4
     // 300kHz = +-150kHz
-    first_downsample = 20;
+    first_downsample = 5;
+    second_downsample = 4;
   } else if (ifrate == 3000000.0) {
+    // decimation rate: 10 = 5 * 2
     // 300kHz = +-150kHz
-    first_downsample = 10;
+    first_downsample = 5;
+    second_downsample = 2;
   } else {
     fprintf(stderr, "Sample rate unsupported\n");
     fprintf(stderr, "Supported rate:\n");
@@ -442,9 +451,13 @@ int main(int argc, char **argv) {
 
   fprintf(stderr, "IF sample rate:    %.0f Hz\n", ifrate);
   fprintf(stderr, "First downsample:  %u (downsampled by)\n", first_downsample);
-  fprintf(stderr, "Downsampled rate:  %.0f Hz\n", ifrate / first_downsample);
+  fprintf(stderr, "First rate:        %.0f Hz\n", ifrate / first_downsample);
+  fprintf(stderr, "Second downsample: %u (downsampled by)\n",
+          second_downsample);
+  fprintf(stderr, "Second rate:       %.0f Hz\n",
+          ifrate / first_downsample / second_downsample);
   fprintf(stderr, "IF half bandwidth: %.0f Hz\n",
-          0.45 * (ifrate / first_downsample));
+          0.45 * (ifrate / first_downsample / second_downsample));
 
   double delta_if = tuner_freq - freq;
   MovingAverage<float> ppm_average(40, 0.0f);
@@ -482,6 +495,7 @@ int main(int argc, char **argv) {
   // Prepare decoder.
   FmDecoder fm(ifrate,                      // sample_rate_if
                first_downsample,            // first_downsample
+               second_downsample,           // second_downsample
                freq - tuner_freq,           // tuning_offset
                pcmrate,                     // sample_rate_pcm
                stereo,                      // stereo
