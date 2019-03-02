@@ -141,6 +141,7 @@ See [doc/NOTES-jj1bdx.md](doc/NOTES-jj1bdx.md) for the details of the modificati
 ## Acknowledgments
 
 * András Retzler, HA7ILM
+* Twitter [@lambdaprog](https://twitter.com/lambdaprog/)
 
 ## License
 
