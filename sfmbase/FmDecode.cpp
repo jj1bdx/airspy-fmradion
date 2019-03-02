@@ -320,7 +320,8 @@ FmDecoder::FmDecoder(double sample_rate_if, unsigned int first_downsample,
 
       // Construct LowPassFilterFirIQ
       ,
-      m_iffilter(8 * m_first_downsample, bandwidth_if / sample_rate_if, m_first_downsample)
+      m_iffilter(8 * m_first_downsample, bandwidth_if / sample_rate_if,
+                 m_first_downsample)
 
       // Construct EqParams
       ,
@@ -372,12 +373,22 @@ FmDecoder::FmDecoder(double sample_rate_if, unsigned int first_downsample,
 }
 
 void FmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
+
+// This fine tuner is not really needed
+// so long as the stability of the receiver device is
+// within the range of +- 1ppm (~100Hz or less).
+#ifdef USE_FINETUNER
   // Fine tuning.
   m_finetuner.process(samples_in, m_buf_iftuned);
 
   // Low pass filter to isolate station,
   // and perform first stage decimation.
   m_iffilter.process(m_buf_iftuned, m_buf_iffiltered);
+#else
+  // Low pass filter to isolate station,
+  // and perform first stage decimation.
+  m_iffilter.process(samples_in, m_buf_iffiltered);
+#endif
 
   // Measure IF level.
   double if_rms = rms_level_approx(m_buf_iffiltered);
