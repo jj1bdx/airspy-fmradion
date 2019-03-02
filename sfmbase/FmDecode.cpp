@@ -42,7 +42,13 @@ double rms_level_approx(const IQSampleVector &samples) {
 
 // Construct phase discriminator.
 PhaseDiscriminator::PhaseDiscriminator(double max_freq_dev)
-    : m_freq_scale_factor(1.0 / (max_freq_dev * 2.0 * M_PI)) {}
+    : m_freq_scale_factor(1.0 / (max_freq_dev * 2.0 * M_PI)) {
+  // Reservation of std::vector objects in the class
+  const unsigned int vector_size = 131072;
+  m_temp.reserve(vector_size);
+  m_temp_dq.reserve(vector_size);
+  m_temp_di.reserve(vector_size);
+}
 
 // Process samples.
 // A vectorized quadratic discrimination algorithm written by
@@ -52,37 +58,36 @@ PhaseDiscriminator::PhaseDiscriminator(double max_freq_dev)
 inline void PhaseDiscriminator::process(const IQSampleVector &samples_in,
                                         SampleVector &samples_out) {
   unsigned int n = samples_in.size();
-  samples_out.resize(n);
 
-  // Made static for speeding up processing.
-  static SampleVector temp(n);
-  static std::vector<IQSample::value_type> temp_dq(n);
-  static std::vector<IQSample::value_type> temp_di(n);
+  samples_out.resize(n);
+  m_temp.resize(n);
+  m_temp_dq.resize(n);
+  m_temp_di.resize(n);
 
   // Compute dq.
-  temp_dq[0] = samples_in[0].real() - m_last1_sample.real();
+  m_temp_dq[0] = samples_in[0].real() - m_last1_sample.real();
   for (unsigned int i = 1; i < n; i++) {
-    temp_dq[i] = samples_in[i].real() - samples_in[i - 1].real();
+    m_temp_dq[i] = samples_in[i].real() - samples_in[i - 1].real();
   }
   // Compute di.
-  temp_di[0] = samples_in[0].imag() - m_last1_sample.imag();
+  m_temp_di[0] = samples_in[0].imag() - m_last1_sample.imag();
   for (unsigned int i = 1; i < n; i++) {
-    temp_di[i] = samples_in[i].imag() - samples_in[i - 1].imag();
+    m_temp_di[i] = samples_in[i].imag() - samples_in[i - 1].imag();
   }
   // Compute output numerator.
   for (unsigned int i = 0; i < n; i++) {
-    samples_out[i] = (samples_in[i].imag() * temp_dq[i]) -
-                     (samples_in[i].real() * temp_di[i]);
+    samples_out[i] = (samples_in[i].imag() * m_temp_dq[i]) -
+                     (samples_in[i].real() * m_temp_di[i]);
   }
   // Compute output denominator.
   for (unsigned int i = 0; i < n; i++) {
-    temp[i] = (samples_in[i].imag() * samples_in[i].imag()) +
+    m_temp[i] = (samples_in[i].imag() * samples_in[i].imag()) +
               (samples_in[i].real() * samples_in[i].real());
   }
   // Scale output.
   for (unsigned int i = 0; i < n; i++) {
     samples_out[i] =
-        (temp[i]) ? m_freq_scale_factor * samples_out[i] / temp[i] : 0;
+        (m_temp[i]) ? m_freq_scale_factor * samples_out[i] / m_temp[i] : 0;
   }
 
   m_last1_sample = samples_in[n - 1];
@@ -369,7 +374,15 @@ FmDecoder::FmDecoder(double sample_rate_if, unsigned int first_downsample,
           (deemphasis == 0) ? 1.0 : (deemphasis * sample_rate_pcm * 1.0e-6))
 
 {
-  // nothing more to do
+  // Reservation of std::vector objects in the class
+  const unsigned int vector_size = 131072;
+  m_buf_iftuned.reserve(vector_size);
+  m_buf_iffiltered.reserve(vector_size);
+  m_buf_baseband.reserve(vector_size);
+  m_buf_baseband_raw.reserve(vector_size);
+  m_buf_mono.reserve(vector_size);
+  m_buf_rawstereo.reserve(vector_size);
+  m_buf_stereo.reserve(vector_size);
 }
 
 void FmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
