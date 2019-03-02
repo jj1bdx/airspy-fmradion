@@ -128,7 +128,6 @@ private:
 class FmDecoder {
 public:
   static constexpr double default_deemphasis = 50;
-  static constexpr double default_bandwidth_if = 100000;
   static constexpr double default_freq_dev = 75000;
   static constexpr double default_bandwidth_pcm = 15000;
   static constexpr double pilot_freq = 19000;
@@ -142,6 +141,8 @@ public:
    * sample_rate_if   :: IQ sample rate in Hz.
    * first_downsample :: Integer first stage downsampling rate (>= 1)
    *                     (applied BEFORE FM demodulation)
+   *                     If signal half bandwidth is automatically defined
+   *                     as 0.45 * (sample_rate_if / first_downsample)
    * tuning_offset    :: Frequency offset in Hz of radio station with respect
    *                     to receiver LO frequency (positive value means
    *                     station is at higher frequency than LO).
@@ -149,8 +150,6 @@ public:
    * stereo           :: True to enable stereo decoding.
    * deemphasis       :: Time constant of de-emphasis filter in microseconds
    *                     (50 us for broadcast FM, 0 to disable de-emphasis).
-   * bandwidth_if     :: Half bandwidth of IF signal in Hz
-   *                     (~ 100 kHz for broadcast FM)
    * freq_dev         :: Full scale carrier frequency deviation
    *                     (75 kHz for broadcast FM)
    * bandwidth_pcm    :: Half bandwidth of audio signal in Hz
@@ -162,7 +161,6 @@ public:
   FmDecoder(double sample_rate_if, unsigned int first_downsample = 1,
             double tuning_offset = 0.0, double sample_rate_pcm = 48000,
             bool stereo = true, double deemphasis = 50,
-            double bandwidth_if = default_bandwidth_if,
             double freq_dev = default_freq_dev,
             double bandwidth_pcm = default_bandwidth_pcm,
             bool pilot_shift = false);

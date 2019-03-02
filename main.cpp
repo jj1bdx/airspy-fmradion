@@ -198,7 +198,6 @@ static bool get_device(std::vector<std::string> &devnames, Source **srcsdr,
 // https://gcc.gnu.org/wiki/VerboseDiagnostics#missing_static_const_definition
 
 constexpr double FmDecoder::default_deemphasis;
-constexpr double FmDecoder::default_bandwidth_if;
 constexpr double FmDecoder::default_freq_dev;
 constexpr double FmDecoder::default_bandwidth_pcm;
 constexpr double FmDecoder::pilot_freq;
@@ -443,6 +442,8 @@ int main(int argc, char **argv) {
   fprintf(stderr, "IF sample rate:    %.0f Hz\n", ifrate);
   fprintf(stderr, "First downsample:  %u (downsampled by)\n", first_downsample);
   fprintf(stderr, "Downsampled rate:  %.0f Hz\n", ifrate / first_downsample);
+  fprintf(stderr, "IF half bandwidth: %.0f Hz\n",
+          0.45 * (ifrate / first_downsample));
 
   double delta_if = tuner_freq - freq;
   MovingAverage<float> ppm_average(40, 0.0f);
@@ -478,16 +479,15 @@ int main(int argc, char **argv) {
   fprintf(stderr, "deemphasis:        %.1f microseconds\n", deemphasis);
 
   // Prepare decoder.
-  FmDecoder fm(ifrate,                          // sample_rate_if
-               first_downsample,                // first_downsample
-               freq - tuner_freq,               // tuning_offset
-               pcmrate,                         // sample_rate_pcm
-               stereo,                          // stereo
-               deemphasis,                      // deemphasis,
-               FmDecoder::default_bandwidth_if, // bandwidth_if
-               FmDecoder::default_freq_dev,     // freq_dev
-               bandwidth_pcm,                   // bandwidth_pcm
-               pilot_shift);                    // pilot_shift
+  FmDecoder fm(ifrate,                      // sample_rate_if
+               first_downsample,            // first_downsample
+               freq - tuner_freq,           // tuning_offset
+               pcmrate,                     // sample_rate_pcm
+               stereo,                      // stereo
+               deemphasis,                  // deemphasis,
+               FmDecoder::default_freq_dev, // freq_dev
+               bandwidth_pcm,               // bandwidth_pcm
+               pilot_shift);                // pilot_shift
 
   // If buffering enabled, start background output thread.
   DataBuffer<Sample> output_buffer;
