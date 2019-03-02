@@ -1,4 +1,5 @@
-// NGSoftFM - Software decoder for FM broadcast radio with RTL-SDR
+// airspy-fmradion
+// Software decoder for FM broadcast radio with Airspy
 //
 // Copyright (C) 2015 Edouard Griffiths, F4EXB
 //

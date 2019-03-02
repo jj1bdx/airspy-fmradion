@@ -97,8 +97,10 @@ void FineTuner::process(const IQSampleVector &samples_in,
 /* ****************  class LowPassFilterFirIQ  **************** */
 
 // Construct low-pass filter.
-LowPassFilterFirIQ::LowPassFilterFirIQ(unsigned int filter_order, double cutoff)
-    : m_state(filter_order) {
+LowPassFilterFirIQ::LowPassFilterFirIQ(unsigned int filter_order, double cutoff,
+		unsigned int downsample)
+    : m_state(filter_order), m_downsample(downsample), m_pos(0) {
+  assert(downsample >= 1);
   make_lanczos_coeff(filter_order, cutoff, m_coeff);
 }
 
@@ -114,32 +116,39 @@ void LowPassFilterFirIQ::process(const IQSampleVector &samples_in,
     return;
   }
 
-  // NOTE: We use m_coeff the wrong way around because it is slightly
-  // faster to scan forward through the array. The result is still correct
-  // because the coefficients are symmetric.
+  // Integer downsample factor, no linear interpolation.
+
+  unsigned int p = m_pos;
+  unsigned int pstep = m_downsample;
+
+  samples_out.resize((n - p + pstep - 1) / pstep);
 
   // The first few samples need data from m_state.
   unsigned int i = 0;
-  for (; i < n && i < order; i++) {
+  for (; p < n && p < order; p += pstep, i++) {
     IQSample y = 0;
-    for (unsigned int j = 0; j < order - i; j++) {
-      y += m_state[i + j] * m_coeff[j];
+    for (unsigned int j = p + 1; j <= order; j++) {
+      y += m_state[order + p - j] * m_coeff[j];
     }
-    for (unsigned int j = order - i; j <= order; j++) {
-      y += samples_in[i - order + j] * m_coeff[j];
+    for (unsigned int j = 1; j <= p; j++) {
+      y += samples_in[p - j] * m_coeff[j];
     }
     samples_out[i] = y;
   }
 
   // Remaining samples only need data from samples_in.
-  for (; i < n; i++) {
+  for (; p < n; p += pstep, i++) {
     IQSample y = 0;
-    IQSampleVector::const_iterator inp = samples_in.begin() + i - order;
     for (unsigned int j = 0; j <= order; j++) {
-      y += inp[j] * m_coeff[j];
+      y += samples_in[p - j] * m_coeff[j];
     }
     samples_out[i] = y;
   }
+
+  assert(i == samples_out.size());
+
+  // Update index of start position in text sample block.
+  m_pos = p - n;
 
   // Update m_state.
   if (n < order) {
