@@ -1,6 +1,6 @@
 # airspy-fmradion
 
-* Version v0.1.0, 2-MAR-2019
+* Version v0.2.0, 2-MAR-2019
 * Software decoder for FM broadcast radio with AirSpy
 * For MacOS and Linux
 * This repository is forked from [ngsoftfm-jj1bdx](https://github.com/jj1bdx/ngsoftfm-jj1bdx) 0.1.14
@@ -89,7 +89,6 @@ Compile and install
 
 ## Basic command options
 
- - `-t devtype` is mandatory and must be `rtlsdr` for RTL-SDR devices or `hackrf` for HackRF.
  - `-c config` Comma separated list of configuration options as key=value pairs or just key for switches. Depends on device type (see next paragraph).
  - `-d devidx` Device index, 'list' to show device list (default 0)
  - `-r pcmrate` Audio sample rate in Hz (default 48000 Hz)
@@ -102,26 +101,24 @@ Compile and install
  - `-X` Shift pilot phase (for Quadrature Multipath Monitor) (-X is ignored under mono mode (-M))
  - `-U` Set deemphasis to 75 microseconds (default: 50)
 
-## Modification by @jj1bdx
+## Modification from ngsoftfm-jj1bdx
 
-See [doc/NOTES-jj1bdx.md](doc/NOTES-jj1bdx.md) for the details of the modification.
+[Twitter @lambdaprog suggested the following strategy](https://twitter.com/lambdaprog/status/1101495337292910594):
 
-* Remove 19kHz pilot signal when the stereo PLL is locked
-* Add equalizer to compensate 0th-hold aperture effect of phase discriminator output
-* The compensation equalizer output parameters are pre-calculated and interpolated from 200kHz ~ 10MHz sampling rates
-* Increase the number of FineTuner table size from 64 to 256
-* Add quiet mode `-q`
-* Add option `-X` for [Quadratic Multipath Monitor (QMM)](http://ham-radio.com/k6sti/qmm.htm) (This option is not effective in monaural mode (`-M` option))
-* Add option `-U` to set deemphasis timing to 75 microseconds for North America (default: 50 microseconds for Europe/Japan)
+> Try starting with 10MSPS and that small conversion filter (7 taps vs. the standard 47 taps), then decimate down to ~312.5 ksps (decimation by 32), then feed the FM demod. The overall CPU usage will be very low and the bit growth will give 14.5 bit resolution.
 
-## Features remaining same as the original NGSoftFM
+In airspy-fmradion, the following conversion process is implemented:
 
-* IF bandwidth: 200kHz (+-100kHz)
-* Default sample rate for RTL-SDR: 1000kHz
+* An integer downsampler is added to the first-stage LowPassFilterFirIQ
+* Input -> LowPassFilterFirIQ with decimator -> PhaseDiscriminator
+* The filter order of LowPassFilterFirIQ is increased to (downsample rate * 8)
+* This reduces CPU usage on Mac mini 2018 from ~51% to ~36% in 10Msps
+* Finetuner is now not activated unless `USE_FINETUNER` compile-time flag is set
+* Not using the finetuner resulted in another 3~4% of CPU usage reduction
+* CPU usage: ~51% -> ~32%
 
-## Device type specific configuration options
 
-### Airspy
+## Airspy configuration options
 
   - `freq=<int>` Desired tune frequency in Hz. Valid range from 1M to 1.8G. (default 100M: `100000000`)
   - `srate=<int>` Device sample rate. `list` lists valid values and exits. (default `10000000`). Valid values depend on the Airspy firmware. Airspy firmware and library must support dynamic sample rate query.
