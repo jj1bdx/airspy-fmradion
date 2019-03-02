@@ -201,8 +201,10 @@ void AirspySource::get_device_names(std::vector<std::string> &devices) {
   }
 
   rc = (airspy_error)airspy_exit();
+#ifdef DEBUG_AIRSPYSOURCE
   std::cerr << "AirspySource::get_device_names: Airspy library exit: " << rc
             << ": " << airspy_error_name(rc) << std::endl;
+#endif
 }
 
 std::uint32_t AirspySource::get_sample_rate() { return m_sampleRate; }
@@ -356,9 +358,10 @@ bool AirspySource::configure(std::string configurationStr) {
     return false;
   } else {
     if (m.find("srate") != m.end()) {
+#ifdef DEBUG_AIRSPYSOURCE
       std::cerr << "AirspySource::configure: srate: " << m["srate"]
                 << std::endl;
-
+#endif
       if (strcasecmp(m["srate"].c_str(), "list") == 0) {
         m_error = "Available sample rates (Hz): " + m_sratesStr;
         return false;
@@ -382,7 +385,9 @@ bool AirspySource::configure(std::string configurationStr) {
     }
 
     if (m.find("freq") != m.end()) {
+#ifdef DEBUG_AIRSPYSOURCE
       std::cerr << "AirspySource::configure: freq: " << m["freq"] << std::endl;
+#endif
       frequency = atoi(m["freq"].c_str());
 
       if ((frequency < 24000000) || (frequency > 1800000000)) {
@@ -392,9 +397,10 @@ bool AirspySource::configure(std::string configurationStr) {
     }
 
     if (m.find("lgain") != m.end()) {
+#ifdef DEBUG_AIRSPYSOURCE
       std::cerr << "AirspySource::configure: lgain: " << m["lgain"]
                 << std::endl;
-
+#endif
       if (strcasecmp(m["lgain"].c_str(), "list") == 0) {
         m_error = "Available LNA gains (dB): " + m_lgainsStr;
         return false;
@@ -410,9 +416,10 @@ bool AirspySource::configure(std::string configurationStr) {
     }
 
     if (m.find("mgain") != m.end()) {
+#ifdef DEBUG_AIRSPYSOURCE
       std::cerr << "AirspySource::configure: mgain: " << m["mgain"]
                 << std::endl;
-
+#endif
       if (strcasecmp(m["mgain"].c_str(), "list") == 0) {
         m_error = "Available mixer gains (dB): " + m_mgainsStr;
         return false;
@@ -428,8 +435,10 @@ bool AirspySource::configure(std::string configurationStr) {
     }
 
     if (m.find("vgain") != m.end()) {
+#ifdef DEBUG_AIRSPYSOURCE
       std::cerr << "AirspySource::configure: vgain: " << m["vgain"]
                 << std::endl;
+#endif
       vgaGain = atoi(m["vgain"].c_str());
 
       if (strcasecmp(m["vgain"].c_str(), "list") == 0) {
@@ -445,17 +454,23 @@ bool AirspySource::configure(std::string configurationStr) {
     }
 
     if (m.find("antbias") != m.end()) {
+#ifdef DEBUG_AIRSPYSOURCE
       std::cerr << "AirspySource::configure: antbias" << std::endl;
+#endif
       antBias = true;
     }
 
     if (m.find("lagc") != m.end()) {
+#ifdef DEBUG_AIRSPYSOURCE
       std::cerr << "AirspySource::configure: lagc" << std::endl;
+#endif
       lnaAGC = true;
     }
 
     if (m.find("magc") != m.end()) {
+#ifdef DEBUG_AIRSPYSOURCE
       std::cerr << "AirspySource::configure: magc" << std::endl;
+#endif
       mixAGC = true;
     }
   }
@@ -473,7 +488,9 @@ bool AirspySource::start(DataBuffer<IQSample> *buf,
   m_stop_flag = stop_flag;
 
   if (m_thread == 0) {
+#ifdef DEBUG_AIRSPYSOURCE
     std::cerr << "AirspySource::start: starting" << std::endl;
+#endif
     m_running = true;
     m_thread = new std::thread(run, m_dev, stop_flag);
     sleep(1);
@@ -486,8 +503,9 @@ bool AirspySource::start(DataBuffer<IQSample> *buf,
 }
 
 void AirspySource::run(airspy_device *dev, std::atomic_bool *stop_flag) {
+#ifdef DEBUG_AIRSPYSOURCE
   std::cerr << "AirspySource::run" << std::endl;
-
+#endif
   airspy_error rc = (airspy_error)airspy_start_rx(dev, rx_callback, 0);
 
   if (rc == AIRSPY_SUCCESS) {
@@ -508,8 +526,9 @@ void AirspySource::run(airspy_device *dev, std::atomic_bool *stop_flag) {
 }
 
 bool AirspySource::stop() {
+#ifdef DEBUG_AIRSPYSOURCE
   std::cerr << "AirspySource::stop" << std::endl;
-
+#endif
   m_thread->join();
   delete m_thread;
   return true;
