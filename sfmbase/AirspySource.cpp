@@ -551,10 +551,11 @@ void AirspySource::callback(const float *buf, int len) {
   IQSampleVector iqsamples;
 
   iqsamples.resize(len / 2);
+  const float scale = 16.0;
 
   for (int i = 0, j = 0; i < len; i += 2, j++) {
-    float re = buf[i];
-    float im = buf[i + 1];
+    float re = buf[i] * scale;
+    float im = buf[i + 1] * scale;
     iqsamples[j] = IQSample(re, im);
   }
 
