@@ -40,7 +40,7 @@
 
 #include "AirspySource.h"
 
-#define AIRSPY_FMRADION_VERSION "v0.2.2"
+#define AIRSPY_FMRADION_VERSION "v0.2.3-dev"
 
 /** Flag is set on SIGINT / SIGTERM. */
 static std::atomic_bool stop_flag(false);
@@ -460,7 +460,7 @@ int main(int argc, char **argv) {
           0.45 * (ifrate / first_downsample / second_downsample));
 
   double delta_if = tuner_freq - freq;
-  MovingAverage<float> ppm_average(40, 0.0f);
+  MovingAverage<float> ppm_average(1000, 0.0f);
 
   srcsdr->print_specific_parms();
 
@@ -555,7 +555,6 @@ int main(int argc, char **argv) {
     // to make and not the one made
     ppm_average.feed(((fm.get_tuning_offset() + delta_if) / tuner_freq) *
                      -1.0e6);
-    double ppm_error = (tuner_freq + fm.get_tuning_offset()) * 1.0e-6;
     double ppm_value_average = ppm_average.average();
     double if_level_db = 20 * log10(fm.get_if_level());
     double baseband_level_db = 20 * log10(fm.get_baseband_level()) + 3.01;
@@ -574,9 +573,9 @@ int main(int argc, char **argv) {
     if (!quietmode) {
       // Show per-block statistics.
       fprintf(stderr,
-              "\rblk=%7d:f=%8.4fMHz:ppm=%+6.2f:IF=%+5.1fdB:"
+              "\rblk=%7d:ppm=%+6.2f:IF=%+5.1fdB:"
               "BB=%+5.1fdB:AF=%+5.1fdB:buf=%.1fs",
-              block, ppm_error, ppm_value_average, if_level_db,
+              block, ppm_value_average, if_level_db,
               baseband_level_db, audio_level_db, buflen_sec);
       // Show stereo status.
       if (fm.stereo_detected() != got_stereo) {
