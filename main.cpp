@@ -2,7 +2,7 @@
 //
 // Copyright (C) 2013, Joris van Rantwijk.
 // Copyright (C) 2015 Edouard Griffiths, F4EXB
-// Copyright (C) 2018 Kenji Rikitake, JJ1BDX
+// Copyright (C) 2018, 2019 Kenji Rikitake, JJ1BDX
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -40,7 +40,7 @@
 
 #include "AirspySource.h"
 
-#define AIRSPY_FMRADION_VERSION "v0.2.1-dev"
+#define AIRSPY_FMRADION_VERSION "v0.2.1"
 
 /** Flag is set on SIGINT / SIGTERM. */
 static std::atomic_bool stop_flag(false);
