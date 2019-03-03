@@ -1,6 +1,6 @@
 # airspy-fmradion
 
-* Version v0.2.2, 3-MAR-2019
+* Version v0.2.3, 3-MAR-2019
 * Software decoder for FM broadcast radio with AirSpy
 * For MacOS and Linux
 * This repository is forked from [ngsoftfm-jj1bdx](https://github.com/jj1bdx/ngsoftfm-jj1bdx) 0.1.14
@@ -116,8 +116,9 @@ In airspy-fmradion, the following conversion process is implemented:
 * Finetuner is now not activated unless `USE_FINETUNER` compile-time flag is set
 * Not using the finetuner resulted in another 3~4% of CPU usage reduction
 * CPU usage: ~51% -> ~29% (on Mac mini 2018, with debug output on)
-* Use `AIRSPY_SAMPLE_FLOAT32_IQ` to directly obtain float IQ sample data from Airspy, scale x16 to align the former INT16 IF level
+* Use `AIRSPY_SAMPLE_FLOAT32_IQ` to directly obtain float IQ sample data from Airspy: IF level is now -24.08dB than the previous (pre-v0.2.2) version
 * Halfband kernel filter designed by Twitter @lambdaprog is set for Airspy conversion filter
+* Use sparse debug output for ppm and other level status
 
 ## Airspy configuration options
 
