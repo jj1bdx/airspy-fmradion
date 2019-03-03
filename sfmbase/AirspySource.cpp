@@ -95,10 +95,10 @@ AirspySource::AirspySource(int dev_index)
 
     m_sratesStr = srates_ostr.str();
 
-    rc = (airspy_error)airspy_set_sample_type(m_dev, AIRSPY_SAMPLE_INT16_IQ);
+    rc = (airspy_error)airspy_set_sample_type(m_dev, AIRSPY_SAMPLE_FLOAT32_IQ);
 
     if (rc != AIRSPY_SUCCESS) {
-      m_error = "AirspyInput::start: could not set sample type to INT16_IQ";
+      m_error = "AirspyInput::start: could not set sample type to FLOAT32_IQ";
     }
   }
 
@@ -321,10 +321,13 @@ bool AirspySource::configure(int sampleRateIndex, uint32_t frequency,
   // The rest will be shaved up by the decimation."
   // See <https://twitter.com/lambdaprog/status/1101500018618523659>
   // and <https://twitter.com/lambdaprog/status/1101456999743717376>
+  // and <https://twitter.com/lambdaprog/status/1102181099793539072>
 
-  const int16_t halfband_kernel[7] = {-1033, 0, 9225, 16384, 9225, 0, -1033};
-  rc = (airspy_error)airspy_set_conversion_filter_int16(m_dev, halfband_kernel,
-                                                        7);
+  const float halfband_kernel[7] = {
+      -0.031534955091398462, 0.0, 0.281533904166905770, 0.5,
+      0.281533904166905770,  0.0, -0.031534955091398462};
+  rc = (airspy_error)airspy_set_conversion_filter_float32(m_dev,
+                                                          halfband_kernel, 7);
 
   if (rc != AIRSPY_SUCCESS) {
     std::ostringstream err_ostr;
@@ -538,23 +541,21 @@ int AirspySource::rx_callback(airspy_transfer_t *transfer) {
   int len = transfer->sample_count * 2; // interleaved I/Q samples
 
   if (m_this) {
-    m_this->callback((short *)transfer->samples, len);
+    m_this->callback((float *)transfer->samples, len);
   }
 
   return 0;
 }
 
-void AirspySource::callback(const short *buf, int len) {
+void AirspySource::callback(const float *buf, int len) {
   IQSampleVector iqsamples;
 
   iqsamples.resize(len / 2);
 
   for (int i = 0, j = 0; i < len; i += 2, j++) {
-    int32_t re = buf[i];
-    int32_t im = buf[i + 1];
-    iqsamples[j] =
-        IQSample(re / IQSample::value_type(1 << 11), // 12 bits samples
-                 im / IQSample::value_type(1 << 11));
+    float re = buf[i];
+    float im = buf[i + 1];
+    iqsamples[j] = IQSample(re, im);
   }
 
   m_buf->push(move(iqsamples));

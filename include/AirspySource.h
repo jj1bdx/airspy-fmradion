@@ -75,7 +75,7 @@ private:
                  int lna_gain, int mix_gain, int vga_gain, bool lna_agc,
                  bool mix_agc);
 
-  void callback(const short *buf, int len);
+  void callback(const float *buf, int len);
   static int rx_callback(airspy_transfer_t *transfer);
   static void run(airspy_device *dev, std::atomic_bool *stop_flag);
 
