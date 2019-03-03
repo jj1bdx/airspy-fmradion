@@ -571,14 +571,9 @@ int main(int argc, char **argv) {
 
     // Show status messages for each block if not in quiet mode.
     if (!quietmode) {
-      // Show per-block statistics.
-      fprintf(stderr,
-              "\rblk=%7d:ppm=%+6.2f:IF=%+5.1fdB:"
-              "BB=%+5.1fdB:AF=%+5.1fdB:buf=%.1fs",
-              block, ppm_value_average, if_level_db,
-              baseband_level_db, audio_level_db, buflen_sec);
+      bool stereo_change = (fm.stereo_detected() != got_stereo);
       // Show stereo status.
-      if (fm.stereo_detected() != got_stereo) {
+      if (stereo_change) {
         got_stereo = fm.stereo_detected();
         if (got_stereo) {
           fprintf(stderr, "\ngot stereo signal (pilot level = %f)\n",
@@ -587,7 +582,15 @@ int main(int argc, char **argv) {
           fprintf(stderr, "\nlost stereo signal\n");
         }
       }
-      fflush(stderr);
+      // Show per-block statistics.
+      if (stereo_change || ((block % 10) == 0)) {
+        fprintf(stderr,
+                "\rblk=%7d:ppm=%+6.2f:IF=%+5.1fdB:"
+                "BB=%+5.1fdB:AF=%+5.1fdB:buf=%.1fs",
+                block, ppm_value_average, if_level_db, baseband_level_db,
+                audio_level_db, buflen_sec);
+        fflush(stderr);
+      }
     }
 
     // Write PPS markers.
