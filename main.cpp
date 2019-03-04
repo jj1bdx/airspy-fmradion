@@ -414,7 +414,9 @@ int main(int argc, char **argv) {
   fprintf(stderr, "tuned for:         %.6f MHz\n", freq * 1.0e-6);
 
   double tuner_freq = srcsdr->get_frequency();
-  fprintf(stderr, "device tuned for:  %.6f MHz\n", tuner_freq * 1.0e-6);
+  if (tuner_freq != freq) {
+    fprintf(stderr, "device tuned for:  %.6f MHz\n", tuner_freq * 1.0e-6);
+  }
 
   double ifrate = srcsdr->get_sample_rate();
   unsigned int first_downsample;
@@ -452,18 +454,18 @@ int main(int argc, char **argv) {
     fprintf(stderr, "Sample rate unsupported\n");
     fprintf(stderr, "Supported rate:\n");
     fprintf(stderr, "Airspy R2: 2500000, 10000000\n");
+#if 0
     fprintf(stderr, "Airspy Mini: 3000000, 6000000\n");
+#endif
     delete srcsdr;
     exit(1);
   }
 
   fprintf(stderr, "IF sample rate:    %.0f Hz\n", ifrate);
-  fprintf(stderr, "First downsample:  %u (downsampled by)\n", first_downsample);
-  fprintf(stderr, "First rate:        %.0f Hz\n", ifrate / first_downsample);
-  fprintf(stderr, "Second downsample: %u (downsampled by)\n",
-          second_downsample);
-  fprintf(stderr, "Second rate:       %.0f Hz\n",
-          ifrate / first_downsample / second_downsample);
+  fprintf(stderr, "1st rate:          %.0f Hz (divided by %u)\n",
+          ifrate / first_downsample, first_downsample);
+  fprintf(stderr, "2nd rate:          %.0f Hz (divided by %u)\n",
+          ifrate / first_downsample / second_downsample, second_downsample);
 
   double delta_if = tuner_freq - freq;
   MovingAverage<float> ppm_average(1000, 0.0f);
