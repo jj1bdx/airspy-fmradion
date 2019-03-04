@@ -203,7 +203,6 @@ constexpr double FmDecoder::default_deemphasis;
 constexpr double FmDecoder::default_freq_dev;
 constexpr double FmDecoder::default_bandwidth_pcm;
 constexpr double FmDecoder::pilot_freq;
-constexpr unsigned int FmDecoder::finetuner_table_size;
 constexpr double FmDecoder::default_deemphasis_eu;
 constexpr double FmDecoder::default_deemphasis_na;
 

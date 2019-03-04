@@ -315,17 +315,10 @@ FmDecoder::FmDecoder(double sample_rate_if, unsigned int first_downsample,
     : m_sample_rate_if(sample_rate_if),
       m_sample_rate_firstout(m_sample_rate_if / first_downsample),
       m_sample_rate_fmdemod(m_sample_rate_firstout / second_downsample),
-      m_tuning_table_size(finetuner_table_size),
-      m_tuning_shift(lrint(-double(finetuner_table_size) * tuning_offset /
-                           sample_rate_if)),
       m_freq_dev(freq_dev), m_first_downsample(first_downsample),
       m_second_downsample(second_downsample), m_pilot_shift(pilot_shift),
       m_stereo_enabled(stereo), m_stereo_detected(false), m_if_level(0),
       m_baseband_mean(0), m_baseband_level(0)
-
-      // Construct FineTuner
-      ,
-      m_finetuner(m_tuning_table_size, m_tuning_shift)
 
       // Construct LowPassFilterFirIQ
       ,
@@ -392,21 +385,13 @@ FmDecoder::FmDecoder(double sample_rate_if, unsigned int first_downsample,
 
 void FmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
 
-// This fine tuner is not really needed
-// so long as the stability of the receiver device is
-// within the range of +- 1ppm (~100Hz or less).
-#ifdef USE_FINETUNER
-  // Fine tuning.
-  m_finetuner.process(samples_in, m_buf_iftuned);
+  // Fine tuning is not needed
+  // so long as the stability of the receiver device is
+  // within the range of +- 1ppm (~100Hz or less).
 
   // First stage of the low pass filters to isolate station,
   // and perform first stage decimation.
-  m_iffilter_first.process(m_buf_iftuned, m_buf_iffirstout);
-#else
-  // First stage of the low pass filters to isolate station,
-  // and perform first stage decimation.
   m_iffilter_first.process(samples_in, m_buf_iffirstout);
-#endif
 
   // Second stage of the low pass filters to isolate station,
   m_iffilter_second.process(m_buf_iffirstout, m_buf_iffiltered);

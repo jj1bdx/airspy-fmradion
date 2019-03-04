@@ -23,28 +23,6 @@
 #include "SoftFM.h"
 #include <vector>
 
-/** Fine tuner which shifts the frequency of an IQ signal by a fixed offset. */
-class FineTuner {
-public:
-  /**
-   * Construct fine tuner.
-   *
-   * table_size :: Size of internal sin/cos tables, determines the resolution
-   *               of the frequency shift.
-   *
-   * freq_shift :: Frequency shift. Signal frequency will be shifted by
-   *               (sample_rate * freq_shift / table_size).
-   */
-  FineTuner(unsigned int table_size, int freq_shift);
-
-  /** Process samples. */
-  void process(const IQSampleVector &samples_in, IQSampleVector &samples_out);
-
-private:
-  unsigned int m_index;
-  IQSampleVector m_table;
-};
-
 /** Low-pass filter for IQ samples, based on Lanczos FIR filter. */
 class LowPassFilterFirIQ {
 public:

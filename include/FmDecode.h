@@ -134,7 +134,6 @@ public:
   static constexpr double default_freq_dev = 75000;
   static constexpr double default_bandwidth_pcm = 15000;
   static constexpr double pilot_freq = 19000;
-  static constexpr unsigned int finetuner_table_size = 256;
   static constexpr double default_deemphasis_eu = 50; // Europe and Japan
   static constexpr double default_deemphasis_na = 75; // USA/Canada
 
@@ -187,11 +186,7 @@ public:
   bool stereo_detected() const { return m_stereo_detected; }
 
   /** Return actual frequency offset in Hz with respect to receiver LO. */
-  double get_tuning_offset() const {
-    double tuned =
-        -m_tuning_shift * m_sample_rate_if / double(m_tuning_table_size);
-    return tuned + m_baseband_mean * m_freq_dev;
-  }
+  double get_tuning_offset() const { return m_baseband_mean * m_freq_dev; }
 
   /** Return RMS IF level (where full scale IQ signal is 1.0). */
   double get_if_level() const { return m_if_level; }
@@ -230,8 +225,6 @@ private:
   const double m_sample_rate_if;
   const double m_sample_rate_firstout;
   const double m_sample_rate_fmdemod;
-  const int m_tuning_table_size;
-  const int m_tuning_shift;
   const double m_freq_dev;
   const unsigned int m_first_downsample;
   const unsigned int m_second_downsample;
@@ -251,7 +244,6 @@ private:
   SampleVector m_buf_rawstereo;
   SampleVector m_buf_stereo;
 
-  FineTuner m_finetuner;
   LowPassFilterFirIQ m_iffilter_first;
   LowPassFilterFirIQ m_iffilter_second;
   EqParameters m_eqparams;
