@@ -304,9 +304,12 @@ void PilotPhaseLock::process(SampleVector &samples_in,
 /* ****************  class FmDecoder  **************** */
 
 FmDecoder::FmDecoder(double sample_rate_if, unsigned int first_downsample,
-                     unsigned int second_downsample, double tuning_offset,
-                     double sample_rate_pcm, bool stereo, double deemphasis,
-                     double freq_dev, double bandwidth_pcm, bool pilot_shift)
+                     const std::vector<IQSample::value_type> &first_coeff,
+                     unsigned int second_downsample,
+                     const std::vector<IQSample::value_type> &second_coeff,
+                     double tuning_offset, double sample_rate_pcm, bool stereo,
+                     double deemphasis, double freq_dev, double bandwidth_pcm,
+                     bool pilot_shift)
 
     // Initialize member fields
     : m_sample_rate_if(sample_rate_if),
@@ -326,10 +329,8 @@ FmDecoder::FmDecoder(double sample_rate_if, unsigned int first_downsample,
 
       // Construct LowPassFilterFirIQ
       ,
-      m_iffilter_first(8 * m_first_downsample, 0.45 / m_first_downsample,
-                       m_first_downsample),
-      m_iffilter_second(8 * m_second_downsample, 0.45 / m_second_downsample,
-                        m_second_downsample)
+      m_iffilter_first(first_coeff, m_first_downsample),
+      m_iffilter_second(second_coeff, m_second_downsample)
 
       // Construct EqParams
       ,

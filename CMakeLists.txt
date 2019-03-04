@@ -98,6 +98,7 @@ set(sfmbase_SOURCES
 set(sfmbase_HEADERS
     include/AudioOutput.h
     include/Filter.h
+    include/FilterParameters.h
     include/FmDecode.h
     include/MovingAverage.h
     include/Source.h

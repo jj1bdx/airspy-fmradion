@@ -144,12 +144,10 @@ public:
    * sample_rate_if   :: IQ sample rate in Hz.
    * first_downsample :: Integer first stage downsampling rate (>= 1)
    *                     (applied BEFORE FM demodulation)
+   * first_coeff      :: First stage filter coefficients
    * second_downsample:: Integer second stage downsampling rate (>= 1)
    *                     (applied BEFORE FM demodulation)
-   *                     Signal half bandwidth is automatically defined
-   *                     as 0.45 *
-   *                        (sample_rate_if / first_downsample /
-   *                         second_downsample)
+   * second_coeff     :: Second stage filter coefficients
    * tuning_offset    :: Frequency offset in Hz of radio station with respect
    *                     to receiver LO frequency (positive value means
    *                     station is at higher frequency than LO).
@@ -165,10 +163,13 @@ public:
    *                  :: (use cos(2*x) instead of sin (2*x))
    *                  :: (for multipath distortion detection)
    */
-  FmDecoder(double sample_rate_if, unsigned int first_downsample = 1,
-            unsigned int second_downsample = 1, double tuning_offset = 0.0,
-            double sample_rate_pcm = 48000, bool stereo = true,
-            double deemphasis = 50, double freq_dev = default_freq_dev,
+  FmDecoder(double sample_rate_if, unsigned int first_downsample,
+            const std::vector<IQSample::value_type> &first_coeff,
+            unsigned int second_downsample,
+            const std::vector<IQSample::value_type> &second_coeff,
+            double tuning_offset = 0.0, double sample_rate_pcm = 48000,
+            bool stereo = true, double deemphasis = 50,
+            double freq_dev = default_freq_dev,
             double bandwidth_pcm = default_bandwidth_pcm,
             bool pilot_shift = false);
 

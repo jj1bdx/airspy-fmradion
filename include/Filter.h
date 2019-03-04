@@ -51,20 +51,19 @@ public:
   /**
    * Construct low-pass filter.
    *
-   * filter_order :: FIR filter order.
-   * cutoff       :: Cutoff frequency relative to the full sample rate
-   *                 (valid range 0.0 ... 0.5).
+   * coeff        :: FIR filter coefficients.
    * downsample   :: Integer downsampling rate (>= 1)
    */
-  LowPassFilterFirIQ(unsigned int filter_order, double cutoff,
+  LowPassFilterFirIQ(const std::vector<IQSample::value_type> &coeff,
                      unsigned int downsample);
 
   /** Process samples. */
   void process(const IQSampleVector &samples_in, IQSampleVector &samples_out);
 
 private:
-  std::vector<IQSample::value_type> m_coeff;
+  const std::vector<IQSample::value_type> m_coeff;
   IQSampleVector m_state;
+  unsigned int m_order;
   unsigned int m_downsample;
   unsigned int m_pos;
 };

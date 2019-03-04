@@ -98,11 +98,12 @@ void FineTuner::process(const IQSampleVector &samples_in,
 /* ****************  class LowPassFilterFirIQ  **************** */
 
 // Construct low-pass filter.
-LowPassFilterFirIQ::LowPassFilterFirIQ(unsigned int filter_order, double cutoff,
-                                       unsigned int downsample)
-    : m_state(filter_order), m_downsample(downsample), m_pos(0) {
+LowPassFilterFirIQ::LowPassFilterFirIQ(
+    const std::vector<IQSample::value_type> &coeff, unsigned int downsample)
+    : m_coeff(coeff),
+      m_order(coeff.size() - 1), m_downsample(downsample), m_pos(0) {
   assert(downsample >= 1);
-  make_lanczos_coeff(filter_order, cutoff, m_coeff);
+  m_state.resize(m_order);
 }
 
 // Process samples.

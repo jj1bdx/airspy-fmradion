@@ -33,6 +33,7 @@
 
 #include "AudioOutput.h"
 #include "DataBuffer.h"
+#include "FilterParameters.h"
 #include "FmDecode.h"
 #include "MovingAverage.h"
 #include "SoftFM.h"
@@ -40,7 +41,7 @@
 
 #include "AirspySource.h"
 
-#define AIRSPY_FMRADION_VERSION "v0.2.3"
+#define AIRSPY_FMRADION_VERSION "v0.2.4-dev"
 
 /** Flag is set on SIGINT / SIGTERM. */
 static std::atomic_bool stop_flag(false);
@@ -418,13 +419,18 @@ int main(int argc, char **argv) {
 
   double ifrate = srcsdr->get_sample_rate();
   unsigned int first_downsample;
+  std::vector<IQSample::value_type> first_coeff;
   unsigned int second_downsample;
+  std::vector<IQSample::value_type> second_coeff;
 
   if (ifrate == 10000000.0) {
     // decimation rate: 32 = 8 * 4
     // 312.5kHz = +-156.25kHz
     first_downsample = 8;
+    first_coeff = FilterParameters::lambdaprog_10000khz_div8;
     second_downsample = 4;
+    second_coeff = FilterParameters::lambdaprog_1250khz_div4;
+#if 0
   } else if (ifrate == 2500000.0) {
     // decimation rate: 8 = 4 * 2
     // 312.5kHz = +-156.25kHz
@@ -440,6 +446,7 @@ int main(int argc, char **argv) {
     // 300kHz = +-150kHz
     first_downsample = 5;
     second_downsample = 2;
+#endif
   } else {
     fprintf(stderr, "Sample rate unsupported\n");
     fprintf(stderr, "Supported rate:\n");
@@ -495,7 +502,9 @@ int main(int argc, char **argv) {
   // Prepare decoder.
   FmDecoder fm(ifrate,                      // sample_rate_if
                first_downsample,            // first_downsample
+               first_coeff,                 // first_coeff
                second_downsample,           // second_downsample
+               second_coeff,                // second_coeff
                freq - tuner_freq,           // tuning_offset
                pcmrate,                     // sample_rate_pcm
                stereo,                      // stereo
