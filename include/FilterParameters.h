@@ -99,6 +99,7 @@ const std::vector<IQSample::value_type>
         -570.5045743115042570E-6, -0.001311101751774940,
         -545.8813707762652710E-6};
 
+// 300-tap FM audio filter
 const std::vector<SampleVector::value_type>
     FilterParameters::jj1bdx_312_5khz_fmaudio = {9.010948571040366060E-6,
                                                  14.72538285650357180E-6,
