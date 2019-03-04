@@ -147,9 +147,7 @@ public:
    * second_downsample:: Integer second stage downsampling rate (>= 1)
    *                     (applied BEFORE FM demodulation)
    * second_coeff     :: Second stage filter coefficients
-   * tuning_offset    :: Frequency offset in Hz of radio station with respect
-   *                     to receiver LO frequency (positive value means
-   *                     station is at higher frequency than LO).
+   * fmaudio_coeff    :: Output audio filter coefficients
    * sample_rate_pcm  :: Audio sample rate.
    * stereo           :: True to enable stereo decoding.
    * deemphasis       :: Time constant of de-emphasis filter in microseconds
@@ -166,9 +164,9 @@ public:
             const std::vector<IQSample::value_type> &first_coeff,
             unsigned int second_downsample,
             const std::vector<IQSample::value_type> &second_coeff,
-            double tuning_offset = 0.0, double sample_rate_pcm = 48000,
-            bool stereo = true, double deemphasis = 50,
-            double freq_dev = default_freq_dev,
+            const std::vector<SampleVector::value_type> &fmaudio_coeff,
+            double sample_rate_pcm = 48000, bool stereo = true,
+            double deemphasis = 50, double freq_dev = default_freq_dev,
             double bandwidth_pcm = default_bandwidth_pcm,
             bool pilot_shift = false);
 

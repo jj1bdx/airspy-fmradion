@@ -121,6 +121,7 @@ In airspy-fmradion, the following conversion process is implemented:
 * Use sparse debug output for ppm and other level status
 * Use pre-built filter coefficients for LPFIQ, which results in 5% further CPU usage reduction (~25%)
 * Filter coefficients for LPFIQ are listed under `doc/fir-filter-data`
+* Use pre-built filter coefficients for audio downsample filter, which results in 1% further usage reduction (~24%)
 
 ## Airspy configuration options
 

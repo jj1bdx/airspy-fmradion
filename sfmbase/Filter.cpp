@@ -128,20 +128,22 @@ void LowPassFilterFirIQ::process(const IQSampleVector &samples_in,
 /* ****************  class DownsampleFilter  **************** */
 
 // Construct low-pass filter with optional downsampling.
-DownsampleFilter::DownsampleFilter(unsigned int filter_order, double cutoff,
-                                   double downsample, bool integer_factor)
-    : m_downsample(downsample),
+DownsampleFilter::DownsampleFilter(
+    const std::vector<SampleVector::value_type> &coeff, double downsample,
+    bool integer_factor)
+    : m_coeff(coeff), m_order(coeff.size() - 1), m_downsample(downsample),
       m_downsample_int(integer_factor ? lrint(downsample) : 0), m_pos_int(0),
-      m_pos_frac(0), m_state(filter_order) {
-  assert(downsample >= 1);
-  assert(filter_order > 1);
-
+      m_pos_frac(0) {
   // Force the first coefficient to zero and append an extra zero at the
-  // end of the array. This ensures we can always obtain (filter_order+1)
+  // end of the array. This ensures we can always obtain (m_order+1)
   // coefficients by linear interpolation between adjacent array elements.
-  make_lanczos_coeff(filter_order - 1, cutoff, m_coeff);
   m_coeff.insert(m_coeff.begin(), 0);
   m_coeff.push_back(0);
+  m_order = coeff.size() - 1;
+
+  assert(downsample >= 1);
+  assert(m_order > 2);
+  m_state.resize(m_order);
 }
 
 // Process samples.

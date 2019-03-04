@@ -57,28 +57,27 @@ public:
   /**
    * Construct low-pass filter with optional downsampling.
    *
-   * filter_order :: FIR filter order
-   * cutoff       :: Cutoff frequency relative to the full input sample rate
-   *                 (valid range 0.0 .. 0.5)
+   * coeff        :: FIR filter coefficients.
    * downsample   :: Decimation factor (>= 1) or 1 to disable
    * integer_factor :: Enables a faster and more precise algorithm that
    *                   only works for integer downsample factors.
    *
    * The output sample rate is (input_sample_rate / downsample)
    */
-  DownsampleFilter(unsigned int filter_order, double cutoff,
+  DownsampleFilter(const std::vector<SampleVector::value_type> &coeff,
                    double downsample = 1, bool integer_factor = true);
 
   /** Process samples. */
   void process(const SampleVector &samples_in, SampleVector &samples_out);
 
 private:
+  std::vector<SampleVector::value_type> m_coeff;
+  SampleVector m_state;
+  unsigned int m_order;
   double m_downsample;
   unsigned int m_downsample_int;
   unsigned int m_pos_int;
   Sample m_pos_frac;
-  SampleVector m_coeff;
-  SampleVector m_state;
 };
 
 /** First order low-pass IIR filter for real-valued signals. */

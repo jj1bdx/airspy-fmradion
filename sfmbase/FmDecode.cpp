@@ -307,9 +307,9 @@ FmDecoder::FmDecoder(double sample_rate_if, unsigned int first_downsample,
                      const std::vector<IQSample::value_type> &first_coeff,
                      unsigned int second_downsample,
                      const std::vector<IQSample::value_type> &second_coeff,
-                     double tuning_offset, double sample_rate_pcm, bool stereo,
-                     double deemphasis, double freq_dev, double bandwidth_pcm,
-                     bool pilot_shift)
+                     const std::vector<SampleVector::value_type> &fmaudio_coeff,
+                     double sample_rate_pcm, bool stereo, double deemphasis,
+                     double freq_dev, double bandwidth_pcm, bool pilot_shift)
 
     // Initialize member fields
     : m_sample_rate_if(sample_rate_if),
@@ -346,15 +346,13 @@ FmDecoder::FmDecoder(double sample_rate_if, unsigned int first_downsample,
 
       // Construct DownsampleFilter for mono channel
       ,
-      m_resample_mono(int(m_sample_rate_fmdemod / 1000.0),     // filter_order
-                      bandwidth_pcm / m_sample_rate_fmdemod,   // cutoff
+      m_resample_mono(fmaudio_coeff,                           // coeff
                       m_sample_rate_fmdemod / sample_rate_pcm, // downsample
                       false)                                   // integer_factor
 
       // Construct DownsampleFilter for stereo channel
       ,
-      m_resample_stereo(int(m_sample_rate_fmdemod / 1000.0),     // filter_order
-                        bandwidth_pcm / m_sample_rate_fmdemod,   // cutoff
+      m_resample_stereo(fmaudio_coeff,                           // coeff
                         m_sample_rate_fmdemod / sample_rate_pcm, // downsample
                         false) // integer_factor
 
