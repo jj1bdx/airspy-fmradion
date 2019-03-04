@@ -1,6 +1,6 @@
 # airspy-fmradion
 
-* Version v0.2.3, 3-MAR-2019
+* Version v0.2.4-dev, 4-MAR-2019
 * Software decoder for FM broadcast radio with AirSpy
 * For MacOS and Linux
 * This repository is forked from [ngsoftfm-jj1bdx](https://github.com/jj1bdx/ngsoftfm-jj1bdx) 0.1.14
@@ -119,6 +119,8 @@ In airspy-fmradion, the following conversion process is implemented:
 * Use `AIRSPY_SAMPLE_FLOAT32_IQ` to directly obtain float IQ sample data from Airspy: IF level is now -24.08dB than the previous (pre-v0.2.2) version
 * Halfband kernel filter designed by Twitter @lambdaprog is set for Airspy conversion filter
 * Use sparse debug output for ppm and other level status
+* Use pre-built filter coefficients for LPFIQ, which results in 5% further CPU usage reduction (~25%)
+* Filter coefficients for LPFIQ are listed under `doc/fir-filter-data`
 
 ## Airspy configuration options
 
