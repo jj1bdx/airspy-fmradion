@@ -465,8 +465,6 @@ int main(int argc, char **argv) {
           second_downsample);
   fprintf(stderr, "Second rate:       %.0f Hz\n",
           ifrate / first_downsample / second_downsample);
-  fprintf(stderr, "IF half bandwidth: %.0f Hz\n",
-          0.45 * (ifrate / first_downsample / second_downsample));
 
   double delta_if = tuner_freq - freq;
   MovingAverage<float> ppm_average(1000, 0.0f);
