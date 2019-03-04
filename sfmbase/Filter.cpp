@@ -100,8 +100,8 @@ void FineTuner::process(const IQSampleVector &samples_in,
 // Construct low-pass filter.
 LowPassFilterFirIQ::LowPassFilterFirIQ(
     const std::vector<IQSample::value_type> &coeff, unsigned int downsample)
-    : m_coeff(coeff),
-      m_order(coeff.size() - 1), m_downsample(downsample), m_pos(0) {
+    : m_coeff(coeff), m_order(coeff.size() - 1), m_downsample(downsample),
+      m_pos(0) {
   assert(downsample >= 1);
   m_state.resize(m_order);
 }

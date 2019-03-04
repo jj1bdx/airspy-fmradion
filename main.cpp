@@ -430,12 +430,14 @@ int main(int argc, char **argv) {
     first_coeff = FilterParameters::lambdaprog_10000khz_div8;
     second_downsample = 4;
     second_coeff = FilterParameters::lambdaprog_1250khz_div4;
-#if 0
   } else if (ifrate == 2500000.0) {
     // decimation rate: 8 = 4 * 2
     // 312.5kHz = +-156.25kHz
     first_downsample = 4;
+    first_coeff = FilterParameters::jj1bdx_2500khz_div4;
     second_downsample = 2;
+    second_coeff = FilterParameters::jj1bdx_600khz_625khz_div2;
+#if 0
   } else if (ifrate == 6000000.0) {
     // decimation rate: 20 = 5 * 4
     // 300kHz = +-150kHz
