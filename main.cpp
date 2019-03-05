@@ -461,8 +461,11 @@ int main(int argc, char **argv) {
     exit(1);
   }
 
-  std::vector<SampleVector::value_type> fmaudio_coeff =
-      FilterParameters::jj1bdx_312_5khz_fmaudio;
+  std::vector<SampleVector::value_type> first_fmaudio_coeff =
+      FilterParameters::lambdaprog_312_5khz_div6;
+  std::vector<SampleVector::value_type> second_fmaudio_coeff =
+      FilterParameters::jj1bdx_58_0333khz_fmaudio;
+  unsigned int first_fmaudio_downsample = 6;
 
   fprintf(stderr, "IF sample rate:    %.0f Hz\n", ifrate);
   fprintf(stderr, "1st rate:          %.0f Hz (divided by %u)\n",
@@ -509,7 +512,9 @@ int main(int argc, char **argv) {
                first_coeff,                 // first_coeff
                second_downsample,           // second_downsample
                second_coeff,                // second_coeff
-               fmaudio_coeff,               // fmaudio_coeff
+               first_fmaudio_coeff,         // first_fmaudio_coeff
+               first_fmaudio_downsample,    // first_fmaudio_downsample
+               second_fmaudio_coeff,        // second_fmaudio_coeff
                pcmrate,                     // sample_rate_pcm
                stereo,                      // stereo
                deemphasis,                  // deemphasis,

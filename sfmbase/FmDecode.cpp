@@ -303,13 +303,16 @@ void PilotPhaseLock::process(SampleVector &samples_in,
 
 /* ****************  class FmDecoder  **************** */
 
-FmDecoder::FmDecoder(double sample_rate_if, unsigned int first_downsample,
-                     const std::vector<IQSample::value_type> &first_coeff,
-                     unsigned int second_downsample,
-                     const std::vector<IQSample::value_type> &second_coeff,
-                     const std::vector<SampleVector::value_type> &fmaudio_coeff,
-                     double sample_rate_pcm, bool stereo, double deemphasis,
-                     double freq_dev, double bandwidth_pcm, bool pilot_shift)
+FmDecoder::FmDecoder(
+    double sample_rate_if, unsigned int first_downsample,
+    const std::vector<IQSample::value_type> &first_coeff,
+    unsigned int second_downsample,
+    const std::vector<IQSample::value_type> &second_coeff,
+    const std::vector<SampleVector::value_type> &first_fmaudio_coeff,
+    unsigned int first_fmaudio_downsample,
+    const std::vector<SampleVector::value_type> &second_fmaudio_coeff,
+    double sample_rate_pcm, bool stereo, double deemphasis, double freq_dev,
+    double bandwidth_pcm, bool pilot_shift)
 
     // Initialize member fields
     : m_sample_rate_if(sample_rate_if),
@@ -346,15 +349,25 @@ FmDecoder::FmDecoder(double sample_rate_if, unsigned int first_downsample,
 
       // Construct DownsampleFilter for mono channel
       ,
-      m_resample_mono(fmaudio_coeff,                           // coeff
-                      m_sample_rate_fmdemod / sample_rate_pcm, // downsample
-                      false)                                   // integer_factor
+      m_first_resample_mono(first_fmaudio_coeff,      // coeff
+                            first_fmaudio_downsample, // downsample
+                            true),                    // integer_factor
+      m_second_resample_mono(
+          second_fmaudio_coeff, // coeff
+                                // downsample
+          (m_sample_rate_fmdemod / first_fmaudio_downsample) / sample_rate_pcm,
+          false) // integer_factor
 
       // Construct DownsampleFilter for stereo channel
       ,
-      m_resample_stereo(fmaudio_coeff,                           // coeff
-                        m_sample_rate_fmdemod / sample_rate_pcm, // downsample
-                        false) // integer_factor
+      m_first_resample_stereo(first_fmaudio_coeff,      // coeff
+                              first_fmaudio_downsample, // downsample
+                              true),                    // integer_factor
+      m_second_resample_stereo(
+          second_fmaudio_coeff, // coeff
+                                // downsample
+          (m_sample_rate_fmdemod / first_fmaudio_downsample) / sample_rate_pcm,
+          false) // integer_factor
 
       // Construct HighPassFilterIir
       ,
@@ -376,8 +389,10 @@ FmDecoder::FmDecoder(double sample_rate_if, unsigned int first_downsample,
   m_buf_iffiltered.reserve(vector_size);
   m_buf_baseband.reserve(vector_size);
   m_buf_baseband_raw.reserve(vector_size);
+  m_buf_mono_firstout.reserve(vector_size);
   m_buf_mono.reserve(vector_size);
   m_buf_rawstereo.reserve(vector_size);
+  m_buf_stereo_firstout.reserve(vector_size);
   m_buf_stereo.reserve(vector_size);
 }
 
@@ -419,7 +434,8 @@ void FmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
   }
 
   // Extract mono audio signal.
-  m_resample_mono.process(m_buf_baseband, m_buf_mono);
+  m_first_resample_mono.process(m_buf_baseband, m_buf_mono_firstout);
+  m_second_resample_mono.process(m_buf_mono_firstout, m_buf_mono);
   // DC blocking
   m_dcblock_mono.process_inplace(m_buf_mono);
 
@@ -432,7 +448,8 @@ void FmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
     // NOTE: This MUST be done even if no stereo signal is detected yet,
     // because the downsamplers for mono and stereo signal must be
     // kept in sync.
-    m_resample_stereo.process(m_buf_rawstereo, m_buf_stereo);
+    m_first_resample_stereo.process(m_buf_rawstereo, m_buf_stereo_firstout);
+    m_second_resample_stereo.process(m_buf_stereo_firstout, m_buf_stereo);
 
     // DC blocking
     m_dcblock_stereo.process_inplace(m_buf_stereo);

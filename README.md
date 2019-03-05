@@ -119,9 +119,10 @@ In airspy-fmradion, the following conversion process is implemented:
 * Use `AIRSPY_SAMPLE_FLOAT32_IQ` to directly obtain float IQ sample data from Airspy: IF level is now -24.08dB than the previous (pre-v0.2.2) version
 * Halfband kernel filter designed by Twitter @lambdaprog is set for Airspy conversion filter
 * Use sparse debug output for ppm and other level status
-* Use pre-built filter coefficients for LPFIQ, which results in 5% further CPU usage reduction (~25%)
+* Use pre-built filter coefficients for LPFIQ, which results in 4% further CPU usage reduction (~26%)
 * Filter coefficients for LPFIQ are listed under `doc/fir-filter-data`
-* Use pre-built filter coefficients for audio downsample filter (312.5kHz 300 taps)
+* Use pre-built filter coefficients for audio downsample filters
+* Use two-stage filters for audio downsampling, such as 312.5kHz / 6 -> 52.08333333kHz / 1.0856944444444444444 -> 48kHz, which results in 1% further CPU usage reduction (~25%)
 
 ## Airspy configuration options
 

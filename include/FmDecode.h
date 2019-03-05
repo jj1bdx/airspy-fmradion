@@ -147,7 +147,10 @@ public:
    * second_downsample:: Integer second stage downsampling rate (>= 1)
    *                     (applied BEFORE FM demodulation)
    * second_coeff     :: Second stage filter coefficients
-   * fmaudio_coeff    :: Output audio filter coefficients
+   * first_fmaudio_coeff      :: First stage output audio filter coefficients
+   * first_fmaudio_downsample :: Integer first stage downsampling rate
+   *                             for fmaudio (>= 1)
+   * second_fmaudio_coeff     :: First stage output audio filter coefficients
    * sample_rate_pcm  :: Audio sample rate.
    * stereo           :: True to enable stereo decoding.
    * deemphasis       :: Time constant of de-emphasis filter in microseconds
@@ -164,7 +167,9 @@ public:
             const std::vector<IQSample::value_type> &first_coeff,
             unsigned int second_downsample,
             const std::vector<IQSample::value_type> &second_coeff,
-            const std::vector<SampleVector::value_type> &fmaudio_coeff,
+            const std::vector<SampleVector::value_type> &first_fmaudio_coeff,
+            unsigned int first_fmaudio_downsample,
+            const std::vector<SampleVector::value_type> &second_fmaudio_coeff,
             double sample_rate_pcm = 48000, bool stereo = true,
             double deemphasis = 50, double freq_dev = default_freq_dev,
             double bandwidth_pcm = default_bandwidth_pcm,
@@ -238,8 +243,10 @@ private:
   IQSampleVector m_buf_iffiltered;
   SampleVector m_buf_baseband;
   SampleVector m_buf_baseband_raw;
+  SampleVector m_buf_mono_firstout;
   SampleVector m_buf_mono;
   SampleVector m_buf_rawstereo;
+  SampleVector m_buf_stereo_firstout;
   SampleVector m_buf_stereo;
 
   LowPassFilterFirIQ m_iffilter_first;
@@ -248,8 +255,10 @@ private:
   DiscriminatorEqualizer m_disceq;
   PhaseDiscriminator m_phasedisc;
   PilotPhaseLock m_pilotpll;
-  DownsampleFilter m_resample_mono;
-  DownsampleFilter m_resample_stereo;
+  DownsampleFilter m_first_resample_mono;
+  DownsampleFilter m_second_resample_mono;
+  DownsampleFilter m_first_resample_stereo;
+  DownsampleFilter m_second_resample_stereo;
   HighPassFilterIir m_dcblock_mono;
   HighPassFilterIir m_dcblock_stereo;
   LowPassFilterRC m_deemph_mono;
