@@ -1,6 +1,6 @@
 # airspy-fmradion
 
-* Version v0.2.4, 4-MAR-2019
+* Version v0.2.5, 5-MAR-2019
 * Software decoder for FM broadcast radio with AirSpy
 * For MacOS and Linux
 * This repository is forked from [ngsoftfm-jj1bdx](https://github.com/jj1bdx/ngsoftfm-jj1bdx) 0.1.14
