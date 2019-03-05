@@ -131,6 +131,7 @@ private:
 class FmDecoder {
 public:
   static constexpr double default_deemphasis = 50;
+  static constexpr double sample_rate_pcm = 48000;
   static constexpr double default_freq_dev = 75000;
   static constexpr double default_bandwidth_pcm = 15000;
   static constexpr double pilot_freq = 19000;
@@ -151,7 +152,6 @@ public:
    * first_fmaudio_downsample :: Integer first stage downsampling rate
    *                             for fmaudio (>= 1)
    * second_fmaudio_coeff     :: First stage output audio filter coefficients
-   * sample_rate_pcm  :: Audio sample rate.
    * stereo           :: True to enable stereo decoding.
    * deemphasis       :: Time constant of de-emphasis filter in microseconds
    *                     (50 us for broadcast FM, 0 to disable de-emphasis).
@@ -170,7 +170,7 @@ public:
             const std::vector<SampleVector::value_type> &first_fmaudio_coeff,
             unsigned int first_fmaudio_downsample,
             const std::vector<SampleVector::value_type> &second_fmaudio_coeff,
-            double sample_rate_pcm = 48000, bool stereo = true,
+            bool stereo = true,
             double deemphasis = 50, double freq_dev = default_freq_dev,
             double bandwidth_pcm = default_bandwidth_pcm,
             bool pilot_shift = false);

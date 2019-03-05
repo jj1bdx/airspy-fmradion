@@ -311,7 +311,7 @@ FmDecoder::FmDecoder(
     const std::vector<SampleVector::value_type> &first_fmaudio_coeff,
     unsigned int first_fmaudio_downsample,
     const std::vector<SampleVector::value_type> &second_fmaudio_coeff,
-    double sample_rate_pcm, bool stereo, double deemphasis, double freq_dev,
+    bool stereo, double deemphasis, double freq_dev,
     double bandwidth_pcm, bool pilot_shift)
 
     // Initialize member fields

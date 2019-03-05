@@ -200,6 +200,7 @@ static bool get_device(std::vector<std::string> &devnames, Source **srcsdr,
 // https://gcc.gnu.org/wiki/VerboseDiagnostics#missing_static_const_definition
 
 constexpr double FmDecoder::default_deemphasis;
+constexpr double FmDecoder::sample_rate_pcm;
 constexpr double FmDecoder::default_freq_dev;
 constexpr double FmDecoder::default_bandwidth_pcm;
 constexpr double FmDecoder::pilot_freq;
@@ -208,7 +209,7 @@ constexpr double FmDecoder::default_deemphasis_na;
 
 int main(int argc, char **argv) {
   int devidx = 0;
-  int pcmrate = 48000;
+  int pcmrate = FmDecoder::sample_rate_pcm;
   bool stereo = true;
   enum OutputMode { MODE_RAW, MODE_WAV, MODE_ALSA };
 #ifdef USE_ALSA
@@ -234,7 +235,6 @@ int main(int argc, char **argv) {
 
   const struct option longopts[] = {{"config", 2, NULL, 'c'},
                                     {"dev", 1, NULL, 'd'},
-                                    {"pcmrate", 1, NULL, 'r'},
                                     {"mono", 0, NULL, 'M'},
                                     {"raw", 1, NULL, 'R'},
                                     {"wav", 1, NULL, 'W'},
@@ -247,7 +247,7 @@ int main(int argc, char **argv) {
                                     {NULL, 0, NULL, 0}};
 
   int c, longindex;
-  while ((c = getopt_long(argc, argv, "c:d:r:MR:W:P::T:b:qXU", longopts,
+  while ((c = getopt_long(argc, argv, "c:d:MR:W:P::T:b:qXU", longopts,
                           &longindex)) >= 0) {
     switch (c) {
     case 'c':
@@ -256,11 +256,6 @@ int main(int argc, char **argv) {
     case 'd':
       if (!parse_int(optarg, devidx)) {
         devidx = -1;
-      }
-      break;
-    case 'r':
-      if (!parse_int(optarg, pcmrate, true) || pcmrate < 1) {
-        badarg("-r");
       }
       break;
     case 'M':
@@ -515,7 +510,6 @@ int main(int argc, char **argv) {
                first_fmaudio_coeff,         // first_fmaudio_coeff
                first_fmaudio_downsample,    // first_fmaudio_downsample
                second_fmaudio_coeff,        // second_fmaudio_coeff
-               pcmrate,                     // sample_rate_pcm
                stereo,                      // stereo
                deemphasis,                  // deemphasis,
                FmDecoder::default_freq_dev, // freq_dev
