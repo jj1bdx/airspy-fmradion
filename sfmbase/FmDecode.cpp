@@ -43,11 +43,6 @@ double rms_level_approx(const IQSampleVector &samples) {
 // Construct phase discriminator.
 PhaseDiscriminator::PhaseDiscriminator(double max_freq_dev)
     : m_freq_scale_factor(1.0 / (max_freq_dev * 2.0 * M_PI)) {
-  // Reservation of std::vector objects in the class
-  const unsigned int vector_size = 131072;
-  m_temp.reserve(vector_size);
-  m_temp_dq.reserve(vector_size);
-  m_temp_di.reserve(vector_size);
 }
 
 // Process samples.
@@ -183,7 +178,7 @@ PilotPhaseLock::PilotPhaseLock(double freq, double bandwidth,
 
 // Process samples and generate the 38kHz locked tone;
 // remove remained locked 19kHz tone from samples_in if locked.
-void PilotPhaseLock::process(SampleVector &samples_in,
+void PilotPhaseLock::process(const SampleVector &samples_in,
                              SampleVector &samples_out, bool pilot_shift) {
   unsigned int n = samples_in.size();
 
@@ -273,11 +268,6 @@ void PilotPhaseLock::process(SampleVector &samples_in,
           m_pps_cnt++;
         }
       }
-    }
-
-    // Remove detected 19kHz tone from samples_in if locked.
-    if (was_locked) {
-      samples_in[i] -= psin * m_pilot_level * 2.0;
     }
   }
 
@@ -380,19 +370,8 @@ FmDecoder::FmDecoder(
       m_deemph_stereo(
           (deemphasis == 0) ? 1.0 : (deemphasis * sample_rate_pcm * 1.0e-6))
 
-{
-  // Reservation of std::vector objects in the class
-  const unsigned int vector_size = 131072;
-  m_buf_iftuned.reserve(vector_size);
-  m_buf_iffirstout.reserve(vector_size);
-  m_buf_iffiltered.reserve(vector_size);
-  m_buf_baseband.reserve(vector_size);
-  m_buf_baseband_raw.reserve(vector_size);
-  m_buf_mono_firstout.reserve(vector_size);
-  m_buf_mono.reserve(vector_size);
-  m_buf_rawstereo.reserve(vector_size);
-  m_buf_stereo_firstout.reserve(vector_size);
-  m_buf_stereo.reserve(vector_size);
+{ 
+	// do nothing
 }
 
 void FmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {

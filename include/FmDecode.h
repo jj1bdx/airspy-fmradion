@@ -98,7 +98,7 @@ public:
    *             :: using cos(2*x) instead of sin (2*x)
    *             :: (for multipath distortion detection)
    */
-  void process(SampleVector &samples_in, SampleVector &samples_out,
+  void process(const SampleVector &samples_in, SampleVector &samples_out,
                bool pilot_shift);
 
   /** Return true if the phase-locked loop is locked. */
