@@ -122,6 +122,7 @@ In airspy-fmradion, the following conversion process is implemented:
 * Filter coefficients for LPFIQ are listed under `doc/fir-filter-data`
 * Use pre-built filter coefficients for audio downsample filters
 * Use two-stage filters for audio downsampling, such as 312.5kHz / 6 -> 52.08333333kHz / 1.0856944444444444444 -> 48kHz, which results in 1% further CPU usage reduction (~25%)
+* CPU usage rate is now 95% on Intel NUC DN2820FYKH Celeron N2830 / Ubuntu 18.04 (usable range)
 * Audio sample rate is fixed to 48000Hz
 
 ## Airspy configuration options
