@@ -199,11 +199,11 @@ static bool get_device(std::vector<std::string> &devnames, Source **srcsdr,
 // See
 // https://gcc.gnu.org/wiki/VerboseDiagnostics#missing_static_const_definition
 
-constexpr double FmDecoder::default_deemphasis;
 constexpr double FmDecoder::sample_rate_pcm;
-constexpr double FmDecoder::default_freq_dev;
-constexpr double FmDecoder::default_bandwidth_pcm;
+constexpr double FmDecoder::freq_dev;
+constexpr double FmDecoder::bandwidth_pcm;
 constexpr double FmDecoder::pilot_freq;
+constexpr double FmDecoder::default_deemphasis;
 constexpr double FmDecoder::default_deemphasis_eu;
 constexpr double FmDecoder::default_deemphasis_na;
 
@@ -233,18 +233,13 @@ int main(int argc, char **argv) {
   fprintf(stderr, "airspy-fmradion " AIRSPY_FMRADION_VERSION "\n");
   fprintf(stderr, "Software decoder for FM broadcast radio with Airspy\n");
 
-  const struct option longopts[] = {{"config", 2, NULL, 'c'},
-                                    {"dev", 1, NULL, 'd'},
-                                    {"mono", 0, NULL, 'M'},
-                                    {"raw", 1, NULL, 'R'},
-                                    {"wav", 1, NULL, 'W'},
-                                    {"play", 2, NULL, 'P'},
-                                    {"pps", 1, NULL, 'T'},
-                                    {"buffer", 1, NULL, 'b'},
-                                    {"quiet", 1, NULL, 'q'},
-                                    {"pilotshift", 0, NULL, 'X'},
-                                    {"usa", 0, NULL, 'U'},
-                                    {NULL, 0, NULL, 0}};
+  const struct option longopts[] = {
+      {"config", 2, NULL, 'c'}, {"dev", 1, NULL, 'd'},
+      {"mono", 0, NULL, 'M'},   {"raw", 1, NULL, 'R'},
+      {"wav", 1, NULL, 'W'},    {"play", 2, NULL, 'P'},
+      {"pps", 1, NULL, 'T'},    {"buffer", 1, NULL, 'b'},
+      {"quiet", 1, NULL, 'q'},  {"pilotshift", 0, NULL, 'X'},
+      {"usa", 0, NULL, 'U'},    {NULL, 0, NULL, 0}};
 
   int c, longindex;
   while ((c = getopt_long(argc, argv, "c:d:MR:W:P::T:b:qXU", longopts,
@@ -492,29 +487,26 @@ int main(int argc, char **argv) {
   }
 
   // Prevent aliasing at very low output sample rates.
-  double bandwidth_pcm =
-      std::min(FmDecoder::default_bandwidth_pcm, 0.45 * pcmrate);
   double deemphasis = deemphasis_na ? FmDecoder::default_deemphasis_na
                                     : FmDecoder::default_deemphasis_eu;
 
   fprintf(stderr, "audio sample rate: %u Hz\n", pcmrate);
-  fprintf(stderr, "audio bandwidth:   %.3f kHz\n", bandwidth_pcm * 1.0e-3);
+  fprintf(stderr, "audio bandwidth:   %u Hz\n",
+          (unsigned int)FmDecoder::bandwidth_pcm);
   fprintf(stderr, "deemphasis:        %.1f microseconds\n", deemphasis);
 
   // Prepare decoder.
-  FmDecoder fm(ifrate,                      // sample_rate_if
-               first_downsample,            // first_downsample
-               first_coeff,                 // first_coeff
-               second_downsample,           // second_downsample
-               second_coeff,                // second_coeff
-               first_fmaudio_coeff,         // first_fmaudio_coeff
-               first_fmaudio_downsample,    // first_fmaudio_downsample
-               second_fmaudio_coeff,        // second_fmaudio_coeff
-               stereo,                      // stereo
-               deemphasis,                  // deemphasis,
-               FmDecoder::default_freq_dev, // freq_dev
-               bandwidth_pcm,               // bandwidth_pcm
-               pilot_shift);                // pilot_shift
+  FmDecoder fm(ifrate,                   // sample_rate_if
+               first_downsample,         // first_downsample
+               first_coeff,              // first_coeff
+               second_downsample,        // second_downsample
+               second_coeff,             // second_coeff
+               first_fmaudio_coeff,      // first_fmaudio_coeff
+               first_fmaudio_downsample, // first_fmaudio_downsample
+               second_fmaudio_coeff,     // second_fmaudio_coeff
+               stereo,                   // stereo
+               deemphasis,               // deemphasis,
+               pilot_shift);             // pilot_shift
 
   // If buffering enabled, start background output thread.
   DataBuffer<Sample> output_buffer;

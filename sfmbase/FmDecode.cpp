@@ -311,14 +311,13 @@ FmDecoder::FmDecoder(
     const std::vector<SampleVector::value_type> &first_fmaudio_coeff,
     unsigned int first_fmaudio_downsample,
     const std::vector<SampleVector::value_type> &second_fmaudio_coeff,
-    bool stereo, double deemphasis, double freq_dev,
-    double bandwidth_pcm, bool pilot_shift)
+    bool stereo, double deemphasis, bool pilot_shift)
 
     // Initialize member fields
     : m_sample_rate_if(sample_rate_if),
       m_sample_rate_firstout(m_sample_rate_if / first_downsample),
       m_sample_rate_fmdemod(m_sample_rate_firstout / second_downsample),
-      m_freq_dev(freq_dev), m_first_downsample(first_downsample),
+      m_first_downsample(first_downsample),
       m_second_downsample(second_downsample), m_pilot_shift(pilot_shift),
       m_stereo_enabled(stereo), m_stereo_detected(false), m_if_level(0),
       m_baseband_mean(0), m_baseband_level(0)
