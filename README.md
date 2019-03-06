@@ -121,8 +121,8 @@ The following conversion process is implemented:
 * Use `AIRSPY_SAMPLE_FLOAT32_IQ` to directly obtain float IQ sample data from Airspy: IF level is now -24.08dB than the previous (pre-v0.2.2) version
 * Use sparse debug output for ppm and other level status
 * Filter coefficients for LPFIQ are listed under `doc/fir-filter-data`
-* CPU usage: ~56% -> ~30% (on Mac mini 2018, with debug output on)
-* CPU usage rate is now 104% on Intel NUC DN2820FYKH Celeron N2830 / Ubuntu 18.04 (usable range with 2 cores)
+* CPU usage: ~56% -> ~30% on Mac mini 2018, with debug output on, comparing with ngsoftfm-jj1bdx 0.1.14
+* CPU usage: ~170% -> ~104% on Intel NUC DN2820FYKH Celeron N2830 / Ubuntu 18.04 (usable range with 2 cores)
 
 ## Airspy configuration options
 
