@@ -42,8 +42,7 @@ double rms_level_approx(const IQSampleVector &samples) {
 
 // Construct phase discriminator.
 PhaseDiscriminator::PhaseDiscriminator(double max_freq_dev)
-    : m_freq_scale_factor(1.0 / (max_freq_dev * 2.0 * M_PI)) {
-}
+    : m_freq_scale_factor(1.0 / (max_freq_dev * 2.0 * M_PI)) {}
 
 // Process samples.
 // A vectorized quadratic discrimination algorithm written by
@@ -370,8 +369,8 @@ FmDecoder::FmDecoder(
       m_deemph_stereo(
           (deemphasis == 0) ? 1.0 : (deemphasis * sample_rate_pcm * 1.0e-6))
 
-{ 
-	// do nothing
+{
+  // do nothing
 }
 
 void FmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
