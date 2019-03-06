@@ -41,7 +41,7 @@
 
 #include "AirspySource.h"
 
-#define AIRSPY_FMRADION_VERSION "v0.2.6-dev"
+#define AIRSPY_FMRADION_VERSION "v0.2.6-dev2"
 
 /** Flag is set on SIGINT / SIGTERM. */
 static std::atomic_bool stop_flag(false);
@@ -418,9 +418,9 @@ int main(int argc, char **argv) {
     // decimation rate: 32 = 8 * 4
     // 312.5kHz = +-156.25kHz
     first_downsample = 8;
-    first_coeff = FilterParameters::lambdaprog_10000khz_div8;
+    first_coeff = FilterParameters::jj1bdx_10000khz_div8;
     second_downsample = 4;
-    second_coeff = FilterParameters::lambdaprog_1250khz_div4;
+    second_coeff = FilterParameters::jj1bdx_1250khz_div4;
   } else if (ifrate == 2500000.0) {
     // decimation rate: 8 = 4 * 2
     // 312.5kHz = +-156.25kHz
@@ -452,7 +452,7 @@ int main(int argc, char **argv) {
   }
 
   std::vector<SampleVector::value_type> first_fmaudio_coeff =
-      FilterParameters::lambdaprog_312_5khz_div6;
+      FilterParameters::jj1bdx_312_5khz_div6;
   std::vector<SampleVector::value_type> second_fmaudio_coeff =
       FilterParameters::jj1bdx_58_0333khz_fmaudio;
   unsigned int first_fmaudio_downsample = 6;
