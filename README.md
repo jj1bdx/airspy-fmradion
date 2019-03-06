@@ -105,25 +105,24 @@ Compile and install
 
 > Try starting with 10MSPS and that small conversion filter (7 taps vs. the standard 47 taps), then decimate down to ~312.5 ksps (decimation by 32), then feed the FM demod. The overall CPU usage will be very low and the bit growth will give 14.5 bit resolution.
 
-In airspy-fmradion, the following conversion process is implemented:
+Removed features:
 
-* Downsampling factor is split into two stages
-* An integer downsampler is added to the first-stage LowPassFilterFirIQ (LPFIQ)
-* Input -> LPFIQ 1st -> LPFIQ 2nd -> PhaseDiscriminator
-* The filter order of LPFIQ is set to (downsample rate * 8)
-* This reduces CPU usage on Mac mini 2018 from ~51% to ~36% in 10Msps
-* Finetuner is removed (Not really needed for +-1ppm or less offset)
-* Not using the finetuner resulted in another 3~4% of CPU usage reduction
-* CPU usage: ~51% -> ~29% (on Mac mini 2018, with debug output on)
-* Use `AIRSPY_SAMPLE_FLOAT32_IQ` to directly obtain float IQ sample data from Airspy: IF level is now -24.08dB than the previous (pre-v0.2.2) version
 * Halfband kernel filter designed by Twitter @lambdaprog is set for Airspy conversion filter
-* Use sparse debug output for ppm and other level status
-* Use pre-built filter coefficients for LPFIQ, which results in 4% further CPU usage reduction (~26%)
-* Filter coefficients for LPFIQ are listed under `doc/fir-filter-data`
-* Use pre-built filter coefficients for audio downsample filters
-* Use two-stage filters for audio downsampling, such as 312.5kHz / 6 -> 52.08333333kHz / 1.0856944444444444444 -> 48kHz, which results in 1% further CPU usage reduction (~25%)
-* CPU usage rate is now 95% on Intel NUC DN2820FYKH Celeron N2830 / Ubuntu 18.04 (usable range)
+* Finetuner is removed (Not really needed for +-1ppm or less offset)
 * Audio sample rate is fixed to 48000Hz
+
+The following conversion process is implemented:
+
+* An integer downsampler is added to the first-stage LowPassFilterFirIQ (LPFIQ)
+* Use pre-built optimized filter coefficients for LPFIQ and audio filters
+* Input -> LPFIQ 1st -> LPFIQ 2nd -> PhaseDiscriminator
+* 10MHz -> 1.25MHz -> 312.5kHz (/8 and /4)
+* Use two-stage filters for audio downsampling, such as 312.5kHz / 6 -> 52.08333333kHz / 1.0856944444444444444 -> 48kHz
+* Use `AIRSPY_SAMPLE_FLOAT32_IQ` to directly obtain float IQ sample data from Airspy: IF level is now -24.08dB than the previous (pre-v0.2.2) version
+* Use sparse debug output for ppm and other level status
+* Filter coefficients for LPFIQ are listed under `doc/fir-filter-data`
+* CPU usage: ~56% -> ~30% (on Mac mini 2018, with debug output on)
+* CPU usage rate is now 104% on Intel NUC DN2820FYKH Celeron N2830 / Ubuntu 18.04 (usable range with 2 cores)
 
 ## Airspy configuration options
 
