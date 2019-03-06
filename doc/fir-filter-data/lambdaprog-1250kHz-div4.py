@@ -36,10 +36,13 @@ b = [
  0.000167223634636264
  ]
 
+f = 1250000
 w, h = signal.freqz(b)
 fig, ax1 = plt.subplots()
+fs = f / (np.pi * 2.0)
 ax1.set_title('Digital filter frequency response')
-ax1.plot(w, 20 * np.log10(abs(h)), 'b')
+ax1.grid(True)
+ax1.plot(w * fs, 20 * np.log10(abs(h)), 'b')
 ax1.set_ylabel('Amplitude [dB]', color='b')
-ax1.set_xlabel('Frequency [rad/sample]')
+ax1.set_xlabel('Frequency [Hz]')
 plt.show()
