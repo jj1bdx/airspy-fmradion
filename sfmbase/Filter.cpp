@@ -90,6 +90,7 @@ void LowPassFilterFirIQ::process(const IQSampleVector &samples_in,
   }
 
   // The first few samples need data from m_state.
+  // NOTE: this assumes the filter has symmetric coefficient pairs
   unsigned int i = 0;
   for (; p < n && p < order; p += pstep, i++) {
     IQSample y = 0;
@@ -103,10 +104,15 @@ void LowPassFilterFirIQ::process(const IQSampleVector &samples_in,
   }
 
   // Remaining samples only need data from samples_in.
+  // NOTE: this assumes the filter has symmetric coefficient pairs
+  unsigned int half_order = (order - 1) / 2;
   for (; p < n; p += pstep, i++) {
     IQSample y = 0;
-    for (unsigned int j = 0; j <= order; j++) {
-      y += samples_in[p - j] * m_coeff[j];
+    for (unsigned int k = 0; k <= half_order; k++) {
+      y += (samples_in[p - k] + samples_in[p - (order - k)]) * m_coeff[k];
+    }
+    if ((order % 2) == 0) {
+      y += samples_in[p - (order / 2)] * m_coeff[(order / 2)];
     }
     samples_out[i] = y;
   }
@@ -139,7 +145,7 @@ DownsampleFilter::DownsampleFilter(
   // coefficients by linear interpolation between adjacent array elements.
   m_coeff.insert(m_coeff.begin(), 0);
   m_coeff.push_back(0);
-  m_order = coeff.size() - 1;
+  m_order = coeff.size();
 
   assert(downsample >= 1);
   assert(m_order > 2);
@@ -163,6 +169,7 @@ void DownsampleFilter::process(const SampleVector &samples_in,
     samples_out.resize((n - p + pstep - 1) / pstep);
 
     // The first few samples need data from m_state.
+    // NOTE: this assumes the filter has symmetric coefficient pairs
     unsigned int i = 0;
     for (; p < n && p < order; p += pstep, i++) {
       Sample y = 0;
@@ -176,14 +183,19 @@ void DownsampleFilter::process(const SampleVector &samples_in,
     }
 
     // Remaining samples only need data from samples_in.
+    // NOTE: this assumes the filter has symmetric coefficient pairs
+    unsigned int half_order = order / 2;
     for (; p < n; p += pstep, i++) {
       Sample y = 0;
-      for (unsigned int j = 1; j <= order; j++) {
-        y += samples_in[p - j] * m_coeff[j];
+      for (unsigned int k = 1; k <= half_order; k++) {
+        y += (samples_in[p - k] + samples_in[p - ((order + 1) - k)]) *
+             m_coeff[k];
+      }
+      if ((order % 2) > 0) {
+        y += samples_in[p - ((order + 1) / 2)] * m_coeff[((order + 1) / 2)];
       }
       samples_out[i] = y;
     }
-
     assert(i == samples_out.size());
 
     // Update index of start position in text sample block.
