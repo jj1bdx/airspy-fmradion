@@ -41,7 +41,7 @@
 
 #include "AirspySource.h"
 
-#define AIRSPY_FMRADION_VERSION "v0.2.7-dev"
+#define AIRSPY_FMRADION_VERSION "v0.2.7-dev2"
 
 /** Flag is set on SIGINT / SIGTERM. */
 static std::atomic_bool stop_flag(false);
@@ -552,8 +552,8 @@ int main(int argc, char **argv) {
     samples_mean_rms(audiosamples, audio_mean, audio_rms);
     audio_level = 0.95 * audio_level + 0.05 * audio_rms;
 
-    // Set nominal audio volume.
-    adjust_gain(audiosamples, 0.5);
+    // SKIPPED: Set nominal audio volume
+    // adjust_gain(audiosamples, 0.5)
 
     // the minus factor is to show the ppm correction
     // to make and not the one made
