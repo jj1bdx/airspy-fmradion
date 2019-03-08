@@ -1,6 +1,6 @@
 # airspy-fmradion
 
-* Version v0.2.6, 6-MAR-2019
+* Version v0.2.7, 8-MAR-2019
 * Software decoder for FM broadcast radio with AirSpy
 * For MacOS and Linux
 * This repository is forked from [ngsoftfm-jj1bdx](https://github.com/jj1bdx/ngsoftfm-jj1bdx) 0.1.14
@@ -101,17 +101,27 @@ Compile and install
 
 ## Modification from ngsoftfm-jj1bdx
 
+### Major changes
+
+* Since v0.2.7, output level is now at unity (`adjust_gain()` is not used) `
+
+### The modification strategy
+
 [Twitter @lambdaprog suggested the following strategy](https://twitter.com/lambdaprog/status/1101495337292910594):
 
 > Try starting with 10MSPS and that small conversion filter (7 taps vs. the standard 47 taps), then decimate down to ~312.5 ksps (decimation by 32), then feed the FM demod. The overall CPU usage will be very low and the bit growth will give 14.5 bit resolution.
 
-Removed features:
+### Removed features
 
 * Halfband kernel filter designed by Twitter @lambdaprog is set for Airspy conversion filter
 * Finetuner is removed (Not really needed for +-1ppm or less offset)
 * Audio sample rate is fixed to 48000Hz
 
-The following conversion process is implemented:
+### No-goals
+
+* Adaptive IF filtering (unable to obtain better results)
+
+### The following conversion process units are implemented
 
 * An integer downsampler is added to the first-stage LowPassFilterFirIQ (LPFIQ)
 * Use pre-built optimized filter coefficients for LPFIQ and audio filters
@@ -123,6 +133,7 @@ The following conversion process is implemented:
 * Filter coefficients for LPFIQ are listed under `doc/fir-filter-data`
 * CPU usage: ~56% -> ~30% on Mac mini 2018, with debug output on, comparing with ngsoftfm-jj1bdx 0.1.14
 * CPU usage: ~170% -> ~104% on Intel NUC DN2820FYKH Celeron N2830 / Ubuntu 18.04 (usable range with 2 cores)
+* More optimization on LPFIQ and audio filters by assuming symmetric coefficients (~30% -> ~25%)
 
 ## Airspy configuration options
 
