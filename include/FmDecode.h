@@ -262,6 +262,7 @@ private:
   SampleVector m_buf_stereo_firstout;
   SampleVector m_buf_stereo;
 
+  FourthDownconverterIQ m_downconverter;
   LowPassFilterFirIQ m_iffilter_first;
   LowPassFilterFirIQ m_iffilter_second;
   EqParameters m_eqparams;

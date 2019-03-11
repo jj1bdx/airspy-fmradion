@@ -450,14 +450,9 @@ int main(int argc, char **argv) {
   double second_fmaudio_downsample;
   bool second_fmaudio_integer;
 
-  if (strcasecmp(devtype.c_str(), "airspy") == 0) {
+  if (strcasecmp(devtype_str.c_str(), "airspy") == 0) {
     fourth_downsampler = false;
-    first_fmaudio_coeff = FilterParameters::jj1bdx_312_5khz_div6;
-    second_fmaudio_coeff = FilterParameters::jj1bdx_58_0333khz_fmaudio;
-    first_fmaudio_downsample = 6;
-    second_fmaudio_downsample = ifrate / (first_downsample * second_downsample *
-                                          first_fmaudio_downsample);
-    second_fmaudio_integer = false;
+
     if (ifrate == 10000000.0) {
       // decimation rate: 32 = 8 * 4
       // 312.5kHz = +-156.25kHz
@@ -485,7 +480,8 @@ int main(int argc, char **argv) {
     second_downsample = 2;
 #endif
 
-    } else {
+    } 
+    else {
       fprintf(stderr, "Sample rate unsupported\n");
       fprintf(stderr, "Supported rate:\n");
       fprintf(stderr, "Airspy R2: 2500000, 10000000\n");
@@ -495,7 +491,15 @@ int main(int argc, char **argv) {
       delete srcsdr;
       exit(1);
     }
-  } else if (strcasecmp(devtype.c_str(), "airspyhf") == 0) {
+
+    first_fmaudio_coeff = FilterParameters::jj1bdx_312_5khz_div6;
+    second_fmaudio_coeff = FilterParameters::jj1bdx_58_0333khz_fmaudio;
+    first_fmaudio_downsample = 6;
+    second_fmaudio_downsample = ifrate / (first_downsample * second_downsample *
+                                          first_fmaudio_downsample);
+    second_fmaudio_integer = false;
+
+  } else if (strcasecmp(devtype_str.c_str(), "airspyhf") == 0) {
     if (ifrate == 768000.0) {
       fourth_downsampler = true;
       first_downsample = 2;
@@ -535,7 +539,6 @@ int main(int argc, char **argv) {
               second_fmaudio_downsample,
           second_fmaudio_downsample);
 
-  double delta_if = tuner_freq - freq;
   MovingAverage<float> ppm_average(100, 0.0f);
 
   srcsdr->print_specific_parms();

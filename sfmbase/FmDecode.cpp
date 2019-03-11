@@ -355,11 +355,12 @@ FmDecoder::FmDecoder(
 
     // Initialize member fields
     : m_sample_rate_if(sample_rate_if),
-      m_fourth_downsampler(fourth_downsampler),
       m_sample_rate_firstout(m_sample_rate_if / first_downsample),
       m_sample_rate_fmdemod(m_sample_rate_firstout / second_downsample),
       m_first_downsample(first_downsample),
-      m_second_downsample(second_downsample), m_pilot_shift(pilot_shift),
+      m_second_downsample(second_downsample),
+      m_fourth_downsampler(fourth_downsampler),
+      m_pilot_shift(pilot_shift),
       m_stereo_enabled(stereo), m_stereo_detected(false), m_if_level(0),
       m_baseband_mean(0), m_baseband_level(0)
 
@@ -394,7 +395,7 @@ FmDecoder::FmDecoder(
                             true),                    // integer_factor
       m_second_resample_mono(second_fmaudio_coeff,    // coeff
                                                       // downsample
-                             second_audio_downsample,
+                             second_fmaudio_downsample,
                              second_fmaudio_integer) // integer_factor
 
       // Construct DownsampleFilter for stereo channel
@@ -404,7 +405,7 @@ FmDecoder::FmDecoder(
                               true),                    // integer_factor
       m_second_resample_stereo(second_fmaudio_coeff,    // coeff
                                                         // downsample
-                               second_audio_downsample,
+                               second_fmaudio_downsample,
                                second_fmaudio_integer) // integer_factor
 
       // Construct HighPassFilterIir
