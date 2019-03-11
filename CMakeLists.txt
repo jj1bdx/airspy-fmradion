@@ -19,13 +19,7 @@ endif()
 
 # Find Airspy library.
 pkg_check_modules(PKG_AIRSPY libairspy)
-if (CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
-    find_path(AIRSPY_INCLUDE_DIR airspy.h
-             HINT /usr/local/include/libairspy ${PKG_AIRSPY_INCLUDE_DIRS})
-    find_library(AIRSPY_LIBRARY libairspy.so
-             HINT /usr/local/lib ${PKG_AIRSPY_LIBRARY_DIRS})
-    set(AIRSPY_INCLUDE_OPTION "-I/usr/local/include")
-elseif (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     find_path(AIRSPY_INCLUDE_DIR airspy.h
              HINT /usr/local/include/libairspy ${PKG_AIRSPY_INCLUDE_DIRS})
     find_library(AIRSPY_LIBRARY libairspy.a
@@ -39,24 +33,30 @@ else()
     set(AIRSPY_INCLUDE_OPTION "")
 endif()
 
+# Find Airspy HF library.
+pkg_check_modules(PKG_AIRSPYHF libairspyhf)
+if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    find_path(AIRSPYHF_INCLUDE_DIR airspyhf.h
+        HINT /usr/local/include/libairspyhf ${PKG_AIRSPYHF_INCLUDE_DIRS})
+    find_library(AIRSPYHF_LIBRARY libairspyhf.a
+        HINT /usr/local/lib ${PKG_AIRSPYHF_LIBRARY_DIRS})
+    set(AIRSPYHF_INCLUDE_OPTION "-I/usr/local/include")
+else()
+    find_path(AIRSPYHF_INCLUDE_DIR airspyhf.h
+             HINT ${PKG_AIRSPYHF_INCLUDE_DIRS})
+    find_library(AIRSPYHF_LIBRARY libairspyhf.a
+             HINT ${PKG_AIRSPYHF_LIBRARY_DIRS})
+    set(AIRSPYHF_INCLUDE_OPTION "")
+endif()
+
 # Find libusb
 # See https://github.com/texane/stlink/blob/master/cmake/modules/FindLibUSB.cmake
 pkg_check_modules(PKG_LIBUSB libusb-1.0)
-if (CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
-    find_path(LIBUSB_INCLUDE_DIR libusb.h
-        HINTS /usr/include ${PKG_LIBUSB_INCLUDE_DIRS}
-    )
-else ()
-    find_path(LIBUSB_INCLUDE_DIR libusb.h
-        HINTS /usr /usr/local /opt ${PKG_LIBUSB_INCLUDE_DIRS}
-        PATH_SUFFIXES libusb-1.0
-    )
-endif()
-if (CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
-    set(LIBUSB_NAME usb)
-else ()
-    set(LIBUSB_NAME usb-1.0)
-endif()
+find_path(LIBUSB_INCLUDE_DIR libusb.h
+    HINTS /usr /usr/local /opt ${PKG_LIBUSB_INCLUDE_DIRS}
+    PATH_SUFFIXES libusb-1.0
+)
+set(LIBUSB_NAME usb-1.0)
 find_library(LIBUSB_LIBRARY ${LIBUSB_NAME}
              HINTS /usr /usr/local /opt ${PKG_LIBUSB_LIBRARY_DIRS})
 
@@ -68,25 +68,28 @@ endif()
 
 set(AIRSPY_INCLUDE_DIRS ${AIRSPY_INCLUDE_DIR} ${LIBUSB_INCLUDE_DIR})
 set(AIRSPY_LIBRARIES    ${AIRSPY_LIBRARY} ${LIBUSB_LIBRARY})
+set(AIRSPYHF_INCLUDE_DIRS ${AIRSPYHF_INCLUDE_DIR} ${LIBUSB_INCLUDE_DIR})
+set(AIRSPYHF_LIBRARIES    ${AIRSPYHF_LIBRARY} ${LIBUSB_LIBRARY})
 
-# Compiler flags and options.
+# Optimization flags and options.
 ##
 # Enable speed-based optimization
-set(CMAKE_CXX_FLAGS "-Wall -std=c++11 -O3 -ffast-math -ftree-vectorize -march=native ${ALSA_OPTION} ${AIRSPY_INCLUDE_OPTION} ${EXTRA_FLAGS}")
+set(OPTIMIZATION_FLAGS "-O3 -ffast-math -ftree-vectorize -march=native")
 ##
 # Use conservative options when failed to run
-#set(CMAKE_CXX_FLAGS "-Wall -std=c++11 -O2 ${ALSA_OPTION} ${AIRSPY_INCLUDE_OPTION} ${EXTRA_FLAGS}")
+#set(OPTIMIZATION_FLAGS "-O2")
 ##
 # For vectorization analysis (in Clang only)
-#set(CMAKE_CXX_FLAGS "-Wall -std=c++11 -O3 -ffast-math -ftree-vectorize -march=native -Rpass=loop-vectorize -Rpass-missed=loop-vectorize -Rpass-analysis=loop-vectorize ${ALSA_OPTION} ${AIRSPY_INCLUDE_OPTION} ${EXTRA_FLAGS}")
-##
-# For clang profiling
-# set(CMAKE_CXX_FLAGS "-Wall -std=c++11 -g -fprofile-instr-generate -fcoverage-mapping ${ALSA_OPTION} ${AIRSPY_INCLUDE_OPTION} ${EXTRA_FLAGS}")
-# SET(CMAKE_EXE_LINKER_FLAGS "-fprofile-instr-generate")
+#set(OPTIMIZATION_FLAGS "-O3 -ffast-math -ftree-vectorize -march=native -Rpass=loop-vectorize -Rpass-missed=loop-vectorize -Rpass-analysis=loop-vectorize")
 ##
 # For clang profiling with optimization
-#set(CMAKE_CXX_FLAGS "-Wall -std=c++11 -O3 -ffast-math -ftree-vectorize -march=native -g -fprofile-instr-generate -fcoverage-mapping ${ALSA_OPTION} ${AIRSPY_INCLUDE_OPTION} ${EXTRA_FLAGS}")
+#set(OPTIMIZATION_FLAGS "-O3 -ffast-math -ftree-vectorize -march=native -g -fprofile-instr-generate -fcoverage-mapping")
 #SET(CMAKE_EXE_LINKER_FLAGS "-fprofile-instr-generate")
+##
+
+# Common compiler flags and options.
+##
+set(CMAKE_CXX_FLAGS "-Wall -std=c++11 ${OPTIMIZATION_FLAGS} ${ALSA_OPTION} ${AIRSPY_INCLUDE_OPTION} ${AIRSPYHF_INCLUDE_OPTION} ${EXTRA_FLAGS}")
 
 set(sfmbase_SOURCES
     sfmbase/Filter.cpp
@@ -131,6 +134,21 @@ set(sfmairspy_SOURCES
     ${sfmairspy_HEADERS}
 )
 
+# Airspy HF sources
+
+set(sfmairspyhf_SOURCES
+    sfmbase/AirspyHFSource.cpp
+)
+
+set(sfmairspyhf_HEADERS
+    include/AirspyHFSource.h
+)
+
+set(sfmairspyhf_SOURCES
+    ${sfmairspyhf_SOURCES}
+    ${sfmairspyhf_HEADERS}
+)
+
 # Libraries
 
 add_library(sfmbase STATIC
@@ -140,6 +158,12 @@ add_library(sfmbase STATIC
 add_library(sfmairspy STATIC
     ${sfmairspy_SOURCES}
 )
+
+add_library(sfmairspyhf STATIC
+    ${sfmairspyhf_SOURCES}
+)
+
+# Executable
 
 add_executable(airspy-fmradion
 	main.cpp
@@ -154,14 +178,25 @@ include_directories(
 target_link_libraries(airspy-fmradion
     sfmbase
     sfmairspy
+    sfmairspyhf
     ${CMAKE_THREAD_LIBS_INIT}
     ${ALSA_LIBRARIES}
     ${EXTRA_LIBS} 
 )
 
+# Linked libraries
+
 target_link_libraries(sfmairspy
     ${AIRSPY_LIBRARIES}
 )
 
+target_link_libraries(sfmairspyhf
+    ${AIRSPYHF_LIBRARIES}
+)
+
+# Installation
+
 install(TARGETS airspy-fmradion DESTINATION bin)
-install(TARGETS sfmbase sfmairspy DESTINATION lib)
+install(TARGETS sfmbase sfmairspy sfmairspyhf DESTINATION lib)
+
+# End of CMakeLists.txt

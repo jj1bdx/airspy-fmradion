@@ -27,6 +27,18 @@
 #include "Filter.h"
 #include "SoftFM.h"
 
+// Downconverting Fs/4 tuner.
+class FourthDownconverterIQ {
+public:
+  // Construct Fs/4 downconverting tuner.
+  FourthDownconverterIQ();
+  // Process samples.
+  void process(const IQSampleVector &samples_in, IQSampleVector &samples_out);
+
+private:
+  unsigned int m_index;
+};
+
 /* Detect frequency by phase discrimination between successive samples. */
 class PhaseDiscriminator {
 public:
@@ -144,16 +156,20 @@ public:
    * Construct FM decoder.
    *
    * sample_rate_if   :: IQ sample rate in Hz.
+   * fourth_downsampler :: Use Fs/4 downsampler
    * first_downsample :: Integer first stage downsampling rate (>= 1)
    *                     (applied BEFORE FM demodulation)
    * first_coeff      :: First stage filter coefficients
    * second_downsample:: Integer second stage downsampling rate (>= 1)
    *                     (applied BEFORE FM demodulation)
    * second_coeff     :: Second stage filter coefficients
-   * first_fmaudio_coeff      :: First stage output audio filter coefficients
-   * first_fmaudio_downsample :: Integer first stage downsampling rate
-   *                             for fmaudio (>= 1)
-   * second_fmaudio_coeff     :: First stage output audio filter coefficients
+   * first_fmaudio_coeff       :: First stage output audio filter coefficients
+   * first_fmaudio_downsample  :: Integer first stage downsampling rate
+   *                              for fmaudio (>= 1)
+   * second_fmaudio_coeff      :: First stage output audio filter coefficients
+   * second_fmaudio_downsample :: Float first stage downsampling rate
+   *                              for fmaudio (>= 1)
+   * second_fmaudio_integer    :: second_fmaudio_downsample is integer
    * stereo           :: True to enable stereo decoding.
    * deemphasis       :: Time constant of de-emphasis filter in microseconds
    *                     (50 us for broadcast FM, 0 to disable de-emphasis).
@@ -161,13 +177,15 @@ public:
    *                  :: (use cos(2*x) instead of sin (2*x))
    *                  :: (for multipath distortion detection)
    */
-  FmDecoder(double sample_rate_if, unsigned int first_downsample,
+  FmDecoder(double sample_rate_if, bool fourth_downsampler,
+            unsigned int first_downsample,
             const std::vector<IQSample::value_type> &first_coeff,
             unsigned int second_downsample,
             const std::vector<IQSample::value_type> &second_coeff,
             const std::vector<SampleVector::value_type> &first_fmaudio_coeff,
             unsigned int first_fmaudio_downsample,
             const std::vector<SampleVector::value_type> &second_fmaudio_coeff,
+            double second_fmaudio_downsample, bool second_fmaudio_integer,
             bool stereo, double deemphasis, bool pilot_shift);
 
   /**
@@ -225,6 +243,7 @@ private:
   const double m_sample_rate_fmdemod;
   const unsigned int m_first_downsample;
   const unsigned int m_second_downsample;
+  const bool m_fourth_downsampler;
   const bool m_pilot_shift;
   const bool m_stereo_enabled;
   bool m_stereo_detected;
@@ -243,6 +262,7 @@ private:
   SampleVector m_buf_stereo_firstout;
   SampleVector m_buf_stereo;
 
+  FourthDownconverterIQ m_downconverter;
   LowPassFilterFirIQ m_iffilter_first;
   LowPassFilterFirIQ m_iffilter_second;
   EqParameters m_eqparams;
