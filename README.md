@@ -1,6 +1,6 @@
 # airspy-fmradion
 
-* Version v0.3.0, 11-MAR-2019
+* Version v0.3.1, 11-MAR-2019
 * **airspy-fmradion** is a software-defined radio receiver for FM broadcast radio, specifically designed for Airspy R2 and Airspy HF+.
 * This repository is forked from [ngsoftfm-jj1bdx](https://github.com/jj1bdx/ngsoftfm-jj1bdx) 0.1.14 and merged with [airspfhf-fmradion](https://github.com/jj1bdx/airspyhf-fmradion)
 * For MacOS and Linux
