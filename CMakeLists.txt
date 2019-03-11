@@ -49,6 +49,13 @@ else()
     set(AIRSPYHF_INCLUDE_OPTION "")
 endif()
 
+# Find RTL-SDR library.
+pkg_check_modules(PKG_RTLSDR librtlsdr)
+find_path(RTLSDR_INCLUDE_DIR rtl-sdr.h
+          HINT ${PKG_RTLSDR_INCLUDE_DIRS})
+find_library(RTLSDR_LIBRARY librtlsdr.a
+             HINT ${PKG_RTLSDR_LIBRARY_DIRS})
+
 # Find libusb
 # See https://github.com/texane/stlink/blob/master/cmake/modules/FindLibUSB.cmake
 pkg_check_modules(PKG_LIBUSB libusb-1.0)
@@ -65,6 +72,18 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
 else ()
     set(ALSA_OPTION "")
 endif()
+
+if(RTLSDR_INCLUDE_DIR AND RTLSDR_LIBRARY)
+    message(STATUS "Found librtlsdr: ${RTLSDR_INCLUDE_DIR}, ${RTLSDR_LIBRARY}")
+else()
+    message(WARNING "Can not find Osmocom RTL-SDR library")
+    message("Try again with environment variable PKG_CONFIG_PATH")
+    message("or with -DRTLSDR_INCLUDE_DIR=/path/rtlsdr/include")
+    message("        -DRTLSDR_LIBRARY=/path/rtlsdr/lib/librtlsdr.a")
+endif()
+
+set(RTLSDR_INCLUDE_DIRS ${RTLSDR_INCLUDE_DIR} ${LIBUSB_INCLUDE_DIR})
+set(RTLSDR_LIBRARIES    ${RTLSDR_LIBRARY} ${LIBUSB_LIBRARY})
 
 set(AIRSPY_INCLUDE_DIRS ${AIRSPY_INCLUDE_DIR} ${LIBUSB_INCLUDE_DIR})
 set(AIRSPY_LIBRARIES    ${AIRSPY_LIBRARY} ${LIBUSB_LIBRARY})
@@ -119,6 +138,21 @@ set(sfmbase_SOURCES
     ${sfmbase_HEADERS}
 )
 
+# RTL-SDR sources
+
+set(sfmrtlsdr_SOURCES
+    sfmbase/RtlSdrSource.cpp
+)
+
+set(sfmrtlsdr_HEADERS
+    include/RtlSdrSource.h
+)
+
+set(sfmrtlsdr_SOURCES
+    ${sfmrtlsdr_SOURCES}
+    ${sfmrtlsdr_HEADERS}
+)
+
 # Airspy sources
 
 set(sfmairspy_SOURCES
@@ -155,6 +189,10 @@ add_library(sfmbase STATIC
     ${sfmbase_SOURCES}
 )
 
+add_library(sfmrtlsdr STATIC
+    ${sfmrtlsdr_SOURCES}
+)
+
 add_library(sfmairspy STATIC
     ${sfmairspy_SOURCES}
 )
@@ -177,6 +215,7 @@ include_directories(
 
 target_link_libraries(airspy-fmradion
     sfmbase
+    sfmrtlsdr
     sfmairspy
     sfmairspyhf
     ${CMAKE_THREAD_LIBS_INIT}
@@ -185,6 +224,10 @@ target_link_libraries(airspy-fmradion
 )
 
 # Linked libraries
+
+target_link_libraries(sfmrtlsdr
+    ${RTLSDR_LIBRARIES}
+)
 
 target_link_libraries(sfmairspy
     ${AIRSPY_LIBRARIES}
@@ -197,6 +240,6 @@ target_link_libraries(sfmairspyhf
 # Installation
 
 install(TARGETS airspy-fmradion DESTINATION bin)
-install(TARGETS sfmbase sfmairspy sfmairspyhf DESTINATION lib)
+install(TARGETS sfmbase sfmrtlsdr sfmairspy sfmairspyhf DESTINATION lib)
 
 # End of CMakeLists.txt

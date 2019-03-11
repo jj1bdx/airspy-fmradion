@@ -41,8 +41,9 @@
 
 #include "AirspyHFSource.h"
 #include "AirspySource.h"
+#include "RtlSdrSource.h"
 
-#define AIRSPY_FMRADION_VERSION "v0.3.1"
+#define AIRSPY_FMRADION_VERSION "v0.4.0-dev"
 
 /** Flag is set on SIGINT / SIGTERM. */
 static std::atomic_bool stop_flag(false);
@@ -96,6 +97,7 @@ void usage() {
       stderr,
       "Usage: airspy-fmradion [options]\n"
       "  -t devtype     Device type:\n"
+      "                   - rtlsdr: RTL-SDR devices\n"
       "                   - airspy: Airspy R2\n"
       "                   - airspyhf: Airspy HF+\n"
       "  -q             Quiet mode\n"
@@ -115,6 +117,19 @@ void usage() {
       "  -X             Shift pilot phase (for Quadrature Multipath Monitor)\n"
       "                 (-X is ignored under mono mode (-M))\n"
       "  -U             Set deemphasis to 75 microseconds (default: 50)\n"
+      "\n"
+      "Configuration options for RTL-SDR devices\n"
+      "  freq=<int>     Frequency of radio station in Hz (default 100000000)\n"
+      "                 valid values: 10M to 2.2G (working range depends on "
+      "device)\n"
+      "  srate=<int>    IF sample rate in Hz (default 960000)\n"
+      "                 (valid ranges: [225001, 300000], [900001, 3200000]))\n"
+      "  gain=<float>   Set LNA gain in dB, or 'auto',\n"
+      "                 or 'list' to just get a list of valid values (default "
+      "auto)\n"
+      "  blklen=<int>   Set audio buffer size in seconds (default RTL-SDR "
+      "default)\n"
+      "  agc            Enable RTL AGC mode (default disabled)\n"
       "\n"
       "Configuration options for Airspy devices:\n"
       "  freq=<int>     Frequency of radio station in Hz (default 100000000)\n"
@@ -175,7 +190,9 @@ double get_time() {
 
 static bool get_device(std::vector<std::string> &devnames, std::string &devtype,
                        Source **srcsdr, int devidx) {
-  if (strcasecmp(devtype.c_str(), "airspy") == 0) {
+  if (strcasecmp(devtype.c_str(), "rtlsdr") == 0) {
+    RtlSdrSource::get_device_names(devnames);
+  } else if (strcasecmp(devtype.c_str(), "airspy") == 0) {
     AirspySource::get_device_names(devnames);
   } else if (strcasecmp(devtype.c_str(), "airspyhf") == 0) {
     AirspyHFSource::get_device_names(devnames);
@@ -183,7 +200,7 @@ static bool get_device(std::vector<std::string> &devnames, std::string &devtype,
     fprintf(
         stderr,
         "ERROR: wrong device type (-t option) must be one of the following:\n");
-    fprintf(stderr, "        airspy, airspyhf\n");
+    fprintf(stderr, "        rtlsdr, airspy, airspyhf\n");
     return false;
   }
 
@@ -203,7 +220,10 @@ static bool get_device(std::vector<std::string> &devnames, std::string &devtype,
 
   fprintf(stderr, "using device %d: %s\n", devidx, devnames[devidx].c_str());
 
-  if (strcasecmp(devtype.c_str(), "airspy") == 0) {
+  if (strcasecmp(devtype.c_str(), "rtlsdr") == 0) {
+    // Open RTL-SDR device.
+    *srcsdr = new RtlSdrSource(devidx);
+  } else if (strcasecmp(devtype.c_str(), "airspy") == 0) {
     // Open Airspy device.
     *srcsdr = new AirspySource(devidx);
   } else if (strcasecmp(devtype.c_str(), "airspyhf") == 0) {
@@ -522,6 +542,29 @@ int main(int argc, char **argv) {
       fprintf(stderr, "Sample rate unsupported\n");
       fprintf(stderr, "Supported rate:\n");
       fprintf(stderr, "Airspy HF: 768000\n");
+      delete srcsdr;
+      exit(1);
+    }
+  } else if (strcasecmp(devtype_str.c_str(), "rtlsdr") == 0) {
+    if ((ifrate >= 900001.0) && (ifrate <= 937500.0)) {
+      if_blocksize = 65536;
+      fourth_downsampler = true;
+      first_downsample = 3;
+      first_coeff = FilterParameters::jj1bdx_900kHz_div3;
+      second_downsample = 1;                                // placeholder
+      second_coeff = FilterParameters::delay_3taps_only_iq; // placeholder
+      first_fmaudio_coeff = FilterParameters::jj1bdx_312_5khz_div6;
+      second_fmaudio_coeff = FilterParameters::jj1bdx_58_0333khz_fmaudio;
+      first_fmaudio_downsample = 6;
+      second_fmaudio_downsample =
+          (ifrate /
+           (first_downsample * second_downsample * first_fmaudio_downsample)) /
+          pcmrate;
+      second_fmaudio_integer = false;
+    } else {
+      fprintf(stderr, "Sample rate unsupported\n");
+      fprintf(stderr, "Supported rate:\n");
+      fprintf(stderr, "RTL-SDR: 900001 ~ 937500 \n");
       delete srcsdr;
       exit(1);
     }
