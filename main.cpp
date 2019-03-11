@@ -526,10 +526,10 @@ int main(int argc, char **argv) {
   }
 
   fprintf(stderr, "IF sample rate:    %.1f Hz\n", ifrate);
-  fprintf(stderr, "1st rate:          %.1f Hz (divided by %u)\n",
+  fprintf(stderr, "IF 1st rate:       %.1f Hz (divided by %u)\n",
           ifrate / first_downsample, first_downsample);
   if (second_downsample != 1) {
-    fprintf(stderr, "2nd rate:          %.1f Hz (divided by %u)\n",
+    fprintf(stderr, "IF 2nd rate:       %.1f Hz (divided by %u)\n",
             ifrate / first_downsample / second_downsample, second_downsample);
   }
   fprintf(stderr, "FM demod rate:     %.1f Hz\n",
