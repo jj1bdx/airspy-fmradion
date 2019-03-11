@@ -257,9 +257,11 @@ private:
   SampleVector m_buf_baseband;
   SampleVector m_buf_baseband_raw;
   SampleVector m_buf_mono_firstout;
+  SampleVector m_buf_mono_secondout;
   SampleVector m_buf_mono;
   SampleVector m_buf_rawstereo;
   SampleVector m_buf_stereo_firstout;
+  SampleVector m_buf_stereo_secondout;
   SampleVector m_buf_stereo;
 
   FourthDownconverterIQ m_downconverter;
@@ -271,8 +273,10 @@ private:
   PilotPhaseLock m_pilotpll;
   DownsampleFilter m_first_resample_mono;
   DownsampleFilter m_second_resample_mono;
+  DownsampleFilter m_third_resample_mono;
   DownsampleFilter m_first_resample_stereo;
   DownsampleFilter m_second_resample_stereo;
+  DownsampleFilter m_third_resample_stereo;
   HighPassFilterIir m_dcblock_mono;
   HighPassFilterIir m_dcblock_stereo;
   LowPassFilterRC m_deemph_mono;

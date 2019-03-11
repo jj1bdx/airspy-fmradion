@@ -112,6 +112,7 @@ set(CMAKE_CXX_FLAGS "-Wall -std=c++11 ${OPTIMIZATION_FLAGS} ${ALSA_OPTION} ${AIR
 
 set(sfmbase_SOURCES
     sfmbase/Filter.cpp
+    sfmbase/FilterParameters.cpp
     sfmbase/FmDecode.cpp
     sfmbase/AudioOutput.cpp 
     sfmbase/EqParameters.cpp
