@@ -42,7 +42,7 @@ public:
   static const std::vector<SampleVector::value_type> delay_3taps_only_audio;
 
   static const std::vector<SampleVector::value_type> jj1bdx_384k_div4;
-  static const std::vector<SampleVector::value_type> jj1bdx_96k_div2_fmaudio;
+  static const std::vector<SampleVector::value_type> jj1bdx_96k_div2;
 
   static const std::vector<IQSample::value_type> jj1bdx_900kHz_div3;
 

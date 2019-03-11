@@ -20,8 +20,8 @@
 #include <cassert>
 #include <cmath>
 
-#include "FmDecode.h"
 #include "FilterParameters.h"
+#include "FmDecode.h"
 
 // Compute RMS over a small prefix of the specified sample vector.
 double rms_level_approx(const IQSampleVector &samples) {
