@@ -251,8 +251,8 @@ int main(int argc, char **argv) {
   Source *srcsdr = 0;
 
   fprintf(stderr, "airspy-fmradion " AIRSPY_FMRADION_VERSION "\n");
-  fprintf(stderr, "Software decoder for FM broadcast radio\n"
-  fprintf(stderr, "for Airspy R2 and Airspy HF+\n"
+  fprintf(stderr, "Software decoder for FM broadcast radio\n");
+  fprintf(stderr, "for Airspy R2 and Airspy HF+\n");
 
   const struct option longopts[] = {{"devtype", 2, NULL, 't'},
                                     {"config", 2, NULL, 'c'},
