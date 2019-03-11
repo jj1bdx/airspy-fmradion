@@ -516,7 +516,7 @@ int main(int argc, char **argv) {
       exit(1);
     }
 
-    first_fmaudio_coeff = FilterParameters::jj1bdx_312_5khz_div4;
+    first_fmaudio_coeff = FilterParameters::jj1bdx_312_5khz_div6;
     second_fmaudio_coeff = FilterParameters::jj1bdx_78_125khz_fmaudio;
     first_fmaudio_downsample = 4;
     second_fmaudio_downsample =
@@ -553,7 +553,7 @@ int main(int argc, char **argv) {
       first_coeff = FilterParameters::jj1bdx_900kHz_div3;
       second_downsample = 1;                                // placeholder
       second_coeff = FilterParameters::delay_3taps_only_iq; // placeholder
-      first_fmaudio_coeff = FilterParameters::jj1bdx_312_5khz_div4;
+      first_fmaudio_coeff = FilterParameters::jj1bdx_312_5khz_div6;
       second_fmaudio_coeff = FilterParameters::jj1bdx_78_125khz_fmaudio;
       first_fmaudio_downsample = 4;
       second_fmaudio_downsample =

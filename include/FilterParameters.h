@@ -46,7 +46,9 @@ public:
 
   static const std::vector<IQSample::value_type> jj1bdx_900kHz_div3;
 
+  static const std::vector<SampleVector::value_type> jj1bdx_312_5khz_div6;
   static const std::vector<SampleVector::value_type> jj1bdx_312_5khz_div4;
+  static const std::vector<SampleVector::value_type> jj1bdx_78_125khz_24khz;
   static const std::vector<SampleVector::value_type> jj1bdx_78_125khz_fmaudio;
 
   static const std::vector<SampleVector::value_type> jj1bdx_48khz_fmaudio;
