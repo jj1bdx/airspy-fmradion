@@ -122,7 +122,7 @@ void usage() {
       "  freq=<int>     Frequency of radio station in Hz (default 100000000)\n"
       "                 valid values: 10M to 2.2G (working range depends on "
       "device)\n"
-      "  srate=<int>    IF sample rate in Hz (default 960000)\n"
+      "  srate=<int>    IF sample rate in Hz (default 937500)\n"
       "                 (valid ranges: [225001, 300000], [900001, 3200000]))\n"
       "  gain=<float>   Set LNA gain in dB, or 'auto',\n"
       "                 or 'list' to just get a list of valid values (default "
@@ -516,9 +516,9 @@ int main(int argc, char **argv) {
       exit(1);
     }
 
-    first_fmaudio_coeff = FilterParameters::jj1bdx_312_5khz_div6;
-    second_fmaudio_coeff = FilterParameters::jj1bdx_58_0333khz_fmaudio;
-    first_fmaudio_downsample = 6;
+    first_fmaudio_coeff = FilterParameters::jj1bdx_312_5khz_div4;
+    second_fmaudio_coeff = FilterParameters::jj1bdx_78_125khz_fmaudio;
+    first_fmaudio_downsample = 4;
     second_fmaudio_downsample =
         (ifrate /
          (first_downsample * second_downsample * first_fmaudio_downsample)) /
@@ -553,9 +553,9 @@ int main(int argc, char **argv) {
       first_coeff = FilterParameters::jj1bdx_900kHz_div3;
       second_downsample = 1;                                // placeholder
       second_coeff = FilterParameters::delay_3taps_only_iq; // placeholder
-      first_fmaudio_coeff = FilterParameters::jj1bdx_312_5khz_div6;
-      second_fmaudio_coeff = FilterParameters::jj1bdx_58_0333khz_fmaudio;
-      first_fmaudio_downsample = 6;
+      first_fmaudio_coeff = FilterParameters::jj1bdx_312_5khz_div4;
+      second_fmaudio_coeff = FilterParameters::jj1bdx_78_125khz_fmaudio;
+      first_fmaudio_downsample = 4;
       second_fmaudio_downsample =
           (ifrate /
            (first_downsample * second_downsample * first_fmaudio_downsample)) /
