@@ -450,10 +450,13 @@ int main(int argc, char **argv) {
   double second_fmaudio_downsample;
   bool second_fmaudio_integer;
 
+  unsigned int if_blocksize;
+
   if (strcasecmp(devtype_str.c_str(), "airspy") == 0) {
     fourth_downsampler = false;
 
     if (ifrate == 10000000.0) {
+      if_blocksize = 65536;
       // decimation rate: 32 = 8 * 4
       // 312.5kHz = +-156.25kHz
       first_downsample = 8;
@@ -461,6 +464,7 @@ int main(int argc, char **argv) {
       second_downsample = 4;
       second_coeff = FilterParameters::jj1bdx_1250khz_div4;
     } else if (ifrate == 2500000.0) {
+      if_blocksize = 65536;
       // decimation rate: 8 = 4 * 2
       // 312.5kHz = +-156.25kHz
       first_downsample = 4;
@@ -502,6 +506,7 @@ int main(int argc, char **argv) {
 
   } else if (strcasecmp(devtype_str.c_str(), "airspyhf") == 0) {
     if (ifrate == 768000.0) {
+      if_blocksize = 16384;
       fourth_downsampler = true;
       first_downsample = 2;
       first_coeff = FilterParameters::jj1bdx_768kHz_div2;
@@ -525,6 +530,10 @@ int main(int argc, char **argv) {
     exit(1);
   }
 
+  double total_decimation_rate = first_downsample * second_downsample *
+                                 first_fmaudio_downsample *
+                                 second_fmaudio_downsample;
+
   fprintf(stderr, "IF sample rate:    %.1f Hz\n", ifrate);
   fprintf(stderr, "IF 1st rate:       %.1f Hz (divided by %u)\n",
           ifrate / first_downsample, first_downsample);
@@ -539,8 +548,8 @@ int main(int argc, char **argv) {
               (first_downsample * second_downsample * first_fmaudio_downsample),
           first_fmaudio_downsample);
   fprintf(stderr, "Audio 2nd rate:    %.1f Hz ",
-          ifrate / (first_downsample * second_downsample *
-                    first_fmaudio_downsample * second_fmaudio_downsample));
+          ifrate / total_decimation_rate);
+
   if (second_fmaudio_integer) {
     fprintf(stderr, "(divided by %u)\n", (int)second_fmaudio_downsample);
   } else {
@@ -611,6 +620,9 @@ int main(int argc, char **argv) {
 
   double block_time = get_time();
 
+  // TODO: ~0.1sec / display (should be tuned)
+  unsigned int stat_rate = lrint(5120 / (if_blocksize / total_decimation_rate));
+
   // Main loop.
   for (unsigned int block = 0; !stop_flag.load(); block++) {
 
@@ -668,7 +680,7 @@ int main(int argc, char **argv) {
         }
       }
       // Show per-block statistics.
-      if (stereo_change || ((block % 5) == 0)) {
+      if (stereo_change || ((block % stat_rate) == 0)) {
         fprintf(stderr,
                 "\rblk=%7d:ppm=%+6.2f:IF=%+5.1fdB:AF=%+5.1fdB:buf=%.1fs", block,
                 ppm_value_average, if_level_db, audio_level_db, buflen_sec);
