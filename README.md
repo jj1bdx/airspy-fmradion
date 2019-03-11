@@ -1,6 +1,6 @@
 # airspy-fmradion
 
-* Version v0.4.0, 11-MAR-2019
+* Version v0.4.1, 12-MAR-2019
 * **airspy-fmradion** is a software-defined radio receiver for FM broadcast radio, specifically designed for Airspy R2 and Airspy HF+, and RTL-SDR.
 * This repository is forked from [ngsoftfm-jj1bdx](https://github.com/jj1bdx/ngsoftfm-jj1bdx) 0.1.14 and merged with [airspfhf-fmradion](https://github.com/jj1bdx/airspyhf-fmradion)
 * For MacOS and Linux
@@ -131,6 +131,7 @@ Compile and install
 ## Filter design documentation
 
 * Filter coefficients are listed under `doc/filter-design`
+* Third-stage 19kHz cut LPF implemented
 
 ## Airspy R2 modification from ngsoftfm-jj1bdx
 
@@ -155,9 +156,8 @@ Compile and install
 * Use two-stage filters for audio downsampling, such as 312.5kHz / 4 -> 78.125kHz / 1.627604166666666666 -> 48kHz
 * Use `AIRSPY_SAMPLE_FLOAT32_IQ` to directly obtain float IQ sample data from Airspy: IF level is now -24.08dB than the previous (pre-v0.2.2) version
 * Use sparse debug output for ppm and other level status
-* CPU usage: ~56% -> ~30% on Mac mini 2018, with debug output on, comparing with ngsoftfm-jj1bdx 0.1.14
-* CPU usage: ~170% -> ~104% on Intel NUC DN2820FYKH Celeron N2830 / Ubuntu 18.04 (usable range with 2 cores)
-* More optimization on LPFIQ and audio filters by assuming symmetric coefficients (~30% -> ~25%)
+* CPU usage: ~56% -> ~31% on Mac mini 2018, with debug output on, comparing with ngsoftfm-jj1bdx 0.1.14
+* More optimization on LPFIQ and audio filters by assuming symmetric coefficients (-5% of Mac mini 2018 CPU usage)
 
 ### Airspy configuration options
 
@@ -179,8 +179,7 @@ Compile and install
 * Airspy HF+ allows only 660kHz alias-free BW, so the maximum alias-free BW for IF is (660/2)kHz - 192kHz = 138kHz
 * FM demodulation rate: 384kHz
 * 48 * 16 = 768, so all filters are in integer sampling rates
-* CPU usage: ~9% on Mac mini 2018 / macOS 10.14.3
-* CPU usage: ~60% on Intel NUC DN2820FYKH Celeron N2830 / Ubuntu 18.04 (usable range with 2 cores)
+* CPU usage: ~11% on Mac mini 2018 / macOS 10.14.3
 
 ### Filter characteristics
 
