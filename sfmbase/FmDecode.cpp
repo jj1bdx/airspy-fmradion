@@ -434,19 +434,22 @@ void FmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
     // to avoid frequency zero offset
     // because Airspy HF+ is a Zero IF receiver
     m_downconverter.process(samples_in, m_buf_iftuned);
-    // First stage of the low pass filters to isolate station,
-    // and perform first stage decimation.
-    m_iffilter_first.process(m_buf_iftuned, m_buf_iffirstout);
   } else {
-    // No frequency shifting here
-
-    // First stage of the low pass filters to isolate station,
-    // and perform first stage decimation.
-    m_iffilter_first.process(samples_in, m_buf_iffirstout);
+    // No shifting here
+    m_buf_iftuned = samples_in;
   }
 
-  // Second stage of the low pass filters to isolate station,
-  m_iffilter_second.process(m_buf_iffirstout, m_buf_iffiltered);
+  // First stage of the low pass filters to isolate station,
+  // and perform first stage decimation.
+  m_iffilter_first.process(m_buf_iftuned, m_buf_iffirstout);
+
+  if (m_second_downsample > 1) {
+    // Second stage of the low pass filters to isolate station,
+    m_iffilter_second.process(m_buf_iffirstout, m_buf_iffiltered);
+  } else {
+    // No second downsampling here
+    m_buf_iffiltered = m_buf_iffirstout;
+  }
 
   // Measure IF level.
   double if_rms = rms_level_approx(m_buf_iffiltered);
