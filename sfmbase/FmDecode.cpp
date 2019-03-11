@@ -29,13 +29,62 @@ double rms_level_approx(const IQSampleVector &samples) {
 
   IQSample::value_type level = 0;
   for (unsigned int i = 0; i < n; i++) {
-    const IQSample &s = samples[i];
-    IQSample::value_type re = s.real(), im = s.imag();
-    IQSample::value_type sqsum = re * re + im * im;
-    level += sqsum;
+    level += std::norm(samples[i]);
   }
   // Return RMS level
   return sqrt(level / n);
+}
+
+// ////////////////  class FourthDownconverterIQ /////////////////
+
+// Construct Fs/4 downconverting tuner.
+FourthDownconverterIQ::FourthDownconverterIQ() {}
+
+// Process samples.
+// See Richard G. Lyons' explanation at
+// https://www.embedded.com/print/4007186
+inline void FourthDownconverterIQ::process(const IQSampleVector &samples_in,
+                                           IQSampleVector &samples_out) {
+  unsigned int tblidx = m_index;
+  unsigned int n = samples_in.size();
+
+  samples_out.resize(n);
+
+  for (unsigned int i = 0; i < n; i++) {
+    IQSample y;
+    const IQSample &s = samples_in[i];
+    const IQSample::value_type re = s.real();
+    const IQSample::value_type im = s.imag();
+    switch (tblidx) {
+    case 0:
+      // multiply +1
+      y = s;
+      tblidx = 1;
+      break;
+    case 1:
+      // multiply +j
+      y = IQSample(im, -re);
+      tblidx = 2;
+      break;
+    case 2:
+      // multiply -1
+      y = IQSample(-re, -im);
+      tblidx = 3;
+      break;
+    case 3:
+      // multiply -j
+      y = IQSample(-im, re);
+      tblidx = 0;
+      break;
+    default:
+      // unreachable, error here;
+      assert(tblidx < 4);
+      break;
+    }
+    samples_out[i] = y;
+  }
+
+  m_index = tblidx;
 }
 
 /* ****************  class PhaseDiscriminator  **************** */
@@ -293,17 +342,20 @@ void PilotPhaseLock::process(const SampleVector &samples_in,
 /* ****************  class FmDecoder  **************** */
 
 FmDecoder::FmDecoder(
-    double sample_rate_if, unsigned int first_downsample,
+    double sample_rate_if, bool fourth_downsampler,
+    unsigned int first_downsample,
     const std::vector<IQSample::value_type> &first_coeff,
     unsigned int second_downsample,
     const std::vector<IQSample::value_type> &second_coeff,
     const std::vector<SampleVector::value_type> &first_fmaudio_coeff,
     unsigned int first_fmaudio_downsample,
     const std::vector<SampleVector::value_type> &second_fmaudio_coeff,
-    bool stereo, double deemphasis, bool pilot_shift)
+    double second_fmaudio_downsample, bool second_fmaudio_integer, bool stereo,
+    double deemphasis, bool pilot_shift)
 
     // Initialize member fields
     : m_sample_rate_if(sample_rate_if),
+      m_fourth_downsampler(fourth_downsampler),
       m_sample_rate_firstout(m_sample_rate_if / first_downsample),
       m_sample_rate_fmdemod(m_sample_rate_firstout / second_downsample),
       m_first_downsample(first_downsample),
@@ -340,22 +392,20 @@ FmDecoder::FmDecoder(
       m_first_resample_mono(first_fmaudio_coeff,      // coeff
                             first_fmaudio_downsample, // downsample
                             true),                    // integer_factor
-      m_second_resample_mono(
-          second_fmaudio_coeff, // coeff
-                                // downsample
-          (m_sample_rate_fmdemod / first_fmaudio_downsample) / sample_rate_pcm,
-          false) // integer_factor
+      m_second_resample_mono(second_fmaudio_coeff,    // coeff
+                                                      // downsample
+                             second_audio_downsample,
+                             second_fmaudio_integer) // integer_factor
 
       // Construct DownsampleFilter for stereo channel
       ,
       m_first_resample_stereo(first_fmaudio_coeff,      // coeff
                               first_fmaudio_downsample, // downsample
                               true),                    // integer_factor
-      m_second_resample_stereo(
-          second_fmaudio_coeff, // coeff
-                                // downsample
-          (m_sample_rate_fmdemod / first_fmaudio_downsample) / sample_rate_pcm,
-          false) // integer_factor
+      m_second_resample_stereo(second_fmaudio_coeff,    // coeff
+                                                        // downsample
+                               second_audio_downsample,
+                               second_fmaudio_integer) // integer_factor
 
       // Construct HighPassFilterIir
       ,
@@ -379,9 +429,21 @@ void FmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
   // so long as the stability of the receiver device is
   // within the range of +- 1ppm (~100Hz or less).
 
-  // First stage of the low pass filters to isolate station,
-  // and perform first stage decimation.
-  m_iffilter_first.process(samples_in, m_buf_iffirstout);
+  if (m_fourth_downsampler) {
+    // Fs/4 downconvering is required
+    // to avoid frequency zero offset
+    // because Airspy HF+ is a Zero IF receiver
+    m_downconverter.process(samples_in, m_buf_iftuned);
+    // First stage of the low pass filters to isolate station,
+    // and perform first stage decimation.
+    m_iffilter_first.process(m_buf_iftuned, m_buf_iffirstout);
+  } else {
+    // No frequency shifting here
+
+    // First stage of the low pass filters to isolate station,
+    // and perform first stage decimation.
+    m_iffilter_first.process(samples_in, m_buf_iffirstout);
+  }
 
   // Second stage of the low pass filters to isolate station,
   m_iffilter_second.process(m_buf_iffirstout, m_buf_iffiltered);

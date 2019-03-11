@@ -39,19 +39,13 @@
 #include "SoftFM.h"
 #include "util.h"
 
+#include "AirspyHFSource.h"
 #include "AirspySource.h"
 
-#define AIRSPY_FMRADION_VERSION "v0.2.7"
+#define AIRSPY_FMRADION_VERSION "v0.3.0-dev"
 
 /** Flag is set on SIGINT / SIGTERM. */
 static std::atomic_bool stop_flag(false);
-
-/** Simple linear gain adjustment. */
-void adjust_gain(SampleVector &samples, double gain) {
-  for (unsigned int i = 0, n = samples.size(); i < n; i++) {
-    samples[i] *= gain;
-  }
-}
 
 /**
  * Get data from output buffer and write to output stream.
@@ -101,6 +95,9 @@ void usage() {
   fprintf(
       stderr,
       "Usage: airspy-fmradion [options]\n"
+      "  -t devtype     Device type:\n"
+      "                   - airspy: Airspy R2\n"
+      "                   - airspyhf: Airspy HF+\n"
       "  -q             Quiet mode\n"
       "  -c config      Comma separated key=value configuration pairs or just "
       "key for switches\n"
@@ -135,6 +132,14 @@ void usage() {
       "  antbias        Enable antemma bias (default disabled)\n"
       "  lagc           Enable LNA AGC (default disabled)\n"
       "  magc           Enable mixer AGC (default disabled)\n"
+      "\n"
+      "Configuration options for Airspy HF devices:\n"
+      "  freq=<int>     Frequency of radio station in Hz (default 100000000)\n"
+      "                 valid values: 60M to 260M\n"
+      "  srate=<int>    IF sample rate in Hz."
+      "Depends on Airspy HF firmware and libairspyhf support\n"
+      "                 Airspy HF firmware and library must support dynamic "
+      "sample rate query. (default 768000)\n"
       "\n");
 }
 
@@ -168,10 +173,19 @@ double get_time() {
   return tv.tv_sec + 1.0e-6 * tv.tv_usec;
 }
 
-static bool get_device(std::vector<std::string> &devnames, Source **srcsdr,
-                       int devidx) {
-
-  AirspySource::get_device_names(devnames);
+static bool get_device(std::vector<std::string> &devnames, std::string &devtype,
+                       Source **srcsdr, int devidx) {
+  if (strcasecmp(devtype.c_str(), "airspy") == 0) {
+    AirspySource::get_device_names(devnames);
+  } else if (strcasecmp(devtype.c_str(), "airspyhf") == 0) {
+    AirspyHFSource::get_device_names(devnames);
+  } else {
+    fprintf(
+        stderr,
+        "ERROR: wrong device type (-t option) must be one of the following:\n");
+    fprintf(stderr, "        airspy, airspyhf\n");
+    return false;
+  }
 
   if (devidx < 0 || (unsigned int)devidx >= devnames.size()) {
     if (devidx != -1) {
@@ -189,8 +203,13 @@ static bool get_device(std::vector<std::string> &devnames, Source **srcsdr,
 
   fprintf(stderr, "using device %d: %s\n", devidx, devnames[devidx].c_str());
 
-  // Open Airspy device.
-  *srcsdr = new AirspySource(devidx);
+  if (strcasecmp(devtype.c_str(), "airspy") == 0) {
+    // Open Airspy device.
+    *srcsdr = new AirspySource(devidx);
+  } else if (strcasecmp(devtype.c_str(), "airspyhf") == 0) {
+    // Open Airspy HF device.
+    *srcsdr = new AirspyHFSource(devidx);
+  }
 
   return true;
 }
@@ -227,24 +246,34 @@ int main(int argc, char **argv) {
   bool pilot_shift = false;
   bool deemphasis_na = false;
   std::string config_str;
+  std::string devtype_str;
   std::vector<std::string> devnames;
   Source *srcsdr = 0;
 
   fprintf(stderr, "airspy-fmradion " AIRSPY_FMRADION_VERSION "\n");
   fprintf(stderr, "Software decoder for FM broadcast radio with Airspy\n");
 
-  const struct option longopts[] = {
-      {"config", 2, NULL, 'c'}, {"dev", 1, NULL, 'd'},
-      {"mono", 0, NULL, 'M'},   {"raw", 1, NULL, 'R'},
-      {"wav", 1, NULL, 'W'},    {"play", 2, NULL, 'P'},
-      {"pps", 1, NULL, 'T'},    {"buffer", 1, NULL, 'b'},
-      {"quiet", 1, NULL, 'q'},  {"pilotshift", 0, NULL, 'X'},
-      {"usa", 0, NULL, 'U'},    {NULL, 0, NULL, 0}};
+  const struct option longopts[] = {{"devtype", 2, NULL, 't'},
+                                    {"config", 2, NULL, 'c'},
+                                    {"dev", 1, NULL, 'd'},
+                                    {"mono", 0, NULL, 'M'},
+                                    {"raw", 1, NULL, 'R'},
+                                    {"wav", 1, NULL, 'W'},
+                                    {"play", 2, NULL, 'P'},
+                                    {"pps", 1, NULL, 'T'},
+                                    {"buffer", 1, NULL, 'b'},
+                                    {"quiet", 1, NULL, 'q'},
+                                    {"pilotshift", 0, NULL, 'X'},
+                                    {"usa", 0, NULL, 'U'},
+                                    {NULL, 0, NULL, 0}};
 
   int c, longindex;
-  while ((c = getopt_long(argc, argv, "c:d:MR:W:P::T:b:qXU", longopts,
+  while ((c = getopt_long(argc, argv, "t:c:d:MR:W:P::T:b:qXU", longopts,
                           &longindex)) >= 0) {
     switch (c) {
+    case 't':
+      devtype_str.assign(optarg);
+      break;
     case 'c':
       config_str.assign(optarg);
       break;
@@ -383,7 +412,7 @@ int main(int argc, char **argv) {
     exit(1);
   }
 
-  if (!get_device(devnames, &srcsdr, devidx)) {
+  if (!get_device(devnames, devtype_str, &srcsdr, devidx)) {
     exit(1);
   }
 
@@ -409,25 +438,40 @@ int main(int argc, char **argv) {
   }
 
   double ifrate = srcsdr->get_sample_rate();
+
+  bool fourth_downsampler;
   unsigned int first_downsample;
   std::vector<IQSample::value_type> first_coeff;
   unsigned int second_downsample;
   std::vector<IQSample::value_type> second_coeff;
+  std::vector<SampleVector::value_type> first_fmaudio_coeff;
+  std::vector<SampleVector::value_type> second_fmaudio_coeff;
+  unsigned int first_fmaudio_downsample;
+  double second_fmaudio_downsample;
+  bool second_fmaudio_integer;
 
-  if (ifrate == 10000000.0) {
-    // decimation rate: 32 = 8 * 4
-    // 312.5kHz = +-156.25kHz
-    first_downsample = 8;
-    first_coeff = FilterParameters::jj1bdx_10000khz_div8;
-    second_downsample = 4;
-    second_coeff = FilterParameters::jj1bdx_1250khz_div4;
-  } else if (ifrate == 2500000.0) {
-    // decimation rate: 8 = 4 * 2
-    // 312.5kHz = +-156.25kHz
-    first_downsample = 4;
-    first_coeff = FilterParameters::jj1bdx_2500khz_div4;
-    second_downsample = 2;
-    second_coeff = FilterParameters::jj1bdx_600khz_625khz_div2;
+  if (strcasecmp(devtype.c_str(), "airspy") == 0) {
+    fourth_downsampler = false;
+    first_fmaudio_coeff = FilterParameters::jj1bdx_312_5khz_div6;
+    second_fmaudio_coeff = FilterParameters::jj1bdx_58_0333khz_fmaudio;
+    first_fmaudio_downsample = 6;
+    second_fmaudio_downsample = ifrate / (first_downsample * second_downsample *
+                                          first_fmaudio_downsample);
+    second_fmaudio_integer = false;
+    if (ifrate == 10000000.0) {
+      // decimation rate: 32 = 8 * 4
+      // 312.5kHz = +-156.25kHz
+      first_downsample = 8;
+      first_coeff = FilterParameters::jj1bdx_10000khz_div8;
+      second_downsample = 4;
+      second_coeff = FilterParameters::jj1bdx_1250khz_div4;
+    } else if (ifrate == 2500000.0) {
+      // decimation rate: 8 = 4 * 2
+      // 312.5kHz = +-156.25kHz
+      first_downsample = 4;
+      first_coeff = FilterParameters::jj1bdx_2500khz_div4;
+      second_downsample = 2;
+      second_coeff = FilterParameters::jj1bdx_600khz_625khz_div2;
 #if 0
   } else if (ifrate == 6000000.0) {
     // decimation rate: 20 = 5 * 4
@@ -440,31 +484,59 @@ int main(int argc, char **argv) {
     first_downsample = 5;
     second_downsample = 2;
 #endif
-  } else {
-    fprintf(stderr, "Sample rate unsupported\n");
-    fprintf(stderr, "Supported rate:\n");
-    fprintf(stderr, "Airspy R2: 2500000, 10000000\n");
+
+    } else {
+      fprintf(stderr, "Sample rate unsupported\n");
+      fprintf(stderr, "Supported rate:\n");
+      fprintf(stderr, "Airspy R2: 2500000, 10000000\n");
 #if 0
     fprintf(stderr, "Airspy Mini: 3000000, 6000000\n");
 #endif
+      delete srcsdr;
+      exit(1);
+    }
+  } else if (strcasecmp(devtype.c_str(), "airspyhf") == 0) {
+    if (ifrate == 768000.0) {
+      fourth_downsampler = true;
+      first_downsample = 2;
+      first_coeff = FilterParameters::jj1bdx_768kHz_div2;
+      second_downsample = 1;                                // placeholder
+      second_coeff = FilterParameters::delay_3taps_only_iq; // placeholder
+      first_fmaudio_coeff = FilterParameters::jj1bdx_384k_div4;
+      second_fmaudio_coeff = FilterParameters::jj1bdx_96k_div2_fmaudio;
+      first_fmaudio_downsample = 4;
+      second_fmaudio_downsample = 2;
+      second_fmaudio_integer = true;
+    } else {
+      fprintf(stderr, "Sample rate unsupported\n");
+      fprintf(stderr, "Supported rate:\n");
+      fprintf(stderr, "Airspy HF: 768000\n");
+      delete srcsdr;
+      exit(1);
+    }
+  } else {
+    fprintf(stderr, "Device type string unsuppored\n");
     delete srcsdr;
     exit(1);
   }
 
-  std::vector<SampleVector::value_type> first_fmaudio_coeff =
-      FilterParameters::jj1bdx_312_5khz_div6;
-  std::vector<SampleVector::value_type> second_fmaudio_coeff =
-      FilterParameters::jj1bdx_58_0333khz_fmaudio;
-  unsigned int first_fmaudio_downsample = 6;
-
-  fprintf(stderr, "IF sample rate:    %.0f Hz\n", ifrate);
-  fprintf(stderr, "1st rate:          %.0f Hz (divided by %u)\n",
+  fprintf(stderr, "IF sample rate:    %.1f Hz\n", ifrate);
+  fprintf(stderr, "1st rate:          %.1f Hz (divided by %u)\n",
           ifrate / first_downsample, first_downsample);
-  fprintf(stderr, "2nd rate:          %.0f Hz (divided by %u)\n",
+  fprintf(stderr, "2nd rate:          %.1f Hz (divided by %u)\n",
           ifrate / first_downsample / second_downsample, second_downsample);
+  fprintf(stderr, "FM demod rate:     %.1f Hz (divided by %u)\n",
+          ifrate / first_downsample, first_downsample);
+  fprintf(stderr, "Audio 1st rate:    %.1f Hz (divided by %u)\n",
+          ifrate / first_downsample / first_fmaudio_downsample,
+          first_fmaudio_downsample);
+  fprintf(stderr, "Audio 2nd rate:    %.1f Hz (divided by %.1f)\n",
+          ifrate / first_downsample / first_fmaudio_downsample /
+              second_fmaudio_downsample,
+          second_fmaudio_downsample);
 
   double delta_if = tuner_freq - freq;
-  MovingAverage<float> ppm_average(1000, 0.0f);
+  MovingAverage<float> ppm_average(100, 0.0f);
 
   srcsdr->print_specific_parms();
 
@@ -496,17 +568,20 @@ int main(int argc, char **argv) {
   fprintf(stderr, "deemphasis:        %.1f microseconds\n", deemphasis);
 
   // Prepare decoder.
-  FmDecoder fm(ifrate,                   // sample_rate_if
-               first_downsample,         // first_downsample
-               first_coeff,              // first_coeff
-               second_downsample,        // second_downsample
-               second_coeff,             // second_coeff
-               first_fmaudio_coeff,      // first_fmaudio_coeff
-               first_fmaudio_downsample, // first_fmaudio_downsample
-               second_fmaudio_coeff,     // second_fmaudio_coeff
-               stereo,                   // stereo
-               deemphasis,               // deemphasis,
-               pilot_shift);             // pilot_shift
+  FmDecoder fm(ifrate,                    // sample_rate_if
+               fourth_downsampler,        // fourth_downsampler
+               first_downsample,          // first_downsample
+               first_coeff,               // first_coeff
+               second_downsample,         // second_downsample
+               second_coeff,              // second_coeff
+               first_fmaudio_coeff,       // first_fmaudio_coeff
+               first_fmaudio_downsample,  // first_fmaudio_downsample
+               second_fmaudio_coeff,      // second_fmaudio_coeff
+               second_fmaudio_downsample, // second_fmaudio_downsample
+               second_fmaudio_integer,    // second_fmaudio_integer
+               stereo,                    // stereo
+               deemphasis,                // deemphasis,
+               pilot_shift);              // pilot_shift
 
   // If buffering enabled, start background output thread.
   DataBuffer<Sample> output_buffer;
@@ -552,16 +627,11 @@ int main(int argc, char **argv) {
     samples_mean_rms(audiosamples, audio_mean, audio_rms);
     audio_level = 0.95 * audio_level + 0.05 * audio_rms;
 
-    // SKIPPED: Set nominal audio volume
-    // adjust_gain(audiosamples, 0.5)
-
     // the minus factor is to show the ppm correction
     // to make and not the one made
-    ppm_average.feed(((fm.get_tuning_offset() + delta_if) / tuner_freq) *
-                     -1.0e6);
+    ppm_average.feed((fm.get_tuning_offset() / tuner_freq) * -1.0e6);
     double ppm_value_average = ppm_average.average();
     double if_level_db = 20 * log10(fm.get_if_level());
-    double baseband_level_db = 20 * log10(fm.get_baseband_level()) + 3.01;
     double audio_level_db = 20 * log10(audio_level) + 3.01;
 
     double buflen_sec;
@@ -587,12 +657,10 @@ int main(int argc, char **argv) {
         }
       }
       // Show per-block statistics.
-      if (stereo_change || ((block % 10) == 0)) {
+      if (stereo_change || ((block % 5) == 0)) {
         fprintf(stderr,
-                "\rblk=%7d:ppm=%+6.2f:IF=%+5.1fdB:"
-                "BB=%+5.1fdB:AF=%+5.1fdB:buf=%.1fs",
-                block, ppm_value_average, if_level_db, baseband_level_db,
-                audio_level_db, buflen_sec);
+                "\rblk=%7d:ppm=%+6.2f:IF=%+5.1fdB:AF=%+5.1fdB:buf=%.1fs", block,
+                ppm_value_average, if_level_db, audio_level_db, buflen_sec);
         fflush(stderr);
       }
     }
