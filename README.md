@@ -1,7 +1,7 @@
 # airspy-fmradion
 
-* Version v0.3.1, 11-MAR-2019
-* **airspy-fmradion** is a software-defined radio receiver for FM broadcast radio, specifically designed for Airspy R2 and Airspy HF+.
+* Version v0.4.0, 11-MAR-2019
+* **airspy-fmradion** is a software-defined radio receiver for FM broadcast radio, specifically designed for Airspy R2 and Airspy HF+, and RTL-SDR.
 * This repository is forked from [ngsoftfm-jj1bdx](https://github.com/jj1bdx/ngsoftfm-jj1bdx) 0.1.14 and merged with [airspfhf-fmradion](https://github.com/jj1bdx/airspyhf-fmradion)
 * For MacOS and Linux
 
@@ -31,8 +31,9 @@ airspy-fmradion -t airspyhf -q \
  - C++11 (gcc, clang/llvm)
  - [Airspy library](https://github.com/airspy/airspyone_host)
  - [Airspy HF library](https://github.com/airspy/airspyhf)
+ - [RTL-SDR library](http://sdr.osmocom.org/trac/wiki/rtl-sdr)
  - [sox](http://sox.sourceforge.net/)
- - Tested: Airspy R2 and Airspy HF+
+ - Tested: Airspy R2 and Airspy HF+, RTL-SDR V3
  - Fast computer
  - Medium-strong FM radio signal
 
@@ -60,11 +61,11 @@ Base requirements:
 
 To install the library from a Debian/Ubuntu installation just do:
 
-  - `sudo apt-get install libairspy-dev libairspyhf-dev`
+  - `sudo apt-get install libairspy-dev libairspyhf-dev librtlsdr-dev`
 
 ### macOS
 
-* Install HomeBrew `airspy` and `airspyhf`
+* Install HomeBrew `airspy`, `airspyhf`, and `rtl-sdr`
 * See <https://github.com/pothosware/homebrew-pothos/wiki>
 
 ```shell
@@ -92,7 +93,9 @@ cmake .. \
   -DAIRSPY_INCLUDE_DIR=/path/airspy/include \
   -DAIRSPY_LIBRARY_PATH=/path/airspy/lib/libairspy.a
   -DAIRSPYHF_INCLUDE_DIR=/path/airspyhf/include \
-  -DAIRSPYHF_LIBRARY_PATH=/path/airspyhf/lib/libairspyhf.a
+  -DAIRSPYHF_LIBRARY_PATH=/path/airspyhf/lib/libairspyhf.a \
+  -DAIRSPYHF_INCLUDE_DIR=/path/rtlsdr/include \
+  -DAIRSPYHF_LIBRARY_PATH=/path/rtlsdr/lib/librtlsdr.a
 
 PKG_CONFIG_PATH=/path/to/airspy/lib/pkgconfig cmake ..
 ```
@@ -125,6 +128,10 @@ Compile and install
 
 * Adaptive IF filtering (unable to obtain better results)
 
+## Filter design documentation
+
+* Filter coefficients are listed under `doc/filter-design`
+
 ## Airspy R2 modification from ngsoftfm-jj1bdx
 
 ### The modification strategy
@@ -145,10 +152,9 @@ Compile and install
 * Use pre-built optimized filter coefficients for LPFIQ and audio filters
 * Input -> LPFIQ 1st -> LPFIQ 2nd -> PhaseDiscriminator
 * 10MHz -> 1.25MHz -> 312.5kHz (/8 and /4)
-* Use two-stage filters for audio downsampling, such as 312.5kHz / 6 -> 52.08333333kHz / 1.0856944444444444444 -> 48kHz
+* Use two-stage filters for audio downsampling, such as 312.5kHz / 4 -> 78.125kHz / 1.627604166666666666 -> 48kHz
 * Use `AIRSPY_SAMPLE_FLOAT32_IQ` to directly obtain float IQ sample data from Airspy: IF level is now -24.08dB than the previous (pre-v0.2.2) version
 * Use sparse debug output for ppm and other level status
-* Filter coefficients for LPFIQ are listed under `doc/fir-filter-data`
 * CPU usage: ~56% -> ~30% on Mac mini 2018, with debug output on, comparing with ngsoftfm-jj1bdx 0.1.14
 * CPU usage: ~170% -> ~104% on Intel NUC DN2820FYKH Celeron N2830 / Ubuntu 18.04 (usable range with 2 cores)
 * More optimization on LPFIQ and audio filters by assuming symmetric coefficients (~30% -> ~25%)
@@ -186,6 +192,32 @@ Compile and install
 
   - `freq=<int>` Desired tune frequency in Hz. Valid range from 60M to 240M. (default 100M: `100000000`)
   - `srate=<int>` Device sample rate. `list` lists valid values and exits. (default `768000`). Valid values depend on the Airspy HF firmware. Airspy HF firmware and library must support dynamic sample rate query.
+
+## RTL-SDR
+
+### Sample rate
+
+* Valid sample rates are from 900001 to 937500 [Hz].
+* The default value is 937500Hz.
+
+### Conversion process
+
+* 937.5kHz -> 312.5kHz (/3)
+* The audio stage is the same as in Airspy
+
+### RTL-SDR configuration options
+
+  - `freq=<int>` Desired tune frequency in Hz. Accepted range from 10M to 2.2G.
+(default 100M: `100000000`)
+  - `gain=<x>` (default `auto`)
+    - `auto` Selects gain automatically
+    - `list` Lists available gains and exit
+    - `<float>` gain in dB. Possible gains in dB are: `0.0, 0.9, 1.4, 2.7, 3.7,
+7.7, 8.7, 12.5, 14.4, 15.7, 16.6, 19.7, 20.7, 22.9, 25.4, 28.0, 29.7, 32.8, 33.8
+, 36.4, 37.2, 38.6, 40.2, 42.1, 43.4, 43.9, 44.5, 48.0, 49.6`
+  - `srate=<int>` Device sample rate. valid values in the [225001, 300000], [900001, 3200000] ranges. (default `1000000`)
+  - `blklen=<int>` Device block length in bytes (default RTL-SDR default i.e. 64k)
+  - `agc` Activates device AGC (default off)
 
 ## Authors
 
