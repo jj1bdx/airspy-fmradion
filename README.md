@@ -170,7 +170,7 @@ Compile and install
 
 * LPFIQ is single-stage
 * IF center frequency is down Fs/4 than the station frequency, i.e: when the station is 76.5MHz, the tuned frequency is 76.308MHz
-* Airspy FM allows only 660kHz alias-free BW, so the maximum alias-free BW for IF is (660/2)kHz - 192kHz = 138kHz
+* Airspy HF+ allows only 660kHz alias-free BW, so the maximum alias-free BW for IF is (660/2)kHz - 192kHz = 138kHz
 * FM demodulation rate: 384kHz
 * 48 * 16 = 768, so all filters are in integer sampling rates
 * CPU usage: ~9% on Mac mini 2018 / macOS 10.14.3
