@@ -685,12 +685,14 @@ int main(int argc, char **argv) {
     fm.process(iqsamples, audiosamples);
 
     // Measure audio level.
-    double audio_mean, audio_rms;
-    samples_mean_rms(audiosamples, audio_mean, audio_rms);
-    audio_level = 0.95 * audio_level + 0.05 * audio_rms;
+    if (audiosamples.size() > 0) {
+      double audio_mean, audio_rms;
+      samples_mean_rms(audiosamples, audio_mean, audio_rms);
+      audio_level = 0.95 * audio_level + 0.05 * audio_rms;
 
-    // Set nominal audio volume (-6dB).
-    adjust_gain(audiosamples, 0.5);
+      // Set nominal audio volume (-6dB).
+      adjust_gain(audiosamples, 0.5);
+    }
 
     // the minus factor is to show the ppm correction
     // to make and not the one made
