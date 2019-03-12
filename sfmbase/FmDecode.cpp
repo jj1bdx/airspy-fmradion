@@ -39,7 +39,8 @@ double rms_level_approx(const IQSampleVector &samples) {
 // ////////////////  class FourthDownconverterIQ /////////////////
 
 // Construct Fs/4 downconverting tuner.
-FourthDownconverterIQ::FourthDownconverterIQ() {}
+FourthDownconverterIQ::FourthDownconverterIQ()
+  : m_index(0){}
 
 // Process samples.
 // See Richard G. Lyons' explanation at
