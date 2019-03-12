@@ -185,8 +185,8 @@ public:
             unsigned int first_downsample,
             const std::vector<IQSample::value_type> &first_coeff,
             unsigned int second_downsample,
-            const std::vector<IQSample::value_type> &second_coeff,
-            bool stereo, double deemphasis, bool pilot_shift);
+            const std::vector<IQSample::value_type> &second_coeff, bool stereo,
+            double deemphasis, bool pilot_shift);
 
   /**
    * Process IQ samples and return audio samples.

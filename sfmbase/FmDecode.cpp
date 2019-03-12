@@ -400,13 +400,12 @@ const double FmDecoder::default_deemphasis = 50;
 const double FmDecoder::default_deemphasis_eu = 50; // Europe and Japan
 const double FmDecoder::default_deemphasis_na = 75; // USA/Canada
 
-FmDecoder::FmDecoder(
-    double sample_rate_if, bool fourth_downsampler,
-    unsigned int first_downsample,
-    const std::vector<IQSample::value_type> &first_coeff,
-    unsigned int second_downsample,
-    const std::vector<IQSample::value_type> &second_coeff,
-    bool stereo, double deemphasis, bool pilot_shift)
+FmDecoder::FmDecoder(double sample_rate_if, bool fourth_downsampler,
+                     unsigned int first_downsample,
+                     const std::vector<IQSample::value_type> &first_coeff,
+                     unsigned int second_downsample,
+                     const std::vector<IQSample::value_type> &second_coeff,
+                     bool stereo, double deemphasis, bool pilot_shift)
 
     // Initialize member fields
     : m_sample_rate_if(sample_rate_if),
