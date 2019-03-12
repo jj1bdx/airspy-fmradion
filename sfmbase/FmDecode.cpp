@@ -20,7 +20,6 @@
 #include <cassert>
 #include <cmath>
 
-#include "FilterParameters.h"
 #include "FmDecode.h"
 
 // Compute RMS over a small prefix of the specified sample vector.
@@ -34,6 +33,47 @@ double rms_level_approx(const IQSampleVector &samples) {
   }
   // Return RMS level
   return sqrt(level / n);
+}
+
+// class AudioResampler
+
+AudioResampler::AudioResampler(const double input_rate)
+  : m_irate(input_rate) {
+  soxr_error_t error;
+  m_soxr = soxr_create(
+    // Input rate, output rate, # of channels
+    m_irate, FmDecoder::sample_rate_pcm, 1,
+    // To report any error during creation
+    &error,
+    // Use default parameter (float)
+    NULL, NULL, NULL);
+  if (error) {
+    soxr_delete(m_soxr);
+    fprintf(stderr, "FmDecode::AudioResamplr: unable to create soxr: %s\n",
+		    error);
+    exit(1);
+  }
+}
+
+void AudioResampler::process(const SampleVector &samples_in, SampleVector &samples_out) {
+  size_t ilen = samples_in.size();
+  size_t olen = ilen;
+  samples_out.resize(ilen);
+  size_t odone;
+  soxr_error_t error;
+
+  error = soxr_process(m_soxr,
+		  static_cast<soxr_in_t>(&samples_in), ilen, NULL,
+		  static_cast<soxr_out_t>(&samples_out), olen, &odone);
+
+  if (error) {
+    soxr_delete(m_soxr);
+    fprintf(stderr, "FmDecode::AudioResamplr: soxr_process error: %s\n",
+		    error);
+    exit(1);
+  }
+
+  samples_out.resize(odone);
 }
 
 // ////////////////  class FourthDownconverterIQ /////////////////
