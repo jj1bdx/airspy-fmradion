@@ -266,6 +266,7 @@ private:
   IQSampleVector m_buf_iffirstout;
   IQSampleVector m_buf_iffiltered;
   SampleVector m_buf_baseband;
+  SampleVector m_buf_baseband_acc;
   SampleVector m_buf_baseband_raw;
   SampleVector m_buf_mono_firstout;
   SampleVector m_buf_mono;

@@ -43,6 +43,10 @@ AudioResampler::AudioResampler(const double input_rate)
   // Use double
   soxr_io_spec_t io_spec =
     {SOXR_FLOAT64_I, SOXR_FLOAT64_I, 1.0, 0, 0};
+  soxr_quality_spec_t quality_spec =
+	  soxr_quality_spec(SOXR_QQ, SOXR_LINEAR_PHASE);
+  soxr_runtime_spec_t runtime_spec =
+    {8, 8, 4000, 12, 0, SOXR_COEF_INTERP_LOW};
 
   m_soxr = soxr_create(
     // Input rate, output rate, # of channels
@@ -50,8 +54,8 @@ AudioResampler::AudioResampler(const double input_rate)
     // To report any error during creation
     &error,
     &io_spec,
-    // Use default parameter (float)
-    NULL, NULL);
+    &quality_spec,
+    &runtime_spec);
   if (error) {
     soxr_delete(m_soxr);
     fprintf(stderr, "FmDecode::AudioResamplr: unable to create soxr: %s\n",
@@ -70,6 +74,7 @@ void AudioResampler::process(const SampleVector &samples_in, SampleVector &sampl
   error = soxr_process(m_soxr,
 	static_cast<soxr_in_t>(samples_in.data()), ilen, NULL,
 	static_cast<soxr_out_t>(samples_out.data()), olen, &odone);
+  fprintf(stderr, "FmDecode::AudioResamplr: %d %d\n", ilen, odone);
 
   if (error) {
     soxr_delete(m_soxr);
@@ -471,7 +476,7 @@ FmDecoder::FmDecoder(
           (deemphasis == 0) ? 1.0 : (deemphasis * sample_rate_pcm * 1.0e-6))
 
 {
-  // do nothing
+	m_buf_baseband_acc.resize(0);
 }
 
 void FmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
@@ -511,7 +516,15 @@ void FmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
 
   // Compensate 0th-hold aperture effect
   // by applying the equalizer to the discriminator output.
-  m_disceq.process(m_buf_baseband_raw, m_buf_baseband);
+  m_disceq.process(m_buf_baseband_raw, m_buf_baseband_acc);
+
+  m_buf_baseband.insert(std::end(m_buf_baseband),
+		  std::begin(m_buf_baseband_acc),
+		  std::end(m_buf_baseband_acc));
+
+  if (m_buf_baseband.size() < 16384) {
+    audio.resize(0);
+  } else {
 
   // Measure baseband level.
   double baseband_mean, baseband_rms;
@@ -577,6 +590,10 @@ void FmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
     // Just return mono channel.
     audio = move(m_buf_mono);
   }
+
+  m_buf_baseband.resize(0);
+  }
+
 }
 
 // Demodulate stereo L-R signal.
