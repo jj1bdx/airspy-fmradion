@@ -130,6 +130,7 @@ Compile and install
 ## No-goals
 
 * Adaptive IF filtering (unable to obtain better results)
+* Using libsoxr for fractional resampling (too slow)
 
 ## Filter design documentation
 
