@@ -37,49 +37,43 @@ double rms_level_approx(const IQSampleVector &samples) {
 
 // class AudioResampler
 
-AudioResampler::AudioResampler(const double input_rate)
-  : m_irate(input_rate) {
+AudioResampler::AudioResampler(const double input_rate) : m_irate(input_rate) {
   soxr_error_t error;
   // Use double
-  soxr_io_spec_t io_spec =
-    {SOXR_FLOAT64_I, SOXR_FLOAT64_I, 1.0, 0, 0};
+  soxr_io_spec_t io_spec = {SOXR_FLOAT64_I, SOXR_FLOAT64_I, 1.0, 0, 0};
   soxr_quality_spec_t quality_spec =
-	  soxr_quality_spec(SOXR_QQ, SOXR_LINEAR_PHASE);
-  soxr_runtime_spec_t runtime_spec =
-    {8, 8, 4000, 12, 0, SOXR_COEF_INTERP_LOW};
+      soxr_quality_spec(SOXR_HQ, SOXR_LINEAR_PHASE);
+  soxr_runtime_spec_t runtime_spec = {8, 8, 4000, 12, 0, SOXR_COEF_INTERP_LOW};
 
   m_soxr = soxr_create(
-    // Input rate, output rate, # of channels
-    m_irate, FmDecoder::sample_rate_pcm, 1,
-    // To report any error during creation
-    &error,
-    &io_spec,
-    &quality_spec,
-    &runtime_spec);
+      // Input rate, output rate, # of channels
+      m_irate, FmDecoder::sample_rate_pcm, 1,
+      // To report any error during creation
+      &error, &io_spec, &quality_spec, &runtime_spec);
   if (error) {
     soxr_delete(m_soxr);
     fprintf(stderr, "FmDecode::AudioResamplr: unable to create soxr: %s\n",
-		    error);
+            error);
     exit(1);
   }
 }
 
-void AudioResampler::process(const SampleVector &samples_in, SampleVector &samples_out) {
+void AudioResampler::process(const SampleVector &samples_in,
+                             SampleVector &samples_out) {
   size_t ilen = samples_in.size();
   size_t olen = ilen;
   samples_out.resize(ilen);
   size_t odone;
   soxr_error_t error;
 
-  error = soxr_process(m_soxr,
-	static_cast<soxr_in_t>(samples_in.data()), ilen, NULL,
-	static_cast<soxr_out_t>(samples_out.data()), olen, &odone);
+  error = soxr_process(m_soxr, static_cast<soxr_in_t>(samples_in.data()), ilen,
+                       NULL, static_cast<soxr_out_t>(samples_out.data()), olen,
+                       &odone);
   fprintf(stderr, "FmDecode::AudioResamplr: %d %d\n", ilen, odone);
 
   if (error) {
     soxr_delete(m_soxr);
-    fprintf(stderr, "FmDecode::AudioResamplr: soxr_process error: %s\n",
-		    error);
+    fprintf(stderr, "FmDecode::AudioResamplr: soxr_process error: %s\n", error);
     exit(1);
   }
 
@@ -89,8 +83,7 @@ void AudioResampler::process(const SampleVector &samples_in, SampleVector &sampl
 // ////////////////  class FourthDownconverterIQ /////////////////
 
 // Construct Fs/4 downconverting tuner.
-FourthDownconverterIQ::FourthDownconverterIQ()
-  : m_index(0){}
+FourthDownconverterIQ::FourthDownconverterIQ() : m_index(0) {}
 
 // Process samples.
 // See Richard G. Lyons' explanation at
@@ -437,8 +430,8 @@ FmDecoder::FmDecoder(
       m_pilotcut_mono(FilterParameters::jj1bdx_48khz_fmaudio, // coeff
                       1.0, true),
       m_pilotcut_stereo(FilterParameters::jj1bdx_48khz_fmaudio, // coeff
-                      1.0, true)
-      
+                        1.0, true)
+
       // Construct LowPassFilterFirIQ
       ,
       m_iffilter_first(first_coeff, m_first_downsample),
@@ -476,7 +469,7 @@ FmDecoder::FmDecoder(
           (deemphasis == 0) ? 1.0 : (deemphasis * sample_rate_pcm * 1.0e-6))
 
 {
-	m_buf_baseband_acc.resize(0);
+  m_buf_baseband_acc.resize(0);
 }
 
 void FmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
@@ -519,81 +512,80 @@ void FmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
   m_disceq.process(m_buf_baseband_raw, m_buf_baseband_acc);
 
   m_buf_baseband.insert(std::end(m_buf_baseband),
-		  std::begin(m_buf_baseband_acc),
-		  std::end(m_buf_baseband_acc));
+                        std::begin(m_buf_baseband_acc),
+                        std::end(m_buf_baseband_acc));
 
   if (m_buf_baseband.size() < 16384) {
     audio.resize(0);
   } else {
 
-  // Measure baseband level.
-  double baseband_mean, baseband_rms;
-  samples_mean_rms(m_buf_baseband, baseband_mean, baseband_rms);
-  m_baseband_mean = 0.95 * m_baseband_mean + 0.05 * baseband_mean;
-  m_baseband_level = 0.95 * m_baseband_level + 0.05 * baseband_rms;
+    // Measure baseband level.
+    double baseband_mean, baseband_rms;
+    samples_mean_rms(m_buf_baseband, baseband_mean, baseband_rms);
+    m_baseband_mean = 0.95 * m_baseband_mean + 0.05 * baseband_mean;
+    m_baseband_level = 0.95 * m_baseband_level + 0.05 * baseband_rms;
 
-  if (m_stereo_enabled) {
-    // Lock on stereo pilot,
-    // and remove locked 19kHz tone from the composite signal.
-    m_pilotpll.process(m_buf_baseband, m_buf_rawstereo, m_pilot_shift);
-    m_stereo_detected = m_pilotpll.locked();
-  }
+    if (m_stereo_enabled) {
+      // Lock on stereo pilot,
+      // and remove locked 19kHz tone from the composite signal.
+      m_pilotpll.process(m_buf_baseband, m_buf_rawstereo, m_pilot_shift);
+      m_stereo_detected = m_pilotpll.locked();
+    }
 
-  // Extract mono audio signal.
-  m_audioresampler_mono.process(m_buf_baseband, m_buf_mono_firstout);
-  // Filter out mono 19kHz pilot signal.
-  m_pilotcut_mono.process(m_buf_mono_firstout, m_buf_mono);
-  
-  // DC blocking
-  m_dcblock_mono.process_inplace(m_buf_mono);
-
-  if (m_stereo_enabled) {
-
-    // Demodulate stereo signal.
-    demod_stereo(m_buf_baseband, m_buf_rawstereo);
-
-    // Extract audio and downsample.
-    // NOTE: This MUST be done even if no stereo signal is detected yet,
-    // because the downsamplers for mono and stereo signal must be
-    // kept in sync.
-    m_audioresampler_stereo.process(m_buf_rawstereo, m_buf_stereo_firstout);
+    // Extract mono audio signal.
+    m_audioresampler_mono.process(m_buf_baseband, m_buf_mono_firstout);
     // Filter out mono 19kHz pilot signal.
-    m_pilotcut_stereo.process(m_buf_stereo_firstout, m_buf_stereo);
+    m_pilotcut_mono.process(m_buf_mono_firstout, m_buf_mono);
 
     // DC blocking
-    m_dcblock_stereo.process_inplace(m_buf_stereo);
+    m_dcblock_mono.process_inplace(m_buf_mono);
 
-    if (m_stereo_detected) {
-      if (m_pilot_shift) {
-        // Duplicate L-R shifted output in left/right channels.
-        // No deemphasis
-        mono_to_left_right(m_buf_stereo, audio);
+    if (m_stereo_enabled) {
+
+      // Demodulate stereo signal.
+      demod_stereo(m_buf_baseband, m_buf_rawstereo);
+
+      // Extract audio and downsample.
+      // NOTE: This MUST be done even if no stereo signal is detected yet,
+      // because the downsamplers for mono and stereo signal must be
+      // kept in sync.
+      m_audioresampler_stereo.process(m_buf_rawstereo, m_buf_stereo_firstout);
+      // Filter out mono 19kHz pilot signal.
+      m_pilotcut_stereo.process(m_buf_stereo_firstout, m_buf_stereo);
+
+      // DC blocking
+      m_dcblock_stereo.process_inplace(m_buf_stereo);
+
+      if (m_stereo_detected) {
+        if (m_pilot_shift) {
+          // Duplicate L-R shifted output in left/right channels.
+          // No deemphasis
+          mono_to_left_right(m_buf_stereo, audio);
+        } else {
+          // Extract left/right channels from (L+R) / (L-R) signals.
+          stereo_to_left_right(m_buf_mono, m_buf_stereo, audio);
+          // L and R de-emphasis.
+          m_deemph_stereo.process_interleaved_inplace(audio);
+        }
       } else {
-        // Extract left/right channels from (L+R) / (L-R) signals.
-        stereo_to_left_right(m_buf_mono, m_buf_stereo, audio);
-        // L and R de-emphasis.
-        m_deemph_stereo.process_interleaved_inplace(audio);
+        if (m_pilot_shift) {
+          // Fill zero output in left/right channels.
+          zero_to_left_right(m_buf_stereo, audio);
+        } else {
+          // De-emphasis.
+          m_deemph_mono.process_inplace(m_buf_mono);
+          // Duplicate mono signal in left/right channels.
+          mono_to_left_right(m_buf_mono, audio);
+        }
       }
     } else {
-      if (m_pilot_shift) {
-        // Fill zero output in left/right channels.
-        zero_to_left_right(m_buf_stereo, audio);
-      } else {
-        // De-emphasis.
-        m_deemph_mono.process_inplace(m_buf_mono);
-        // Duplicate mono signal in left/right channels.
-        mono_to_left_right(m_buf_mono, audio);
-      }
+      m_deemph_mono.process_inplace(m_buf_mono); //  De-emphasis.
+      // Just return mono channel.
+      audio = move(m_buf_mono);
     }
-  } else {
-    m_deemph_mono.process_inplace(m_buf_mono); //  De-emphasis.
-    // Just return mono channel.
-    audio = move(m_buf_mono);
-  }
 
-  m_buf_baseband.resize(0);
+    m_buf_baseband.resize(0);
   }
-
 }
 
 // Demodulate stereo L-R signal.
