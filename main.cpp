@@ -43,10 +43,17 @@
 #include "AirspySource.h"
 #include "RtlSdrSource.h"
 
-#define AIRSPY_FMRADION_VERSION "v0.4.1"
+#define AIRSPY_FMRADION_VERSION "v0.4.2"
 
 /** Flag is set on SIGINT / SIGTERM. */
 static std::atomic_bool stop_flag(false);
+
+/** Simple linear gain adjustment. */
+void adjust_gain(SampleVector &samples, double gain) {
+  for (unsigned int i = 0, n = samples.size(); i < n; i++) {
+    samples[i] *= gain;
+  }
+}
 
 /**
  * Get data from output buffer and write to output stream.
@@ -233,18 +240,6 @@ static bool get_device(std::vector<std::string> &devnames, std::string &devtype,
 
   return true;
 }
-
-// static constants in FmDecoder must be declared here
-// See
-// https://gcc.gnu.org/wiki/VerboseDiagnostics#missing_static_const_definition
-
-constexpr double FmDecoder::sample_rate_pcm;
-constexpr double FmDecoder::freq_dev;
-constexpr double FmDecoder::bandwidth_pcm;
-constexpr double FmDecoder::pilot_freq;
-constexpr double FmDecoder::default_deemphasis;
-constexpr double FmDecoder::default_deemphasis_eu;
-constexpr double FmDecoder::default_deemphasis_na;
 
 int main(int argc, char **argv) {
   int devidx = 0;
@@ -693,6 +688,9 @@ int main(int argc, char **argv) {
     double audio_mean, audio_rms;
     samples_mean_rms(audiosamples, audio_mean, audio_rms);
     audio_level = 0.95 * audio_level + 0.05 * audio_rms;
+
+    // Set nominal audio volume (-6dB).
+    adjust_gain(audiosamples, 0.5);
 
     // the minus factor is to show the ppm correction
     // to make and not the one made

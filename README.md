@@ -1,6 +1,6 @@
 # airspy-fmradion
 
-* Version v0.4.1, 12-MAR-2019
+* Version v0.4.2, 12-MAR-2019
 * **airspy-fmradion** is a software-defined radio receiver for FM broadcast radio, specifically designed for Airspy R2 and Airspy HF+, and RTL-SDR.
 * This repository is forked from [ngsoftfm-jj1bdx](https://github.com/jj1bdx/ngsoftfm-jj1bdx) 0.1.14 and merged with [airspfhf-fmradion](https://github.com/jj1bdx/airspyhf-fmradion)
 * For MacOS and Linux
@@ -122,7 +122,10 @@ Compile and install
 
 ## Major changes
 
-* Since v0.2.7, output level is now at unity (`adjust_gain()` is removed)
+### Audio gain adjustment
+
+* Since v0.4.2, output maximum level is now at -6dB (0.5) (`adjust_gain()` is reintroduced) again, as in pre-v0.2.7
+* During v0.2.7 to v0.4.1, output level is now at unity (`adjust_gain()` is removed)
 
 ## No-goals
 

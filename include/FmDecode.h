@@ -142,15 +142,13 @@ private:
 /** Complete decoder for FM broadcast signal. */
 class FmDecoder {
 public:
-  static constexpr double sample_rate_pcm = 48000;
-  // Full scale carrier frequency deviation (75 kHz for broadcast FM)
-  static constexpr double freq_dev = 75000;
-  // Half bandwidth of audio signal in Hz (15 kHz for broadcast FM)
-  static constexpr double bandwidth_pcm = 15000;
-  static constexpr double pilot_freq = 19000;
-  static constexpr double default_deemphasis = 50;
-  static constexpr double default_deemphasis_eu = 50; // Europe and Japan
-  static constexpr double default_deemphasis_na = 75; // USA/Canada
+  static const double sample_rate_pcm;
+  static const double freq_dev;
+  static const double bandwidth_pcm;
+  static const double pilot_freq;
+  static const double default_deemphasis;
+  static const double default_deemphasis_eu;
+  static const double default_deemphasis_na;
 
   /**
    * Construct FM decoder.
