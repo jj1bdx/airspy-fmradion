@@ -42,7 +42,7 @@ AudioResampler::AudioResampler(const double input_rate) : m_irate(input_rate) {
   // Use double
   soxr_io_spec_t io_spec = {SOXR_FLOAT64_I, SOXR_FLOAT64_I, 1.0, 0, 0};
   soxr_quality_spec_t quality_spec =
-      soxr_quality_spec(SOXR_HQ, SOXR_LINEAR_PHASE);
+      soxr_quality_spec(SOXR_VHQ, SOXR_LINEAR_PHASE);
   // soxr_runtime_spec_t runtime_spec = {8, 8, 4000, 12, 0,
   // SOXR_COEF_INTERP_LOW};
   soxr_runtime_spec_t runtime_spec = {10, 17, 400, 2, 0, SOXR_COEF_INTERP_AUTO};
@@ -406,11 +406,7 @@ FmDecoder::FmDecoder(
     const std::vector<IQSample::value_type> &first_coeff,
     unsigned int second_downsample,
     const std::vector<IQSample::value_type> &second_coeff,
-    const std::vector<SampleVector::value_type> &first_fmaudio_coeff,
-    unsigned int first_fmaudio_downsample,
-    const std::vector<SampleVector::value_type> &second_fmaudio_coeff,
-    double second_fmaudio_downsample, bool second_fmaudio_integer, bool stereo,
-    double deemphasis, bool pilot_shift)
+    bool stereo, double deemphasis, bool pilot_shift)
 
     // Initialize member fields
     : m_sample_rate_if(sample_rate_if),
