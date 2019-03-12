@@ -43,7 +43,9 @@ AudioResampler::AudioResampler(const double input_rate) : m_irate(input_rate) {
   soxr_io_spec_t io_spec = {SOXR_FLOAT64_I, SOXR_FLOAT64_I, 1.0, 0, 0};
   soxr_quality_spec_t quality_spec =
       soxr_quality_spec(SOXR_HQ, SOXR_LINEAR_PHASE);
-  soxr_runtime_spec_t runtime_spec = {8, 8, 4000, 12, 0, SOXR_COEF_INTERP_LOW};
+  // soxr_runtime_spec_t runtime_spec = {8, 8, 4000, 12, 0,
+  // SOXR_COEF_INTERP_LOW};
+  soxr_runtime_spec_t runtime_spec = {10, 17, 400, 2, 0, SOXR_COEF_INTERP_AUTO};
 
   m_soxr = soxr_create(
       // Input rate, output rate, # of channels
@@ -69,7 +71,7 @@ void AudioResampler::process(const SampleVector &samples_in,
   error = soxr_process(m_soxr, static_cast<soxr_in_t>(samples_in.data()), ilen,
                        NULL, static_cast<soxr_out_t>(samples_out.data()), olen,
                        &odone);
-  fprintf(stderr, "FmDecode::AudioResamplr: %d %d\n", ilen, odone);
+  // fprintf(stderr, "FmDecode::AudioResamplr: %d %d\n", ilen, odone);
 
   if (error) {
     soxr_delete(m_soxr);
@@ -515,7 +517,7 @@ void FmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
                         std::begin(m_buf_baseband_acc),
                         std::end(m_buf_baseband_acc));
 
-  if (m_buf_baseband.size() < 16384) {
+  if (m_buf_baseband.size() < 8192) {
     audio.resize(0);
   } else {
 
