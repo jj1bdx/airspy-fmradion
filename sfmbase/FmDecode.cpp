@@ -40,13 +40,18 @@ double rms_level_approx(const IQSampleVector &samples) {
 AudioResampler::AudioResampler(const double input_rate)
   : m_irate(input_rate) {
   soxr_error_t error;
+  // Use double
+  soxr_io_spec_t io_spec =
+    {SOXR_FLOAT64_I, SOXR_FLOAT64_I, 1.0, 0, 0};
+
   m_soxr = soxr_create(
     // Input rate, output rate, # of channels
     m_irate, FmDecoder::sample_rate_pcm, 1,
     // To report any error during creation
     &error,
+    &io_spec,
     // Use default parameter (float)
-    NULL, NULL, NULL);
+    NULL, NULL);
   if (error) {
     soxr_delete(m_soxr);
     fprintf(stderr, "FmDecode::AudioResamplr: unable to create soxr: %s\n",
@@ -63,8 +68,8 @@ void AudioResampler::process(const SampleVector &samples_in, SampleVector &sampl
   soxr_error_t error;
 
   error = soxr_process(m_soxr,
-		  static_cast<soxr_in_t>(&samples_in), ilen, NULL,
-		  static_cast<soxr_out_t>(&samples_out), olen, &odone);
+	static_cast<soxr_in_t>(samples_in.data()), ilen, NULL,
+	static_cast<soxr_out_t>(samples_out.data()), olen, &odone);
 
   if (error) {
     soxr_delete(m_soxr);
@@ -417,6 +422,18 @@ FmDecoder::FmDecoder(
       m_stereo_enabled(stereo), m_stereo_detected(false), m_if_level(0),
       m_baseband_mean(0), m_baseband_level(0)
 
+      // Construct AudioResampler for mono and stereo channels
+      ,
+      m_audioresampler_mono(m_sample_rate_fmdemod),
+      m_audioresampler_stereo(m_sample_rate_fmdemod)
+
+      // Construct 19kHz pilot signal cut filter
+      ,
+      m_pilotcut_mono(FilterParameters::jj1bdx_48khz_fmaudio, // coeff
+                      1.0, true),
+      m_pilotcut_stereo(FilterParameters::jj1bdx_48khz_fmaudio, // coeff
+                      1.0, true)
+      
       // Construct LowPassFilterFirIQ
       ,
       m_iffilter_first(first_coeff, m_first_downsample),
@@ -440,30 +457,6 @@ FmDecoder::FmDecoder(
       m_pilotpll(pilot_freq / m_sample_rate_fmdemod, // freq
                  50 / m_sample_rate_fmdemod,         // bandwidth
                  0.01)                               // minsignal (was 0.04)
-
-      // Construct DownsampleFilter for mono channel
-      ,
-      m_first_resample_mono(first_fmaudio_coeff,      // coeff
-                            first_fmaudio_downsample, // downsample
-                            true),                    // integer_factor
-      m_second_resample_mono(second_fmaudio_coeff,    // coeff
-                                                      // downsample
-                             second_fmaudio_downsample,
-                             second_fmaudio_integer), // integer_factor
-      m_third_resample_mono(FilterParameters::jj1bdx_48khz_fmaudio, // coeff
-                            1.0, true)
-
-      // Construct DownsampleFilter for stereo channel
-      ,
-      m_first_resample_stereo(first_fmaudio_coeff,      // coeff
-                              first_fmaudio_downsample, // downsample
-                              true),                    // integer_factor
-      m_second_resample_stereo(second_fmaudio_coeff,    // coeff
-                                                        // downsample
-                               second_fmaudio_downsample,
-                               second_fmaudio_integer), // integer_factor
-      m_third_resample_stereo(FilterParameters::jj1bdx_48khz_fmaudio, // coeff
-                              1.0, true)
 
       // Construct HighPassFilterIir
       ,
@@ -534,9 +527,10 @@ void FmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
   }
 
   // Extract mono audio signal.
-  m_first_resample_mono.process(m_buf_baseband, m_buf_mono_firstout);
-  m_second_resample_mono.process(m_buf_mono_firstout, m_buf_mono_secondout);
-  m_third_resample_mono.process(m_buf_mono_secondout, m_buf_mono);
+  m_audioresampler_mono.process(m_buf_baseband, m_buf_mono_firstout);
+  // Filter out mono 19kHz pilot signal.
+  m_pilotcut_mono.process(m_buf_mono_firstout, m_buf_mono);
+  
   // DC blocking
   m_dcblock_mono.process_inplace(m_buf_mono);
 
@@ -549,10 +543,9 @@ void FmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
     // NOTE: This MUST be done even if no stereo signal is detected yet,
     // because the downsamplers for mono and stereo signal must be
     // kept in sync.
-    m_first_resample_stereo.process(m_buf_rawstereo, m_buf_stereo_firstout);
-    m_second_resample_stereo.process(m_buf_stereo_firstout,
-                                     m_buf_stereo_secondout);
-    m_third_resample_stereo.process(m_buf_stereo_secondout, m_buf_stereo);
+    m_audioresampler_stereo.process(m_buf_rawstereo, m_buf_stereo_firstout);
+    // Filter out mono 19kHz pilot signal.
+    m_pilotcut_stereo.process(m_buf_stereo_firstout, m_buf_stereo);
 
     // DC blocking
     m_dcblock_stereo.process_inplace(m_buf_stereo);
