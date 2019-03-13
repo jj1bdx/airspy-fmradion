@@ -642,9 +642,10 @@ int main(int argc, char **argv) {
 
     // Decode FM signal.
     fm.process(iqsamples, audiosamples);
+    bool audio_exists = audiosamples.size() > 0;
 
-    // Measure audio level.
-    if (audiosamples.size() > 0) {
+    // Measure audio level when audio exists
+    if (audio_exists) {
       double audio_mean, audio_rms;
       samples_mean_rms(audiosamples, audio_mean, audio_rms);
       audio_level = 0.95 * audio_level + 0.05 * audio_rms;
@@ -692,7 +693,7 @@ int main(int argc, char **argv) {
     }
 
     // Write PPS markers.
-    if (ppsfile != NULL) {
+    if ((ppsfile != NULL) && audio_exists) {
       for (const PilotPhaseLock::PpsEvent &ev : fm.get_pps_events()) {
         double ts = prev_block_time;
         ts += ev.block_position * (block_time - prev_block_time);
@@ -703,10 +704,10 @@ int main(int argc, char **argv) {
       }
     }
 
-    // Throw away first 4 blocks.
+    // Throw away first 10 blocks.
     // They are noisy because IF filters are still starting up.
     // (Increased from one to support high sampling rates)
-    if (block > 4) {
+    if ((block > 10) && audio_exists) {
       // Write samples to output.
       if (outputbuf_samples > 0) {
         // Buffered write.
