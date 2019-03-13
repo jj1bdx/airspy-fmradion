@@ -1,9 +1,20 @@
 # airspy-fmradion
 
-* Version v0.4.2, 12-MAR-2019
+* Version v0.5.0-pre1, 13-MAR-2019
+* For MacOS and Linux
+* *NOTE: this is a major change adding the usage of libsoxr.*
+* Use v0.4.2 if you want stability.
+
+### What is airspy-fmradion?
+
 * **airspy-fmradion** is a software-defined radio receiver for FM broadcast radio, specifically designed for Airspy R2 and Airspy HF+, and RTL-SDR.
 * This repository is forked from [ngsoftfm-jj1bdx](https://github.com/jj1bdx/ngsoftfm-jj1bdx) 0.1.14 and merged with [airspfhf-fmradion](https://github.com/jj1bdx/airspyhf-fmradion)
-* For MacOS and Linux
+
+### What does airspy-fmradion provide?
+
+- mono or stereo decoding of FM broadcasting stations
+- buffered real-time playback to soundcard or dumping to file
+- command-line interface (*only*)
 
 ## Usage
 
@@ -19,12 +30,6 @@ airspy-fmradion -t airspyhf -q \
     play -t raw -esigned-integer -b16 -r 48000 -c 2 -q -
 ```
 
-### airspy-fmradion provides
-
- - mono or stereo decoding of FM broadcasting stations
- - buffered real-time playback to soundcard or dumping to file
- - command-line interface (*only*)
-
 ### airspy-fmradion requires
 
  - Linux / macOS
@@ -33,6 +38,7 @@ airspy-fmradion -t airspyhf -q \
  - [Airspy HF library](https://github.com/airspy/airspyhf)
  - [RTL-SDR library](http://sdr.osmocom.org/trac/wiki/rtl-sdr)
  - [sox](http://sox.sourceforge.net/)
+ - [The SoX Resampler library aka libsoxr](https://sourceforge.net/p/soxr/wiki/Home/)
  - Tested: Airspy R2 and Airspy HF+, RTL-SDR V3
  - Fast computer
  - Medium-strong FM radio signal
@@ -61,17 +67,20 @@ Base requirements:
 
 To install the library from a Debian/Ubuntu installation just do:
 
-  - `sudo apt-get install libairspy-dev libairspyhf-dev librtlsdr-dev`
+  - `sudo apt-get install libairspy-dev libairspyhf-dev librtlsdr-dev libsoxr-dev`
 
 ### macOS
 
-* Install HomeBrew `airspy`, `airspyhf`, and `rtl-sdr`
+* Install HomeBrew `airspy`, `airspyhf`, `rtl-sdr`, and `libsoxr`
 * See <https://github.com/pothosware/homebrew-pothos/wiki>
+* Use HEAD for `airspyhf`
 
 ```shell
 brew tap pothosware/homebrew-pothos
 brew tap dholm/homebrew-sdr #other sdr apps
 brew update
+brew install libsoxr
+brew install rtl-sdr
 brew install airspy
 brew install airspyhf --HEAD
 ```
@@ -94,8 +103,8 @@ cmake .. \
   -DAIRSPY_LIBRARY_PATH=/path/airspy/lib/libairspy.a
   -DAIRSPYHF_INCLUDE_DIR=/path/airspyhf/include \
   -DAIRSPYHF_LIBRARY_PATH=/path/airspyhf/lib/libairspyhf.a \
-  -DAIRSPYHF_INCLUDE_DIR=/path/rtlsdr/include \
-  -DAIRSPYHF_LIBRARY_PATH=/path/rtlsdr/lib/librtlsdr.a
+  -DRTLSDR_INCLUDE_DIR=/path/rtlsdr/include \
+  -DRTLSDR_LIBRARY_PATH=/path/rtlsdr/lib/librtlsdr.a
 
 PKG_CONFIG_PATH=/path/to/airspy/lib/pkgconfig cmake ..
 ```
@@ -127,10 +136,15 @@ Compile and install
 * Since v0.4.2, output maximum level is now at -6dB (0.5) (`adjust_gain()` is reintroduced) again, as in pre-v0.2.7
 * During v0.2.7 to v0.4.1, output level is now at unity (`adjust_gain()` is removed)
 
+### Audio downsampling is now performed by libsoxr
+
+* Output of FM demodulator is downsampled by libsoxr
+* Quality: `SOXR_HQ` (`SOXR_VHQ` is overkill)
+* FM demodulator data is now buffered to 8192 samples so that the output of the audio downsampler doesn't get stuck
+
 ## No-goals
 
 * Adaptive IF filtering (unable to obtain better results)
-* Using libsoxr for fractional resampling (too slow)
 
 ## Filter design documentation
 
@@ -157,7 +171,6 @@ Compile and install
 * Use pre-built optimized filter coefficients for LPFIQ and audio filters
 * Input -> LPFIQ 1st -> LPFIQ 2nd -> PhaseDiscriminator
 * 10MHz -> 1.25MHz -> 312.5kHz (/8 and /4)
-* Use two-stage filters for audio downsampling, such as 312.5kHz / 4 -> 78.125kHz / 1.627604166666666666 -> 48kHz
 * Use `AIRSPY_SAMPLE_FLOAT32_IQ` to directly obtain float IQ sample data from Airspy: IF level is now -24.08dB than the previous (pre-v0.2.2) version
 * Use sparse debug output for ppm and other level status
 * CPU usage: ~56% -> ~31% on Mac mini 2018, with debug output on, comparing with ngsoftfm-jj1bdx 0.1.14
@@ -188,8 +201,6 @@ Compile and install
 ### Filter characteristics
 
 * IF first stage (768kHz -> 384kHz) : <-0.01dB: 80kHz, -3dB: 100kHz, -90dB: 135kHz
-* Audio first stage (384kHz -> 96kHz) : <-0.01dB: 19kHz, -3dB: 28.6kHz, -90dB: 47.2kHz
-* Audio second stage (96kHz -> 48kHz) : <-0.01dB: 15kHz, -3dB: 16.4kHz, -90dB: 18.8kHz
 
 ### Airspy HF configuration options
 
