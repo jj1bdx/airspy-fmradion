@@ -212,12 +212,12 @@ std::uint32_t AirspySource::get_sample_rate() { return m_sampleRate; }
 std::uint32_t AirspySource::get_frequency() { return m_frequency; }
 
 void AirspySource::print_specific_parms() {
-  fprintf(stderr, "LNA/Mix/VGA gain:  %d, %d, %d dB\n", m_lnaGain, m_mixGain,
+  fprintf(stderr, "LNA/Mix/VGA gain: %d, %d, %d dB\n", m_lnaGain, m_mixGain,
           m_vgaGain);
-  fprintf(stderr, "Antenna bias       %s\n",
-          m_biasAnt ? "enabled" : "disabled");
-  fprintf(stderr, "LNA AGC            %s\n", m_lnaAGC ? "enabled" : "disabled");
-  fprintf(stderr, "Mixer AGC          %s\n", m_mixAGC ? "enabled" : "disabled");
+  fprintf(stderr, "Antenna bias: %s",
+          m_biasAnt ? "on" : "off");
+  fprintf(stderr, " / LNA AGC: %s", m_lnaAGC ? "on" : "off");
+  fprintf(stderr, " / Mixer AGC: %s\n", m_mixAGC ? "on" : "off");
 }
 
 bool AirspySource::configure(int sampleRateIndex, uint32_t frequency,
