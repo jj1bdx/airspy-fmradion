@@ -502,81 +502,85 @@ void FmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
   // by applying the equalizer to the discriminator output.
   m_disceq.process(m_buf_baseband_raw, m_buf_baseband_acc);
 
+  // Append m_buf_baseband_acc to m_buf_baseband
   m_buf_baseband.insert(std::end(m_buf_baseband),
                         std::begin(m_buf_baseband_acc),
                         std::end(m_buf_baseband_acc));
 
+  // Return if the buffered baseband output is less than 8K bytes
+  // to prevent null audio output causing SEGV
   if (m_buf_baseband.size() < 8192) {
     audio.resize(0);
-  } else {
+    return;
+  }
 
-    // Measure baseband level.
-    double baseband_mean, baseband_rms;
-    samples_mean_rms(m_buf_baseband, baseband_mean, baseband_rms);
-    m_baseband_mean = 0.95 * m_baseband_mean + 0.05 * baseband_mean;
-    m_baseband_level = 0.95 * m_baseband_level + 0.05 * baseband_rms;
+  // Measure baseband level.
+  double baseband_mean, baseband_rms;
+  samples_mean_rms(m_buf_baseband, baseband_mean, baseband_rms);
+  m_baseband_mean = 0.95 * m_baseband_mean + 0.05 * baseband_mean;
+  m_baseband_level = 0.95 * m_baseband_level + 0.05 * baseband_rms;
 
-    if (m_stereo_enabled) {
-      // Lock on stereo pilot,
-      // and remove locked 19kHz tone from the composite signal.
-      m_pilotpll.process(m_buf_baseband, m_buf_rawstereo, m_pilot_shift);
-      m_stereo_detected = m_pilotpll.locked();
-    }
+  if (m_stereo_enabled) {
+    // Lock on stereo pilot,
+    // and remove locked 19kHz tone from the composite signal.
+    m_pilotpll.process(m_buf_baseband, m_buf_rawstereo, m_pilot_shift);
+    m_stereo_detected = m_pilotpll.locked();
+  }
 
-    // Extract mono audio signal.
-    m_audioresampler_mono.process(m_buf_baseband, m_buf_mono_firstout);
+  // Extract mono audio signal.
+  m_audioresampler_mono.process(m_buf_baseband, m_buf_mono_firstout);
+  // Filter out mono 19kHz pilot signal.
+  m_pilotcut_mono.process(m_buf_mono_firstout, m_buf_mono);
+
+  // DC blocking
+  m_dcblock_mono.process_inplace(m_buf_mono);
+
+  if (m_stereo_enabled) {
+
+    // Demodulate stereo signal.
+    demod_stereo(m_buf_baseband, m_buf_rawstereo);
+
+    // Extract audio and downsample.
+    // NOTE: This MUST be done even if no stereo signal is detected yet,
+    // because the downsamplers for mono and stereo signal must be
+    // kept in sync.
+    m_audioresampler_stereo.process(m_buf_rawstereo, m_buf_stereo_firstout);
     // Filter out mono 19kHz pilot signal.
-    m_pilotcut_mono.process(m_buf_mono_firstout, m_buf_mono);
+    m_pilotcut_stereo.process(m_buf_stereo_firstout, m_buf_stereo);
 
     // DC blocking
-    m_dcblock_mono.process_inplace(m_buf_mono);
+    m_dcblock_stereo.process_inplace(m_buf_stereo);
 
-    if (m_stereo_enabled) {
-
-      // Demodulate stereo signal.
-      demod_stereo(m_buf_baseband, m_buf_rawstereo);
-
-      // Extract audio and downsample.
-      // NOTE: This MUST be done even if no stereo signal is detected yet,
-      // because the downsamplers for mono and stereo signal must be
-      // kept in sync.
-      m_audioresampler_stereo.process(m_buf_rawstereo, m_buf_stereo_firstout);
-      // Filter out mono 19kHz pilot signal.
-      m_pilotcut_stereo.process(m_buf_stereo_firstout, m_buf_stereo);
-
-      // DC blocking
-      m_dcblock_stereo.process_inplace(m_buf_stereo);
-
-      if (m_stereo_detected) {
-        if (m_pilot_shift) {
-          // Duplicate L-R shifted output in left/right channels.
-          // No deemphasis
-          mono_to_left_right(m_buf_stereo, audio);
-        } else {
-          // Extract left/right channels from (L+R) / (L-R) signals.
-          stereo_to_left_right(m_buf_mono, m_buf_stereo, audio);
-          // L and R de-emphasis.
-          m_deemph_stereo.process_interleaved_inplace(audio);
-        }
+    if (m_stereo_detected) {
+      if (m_pilot_shift) {
+        // Duplicate L-R shifted output in left/right channels.
+        // No deemphasis
+        mono_to_left_right(m_buf_stereo, audio);
       } else {
-        if (m_pilot_shift) {
-          // Fill zero output in left/right channels.
-          zero_to_left_right(m_buf_stereo, audio);
-        } else {
-          // De-emphasis.
-          m_deemph_mono.process_inplace(m_buf_mono);
-          // Duplicate mono signal in left/right channels.
-          mono_to_left_right(m_buf_mono, audio);
-        }
+        // Extract left/right channels from (L+R) / (L-R) signals.
+        stereo_to_left_right(m_buf_mono, m_buf_stereo, audio);
+        // L and R de-emphasis.
+        m_deemph_stereo.process_interleaved_inplace(audio);
       }
     } else {
-      m_deemph_mono.process_inplace(m_buf_mono); //  De-emphasis.
-      // Just return mono channel.
-      audio = move(m_buf_mono);
+      if (m_pilot_shift) {
+        // Fill zero output in left/right channels.
+        zero_to_left_right(m_buf_stereo, audio);
+      } else {
+        // De-emphasis.
+        m_deemph_mono.process_inplace(m_buf_mono);
+        // Duplicate mono signal in left/right channels.
+        mono_to_left_right(m_buf_mono, audio);
+      }
     }
-
-    m_buf_baseband.resize(0);
+  } else {
+    m_deemph_mono.process_inplace(m_buf_mono); //  De-emphasis.
+    // Just return mono channel.
+    audio = move(m_buf_mono);
   }
+
+  // Clear m_buf_baseband for next audio output processing.
+  m_buf_baseband.resize(0);
 }
 
 // Demodulate stereo L-R signal.
