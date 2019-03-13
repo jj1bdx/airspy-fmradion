@@ -40,18 +40,13 @@ double rms_level_approx(const IQSampleVector &samples) {
 AudioResampler::AudioResampler(const double input_rate) : m_irate(input_rate) {
   soxr_error_t error;
   // Use double
-  soxr_io_spec_t io_spec = {SOXR_FLOAT64_I, SOXR_FLOAT64_I, 1.0, 0, 0};
+  soxr_io_spec_t io_spec = soxr_io_spec(SOXR_FLOAT64_I, SOXR_FLOAT64_I);
   soxr_quality_spec_t quality_spec =
-      soxr_quality_spec(SOXR_VHQ, SOXR_LINEAR_PHASE);
-  // soxr_runtime_spec_t runtime_spec = {8, 8, 4000, 12, 0,
-  // SOXR_COEF_INTERP_LOW};
-  soxr_runtime_spec_t runtime_spec = {10, 17, 400, 2, 0, SOXR_COEF_INTERP_AUTO};
+      soxr_quality_spec(SOXR_HQ, SOXR_LINEAR_PHASE);
 
   m_soxr = soxr_create(
-      // Input rate, output rate, # of channels
       m_irate, FmDecoder::sample_rate_pcm, 1,
-      // To report any error during creation
-      &error, &io_spec, &quality_spec, &runtime_spec);
+      &error, &io_spec, &quality_spec, NULL);
   if (error) {
     soxr_delete(m_soxr);
     fprintf(stderr, "FmDecode::AudioResamplr: unable to create soxr: %s\n",
