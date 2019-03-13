@@ -43,7 +43,7 @@
 #include "AirspySource.h"
 #include "RtlSdrSource.h"
 
-#define AIRSPY_FMRADION_VERSION "v0.5.0-pre3"
+#define AIRSPY_FMRADION_VERSION "v0.5.0-pre4"
 
 /** Flag is set on SIGINT / SIGTERM. */
 static std::atomic_bool stop_flag(false);
@@ -266,8 +266,8 @@ int main(int argc, char **argv) {
   Source *srcsdr = 0;
 
   fprintf(stderr, "airspy-fmradion " AIRSPY_FMRADION_VERSION "\n");
-  fprintf(stderr, "Software decoder for FM broadcast radio\n");
-  fprintf(stderr, "for Airspy R2, Airspy HF+, and RTL-SDR\n");
+  fprintf(stderr, "Software FM radio for ");
+  fprintf(stderr, "Airspy R2, Airspy HF+, and RTL-SDR\n");
 
   const struct option longopts[] = {{"devtype", 2, NULL, 't'},
                                     {"config", 2, NULL, 'c'},

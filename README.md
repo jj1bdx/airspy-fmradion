@@ -1,6 +1,6 @@
 # airspy-fmradion
 
-* Version v0.5.0-pre3, 13-MAR-2019
+* Version v0.5.0-pre4, 13-MAR-2019
 * For MacOS and Linux
 * *NOTE: this is a major change adding the usage of libsoxr.*
 * Use v0.4.2 if you want stability.
@@ -151,6 +151,7 @@ Compile and install
 
 * Filter coefficients are listed under `doc/filter-design`
 * Unused filter coefficients are listed under `doc/filter-design/not-used`
+* DiscriminatorEqualizer IF range: 200kHz ~ 1MHz (nyquist: 100kHz ~ 500kHz)
 
 ## Airspy R2 modification from ngsoftfm-jj1bdx
 
