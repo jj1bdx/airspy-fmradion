@@ -507,7 +507,7 @@ void FmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
                         std::begin(m_buf_baseband_acc),
                         std::end(m_buf_baseband_acc));
 
-  // Return if the buffered baseband output is less than 8K bytes
+  // Return if the buffered baseband output is less than 8192 samples
   // to prevent null audio output causing SEGV
   if (m_buf_baseband.size() < 8192) {
     audio.resize(0);
