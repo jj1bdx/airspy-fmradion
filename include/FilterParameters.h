@@ -34,22 +34,12 @@ public:
   static const std::vector<IQSample::value_type> jj1bdx_1250khz_div4;
   static const std::vector<IQSample::value_type> jj1bdx_2500khz_div4;
   static const std::vector<IQSample::value_type> jj1bdx_600khz_625khz_div2;
-
+  static const std::vector<IQSample::value_type> jj1bdx_768kHz_div2;
+  static const std::vector<IQSample::value_type> jj1bdx_900kHz_div3;
   static const std::vector<IQSample::value_type> delay_3taps_only_iq;
 
-  static const std::vector<IQSample::value_type> jj1bdx_768kHz_div2;
-
-  static const std::vector<SampleVector::value_type> delay_3taps_only_audio;
-
-  static const std::vector<SampleVector::value_type> jj1bdx_384k_div4;
-  static const std::vector<SampleVector::value_type> jj1bdx_96k_div2;
-
-  static const std::vector<IQSample::value_type> jj1bdx_900kHz_div3;
-
-  static const std::vector<SampleVector::value_type> jj1bdx_312_5khz_div6;
-  static const std::vector<SampleVector::value_type> jj1bdx_78_125khz_fmaudio;
-
   static const std::vector<SampleVector::value_type> jj1bdx_48khz_fmaudio;
+  static const std::vector<SampleVector::value_type> delay_3taps_only_audio;
 };
 
 #endif // SOFTFM_EQPARAMETERS_H
