@@ -43,7 +43,7 @@
 #include "AirspySource.h"
 #include "RtlSdrSource.h"
 
-#define AIRSPY_FMRADION_VERSION "v0.4.2-libsoxr-test1"
+#define AIRSPY_FMRADION_VERSION "v0.5.0-pre1"
 
 /** Flag is set on SIGINT / SIGTERM. */
 static std::atomic_bool stop_flag(false);
