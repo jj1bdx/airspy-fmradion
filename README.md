@@ -1,6 +1,6 @@
 # airspy-fmradion
 
-* Version v0.5.0-pre1, 13-MAR-2019
+* Version v0.5.0-pre2, 13-MAR-2019
 * For MacOS and Linux
 * *NOTE: this is a major change adding the usage of libsoxr.*
 * Use v0.4.2 if you want stability.
@@ -141,6 +141,7 @@ Compile and install
 * Output of FM demodulator is downsampled by libsoxr
 * Quality: `SOXR_HQ` (`SOXR_VHQ` is overkill)
 * FM demodulator data is now buffered to 8192 samples so that the output of the audio downsampler doesn't get stuck
+* 19kHz cut LPF implemented for post-processing libsoxr output
 
 ## No-goals
 
@@ -149,7 +150,7 @@ Compile and install
 ## Filter design documentation
 
 * Filter coefficients are listed under `doc/filter-design`
-* Third-stage 19kHz cut LPF implemented
+* Unused filter coefficients are listed under `doc/filter-design/not-used`
 
 ## Airspy R2 modification from ngsoftfm-jj1bdx
 
