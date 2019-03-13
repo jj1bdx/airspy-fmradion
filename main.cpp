@@ -267,7 +267,7 @@ int main(int argc, char **argv) {
 
   fprintf(stderr, "airspy-fmradion " AIRSPY_FMRADION_VERSION "\n");
   fprintf(stderr, "Software decoder for FM broadcast radio\n");
-  fprintf(stderr, "for Airspy R2 and Airspy HF+\n");
+  fprintf(stderr, "for Airspy R2, Airspy HF+, and RTL-SDR\n");
 
   const struct option longopts[] = {{"devtype", 2, NULL, 't'},
                                     {"config", 2, NULL, 'c'},
@@ -395,7 +395,7 @@ int main(int argc, char **argv) {
   }
 
   if (outputbuf_samples > 0) {
-    fprintf(stderr, "output buffer:     %.1f seconds\n",
+    fprintf(stderr, "output buffer: %.1f seconds\n",
             outputbuf_samples / double(pcmrate));
   }
 
@@ -446,12 +446,12 @@ int main(int argc, char **argv) {
   }
 
   double freq = srcsdr->get_configured_frequency();
-  fprintf(stderr, "tuned for:         %.6f MHz\n", freq * 1.0e-6);
-
+  fprintf(stderr, "tuned for %.7g MHz", freq * 1.0e-6);
   double tuner_freq = srcsdr->get_frequency();
   if (tuner_freq != freq) {
-    fprintf(stderr, "device tuned for:  %.6f MHz\n", tuner_freq * 1.0e-6);
+    fprintf(stderr, ", device tuned for %.7g MHz", tuner_freq * 1.0e-6);
   }
+  fprintf(stderr, "\n");
 
   double ifrate = srcsdr->get_sample_rate();
 
@@ -542,19 +542,20 @@ int main(int argc, char **argv) {
     exit(1);
   }
 
-  double total_decimation_ratio = ifrate / pcmrate;
   double fmdemod_rate = ifrate / first_downsample / second_downsample;
+  double total_decimation_ratio = ifrate / pcmrate;
+  double audio_decimation_ratio = fmdemod_rate / pcmrate;
 
-  fprintf(stderr, "IF sample rate:    %.1f Hz\n", ifrate);
-  fprintf(stderr, "IF 1st rate:       %.1f Hz (divided by %u)\n",
+  fprintf(stderr, "IF sample rate: %.9g Hz,", ifrate);
+  fprintf(stderr, " IF 1st rate: %.8g Hz (divided by %u)\n",
           ifrate / first_downsample, first_downsample);
   if (second_downsample != 1) {
-    fprintf(stderr, "IF 2nd rate:       %.1f Hz (divided by %u)\n",
+    fprintf(stderr, "IF 2nd rate: %.8g Hz (divided by %u)\n",
             ifrate / first_downsample / second_downsample, second_downsample);
   }
-  fprintf(stderr, "FM demod rate:     %.1f Hz\n", fmdemod_rate);
-  fprintf(stderr, "audio decimation:  %.10f (divided by)\n",
-          fmdemod_rate / pcmrate);
+  fprintf(stderr, "FM demod rate: %.8g Hz,", fmdemod_rate);
+  fprintf(stderr, " audio decimated from FM demod by: %.9g\n",
+		  audio_decimation_ratio);
 
   MovingAverage<float> ppm_average(100, 0.0f);
 
@@ -582,12 +583,12 @@ int main(int argc, char **argv) {
   double deemphasis = deemphasis_na ? FmDecoder::default_deemphasis_na
                                     : FmDecoder::default_deemphasis_eu;
 
-  fprintf(stderr, "audio sample rate: %u Hz\n", pcmrate);
-  fprintf(stderr, "audio bandwidth:   %u Hz\n",
+  fprintf(stderr, "audio sample rate: %u Hz,", pcmrate);
+  fprintf(stderr, " audio bandwidth: %u Hz\n",
           (unsigned int)FmDecoder::bandwidth_pcm);
-  fprintf(stderr, "deemphasis:        %.1f microseconds\n", deemphasis);
-  fprintf(stderr, "total decimation:  %.10f (divided by)\n",
-          total_decimation_ratio);
+  fprintf(stderr, "audio totally decimated from IF by: %.9g\n",
+      total_decimation_ratio);
+  fprintf(stderr, "deemphasis: %.9g microseconds\n", deemphasis);
 
   // Prepare decoder.
   FmDecoder fm(ifrate,             // sample_rate_if
