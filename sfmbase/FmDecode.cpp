@@ -44,12 +44,11 @@ AudioResampler::AudioResampler(const double input_rate) : m_irate(input_rate) {
   soxr_quality_spec_t quality_spec =
       soxr_quality_spec(SOXR_HQ, SOXR_LINEAR_PHASE);
 
-  m_soxr = soxr_create(
-      m_irate, FmDecoder::sample_rate_pcm, 1,
-      &error, &io_spec, &quality_spec, NULL);
+  m_soxr = soxr_create(m_irate, FmDecoder::sample_rate_pcm, 1, &error, &io_spec,
+                       &quality_spec, NULL);
   if (error) {
     soxr_delete(m_soxr);
-    fprintf(stderr, "FmDecode::AudioResamplr: unable to create soxr: %s\n",
+    fprintf(stderr, "FmDecode::AudioResampler: unable to create soxr: %s\n",
             error);
     exit(1);
   }
@@ -57,24 +56,24 @@ AudioResampler::AudioResampler(const double input_rate) : m_irate(input_rate) {
 
 void AudioResampler::process(const SampleVector &samples_in,
                              SampleVector &samples_out) {
-  size_t ilen = samples_in.size();
-  size_t olen = ilen;
-  samples_out.resize(ilen);
-  size_t odone;
+  size_t input_size = samples_in.size();
+  size_t output_size = input_size;
+  samples_out.resize(input_size);
+  size_t output_length;
   soxr_error_t error;
 
-  error = soxr_process(m_soxr, static_cast<soxr_in_t>(samples_in.data()), ilen,
-                       NULL, static_cast<soxr_out_t>(samples_out.data()), olen,
-                       &odone);
-  // fprintf(stderr, "FmDecode::AudioResamplr: %d %d\n", ilen, odone);
+  error = soxr_process(
+      m_soxr, static_cast<soxr_in_t>(samples_in.data()), input_size, NULL,
+      static_cast<soxr_out_t>(samples_out.data()), output_size, &output_length);
 
   if (error) {
     soxr_delete(m_soxr);
-    fprintf(stderr, "FmDecode::AudioResamplr: soxr_process error: %s\n", error);
+    fprintf(stderr, "FmDecode::AudioResampler: soxr_process error: %s\n",
+            error);
     exit(1);
   }
 
-  samples_out.resize(odone);
+  samples_out.resize(output_length);
 }
 
 // ////////////////  class FourthDownconverterIQ /////////////////
