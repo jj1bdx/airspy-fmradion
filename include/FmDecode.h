@@ -25,7 +25,20 @@
 
 #include "EqParameters.h"
 #include "Filter.h"
+#include "FilterParameters.h"
 #include "SoftFM.h"
+
+#include "soxr.h"
+
+class AudioResampler {
+public:
+  AudioResampler(const double input_rate);
+  void process(const SampleVector &samples_in, SampleVector &samples_out);
+
+private:
+  const double m_irate;
+  soxr_t m_soxr;
+};
 
 // Downconverting Fs/4 tuner.
 class FourthDownconverterIQ {
@@ -161,13 +174,6 @@ public:
    * second_downsample:: Integer second stage downsampling rate (>= 1)
    *                     (applied BEFORE FM demodulation)
    * second_coeff     :: Second stage filter coefficients
-   * first_fmaudio_coeff       :: First stage output audio filter coefficients
-   * first_fmaudio_downsample  :: Integer first stage downsampling rate
-   *                              for fmaudio (>= 1)
-   * second_fmaudio_coeff      :: First stage output audio filter coefficients
-   * second_fmaudio_downsample :: Float first stage downsampling rate
-   *                              for fmaudio (>= 1)
-   * second_fmaudio_integer    :: second_fmaudio_downsample is integer
    * stereo           :: True to enable stereo decoding.
    * deemphasis       :: Time constant of de-emphasis filter in microseconds
    *                     (50 us for broadcast FM, 0 to disable de-emphasis).
@@ -179,12 +185,8 @@ public:
             unsigned int first_downsample,
             const std::vector<IQSample::value_type> &first_coeff,
             unsigned int second_downsample,
-            const std::vector<IQSample::value_type> &second_coeff,
-            const std::vector<SampleVector::value_type> &first_fmaudio_coeff,
-            unsigned int first_fmaudio_downsample,
-            const std::vector<SampleVector::value_type> &second_fmaudio_coeff,
-            double second_fmaudio_downsample, bool second_fmaudio_integer,
-            bool stereo, double deemphasis, bool pilot_shift);
+            const std::vector<IQSample::value_type> &second_coeff, bool stereo,
+            double deemphasis, bool pilot_shift);
 
   /**
    * Process IQ samples and return audio samples.
@@ -253,15 +255,18 @@ private:
   IQSampleVector m_buf_iffirstout;
   IQSampleVector m_buf_iffiltered;
   SampleVector m_buf_baseband;
+  SampleVector m_buf_baseband_acc;
   SampleVector m_buf_baseband_raw;
   SampleVector m_buf_mono_firstout;
-  SampleVector m_buf_mono_secondout;
   SampleVector m_buf_mono;
   SampleVector m_buf_rawstereo;
   SampleVector m_buf_stereo_firstout;
-  SampleVector m_buf_stereo_secondout;
   SampleVector m_buf_stereo;
 
+  AudioResampler m_audioresampler_mono;
+  AudioResampler m_audioresampler_stereo;
+  DownsampleFilter m_pilotcut_mono;
+  DownsampleFilter m_pilotcut_stereo;
   FourthDownconverterIQ m_downconverter;
   LowPassFilterFirIQ m_iffilter_first;
   LowPassFilterFirIQ m_iffilter_second;
@@ -269,12 +274,6 @@ private:
   DiscriminatorEqualizer m_disceq;
   PhaseDiscriminator m_phasedisc;
   PilotPhaseLock m_pilotpll;
-  DownsampleFilter m_first_resample_mono;
-  DownsampleFilter m_second_resample_mono;
-  DownsampleFilter m_third_resample_mono;
-  DownsampleFilter m_first_resample_stereo;
-  DownsampleFilter m_second_resample_stereo;
-  DownsampleFilter m_third_resample_stereo;
   HighPassFilterIir m_dcblock_mono;
   HighPassFilterIir m_dcblock_stereo;
   LowPassFilterRC m_deemph_mono;

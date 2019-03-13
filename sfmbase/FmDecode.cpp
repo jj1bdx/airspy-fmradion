@@ -20,7 +20,6 @@
 #include <cassert>
 #include <cmath>
 
-#include "FilterParameters.h"
 #include "FmDecode.h"
 
 // Compute RMS over a small prefix of the specified sample vector.
@@ -36,11 +35,51 @@ double rms_level_approx(const IQSampleVector &samples) {
   return sqrt(level / n);
 }
 
+// class AudioResampler
+
+AudioResampler::AudioResampler(const double input_rate) : m_irate(input_rate) {
+  soxr_error_t error;
+  // Use double
+  soxr_io_spec_t io_spec = soxr_io_spec(SOXR_FLOAT64_I, SOXR_FLOAT64_I);
+  soxr_quality_spec_t quality_spec =
+      soxr_quality_spec(SOXR_HQ, SOXR_LINEAR_PHASE);
+
+  m_soxr = soxr_create(m_irate, FmDecoder::sample_rate_pcm, 1, &error, &io_spec,
+                       &quality_spec, NULL);
+  if (error) {
+    soxr_delete(m_soxr);
+    fprintf(stderr, "FmDecode::AudioResampler: unable to create soxr: %s\n",
+            error);
+    exit(1);
+  }
+}
+
+void AudioResampler::process(const SampleVector &samples_in,
+                             SampleVector &samples_out) {
+  size_t input_size = samples_in.size();
+  size_t output_size = input_size;
+  samples_out.resize(input_size);
+  size_t output_length;
+  soxr_error_t error;
+
+  error = soxr_process(
+      m_soxr, static_cast<soxr_in_t>(samples_in.data()), input_size, NULL,
+      static_cast<soxr_out_t>(samples_out.data()), output_size, &output_length);
+
+  if (error) {
+    soxr_delete(m_soxr);
+    fprintf(stderr, "FmDecode::AudioResampler: soxr_process error: %s\n",
+            error);
+    exit(1);
+  }
+
+  samples_out.resize(output_length);
+}
+
 // ////////////////  class FourthDownconverterIQ /////////////////
 
 // Construct Fs/4 downconverting tuner.
-FourthDownconverterIQ::FourthDownconverterIQ()
-  : m_index(0){}
+FourthDownconverterIQ::FourthDownconverterIQ() : m_index(0) {}
 
 // Process samples.
 // See Richard G. Lyons' explanation at
@@ -355,17 +394,12 @@ const double FmDecoder::default_deemphasis = 50;
 const double FmDecoder::default_deemphasis_eu = 50; // Europe and Japan
 const double FmDecoder::default_deemphasis_na = 75; // USA/Canada
 
-FmDecoder::FmDecoder(
-    double sample_rate_if, bool fourth_downsampler,
-    unsigned int first_downsample,
-    const std::vector<IQSample::value_type> &first_coeff,
-    unsigned int second_downsample,
-    const std::vector<IQSample::value_type> &second_coeff,
-    const std::vector<SampleVector::value_type> &first_fmaudio_coeff,
-    unsigned int first_fmaudio_downsample,
-    const std::vector<SampleVector::value_type> &second_fmaudio_coeff,
-    double second_fmaudio_downsample, bool second_fmaudio_integer, bool stereo,
-    double deemphasis, bool pilot_shift)
+FmDecoder::FmDecoder(double sample_rate_if, bool fourth_downsampler,
+                     unsigned int first_downsample,
+                     const std::vector<IQSample::value_type> &first_coeff,
+                     unsigned int second_downsample,
+                     const std::vector<IQSample::value_type> &second_coeff,
+                     bool stereo, double deemphasis, bool pilot_shift)
 
     // Initialize member fields
     : m_sample_rate_if(sample_rate_if),
@@ -376,6 +410,18 @@ FmDecoder::FmDecoder(
       m_fourth_downsampler(fourth_downsampler), m_pilot_shift(pilot_shift),
       m_stereo_enabled(stereo), m_stereo_detected(false), m_if_level(0),
       m_baseband_mean(0), m_baseband_level(0)
+
+      // Construct AudioResampler for mono and stereo channels
+      ,
+      m_audioresampler_mono(m_sample_rate_fmdemod),
+      m_audioresampler_stereo(m_sample_rate_fmdemod)
+
+      // Construct 19kHz pilot signal cut filter
+      ,
+      m_pilotcut_mono(FilterParameters::jj1bdx_48khz_fmaudio, // coeff
+                      1.0, true),
+      m_pilotcut_stereo(FilterParameters::jj1bdx_48khz_fmaudio, // coeff
+                        1.0, true)
 
       // Construct LowPassFilterFirIQ
       ,
@@ -401,30 +447,6 @@ FmDecoder::FmDecoder(
                  50 / m_sample_rate_fmdemod,         // bandwidth
                  0.01)                               // minsignal (was 0.04)
 
-      // Construct DownsampleFilter for mono channel
-      ,
-      m_first_resample_mono(first_fmaudio_coeff,      // coeff
-                            first_fmaudio_downsample, // downsample
-                            true),                    // integer_factor
-      m_second_resample_mono(second_fmaudio_coeff,    // coeff
-                                                      // downsample
-                             second_fmaudio_downsample,
-                             second_fmaudio_integer), // integer_factor
-      m_third_resample_mono(FilterParameters::jj1bdx_48khz_fmaudio, // coeff
-                            1.0, true)
-
-      // Construct DownsampleFilter for stereo channel
-      ,
-      m_first_resample_stereo(first_fmaudio_coeff,      // coeff
-                              first_fmaudio_downsample, // downsample
-                              true),                    // integer_factor
-      m_second_resample_stereo(second_fmaudio_coeff,    // coeff
-                                                        // downsample
-                               second_fmaudio_downsample,
-                               second_fmaudio_integer), // integer_factor
-      m_third_resample_stereo(FilterParameters::jj1bdx_48khz_fmaudio, // coeff
-                              1.0, true)
-
       // Construct HighPassFilterIir
       ,
       m_dcblock_mono(30.0 / sample_rate_pcm),
@@ -438,7 +460,7 @@ FmDecoder::FmDecoder(
           (deemphasis == 0) ? 1.0 : (deemphasis * sample_rate_pcm * 1.0e-6))
 
 {
-  // do nothing
+  m_buf_baseband_acc.resize(0);
 }
 
 void FmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
@@ -478,7 +500,19 @@ void FmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
 
   // Compensate 0th-hold aperture effect
   // by applying the equalizer to the discriminator output.
-  m_disceq.process(m_buf_baseband_raw, m_buf_baseband);
+  m_disceq.process(m_buf_baseband_raw, m_buf_baseband_acc);
+
+  // Append m_buf_baseband_acc to m_buf_baseband
+  m_buf_baseband.insert(std::end(m_buf_baseband),
+                        std::begin(m_buf_baseband_acc),
+                        std::end(m_buf_baseband_acc));
+
+  // Return if the buffered baseband output is less than 8K bytes
+  // to prevent null audio output causing SEGV
+  if (m_buf_baseband.size() < 8192) {
+    audio.resize(0);
+    return;
+  }
 
   // Measure baseband level.
   double baseband_mean, baseband_rms;
@@ -494,9 +528,10 @@ void FmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
   }
 
   // Extract mono audio signal.
-  m_first_resample_mono.process(m_buf_baseband, m_buf_mono_firstout);
-  m_second_resample_mono.process(m_buf_mono_firstout, m_buf_mono_secondout);
-  m_third_resample_mono.process(m_buf_mono_secondout, m_buf_mono);
+  m_audioresampler_mono.process(m_buf_baseband, m_buf_mono_firstout);
+  // Filter out mono 19kHz pilot signal.
+  m_pilotcut_mono.process(m_buf_mono_firstout, m_buf_mono);
+
   // DC blocking
   m_dcblock_mono.process_inplace(m_buf_mono);
 
@@ -509,10 +544,9 @@ void FmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
     // NOTE: This MUST be done even if no stereo signal is detected yet,
     // because the downsamplers for mono and stereo signal must be
     // kept in sync.
-    m_first_resample_stereo.process(m_buf_rawstereo, m_buf_stereo_firstout);
-    m_second_resample_stereo.process(m_buf_stereo_firstout,
-                                     m_buf_stereo_secondout);
-    m_third_resample_stereo.process(m_buf_stereo_secondout, m_buf_stereo);
+    m_audioresampler_stereo.process(m_buf_rawstereo, m_buf_stereo_firstout);
+    // Filter out mono 19kHz pilot signal.
+    m_pilotcut_stereo.process(m_buf_stereo_firstout, m_buf_stereo);
 
     // DC blocking
     m_dcblock_stereo.process_inplace(m_buf_stereo);
@@ -544,6 +578,9 @@ void FmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
     // Just return mono channel.
     audio = move(m_buf_mono);
   }
+
+  // Clear m_buf_baseband for next audio output processing.
+  m_buf_baseband.resize(0);
 }
 
 // Demodulate stereo L-R signal.

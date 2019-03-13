@@ -32,6 +32,7 @@ else()
              HINT ${PKG_AIRSPY_LIBRARY_DIRS})
     set(AIRSPY_INCLUDE_OPTION "")
 endif()
+message(STATUS "libairspy: ${AIRSPY_INCLUDE_DIR}, ${AIRSPY_LIBRARY}")
 
 # Find Airspy HF library.
 pkg_check_modules(PKG_AIRSPYHF libairspyhf)
@@ -48,6 +49,7 @@ else()
              HINT ${PKG_AIRSPYHF_LIBRARY_DIRS})
     set(AIRSPYHF_INCLUDE_OPTION "")
 endif()
+message(STATUS "libairspyhf: ${AIRSPYHF_INCLUDE_DIR}, ${AIRSPYHF_LIBRARY}")
 
 # Find RTL-SDR library.
 pkg_check_modules(PKG_RTLSDR librtlsdr)
@@ -55,17 +57,33 @@ find_path(RTLSDR_INCLUDE_DIR rtl-sdr.h
           HINT ${PKG_RTLSDR_INCLUDE_DIRS})
 find_library(RTLSDR_LIBRARY librtlsdr.a
              HINT ${PKG_RTLSDR_LIBRARY_DIRS})
+message(STATUS "librtlsdr: ${RTLSDR_INCLUDE_DIR}, ${RTLSDR_LIBRARY}")
 
 # Find libusb
 # See https://github.com/texane/stlink/blob/master/cmake/modules/FindLibUSB.cmake
 pkg_check_modules(PKG_LIBUSB libusb-1.0)
 find_path(LIBUSB_INCLUDE_DIR libusb.h
     HINTS /usr /usr/local /opt ${PKG_LIBUSB_INCLUDE_DIRS}
-    PATH_SUFFIXES libusb-1.0
-)
+    PATH_SUFFIXES libusb-1.0)
 set(LIBUSB_NAME usb-1.0)
 find_library(LIBUSB_LIBRARY ${LIBUSB_NAME}
              HINTS /usr /usr/local /opt ${PKG_LIBUSB_LIBRARY_DIRS})
+message(STATUS "libusb: ${LIBUSB_INCLUDE_DIR}, ${LIBUSB_LIBRARY}")
+
+# Find libsoxr
+pkg_check_modules(PKG_LIBSOXR libsoxr)
+if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    find_path(LIBSOXR_INCLUDE_DIR soxr.h
+        HINTS /usr/local/include ${PKG_LIBSOXR_INCLUDE_DIRS})
+    find_library(LIBSOXR_LIBRARY libsoxr.dylib
+        HINTS /usr/local/lib ${PKG_LIBSOXR_LIBRARY_DIRS})
+else()
+    find_path(LIBSOXR_INCLUDE_DIR soxr.h
+        HINTS ${PKG_LIBSOXR_INCLUDE_DIRS})
+    find_library(LIBSOXR_LIBRARY libsoxr.so
+        HINTS ${PKG_LIBSOXR_LIBRARY_DIRS})
+endif()
+message(STATUS "libsoxr: ${LIBSOXR_INCLUDE_DIR}, ${LIBSOXR_LIBRARY}")
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
     set(ALSA_OPTION "-DUSE_ALSA")
@@ -225,6 +243,10 @@ target_link_libraries(airspy-fmradion
 )
 
 # Linked libraries
+
+target_link_libraries(sfmbase
+    -lsoxr
+)
 
 target_link_libraries(sfmrtlsdr
     ${RTLSDR_LIBRARIES}

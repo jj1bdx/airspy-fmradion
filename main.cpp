@@ -43,7 +43,7 @@
 #include "AirspySource.h"
 #include "RtlSdrSource.h"
 
-#define AIRSPY_FMRADION_VERSION "v0.4.2"
+#define AIRSPY_FMRADION_VERSION "v0.5.0-pre1"
 
 /** Flag is set on SIGINT / SIGTERM. */
 static std::atomic_bool stop_flag(false);
@@ -460,11 +460,6 @@ int main(int argc, char **argv) {
   std::vector<IQSample::value_type> first_coeff;
   unsigned int second_downsample;
   std::vector<IQSample::value_type> second_coeff;
-  std::vector<SampleVector::value_type> first_fmaudio_coeff;
-  std::vector<SampleVector::value_type> second_fmaudio_coeff;
-  unsigned int first_fmaudio_downsample;
-  double second_fmaudio_downsample;
-  bool second_fmaudio_integer;
 
   unsigned int if_blocksize;
 
@@ -511,15 +506,6 @@ int main(int argc, char **argv) {
       exit(1);
     }
 
-    first_fmaudio_coeff = FilterParameters::jj1bdx_312_5khz_div6;
-    second_fmaudio_coeff = FilterParameters::jj1bdx_78_125khz_fmaudio;
-    first_fmaudio_downsample = 4;
-    second_fmaudio_downsample =
-        (ifrate /
-         (first_downsample * second_downsample * first_fmaudio_downsample)) /
-        pcmrate;
-    second_fmaudio_integer = false;
-
   } else if (strcasecmp(devtype_str.c_str(), "airspyhf") == 0) {
     if (ifrate == 768000.0) {
       if_blocksize = 16384;
@@ -528,11 +514,6 @@ int main(int argc, char **argv) {
       first_coeff = FilterParameters::jj1bdx_768kHz_div2;
       second_downsample = 1;                                // placeholder
       second_coeff = FilterParameters::delay_3taps_only_iq; // placeholder
-      first_fmaudio_coeff = FilterParameters::jj1bdx_384k_div4;
-      second_fmaudio_coeff = FilterParameters::jj1bdx_96k_div2;
-      first_fmaudio_downsample = 4;
-      second_fmaudio_downsample = 2;
-      second_fmaudio_integer = true;
     } else {
       fprintf(stderr, "Sample rate unsupported\n");
       fprintf(stderr, "Supported rate:\n");
@@ -548,14 +529,6 @@ int main(int argc, char **argv) {
       first_coeff = FilterParameters::jj1bdx_900kHz_div3;
       second_downsample = 1;                                // placeholder
       second_coeff = FilterParameters::delay_3taps_only_iq; // placeholder
-      first_fmaudio_coeff = FilterParameters::jj1bdx_312_5khz_div6;
-      second_fmaudio_coeff = FilterParameters::jj1bdx_78_125khz_fmaudio;
-      first_fmaudio_downsample = 4;
-      second_fmaudio_downsample =
-          (ifrate /
-           (first_downsample * second_downsample * first_fmaudio_downsample)) /
-          pcmrate;
-      second_fmaudio_integer = false;
     } else {
       fprintf(stderr, "Sample rate unsupported\n");
       fprintf(stderr, "Supported rate:\n");
@@ -569,9 +542,8 @@ int main(int argc, char **argv) {
     exit(1);
   }
 
-  double total_decimation_rate = first_downsample * second_downsample *
-                                 first_fmaudio_downsample *
-                                 second_fmaudio_downsample;
+  double total_decimation_ratio = ifrate / pcmrate;
+  double fmdemod_rate = ifrate / first_downsample / second_downsample;
 
   fprintf(stderr, "IF sample rate:    %.1f Hz\n", ifrate);
   fprintf(stderr, "IF 1st rate:       %.1f Hz (divided by %u)\n",
@@ -580,20 +552,9 @@ int main(int argc, char **argv) {
     fprintf(stderr, "IF 2nd rate:       %.1f Hz (divided by %u)\n",
             ifrate / first_downsample / second_downsample, second_downsample);
   }
-  fprintf(stderr, "FM demod rate:     %.1f Hz\n",
-          ifrate / first_downsample / second_downsample);
-  fprintf(stderr, "Audio 1st rate:    %.1f Hz (divided by %u)\n",
-          ifrate /
-              (first_downsample * second_downsample * first_fmaudio_downsample),
-          first_fmaudio_downsample);
-  fprintf(stderr, "Audio 2nd rate:    %.1f Hz ",
-          ifrate / total_decimation_rate);
-
-  if (second_fmaudio_integer) {
-    fprintf(stderr, "(divided by %u)\n", (int)second_fmaudio_downsample);
-  } else {
-    fprintf(stderr, "(divided by %.10f)\n", second_fmaudio_downsample);
-  }
+  fprintf(stderr, "FM demod rate:     %.1f Hz\n", fmdemod_rate);
+  fprintf(stderr, "audio decimation:  %.10f (divided by)\n",
+          fmdemod_rate / pcmrate);
 
   MovingAverage<float> ppm_average(100, 0.0f);
 
@@ -625,22 +586,19 @@ int main(int argc, char **argv) {
   fprintf(stderr, "audio bandwidth:   %u Hz\n",
           (unsigned int)FmDecoder::bandwidth_pcm);
   fprintf(stderr, "deemphasis:        %.1f microseconds\n", deemphasis);
+  fprintf(stderr, "total decimation:  %.10f (divided by)\n",
+          total_decimation_ratio);
 
   // Prepare decoder.
-  FmDecoder fm(ifrate,                    // sample_rate_if
-               fourth_downsampler,        // fourth_downsampler
-               first_downsample,          // first_downsample
-               first_coeff,               // first_coeff
-               second_downsample,         // second_downsample
-               second_coeff,              // second_coeff
-               first_fmaudio_coeff,       // first_fmaudio_coeff
-               first_fmaudio_downsample,  // first_fmaudio_downsample
-               second_fmaudio_coeff,      // second_fmaudio_coeff
-               second_fmaudio_downsample, // second_fmaudio_downsample
-               second_fmaudio_integer,    // second_fmaudio_integer
-               stereo,                    // stereo
-               deemphasis,                // deemphasis,
-               pilot_shift);              // pilot_shift
+  FmDecoder fm(ifrate,             // sample_rate_if
+               fourth_downsampler, // fourth_downsampler
+               first_downsample,   // first_downsample
+               first_coeff,        // first_coeff
+               second_downsample,  // second_downsample
+               second_coeff,       // second_coeff
+               stereo,             // stereo
+               deemphasis,         // deemphasis,
+               pilot_shift);       // pilot_shift
 
   // If buffering enabled, start background output thread.
   DataBuffer<Sample> output_buffer;
@@ -660,7 +618,8 @@ int main(int argc, char **argv) {
   double block_time = get_time();
 
   // TODO: ~0.1sec / display (should be tuned)
-  unsigned int stat_rate = lrint(5120 / (if_blocksize / total_decimation_rate));
+  unsigned int stat_rate =
+      lrint(5120 / (if_blocksize / total_decimation_ratio));
 
   // Main loop.
   for (unsigned int block = 0; !stop_flag.load(); block++) {
@@ -683,14 +642,17 @@ int main(int argc, char **argv) {
 
     // Decode FM signal.
     fm.process(iqsamples, audiosamples);
+    bool audio_exists = audiosamples.size() > 0;
 
-    // Measure audio level.
-    double audio_mean, audio_rms;
-    samples_mean_rms(audiosamples, audio_mean, audio_rms);
-    audio_level = 0.95 * audio_level + 0.05 * audio_rms;
+    // Measure audio level when audio exists
+    if (audio_exists) {
+      double audio_mean, audio_rms;
+      samples_mean_rms(audiosamples, audio_mean, audio_rms);
+      audio_level = 0.95 * audio_level + 0.05 * audio_rms;
 
-    // Set nominal audio volume (-6dB).
-    adjust_gain(audiosamples, 0.5);
+      // Set nominal audio volume (-6dB).
+      adjust_gain(audiosamples, 0.5);
+    }
 
     // the minus factor is to show the ppm correction
     // to make and not the one made
@@ -731,7 +693,7 @@ int main(int argc, char **argv) {
     }
 
     // Write PPS markers.
-    if (ppsfile != NULL) {
+    if ((ppsfile != NULL) && audio_exists) {
       for (const PilotPhaseLock::PpsEvent &ev : fm.get_pps_events()) {
         double ts = prev_block_time;
         ts += ev.block_position * (block_time - prev_block_time);
@@ -742,10 +704,10 @@ int main(int argc, char **argv) {
       }
     }
 
-    // Throw away first 4 blocks.
+    // Throw away first 10 blocks.
     // They are noisy because IF filters are still starting up.
     // (Increased from one to support high sampling rates)
-    if (block > 4) {
+    if ((block > 10) && audio_exists) {
       // Write samples to output.
       if (outputbuf_samples > 0) {
         // Buffered write.
