@@ -1,9 +1,8 @@
 # airspy-fmradion
 
-* Version v0.5.0-pre4, 13-MAR-2019
+* Version v0.5.0, 14-MAR-2019
 * For MacOS and Linux
-* *NOTE: this is a major change adding the usage of libsoxr.*
-* Use v0.4.2 if you want stability.
+* *NOTE: this release has a major change adding the usage of libsoxr.*
 
 ### What is airspy-fmradion?
 
