@@ -43,7 +43,7 @@
 #include "AirspySource.h"
 #include "RtlSdrSource.h"
 
-#define AIRSPY_FMRADION_VERSION "v0.5.0"
+#define AIRSPY_FMRADION_VERSION "v0.5.1-pre"
 
 /** Flag is set on SIGINT / SIGTERM. */
 static std::atomic_bool stop_flag(false);
@@ -465,7 +465,6 @@ int main(int argc, char **argv) {
 
   if (strcasecmp(devtype_str.c_str(), "airspy") == 0) {
     fourth_downsampler = false;
-
     if (ifrate == 10000000.0) {
       if_blocksize = 65536;
       // decimation rate: 32 = 8 * 4
@@ -482,30 +481,13 @@ int main(int argc, char **argv) {
       first_coeff = FilterParameters::jj1bdx_2500khz_div4;
       second_downsample = 2;
       second_coeff = FilterParameters::jj1bdx_600khz_625khz_div2;
-#if 0
-  } else if (ifrate == 6000000.0) {
-    // decimation rate: 20 = 5 * 4
-    // 300kHz = +-150kHz
-    first_downsample = 5;
-    second_downsample = 4;
-  } else if (ifrate == 3000000.0) {
-    // decimation rate: 10 = 5 * 2
-    // 300kHz = +-150kHz
-    first_downsample = 5;
-    second_downsample = 2;
-#endif
-
     } else {
       fprintf(stderr, "Sample rate unsupported\n");
       fprintf(stderr, "Supported rate:\n");
       fprintf(stderr, "Airspy R2: 2500000, 10000000\n");
-#if 0
-    fprintf(stderr, "Airspy Mini: 3000000, 6000000\n");
-#endif
       delete srcsdr;
       exit(1);
     }
-
   } else if (strcasecmp(devtype_str.c_str(), "airspyhf") == 0) {
     if (ifrate == 768000.0) {
       if_blocksize = 16384;
