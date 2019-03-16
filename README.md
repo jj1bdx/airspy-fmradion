@@ -1,6 +1,6 @@
 # airspy-fmradion
 
-* Version v0.5.1, 14-MAR-2019
+* Version v0.5.2, 16-MAR-2019
 * For MacOS and Linux
 * *NOTE: this release has a major change adding the usage of libsoxr.*
 
@@ -145,12 +145,16 @@ Compile and install
 ## No-goals
 
 * Adaptive IF filtering (unable to obtain better results)
+* CIC filters for the IF 1st stage (simple but too complex to compensate)
 
 ## Filter design documentation
 
 * Filter coefficients are listed under `doc/filter-design`
 * Unused filter coefficients are listed under `doc/filter-design/not-used`
 * DiscriminatorEqualizer IF range: 200kHz ~ 1MHz (nyquist: 100kHz ~ 500kHz)
+* -90dB IF filter width: +-~188kHz for RTL-SDR and AirSpy R2, +-~138kHz for AirSpy HF+
+* <0.01dB IF filter width: at least +-75kHz for all receivers
+* Aliasing allowed outside the -90dB width for the 1st-stage IF filters to reduce CPU power
 
 ## Airspy R2 modification from ngsoftfm-jj1bdx
 
