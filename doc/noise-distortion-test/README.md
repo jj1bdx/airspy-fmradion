@@ -5,14 +5,45 @@
 * ~4.8dB less RMS of no-sound noise by Airspy HF+ (-70dB) than by Airspy R2 (-65.2dB)
 * Distortion ((THD+N)/N) of the 880Hz sine wave tone: Airspy R2: 0.867%, Airspy HF+: 0.697%
 
+## Result figures
+
+### 880Hz time signal tone
+
+![](fmradion-v0.5.2-jobkfm-airspyr2-880Hz.png)
+![](fmradion-v0.5.2-jobkfm-airspyhf-880Hz.png)
+
+fmradion-v0.5.2-jobkfm-airspyhf-nosound.png
+fmradion-v0.5.2-jobkfm-airspyr2-nosound.png
+
+
+
 ## Test conditions
 
+* [airspy-fmradion v0.5.2](https://github.com/jj1bdx/airspy-fmradion/tree/v0.5.2) running on Mac mini 2018
 * Recorded station: JOBK-FM 88.1MHz (NHK-FM Osaka, transmission site: Iimori yama, Daito City, Osaka, Japan)
-* Recorded 880Hz hourly time signals and the no-sound time periods to 48kHz WAV files
+* Recorded 880Hz hourly time signal tones and the no-sound time periods to 48kHz WAV files
 * Antenna: 144MHz 1/2-wavelength vertical on the balcony (ground height: ~15m)
 * Distance from JOBK-FM transmission site: ~21km 
 * Hourly signal for Airspy R2: 2300JST (UTC+9 hrs) 15-MAR-2019
 * Hourly signal for Airspy HF+: 0100JST (UTC+9 hrs) 16-MAR-2019
+* Distortion and noise RMS level measured by [WaveSpectra](http://efu.jp.net/soft/ws/ws.html) by efu
+
+## Results
+
+* ~4.8dB less RMS of no-sound noise by Airspy HF+ (-70dB) than by Airspy R2 (-65.2dB)
+* Distortion ((THD+N)/N) of the 880Hz sine wave tone: Airspy R2: 0.867%, Airspy HF+: 0.697%
+
+## Result figures
+
+### 880Hz time signal tone spectrum
+
+![](fmradion-v0.5.2-jobkfm-airspyr2-880Hz.png)
+![](fmradion-v0.5.2-jobkfm-airspyhf-880Hz.png)
+
+### No-sound noise spectrum
+
+![](fmradion-v0.5.2-jobkfm-airspyr2-nosound.png)
+![](fmradion-v0.5.2-jobkfm-airspyhf-nosound.png)
 
 ## Commands and terminal messages
 
