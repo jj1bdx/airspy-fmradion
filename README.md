@@ -145,7 +145,7 @@ Compile and install
 ## No-goals
 
 * Adaptive IF filtering (unable to obtain better results)
-* CIC filters for the IF 1st stage (simple but too complex to compensate)
+* CIC filters for the IF 1st stage (unable to explore parallelism, too complex to compensate)
 
 ## Filter design documentation
 
