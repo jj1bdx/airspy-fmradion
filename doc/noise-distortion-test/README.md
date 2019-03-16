@@ -7,15 +7,15 @@
 
 ## Result figures
 
-### 880Hz time signal tone
+### 880Hz time signal tone ((THD+N)/N)
 
 ![](fmradion-v0.5.2-jobkfm-airspyr2-880Hz.png)
 ![](fmradion-v0.5.2-jobkfm-airspyhf-880Hz.png)
 
-fmradion-v0.5.2-jobkfm-airspyhf-nosound.png
-fmradion-v0.5.2-jobkfm-airspyr2-nosound.png
+### No-signal sound (RMS level)
 
-
+![](fmradion-v0.5.2-jobkfm-airspyhf-nosound.png)
+![](fmradion-v0.5.2-jobkfm-airspyr2-nosound.png)
 
 ## Test conditions
 
@@ -27,23 +27,6 @@ fmradion-v0.5.2-jobkfm-airspyr2-nosound.png
 * Hourly signal for Airspy R2: 2300JST (UTC+9 hrs) 15-MAR-2019
 * Hourly signal for Airspy HF+: 0100JST (UTC+9 hrs) 16-MAR-2019
 * Distortion and noise RMS level measured by [WaveSpectra](http://efu.jp.net/soft/ws/ws.html) by efu
-
-## Results
-
-* ~4.8dB less RMS of no-sound noise by Airspy HF+ (-70dB) than by Airspy R2 (-65.2dB)
-* Distortion ((THD+N)/N) of the 880Hz sine wave tone: Airspy R2: 0.867%, Airspy HF+: 0.697%
-
-## Result figures
-
-### 880Hz time signal tone spectrum
-
-![](fmradion-v0.5.2-jobkfm-airspyr2-880Hz.png)
-![](fmradion-v0.5.2-jobkfm-airspyhf-880Hz.png)
-
-### No-sound noise spectrum
-
-![](fmradion-v0.5.2-jobkfm-airspyr2-nosound.png)
-![](fmradion-v0.5.2-jobkfm-airspyhf-nosound.png)
 
 ## Commands and terminal messages
 
@@ -82,3 +65,5 @@ audio totally decimated from IF by: 16
 deemphasis: 50 microseconds
 blk=  12445:ppm= +0.19:IF=-29.8dB:AF=-15.9dB:buf=0.6s
 ```
+
+[End of memorandum]
