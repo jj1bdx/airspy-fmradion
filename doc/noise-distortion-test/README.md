@@ -4,6 +4,7 @@
 
 * ~4.8dB less RMS of no-sound noise by Airspy HF+ (-70dB) than by Airspy R2 (-65.2dB)
 * Distortion ((THD+N)/N) of the 880Hz sine wave tone: Airspy R2: 0.867%, Airspy HF+: 0.697%
+* SINAD (inverse of (THD+N)/N) of the 880Hz sine wave tone: Airspy R2: 41.24dB, Airspy HF+: 43.14dB
 
 ## Result figures
 
