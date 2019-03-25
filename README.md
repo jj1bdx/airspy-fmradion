@@ -1,6 +1,6 @@
 # airspy-fmradion
 
-* Version v0.5.2, 16-MAR-2019
+* Version v0.6.0-dev (not tagged), 25-MAR-2019
 * For MacOS and Linux
 * *NOTE: this release has a major change adding the usage of libsoxr.*
 
@@ -132,8 +132,10 @@ Compile and install
 
 ### Audio gain adjustment
 
-* Since v0.4.2, output maximum level is now at -6dB (0.5) (`adjust_gain()` is reintroduced) again, as in pre-v0.2.7
-* During v0.2.7 to v0.4.1, output level is now at unity (`adjust_gain()` is removed)
+* Current: output level is at unity
+* During v0.4.2 to v0.5.2, output maximum level was at -6dB (0.5) (`adjust_gain()` is reintroduced) again, as in pre-v0.2.7
+* During v0.2.7 to v0.4.1, output level was at unity (`adjust_gain()` is removed)
+* Before v0.2.7, output maximum level is at -6dB (0.5) 
 
 ### Audio downsampling is now performed by libsoxr
 

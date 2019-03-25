@@ -43,7 +43,7 @@
 #include "AirspySource.h"
 #include "RtlSdrSource.h"
 
-#define AIRSPY_FMRADION_VERSION "v0.5.2"
+#define AIRSPY_FMRADION_VERSION "v0.6.0-dev"
 
 /** Flag is set on SIGINT / SIGTERM. */
 static std::atomic_bool stop_flag(false);
@@ -537,7 +537,7 @@ int main(int argc, char **argv) {
   }
   fprintf(stderr, "FM demod rate: %.8g Hz,", fmdemod_rate);
   fprintf(stderr, " audio decimated from FM demod by: %.9g\n",
-		  audio_decimation_ratio);
+          audio_decimation_ratio);
 
   MovingAverage<float> ppm_average(100, 0.0f);
 
@@ -569,7 +569,7 @@ int main(int argc, char **argv) {
   fprintf(stderr, " audio bandwidth: %u Hz\n",
           (unsigned int)FmDecoder::bandwidth_pcm);
   fprintf(stderr, "audio totally decimated from IF by: %.9g\n",
-      total_decimation_ratio);
+          total_decimation_ratio);
   fprintf(stderr, "deemphasis: %.9g microseconds\n", deemphasis);
 
   // Prepare decoder.
@@ -633,8 +633,9 @@ int main(int argc, char **argv) {
       samples_mean_rms(audiosamples, audio_mean, audio_rms);
       audio_level = 0.95 * audio_level + 0.05 * audio_rms;
 
+      // NOTE: this code is removed
       // Set nominal audio volume (-6dB).
-      adjust_gain(audiosamples, 0.5);
+      // adjust_gain(audiosamples, 0.5);
     }
 
     // the minus factor is to show the ppm correction
@@ -669,7 +670,7 @@ int main(int argc, char **argv) {
       // Show per-block statistics.
       if (stereo_change || ((block % stat_rate) == 0)) {
         fprintf(stderr,
-                "\rblk=%7d:ppm=%+6.2f:IF=%+5.1fdB:AF=%+5.1fdB:buf=%.1fs", block,
+                "\rblk=%8d:ppm=%+6.2f:IF=%+5.1fdB:AF=%+5.1fdB:buf=%.1fs", block,
                 ppm_value_average, if_level_db, audio_level_db, buflen_sec);
         fflush(stderr);
       }
