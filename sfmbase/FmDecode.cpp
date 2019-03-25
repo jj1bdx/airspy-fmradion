@@ -265,8 +265,7 @@ PilotPhaseLock::PilotPhaseLock(double freq, double bandwidth,
   m_sample_cnt = 0;
 }
 
-// Process samples and generate the 38kHz locked tone;
-// remove remained locked 19kHz tone from samples_in if locked.
+// Process samples and generate the 38kHz locked tone.
 void PilotPhaseLock::process(const SampleVector &samples_in,
                              SampleVector &samples_out, bool pilot_shift) {
   unsigned int n = samples_in.size();
