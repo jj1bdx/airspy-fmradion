@@ -265,8 +265,8 @@ private:
 
   AudioResampler m_audioresampler_mono;
   AudioResampler m_audioresampler_stereo;
-  DownsampleFilter m_pilotcut_mono;
-  DownsampleFilter m_pilotcut_stereo;
+  LowPassFilterFirAudio m_pilotcut_mono;
+  LowPassFilterFirAudio m_pilotcut_stereo;
   FourthDownconverterIQ m_downconverter;
   LowPassFilterFirIQ m_iffilter_first;
   LowPassFilterFirIQ m_iffilter_second;

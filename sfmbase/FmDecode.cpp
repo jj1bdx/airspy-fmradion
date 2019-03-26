@@ -417,10 +417,8 @@ FmDecoder::FmDecoder(double sample_rate_if, bool fourth_downsampler,
 
       // Construct 19kHz pilot signal cut filter
       ,
-      m_pilotcut_mono(FilterParameters::jj1bdx_48khz_fmaudio, // coeff
-                      1.0, true),
-      m_pilotcut_stereo(FilterParameters::jj1bdx_48khz_fmaudio, // coeff
-                        1.0, true)
+      m_pilotcut_mono(FilterParameters::jj1bdx_48khz_fmaudio),
+      m_pilotcut_stereo(FilterParameters::jj1bdx_48khz_fmaudio)
 
       // Construct LowPassFilterFirIQ
       ,
