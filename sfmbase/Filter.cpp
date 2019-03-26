@@ -25,42 +25,6 @@
 
 #include "Filter.h"
 
-/** Prepare Lanczos FIR filter coefficients. */
-template <class T>
-static void make_lanczos_coeff(unsigned int filter_order, double cutoff,
-                               std::vector<T> &coeff) {
-  coeff.resize(filter_order + 1);
-
-  // Prepare Lanczos FIR filter.
-  //   t[i]     =  (i - order/2)
-  //   coeff[i] =  Sinc(2 * cutoff * t[i]) * Sinc(t[i] / (order/2 + 1))
-  //   coeff    /= sum(coeff)
-
-  double ysum = 0.0;
-
-  // Calculate filter kernel.
-  for (int i = 0; i <= (int)filter_order; i++) {
-    int t2 = 2 * i - filter_order;
-
-    double y;
-    if (t2 == 0) {
-      y = 1.0;
-    } else {
-      double x1 = cutoff * t2;
-      double x2 = t2 / double(filter_order + 2);
-      y = (sin(M_PI * x1) / M_PI / x1) * (sin(M_PI * x2) / M_PI / x2);
-    }
-
-    coeff[i] = y;
-    ysum += y;
-  }
-
-  // Apply correction factor to ensure unit gain at DC.
-  for (unsigned i = 0; i <= filter_order; i++) {
-    coeff[i] /= ysum;
-  }
-}
-
 /* ****************  class LowPassFilterFirIQ  **************** */
 
 // Construct low-pass filter.
@@ -131,120 +95,59 @@ void LowPassFilterFirIQ::process(const IQSampleVector &samples_in,
   }
 }
 
-/* ****************  class DownsampleFilter  **************** */
+// Class LowPassFilterFirAudio
 
-// Construct low-pass filter with optional downsampling.
-DownsampleFilter::DownsampleFilter(
-    const std::vector<SampleVector::value_type> &coeff, double downsample,
-    bool integer_factor)
-    : m_coeff(coeff), m_order(coeff.size() - 1), m_downsample(downsample),
-      m_downsample_int(integer_factor ? lrint(downsample) : 0), m_pos_int(0),
-      m_pos_frac(0) {
-  // Force the first coefficient to zero and append an extra zero at the
-  // end of the array. This ensures we can always obtain (m_order+1)
-  // coefficients by linear interpolation between adjacent array elements.
-  m_coeff.insert(m_coeff.begin(), 0);
-  m_coeff.push_back(0);
-  m_order = coeff.size();
-
-  assert(downsample >= 1);
-  assert(m_order > 2);
+// Construct low-pass filter.
+LowPassFilterFirAudio::LowPassFilterFirAudio(
+    const std::vector<SampleVector::value_type> &coeff)
+    : m_coeff(coeff), m_order(coeff.size() - 1), m_pos(0) {
   m_state.resize(m_order);
 }
 
 // Process samples.
-void DownsampleFilter::process(const SampleVector &samples_in,
-                               SampleVector &samples_out) {
+void LowPassFilterFirAudio::process(const SampleVector &samples_in,
+                                    SampleVector &samples_out) {
   unsigned int order = m_state.size();
   unsigned int n = samples_in.size();
+  unsigned int p = m_pos;
+  samples_out.resize(n - p);
 
-  if (m_downsample_int != 0) {
-
-    // Integer downsample factor, no linear interpolation.
-    // This is relatively simple.
-
-    unsigned int p = m_pos_int;
-    unsigned int pstep = m_downsample_int;
-
-    samples_out.resize((n - p + pstep - 1) / pstep);
-
-    // The first few samples need data from m_state.
-    // NOTE: this assumes the filter has symmetric coefficient pairs
-    unsigned int i = 0;
-    for (; p < n && p < order; p += pstep, i++) {
-      Sample y = 0;
-      for (unsigned int j = 1; j <= p; j++) {
-        y += samples_in[p - j] * m_coeff[j];
-      }
-      for (unsigned int j = p + 1; j <= order; j++) {
-        y += m_state[order + p - j] * m_coeff[j];
-      }
-      samples_out[i] = y;
-    }
-
-    // Remaining samples only need data from samples_in.
-    // NOTE: this assumes the filter has symmetric coefficient pairs
-    unsigned int half_order = order / 2;
-    for (; p < n; p += pstep, i++) {
-      Sample y = 0;
-      for (unsigned int k = 1; k <= half_order; k++) {
-        y += (samples_in[p - k] + samples_in[p - ((order + 1) - k)]) *
-             m_coeff[k];
-      }
-      if ((order % 2) > 0) {
-        y += samples_in[p - ((order + 1) / 2)] * m_coeff[((order + 1) / 2)];
-      }
-      samples_out[i] = y;
-    }
-    assert(i == samples_out.size());
-
-    // Update index of start position in text sample block.
-    m_pos_int = p - n;
-
-  } else {
-
-    // Fractional downsample factor via linear interpolation of
-    // the FIR coefficient table. This is a real headache.
-
-    // Estimate number of output samples we can produce in this run.
-    Sample p = m_pos_frac;
-    Sample pstep = m_downsample;
-    unsigned int n_out = int(2 + n / pstep);
-
-    samples_out.resize(n_out);
-
-    // Produce output samples.
-    unsigned int i = 0;
-    Sample pf = p;
-    unsigned int pi = int(pf);
-    while (pi < n) {
-      Sample k1 = pf - pi;
-      Sample k0 = 1 - k1;
-
-      Sample y = 0;
-      for (unsigned int j = 0; j <= order; j++) {
-        Sample k = m_coeff[j] * k0 + m_coeff[j + 1] * k1;
-        Sample s = (j <= pi) ? samples_in[pi - j] : m_state[order + pi - j];
-        y += k * s;
-      }
-      samples_out[i] = y;
-
-      i++;
-      pf = p + i * pstep;
-      pi = int(pf);
-    }
-
-    // We may overestimate the number of samples by 1 or 2.
-    assert(i <= n_out && i + 2 >= n_out);
-    samples_out.resize(i);
-
-    // Update fractional index of start position in text sample block.
-    // Limit to 0 to avoid catastrophic results of rounding errors.
-    m_pos_frac = pf - n;
-    if (m_pos_frac < 0) {
-      m_pos_frac = 0;
-    }
+  if (n == 0) {
+    return;
   }
+
+  // The first few samples need data from m_state.
+  // NOTE: this assumes the filter has symmetric coefficient pairs
+  unsigned int i = 0;
+  for (; p < n && p < order; p++, i++) {
+    Sample y = 0;
+    for (unsigned int j = p + 1; j <= order; j++) {
+      y += m_state[order + p - j] * m_coeff[j];
+    }
+    for (unsigned int j = 1; j <= p; j++) {
+      y += samples_in[p - j] * m_coeff[j];
+    }
+    samples_out[i] = y;
+  }
+
+  // Remaining samples only need data from samples_in.
+  // NOTE: this assumes the filter has symmetric coefficient pairs
+  unsigned int half_order = (order - 1) / 2;
+  for (; p < n; p++, i++) {
+    Sample y = 0;
+    for (unsigned int k = 0; k <= half_order; k++) {
+      y += (samples_in[p - k] + samples_in[p - (order - k)]) * m_coeff[k];
+    }
+    if ((order % 2) == 0) {
+      y += samples_in[p - (order / 2)] * m_coeff[(order / 2)];
+    }
+    samples_out[i] = y;
+  }
+
+  assert(i == samples_out.size());
+
+  // Update index of start position in text sample block.
+  m_pos = p - n;
 
   // Update m_state.
   if (n < order) {

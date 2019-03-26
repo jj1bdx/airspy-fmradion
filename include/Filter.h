@@ -23,7 +23,7 @@
 #include "SoftFM.h"
 #include <vector>
 
-/** Low-pass filter for IQ samples, based on Lanczos FIR filter. */
+/** Low-pass filter for IQ samples. */
 class LowPassFilterFirIQ {
 public:
   /**
@@ -46,26 +46,15 @@ private:
   unsigned int m_pos;
 };
 
-/**
- *  Downsampler with low-pass FIR filter for real-valued signals.
- *
- *  Step 1: Low-pass filter based on Lanczos FIR filter
- *  Step 2: (optional) Decimation by an arbitrary factor (integer or float)
- */
-class DownsampleFilter {
+// Low-pass filter for mono audio signal.
+class LowPassFilterFirAudio {
 public:
   /**
-   * Construct low-pass filter with optional downsampling.
+   * Construct low-pass mono audio filter. No down/up-sampling.
    *
    * coeff        :: FIR filter coefficients.
-   * downsample   :: Decimation factor (>= 1) or 1 to disable
-   * integer_factor :: Enables a faster and more precise algorithm that
-   *                   only works for integer downsample factors.
-   *
-   * The output sample rate is (input_sample_rate / downsample)
    */
-  DownsampleFilter(const std::vector<SampleVector::value_type> &coeff,
-                   double downsample = 1, bool integer_factor = true);
+  LowPassFilterFirAudio(const std::vector<SampleVector::value_type> &coeff);
 
   /** Process samples. */
   void process(const SampleVector &samples_in, SampleVector &samples_out);
@@ -74,10 +63,7 @@ private:
   std::vector<SampleVector::value_type> m_coeff;
   SampleVector m_state;
   unsigned int m_order;
-  double m_downsample;
-  unsigned int m_downsample_int;
-  unsigned int m_pos_int;
-  Sample m_pos_frac;
+  unsigned int m_pos;
 };
 
 /** First order low-pass IIR filter for real-valued signals. */
