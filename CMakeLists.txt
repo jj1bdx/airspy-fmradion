@@ -245,7 +245,7 @@ target_link_libraries(airspy-fmradion
 # Linked libraries
 
 target_link_libraries(sfmbase
-    -lsoxr
+    ${LIBSOXR_LIBRARY}
 )
 
 target_link_libraries(sfmrtlsdr
