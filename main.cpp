@@ -460,9 +460,9 @@ int main(int argc, char **argv) {
   std::vector<IQSample::value_type> first_coeff;
   unsigned int second_downsample;
   std::vector<IQSample::value_type> second_coeff;
-
   unsigned int if_blocksize;
 
+  // Configure filter and downsampler.
   if (strcasecmp(devtype_str.c_str(), "airspy") == 0) {
     fourth_downsampler = false;
     if (ifrate == 10000000.0) {
@@ -528,6 +528,7 @@ int main(int argc, char **argv) {
   double total_decimation_ratio = ifrate / pcmrate;
   double audio_decimation_ratio = fmdemod_rate / pcmrate;
 
+  // Display filter configuration.
   fprintf(stderr, "IF sample rate: %.9g Hz,", ifrate);
   fprintf(stderr, " IF 1st rate: %.8g Hz (divided by %u)\n",
           ifrate / first_downsample, first_downsample);
@@ -633,9 +634,8 @@ int main(int argc, char **argv) {
       samples_mean_rms(audiosamples, audio_mean, audio_rms);
       audio_level = 0.95 * audio_level + 0.05 * audio_rms;
 
-      // NOTE: this code is removed
       // Set nominal audio volume (-6dB).
-      // adjust_gain(audiosamples, 0.5);
+      adjust_gain(audiosamples, 0.5);
     }
 
     // the minus factor is to show the ppm correction
@@ -646,13 +646,9 @@ int main(int argc, char **argv) {
     double audio_level_db = 20 * log10(audio_level) + 3.01;
 
     double buflen_sec;
-    if (outputbuf_samples > 0) {
-      unsigned int nchannel = stereo ? 2 : 1;
-      std::size_t buflen = output_buffer.queued_samples();
-      buflen_sec = buflen / nchannel / double(pcmrate);
-    } else {
-      buflen_sec = -1.0;
-    }
+    unsigned int nchannel = stereo ? 2 : 1;
+    std::size_t buflen = output_buffer.queued_samples();
+    buflen_sec = buflen / nchannel / double(pcmrate);
 
     // Show status messages for each block if not in quiet mode.
     if (!quietmode) {
