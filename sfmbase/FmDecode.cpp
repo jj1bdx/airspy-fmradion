@@ -290,9 +290,7 @@ const double FmDecoder::default_deemphasis_na = 75; // USA/Canada
 FmDecoder::FmDecoder(double sample_rate_demod, bool stereo, double deemphasis,
                      bool pilot_shift)
     // Initialize member fields
-    :
-
-      m_sample_rate_fmdemod(sample_rate_demod), m_pilot_shift(pilot_shift),
+    : m_sample_rate_fmdemod(sample_rate_demod), m_pilot_shift(pilot_shift),
       m_stereo_enabled(stereo), m_stereo_detected(false), m_baseband_mean(0),
       m_baseband_level(0)
 
@@ -338,7 +336,7 @@ FmDecoder::FmDecoder(double sample_rate_demod, bool stereo, double deemphasis,
           (deemphasis == 0) ? 1.0 : (deemphasis * sample_rate_pcm * 1.0e-6))
 
 {
-  m_buf_baseband_acc.resize(0);
+  // Do nothing
 }
 
 void FmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
@@ -348,19 +346,7 @@ void FmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
 
   // Compensate 0th-hold aperture effect
   // by applying the equalizer to the discriminator output.
-  m_disceq.process(m_buf_baseband_raw, m_buf_baseband_acc);
-
-  // Append m_buf_baseband_acc to m_buf_baseband
-  m_buf_baseband.insert(std::end(m_buf_baseband),
-                        std::begin(m_buf_baseband_acc),
-                        std::end(m_buf_baseband_acc));
-
-  // Return if the buffered baseband output is less than 8192 samples
-  // to prevent null audio output causing SEGV
-  if (m_buf_baseband.size() < 8192) {
-    audio.resize(0);
-    return;
-  }
+  m_disceq.process(m_buf_baseband_raw, m_buf_baseband);
 
   // Measure baseband level.
   double baseband_mean, baseband_rms;
@@ -368,34 +354,37 @@ void FmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
   m_baseband_mean = 0.95 * m_baseband_mean + 0.05 * baseband_mean;
   m_baseband_level = 0.95 * m_baseband_level + 0.05 * baseband_rms;
 
+  // The following function must be executed anyway
+  // even if the mono audio resampler output does not come out.
   if (m_stereo_enabled) {
     // Lock on stereo pilot,
     // and remove locked 19kHz tone from the composite signal.
     m_pilotpll.process(m_buf_baseband, m_buf_rawstereo, m_pilot_shift);
     m_stereo_detected = m_pilotpll.locked();
-  }
-
-  // Extract mono audio signal.
-  m_audioresampler_mono.process(m_buf_baseband, m_buf_mono_firstout);
-  // Filter out mono 19kHz pilot signal.
-  m_pilotcut_mono.process(m_buf_mono_firstout, m_buf_mono);
-
-  // DC blocking
-  m_dcblock_mono.process_inplace(m_buf_mono);
-
-  if (m_stereo_enabled) {
-
     // Demodulate stereo signal.
     demod_stereo(m_buf_baseband, m_buf_rawstereo);
-
     // Extract audio and downsample.
     // NOTE: This MUST be done even if no stereo signal is detected yet,
     // because the downsamplers for mono and stereo signal must be
     // kept in sync.
     m_audioresampler_stereo.process(m_buf_rawstereo, m_buf_stereo_firstout);
+  }
+
+  // Extract mono audio signal.
+  m_audioresampler_mono.process(m_buf_baseband, m_buf_mono_firstout);
+  // If no mono audio signal comes out, terminate and wait for next block,
+  if (m_buf_mono_firstout.size() == 0) {
+    audio.resize(0);
+    return;
+  }
+  // Filter out mono 19kHz pilot signal.
+  m_pilotcut_mono.process(m_buf_mono_firstout, m_buf_mono);
+  // DC blocking
+  m_dcblock_mono.process_inplace(m_buf_mono);
+
+  if (m_stereo_enabled) {
     // Filter out mono 19kHz pilot signal.
     m_pilotcut_stereo.process(m_buf_stereo_firstout, m_buf_stereo);
-
     // DC blocking
     m_dcblock_stereo.process_inplace(m_buf_stereo);
 
@@ -426,9 +415,6 @@ void FmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
     // Just return mono channel.
     audio = move(m_buf_mono);
   }
-
-  // Clear m_buf_baseband for next audio output processing.
-  m_buf_baseband.resize(0);
 }
 
 // Demodulate stereo L-R signal.

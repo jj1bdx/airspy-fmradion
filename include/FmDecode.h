@@ -208,7 +208,6 @@ private:
   double m_baseband_level;
 
   SampleVector m_buf_baseband;
-  SampleVector m_buf_baseband_acc;
   SampleVector m_buf_baseband_raw;
   SampleVector m_buf_mono_firstout;
   SampleVector m_buf_mono;
