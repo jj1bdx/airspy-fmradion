@@ -261,7 +261,6 @@ bool AirspyHFSource::start(DataBuffer<IQSample> *buf,
 #endif
     m_running = true;
     m_thread = new std::thread(run, m_dev, stop_flag);
-    sleep(1);
     return *this;
   } else {
     std::cerr << "AirspyHFSource::start: error" << std::endl;

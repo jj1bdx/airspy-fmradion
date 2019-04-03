@@ -550,16 +550,6 @@ int main(int argc, char **argv) {
   // shared_ptr (and no move) instead
   std::unique_ptr<Source> up_srcsdr(srcsdr);
 
-  // Start reading from device in separate thread.
-  // std::thread source_thread(read_source_data, std::move(up_srcsdr),
-  // &source_buffer);
-  up_srcsdr->start(&source_buffer, &stop_flag);
-
-  if (!up_srcsdr) {
-    fprintf(stderr, "ERROR: source: %s\n", up_srcsdr->error().c_str());
-    exit(1);
-  }
-
   // Prevent aliasing at very low output sample rates.
   double deemphasis = deemphasis_na ? FmDecoder::default_deemphasis_na
                                     : FmDecoder::default_deemphasis_eu;
@@ -585,6 +575,16 @@ int main(int argc, char **argv) {
                deemphasis,   // deemphasis,
                pilot_shift   // pilot_shift
   );
+
+  // Start reading from device in separate thread.
+  // std::thread source_thread(read_source_data, std::move(up_srcsdr),
+  // &source_buffer);
+  up_srcsdr->start(&source_buffer, &stop_flag);
+
+  if (!up_srcsdr) {
+    fprintf(stderr, "ERROR: source: %s\n", up_srcsdr->error().c_str());
+    exit(1);
+  }
 
   // If buffering enabled, start background output thread.
   DataBuffer<Sample> output_buffer;
@@ -693,7 +693,7 @@ int main(int argc, char **argv) {
     // Throw away first 10 blocks.
     // They are noisy because IF filters are still starting up.
     // (Increased from one to support high sampling rates)
-    if ((block > 10) && audio_exists) {
+    if (audio_exists) {
       // Write samples to output.
       if (outputbuf_samples > 0) {
         // Buffered write.
