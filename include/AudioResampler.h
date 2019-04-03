@@ -22,17 +22,26 @@
 #include <cstdint>
 #include <vector>
 
+#include "AudioResampler.h"
 #include "SoftFM.h"
 
 #include "soxr.h"
 
+// class AudioResampler
+
 class AudioResampler {
 public:
-  AudioResampler(const double input_rate);
+  // Construct audio resampler.
+  // input_rate : input sampling rate.
+  // output_rate: input sampling rate.
+  AudioResampler(const double input_rate, const double output_rate);
+  // Process monaural audio samples,
+  // converting input_rate to output_rate.
   void process(const SampleVector &samples_in, SampleVector &samples_out);
 
 private:
   const double m_irate;
+  const double m_orate;
   soxr_t m_soxr;
 };
 

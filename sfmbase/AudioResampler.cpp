@@ -23,15 +23,17 @@
 
 // class AudioResampler
 
-AudioResampler::AudioResampler(const double input_rate) : m_irate(input_rate) {
+AudioResampler::AudioResampler(const double input_rate,
+                               const double output_rate)
+    : m_irate(input_rate), m_orate(output_rate) {
   soxr_error_t error;
   // Use double
   soxr_io_spec_t io_spec = soxr_io_spec(SOXR_FLOAT64_I, SOXR_FLOAT64_I);
   soxr_quality_spec_t quality_spec =
       soxr_quality_spec(SOXR_HQ, SOXR_LINEAR_PHASE);
 
-  m_soxr = soxr_create(m_irate, FmDecoder::sample_rate_pcm, 1, &error, &io_spec,
-                       &quality_spec, NULL);
+  m_soxr =
+      soxr_create(m_irate, m_orate, 1, &error, &io_spec, &quality_spec, NULL);
   if (error) {
     soxr_delete(m_soxr);
     fprintf(stderr, "FmDecode::AudioResampler: unable to create soxr: %s\n",
