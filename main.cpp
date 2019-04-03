@@ -44,7 +44,7 @@
 #include "AirspySource.h"
 #include "RtlSdrSource.h"
 
-#define AIRSPY_FMRADION_VERSION "v0.6.0-dev2"
+#define AIRSPY_FMRADION_VERSION "v0.6.0-dev3"
 
 /** Flag is set on SIGINT / SIGTERM. */
 static std::atomic_bool stop_flag(false);
@@ -394,7 +394,7 @@ int main(int argc, char **argv) {
     // Calculate nr of samples for configured buffer length.
     outputbuf_samples = (unsigned int)(bufsecs * pcmrate);
   }
-  fprintf(stderr, "output buffer: %g seconds\n",
+  fprintf(stderr, "output buffer length: %g [s]\n",
           outputbuf_samples / double(pcmrate));
 
   // Prepare output writer.
@@ -444,10 +444,10 @@ int main(int argc, char **argv) {
   }
 
   double freq = srcsdr->get_configured_frequency();
-  fprintf(stderr, "tuned for %.7g MHz", freq * 1.0e-6);
+  fprintf(stderr, "tuned for %.7g [MHz]", freq * 1.0e-6);
   double tuner_freq = srcsdr->get_frequency();
   if (tuner_freq != freq) {
-    fprintf(stderr, ", device tuned for %.7g MHz", tuner_freq * 1.0e-6);
+    fprintf(stderr, ", device tuned for %.7g [MHz]", tuner_freq * 1.0e-6);
   }
   fprintf(stderr, "\n");
 
@@ -527,14 +527,14 @@ int main(int argc, char **argv) {
   double audio_decimation_ratio = fmdemod_rate / pcmrate;
 
   // Display filter configuration.
-  fprintf(stderr, "IF sample rate: %.9g Hz,", ifrate);
-  fprintf(stderr, " IF 1st rate: %.8g Hz (divided by %u)\n",
+  fprintf(stderr, "IF sample rate: %.9g,", ifrate);
+  fprintf(stderr, " IF 1st rate: %.8g [Hz] (divided by %u)\n",
           ifrate / first_downsample, first_downsample);
   if (second_downsample != 1) {
-    fprintf(stderr, "IF 2nd rate: %.8g Hz (divided by %u)\n",
+    fprintf(stderr, "IF 2nd rate: %.8g [Hz] (divided by %u)\n",
             ifrate / first_downsample / second_downsample, second_downsample);
   }
-  fprintf(stderr, "FM demod rate: %.8g Hz,", fmdemod_rate);
+  fprintf(stderr, "FM demod rate: %.8g [Hz],", fmdemod_rate);
   fprintf(stderr, " audio decimated from FM demod by: %.9g\n",
           audio_decimation_ratio);
 
@@ -564,12 +564,12 @@ int main(int argc, char **argv) {
   double deemphasis = deemphasis_na ? FmDecoder::default_deemphasis_na
                                     : FmDecoder::default_deemphasis_eu;
 
-  fprintf(stderr, "audio sample rate: %u Hz,", pcmrate);
-  fprintf(stderr, " audio bandwidth: %u Hz\n",
+  fprintf(stderr, "audio sample rate: %u [Hz],", pcmrate);
+  fprintf(stderr, " audio bandwidth: %u [Hz]\n",
           (unsigned int)FmDecoder::bandwidth_pcm);
   fprintf(stderr, "audio totally decimated from IF by: %.9g\n",
           total_decimation_ratio);
-  fprintf(stderr, "deemphasis: %.9g microseconds\n", deemphasis);
+  fprintf(stderr, "deemphasis: %.9g [µs]\n", deemphasis);
 
   // Prepare IF Downsampler.
   IfDownsampler if_downsampler(fourth_downsampler, // fourth_downsampler
@@ -606,6 +606,7 @@ int main(int argc, char **argv) {
   // TODO: ~0.1sec / display (should be tuned)
   unsigned int stat_rate =
       lrint(5120 / (if_blocksize / total_decimation_ratio));
+  unsigned int discarding_blocks = stat_rate * 4;
 
   // Main loop.
   for (unsigned int block = 0; !stop_flag.load(); block++) {
@@ -663,14 +664,15 @@ int main(int argc, char **argv) {
       if (stereo_change) {
         got_stereo = fm.stereo_detected();
         if (got_stereo) {
-          fprintf(stderr, "\ngot stereo signal (pilot level = %f)\n",
+          fprintf(stderr, "\ngot stereo signal, pilot level = %.7f\n",
                   fm.get_pilot_level());
         } else {
           fprintf(stderr, "\nlost stereo signal\n");
         }
       }
       // Show per-block statistics.
-      if (stereo_change || ((block % stat_rate) == 0)) {
+      if (stereo_change ||
+	 (((block % stat_rate) == 0) && (block > discarding_blocks))) {
         fprintf(stderr,
                 "\rblk=%8d:ppm=%+6.2f:IF=%+5.1fdB:AF=%+5.1fdB:buf=%.2fs", block,
                 ppm_value_average, if_level_db, audio_level_db, buflen_sec);
@@ -690,10 +692,10 @@ int main(int argc, char **argv) {
       }
     }
 
-    // Throw away first 10 blocks.
+    // Throw away first blocks before stereo pilot locking is completed.
     // They are noisy because IF filters are still starting up.
     // (Increased from one to support high sampling rates)
-    if ((block > 10) && audio_exists) {
+    if ((block > discarding_blocks) && audio_exists) {
       // Write samples to output.
       if (outputbuf_samples > 0) {
         // Buffered write.
