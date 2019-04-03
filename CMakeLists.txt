@@ -129,7 +129,8 @@ set(OPTIMIZATION_FLAGS "-O3 -ffast-math -ftree-vectorize -march=native")
 set(CMAKE_CXX_FLAGS "-Wall -std=c++11 ${OPTIMIZATION_FLAGS} ${ALSA_OPTION} ${AIRSPY_INCLUDE_OPTION} ${AIRSPYHF_INCLUDE_OPTION} ${EXTRA_FLAGS}")
 
 set(sfmbase_SOURCES
-    sfmbase/AudioOutput.cpp 
+    sfmbase/AudioResampler.cpp
+    sfmbase/AudioOutput.cpp
     sfmbase/EqParameters.cpp
     sfmbase/Filter.cpp
     sfmbase/FilterParameters.cpp
@@ -138,6 +139,7 @@ set(sfmbase_SOURCES
 )
 
 set(sfmbase_HEADERS
+    include/AudioResampler.h
     include/AudioOutput.h
     include/Filter.h
     include/FilterParameters.h
@@ -231,7 +233,7 @@ add_executable(airspy-fmradion
 include_directories(
     ${CMAKE_SOURCE_DIR}/include
     ${ALSA_INCLUDE_DIRS}
-    ${EXTRA_INCLUDES} 
+    ${EXTRA_INCLUDES}
 )
 
 target_link_libraries(airspy-fmradion
@@ -241,7 +243,7 @@ target_link_libraries(airspy-fmradion
     sfmairspyhf
     ${CMAKE_THREAD_LIBS_INIT}
     ${ALSA_LIBRARIES}
-    ${EXTRA_LIBS} 
+    ${EXTRA_LIBS}
 )
 
 # Linked libraries

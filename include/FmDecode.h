@@ -23,22 +23,11 @@
 #include <cstdint>
 #include <vector>
 
+#include "AudioResampler.h"
 #include "EqParameters.h"
 #include "Filter.h"
 #include "FilterParameters.h"
 #include "SoftFM.h"
-
-#include "soxr.h"
-
-class AudioResampler {
-public:
-  AudioResampler(const double input_rate);
-  void process(const SampleVector &samples_in, SampleVector &samples_out);
-
-private:
-  const double m_irate;
-  soxr_t m_soxr;
-};
 
 /* Detect frequency by phase discrimination between successive samples. */
 class PhaseDiscriminator {
