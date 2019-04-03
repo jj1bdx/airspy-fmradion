@@ -296,8 +296,8 @@ FmDecoder::FmDecoder(double sample_rate_demod, bool stereo, double deemphasis,
 
       // Construct AudioResampler for mono and stereo channels
       ,
-      m_audioresampler_mono(m_sample_rate_fmdemod),
-      m_audioresampler_stereo(m_sample_rate_fmdemod)
+      m_audioresampler_mono(m_sample_rate_fmdemod, FmDecoder::sample_rate_pcm),
+      m_audioresampler_stereo(m_sample_rate_fmdemod, FmDecoder::sample_rate_pcm)
 
       // Construct 19kHz pilot signal cut filter
       ,
