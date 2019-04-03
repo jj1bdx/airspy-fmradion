@@ -129,11 +129,12 @@ set(OPTIMIZATION_FLAGS "-O3 -ffast-math -ftree-vectorize -march=native")
 set(CMAKE_CXX_FLAGS "-Wall -std=c++11 ${OPTIMIZATION_FLAGS} ${ALSA_OPTION} ${AIRSPY_INCLUDE_OPTION} ${AIRSPYHF_INCLUDE_OPTION} ${EXTRA_FLAGS}")
 
 set(sfmbase_SOURCES
+    sfmbase/AudioOutput.cpp 
+    sfmbase/EqParameters.cpp
     sfmbase/Filter.cpp
     sfmbase/FilterParameters.cpp
     sfmbase/FmDecode.cpp
-    sfmbase/AudioOutput.cpp 
-    sfmbase/EqParameters.cpp
+    sfmbase/IfDownsampler.cpp
 )
 
 set(sfmbase_HEADERS
@@ -141,6 +142,7 @@ set(sfmbase_HEADERS
     include/Filter.h
     include/FilterParameters.h
     include/FmDecode.h
+    include/IfDownsampler.h
     include/MovingAverage.h
     include/Source.h
     include/SoftFM.h

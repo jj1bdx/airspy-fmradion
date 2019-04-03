@@ -35,6 +35,7 @@
 #include "DataBuffer.h"
 #include "FilterParameters.h"
 #include "FmDecode.h"
+#include "IfDownsampler.h"
 #include "MovingAverage.h"
 #include "SoftFM.h"
 #include "util.h"
@@ -570,16 +571,20 @@ int main(int argc, char **argv) {
           total_decimation_ratio);
   fprintf(stderr, "deemphasis: %.9g microseconds\n", deemphasis);
 
-  // Prepare decoder.
-  FmDecoder fm(ifrate,             // sample_rate_if
-               fourth_downsampler, // fourth_downsampler
-               first_downsample,   // first_downsample
-               first_coeff,        // first_coeff
-               second_downsample,  // second_downsample
-               second_coeff,       // second_coeff
-               stereo,             // stereo
-               deemphasis,         // deemphasis,
-               pilot_shift);       // pilot_shift
+  // Prepare IF Downsampler.
+  IfDownsampler if_downsampler(fourth_downsampler, // fourth_downsampler
+                               first_downsample,   // first_downsample
+                               first_coeff,        // first_coeff
+                               second_downsample,  // second_downsample
+                               second_coeff        // second_coeff
+  );
+
+  // Prepare FM decoder.
+  FmDecoder fm(fmdemod_rate, // sample_rate_demod
+               stereo,       // stereo
+               deemphasis,   // deemphasis,
+               pilot_shift   // pilot_shift
+  );
 
   // If buffering enabled, start background output thread.
   DataBuffer<Sample> output_buffer;
@@ -613,6 +618,7 @@ int main(int argc, char **argv) {
 
     // Pull next block from source buffer.
     IQSampleVector iqsamples = source_buffer.pull();
+    IQSampleVector if_samples;
 
     if (iqsamples.empty()) {
       break;
@@ -621,8 +627,11 @@ int main(int argc, char **argv) {
     double prev_block_time = block_time;
     block_time = get_time();
 
+    // Downsample IF for the decoder.
+    if_downsampler.process(iqsamples, if_samples);
+
     // Decode FM signal.
-    fm.process(iqsamples, audiosamples);
+    fm.process(if_samples, audiosamples);
     bool audio_exists = audiosamples.size() > 0;
 
     // Measure audio level when audio exists
@@ -639,7 +648,7 @@ int main(int argc, char **argv) {
     // to make and not the one made
     ppm_average.feed((fm.get_tuning_offset() / tuner_freq) * -1.0e6);
     double ppm_value_average = ppm_average.average();
-    double if_level_db = 20 * log10(fm.get_if_level());
+    double if_level_db = 20 * log10(if_downsampler.get_if_level());
     double audio_level_db = 20 * log10(audio_level) + 3.01;
 
     double buflen_sec;

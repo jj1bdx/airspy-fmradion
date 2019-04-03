@@ -40,18 +40,6 @@ private:
   soxr_t m_soxr;
 };
 
-// Downconverting Fs/4 tuner.
-class FourthDownconverterIQ {
-public:
-  // Construct Fs/4 downconverting tuner.
-  FourthDownconverterIQ();
-  // Process samples.
-  void process(const IQSampleVector &samples_in, IQSampleVector &samples_out);
-
-private:
-  unsigned int m_index;
-};
-
 /* Detect frequency by phase discrimination between successive samples. */
 class PhaseDiscriminator {
 public:
@@ -166,28 +154,16 @@ public:
   /**
    * Construct FM decoder.
    *
-   * sample_rate_if   :: IQ sample rate in Hz.
-   * fourth_downsampler :: Use Fs/4 downsampler
-   * first_downsample :: Integer first stage downsampling rate (>= 1)
-   *                     (applied BEFORE FM demodulation)
-   * first_coeff      :: First stage filter coefficients
-   * second_downsample:: Integer second stage downsampling rate (>= 1)
-   *                     (applied BEFORE FM demodulation)
-   * second_coeff     :: Second stage filter coefficients
-   * stereo           :: True to enable stereo decoding.
-   * deemphasis       :: Time constant of de-emphasis filter in microseconds
-   *                     (50 us for broadcast FM, 0 to disable de-emphasis).
-   * pilot_shift      :: True to shift pilot signal phase
-   *                  :: (use cos(2*x) instead of sin (2*x))
-   *                  :: (for multipath distortion detection)
+   * sample_rate_demod :: Demodulator IQ sample rate.
+   * stereo            :: True to enable stereo decoding.
+   * deemphasis        :: Time constant of de-emphasis filter in microseconds
+   *                      (50 us for broadcast FM, 0 to disable de-emphasis).
+   * pilot_shift       :: True to shift pilot signal phase
+   *                   :: (use cos(2*x) instead of sin (2*x))
+   *                   :: (for multipath distortion detection)
    */
-  FmDecoder(double sample_rate_if, bool fourth_downsampler,
-            unsigned int first_downsample,
-            const std::vector<IQSample::value_type> &first_coeff,
-            unsigned int second_downsample,
-            const std::vector<IQSample::value_type> &second_coeff, bool stereo,
-            double deemphasis, bool pilot_shift);
-
+  FmDecoder(double sample_rate_demod, bool stereo, double deemphasis,
+            bool pilot_shift);
   /**
    * Process IQ samples and return audio samples.
    *
@@ -203,9 +179,6 @@ public:
 
   /** Return actual frequency offset in Hz with respect to receiver LO. */
   double get_tuning_offset() const { return m_baseband_mean * freq_dev; }
-
-  /** Return RMS IF level (where full scale IQ signal is 1.0). */
-  double get_if_level() const { return m_if_level; }
 
   /** Return RMS baseband signal level (where nominal level is 0.707). */
   double get_baseband_level() const { return m_baseband_level; }
@@ -238,22 +211,13 @@ private:
                           SampleVector &audio);
 
   // Data members.
-  const double m_sample_rate_if;
-  const double m_sample_rate_firstout;
   const double m_sample_rate_fmdemod;
-  const unsigned int m_first_downsample;
-  const unsigned int m_second_downsample;
-  const bool m_fourth_downsampler;
   const bool m_pilot_shift;
   const bool m_stereo_enabled;
   bool m_stereo_detected;
-  double m_if_level;
   double m_baseband_mean;
   double m_baseband_level;
 
-  IQSampleVector m_buf_iftuned;
-  IQSampleVector m_buf_iffirstout;
-  IQSampleVector m_buf_iffiltered;
   SampleVector m_buf_baseband;
   SampleVector m_buf_baseband_acc;
   SampleVector m_buf_baseband_raw;
@@ -267,9 +231,6 @@ private:
   AudioResampler m_audioresampler_stereo;
   LowPassFilterFirAudio m_pilotcut_mono;
   LowPassFilterFirAudio m_pilotcut_stereo;
-  FourthDownconverterIQ m_downconverter;
-  LowPassFilterFirIQ m_iffilter_first;
-  LowPassFilterFirIQ m_iffilter_second;
   EqParameters m_eqparams;
   DiscriminatorEqualizer m_disceq;
   PhaseDiscriminator m_phasedisc;

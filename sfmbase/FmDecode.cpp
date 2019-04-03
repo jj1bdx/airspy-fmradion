@@ -22,19 +22,6 @@
 
 #include "FmDecode.h"
 
-// Compute RMS over a small prefix of the specified sample vector.
-double rms_level_approx(const IQSampleVector &samples) {
-  unsigned int n = samples.size();
-  n = (n + 63) / 64;
-
-  IQSample::value_type level = 0;
-  for (unsigned int i = 0; i < n; i++) {
-    level += std::norm(samples[i]);
-  }
-  // Return RMS level
-  return sqrt(level / n);
-}
-
 // class AudioResampler
 
 AudioResampler::AudioResampler(const double input_rate) : m_irate(input_rate) {
@@ -74,58 +61,6 @@ void AudioResampler::process(const SampleVector &samples_in,
   }
 
   samples_out.resize(output_length);
-}
-
-// ////////////////  class FourthDownconverterIQ /////////////////
-
-// Construct Fs/4 downconverting tuner.
-FourthDownconverterIQ::FourthDownconverterIQ() : m_index(0) {}
-
-// Process samples.
-// See Richard G. Lyons' explanation at
-// https://www.embedded.com/print/4007186
-inline void FourthDownconverterIQ::process(const IQSampleVector &samples_in,
-                                           IQSampleVector &samples_out) {
-  unsigned int tblidx = m_index;
-  unsigned int n = samples_in.size();
-
-  samples_out.resize(n);
-
-  for (unsigned int i = 0; i < n; i++) {
-    IQSample y;
-    const IQSample &s = samples_in[i];
-    const IQSample::value_type re = s.real();
-    const IQSample::value_type im = s.imag();
-    switch (tblidx) {
-    case 0:
-      // multiply +1
-      y = s;
-      tblidx = 1;
-      break;
-    case 1:
-      // multiply +j
-      y = IQSample(im, -re);
-      tblidx = 2;
-      break;
-    case 2:
-      // multiply -1
-      y = IQSample(-re, -im);
-      tblidx = 3;
-      break;
-    case 3:
-      // multiply -j
-      y = IQSample(-im, re);
-      tblidx = 0;
-      break;
-    default:
-      // unreachable, error here;
-      assert(tblidx < 4);
-      break;
-    }
-    samples_out[i] = y;
-  }
-
-  m_index = tblidx;
 }
 
 /* ****************  class PhaseDiscriminator  **************** */
@@ -393,22 +328,14 @@ const double FmDecoder::default_deemphasis = 50;
 const double FmDecoder::default_deemphasis_eu = 50; // Europe and Japan
 const double FmDecoder::default_deemphasis_na = 75; // USA/Canada
 
-FmDecoder::FmDecoder(double sample_rate_if, bool fourth_downsampler,
-                     unsigned int first_downsample,
-                     const std::vector<IQSample::value_type> &first_coeff,
-                     unsigned int second_downsample,
-                     const std::vector<IQSample::value_type> &second_coeff,
-                     bool stereo, double deemphasis, bool pilot_shift)
-
+FmDecoder::FmDecoder(double sample_rate_demod, bool stereo, double deemphasis,
+                     bool pilot_shift)
     // Initialize member fields
-    : m_sample_rate_if(sample_rate_if),
-      m_sample_rate_firstout(m_sample_rate_if / first_downsample),
-      m_sample_rate_fmdemod(m_sample_rate_firstout / second_downsample),
-      m_first_downsample(first_downsample),
-      m_second_downsample(second_downsample),
-      m_fourth_downsampler(fourth_downsampler), m_pilot_shift(pilot_shift),
-      m_stereo_enabled(stereo), m_stereo_detected(false), m_if_level(0),
-      m_baseband_mean(0), m_baseband_level(0)
+    :
+
+      m_sample_rate_fmdemod(sample_rate_demod), m_pilot_shift(pilot_shift),
+      m_stereo_enabled(stereo), m_stereo_detected(false), m_baseband_mean(0),
+      m_baseband_level(0)
 
       // Construct AudioResampler for mono and stereo channels
       ,
@@ -419,11 +346,6 @@ FmDecoder::FmDecoder(double sample_rate_if, bool fourth_downsampler,
       ,
       m_pilotcut_mono(FilterParameters::jj1bdx_48khz_fmaudio),
       m_pilotcut_stereo(FilterParameters::jj1bdx_48khz_fmaudio)
-
-      // Construct LowPassFilterFirIQ
-      ,
-      m_iffilter_first(first_coeff, m_first_downsample),
-      m_iffilter_second(second_coeff, m_second_downsample)
 
       // Construct EqParams
       ,
@@ -462,38 +384,8 @@ FmDecoder::FmDecoder(double sample_rate_if, bool fourth_downsampler,
 
 void FmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
 
-  // Fine tuning is not needed
-  // so long as the stability of the receiver device is
-  // within the range of +- 1ppm (~100Hz or less).
-
-  if (m_fourth_downsampler) {
-    // Fs/4 downconvering is required
-    // to avoid frequency zero offset
-    // because Airspy HF+ is a Zero IF receiver
-    m_downconverter.process(samples_in, m_buf_iftuned);
-  } else {
-    // No shifting here
-    m_buf_iftuned = samples_in;
-  }
-
-  // First stage of the low pass filters to isolate station,
-  // and perform first stage decimation.
-  m_iffilter_first.process(m_buf_iftuned, m_buf_iffirstout);
-
-  if (m_second_downsample > 1) {
-    // Second stage of the low pass filters to isolate station,
-    m_iffilter_second.process(m_buf_iffirstout, m_buf_iffiltered);
-  } else {
-    // No second downsampling here
-    m_buf_iffiltered = m_buf_iffirstout;
-  }
-
-  // Measure IF level.
-  double if_rms = rms_level_approx(m_buf_iffiltered);
-  m_if_level = 0.95 * m_if_level + 0.05 * (double)if_rms;
-
-  // Extract carrier frequency.
-  m_phasedisc.process(m_buf_iffiltered, m_buf_baseband_raw);
+  // Demodulate FM to MPX signal.
+  m_phasedisc.process(samples_in, m_buf_baseband_raw);
 
   // Compensate 0th-hold aperture effect
   // by applying the equalizer to the discriminator output.
