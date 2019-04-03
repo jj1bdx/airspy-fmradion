@@ -1,6 +1,6 @@
 # airspy-fmradion
 
-* Version v0.6.0-dev (not tagged), 29-MAR-2019
+* Version v0.6.0-dev1 (not tagged), 3-APR-2019
 * For MacOS and Linux
 * *NOTE: this release has a major change adding the usage of libsoxr.*
 
