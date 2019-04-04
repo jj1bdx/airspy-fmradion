@@ -248,12 +248,12 @@ int main(int argc, char **argv) {
   int devidx = 0;
   int pcmrate = FmDecoder::sample_rate_pcm;
   bool stereo = true;
-  enum OutputMode { MODE_RAW, MODE_FLOAT, MODE_WAV, MODE_ALSA };
+  enum OutputMode { MODE_RAW_INT16, MODE_RAW_FLOAT32, MODE_WAV, MODE_ALSA };
 #ifdef USE_ALSA
   OutputMode outmode = MODE_ALSA;
   std::string filename;
 #else  // !USE_ALSA
-  OutputMode outmode = MODE_RAW;
+  OutputMode outmode = MODE_RAW_INT16;
   std::string filename("-");
 #endif // USE_ALSA
   std::string alsadev("default");
@@ -300,11 +300,11 @@ int main(int argc, char **argv) {
       stereo = false;
       break;
     case 'R':
-      outmode = MODE_RAW;
+      outmode = MODE_RAW_INT16;
       filename = optarg;
       break;
     case 'F':
-      outmode = MODE_FLOAT;
+      outmode = MODE_RAW_FLOAT32;
       filename = optarg;
       break;
     case 'W':
@@ -388,8 +388,8 @@ int main(int argc, char **argv) {
   unsigned int outputbuf_samples = 0;
 
   if (bufsecs < 0 &&
-      (outmode == MODE_ALSA || (outmode == MODE_RAW && filename == "-") ||
-       (outmode == MODE_FLOAT && filename == "-"))) {
+      (outmode == MODE_ALSA || (outmode == MODE_RAW_INT16 && filename == "-") ||
+       (outmode == MODE_RAW_FLOAT32 && filename == "-"))) {
     // Set default buffer to 1 second for interactive output streams.
     outputbuf_samples = pcmrate;
   } else if (bufsecs > 0) {
@@ -403,14 +403,14 @@ int main(int argc, char **argv) {
   std::unique_ptr<AudioOutput> audio_output;
 
   switch (outmode) {
-  case MODE_RAW:
+  case MODE_RAW_INT16:
     fprintf(stderr,
             "writing raw 16-bit integer little-endian audio samples to '%s'\n",
             filename.c_str());
     audio_output.reset(new RawAudioOutput(filename));
     audio_output->SetConvertFunction(AudioOutput::samplesToInt16);
     break;
-  case MODE_FLOAT:
+  case MODE_RAW_FLOAT32:
     fprintf(stderr,
             "writing raw 32-bit float little-endian audio samples to '%s'\n",
             filename.c_str());
