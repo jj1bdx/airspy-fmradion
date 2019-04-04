@@ -39,21 +39,21 @@ private:
   unsigned int m_index;
 };
 
-// IF 2-stage Downsampler.
+// IF single/2-stage Downsampler.
 class IfDownsampler {
 public:
   /**
-   * Construct 2-stage IF Downsampler.
+   * Construct single/2-stage IF Downsampler.
    *
-   * fourth_downsampler :: Use Fs/4 downsampler
-   * first_downsample   :: Integer first stage downsampling rate (>= 1)
-   * first_coeff        :: First stage filter coefficients
-   * second_downsample  :: Integer second stage downsampling rate (>= 1)
-   * second_coeff       :: Second stage filter coefficients
+   * first_downsample          :: Integer first stage downsampling rate (>= 1)
+   * first_coeff               :: First stage filter coefficients
+   * enable_second_downsampler :: Enable second downsampler
+   * second_downsample         :: Integer second stage downsampling rate (>= 1)
+   * second_coeff              :: Second stage filter coefficients
    */
-  IfDownsampler(bool fourth_downsampler, unsigned int first_downsample,
+  IfDownsampler(unsigned int first_downsample,
                 const std::vector<IQSample::value_type> &first_coeff,
-                unsigned int second_downsample,
+                bool enable_second_downsampler, unsigned int second_downsample,
                 const std::vector<IQSample::value_type> &second_coeff);
 
   // Process IQ samples and return downsampled output.
@@ -68,14 +68,12 @@ private:
   double rms_level_approx(const IQSampleVector &samples);
 
   // Data members.
-  IQSampleVector m_buf_iftuned;
   IQSampleVector m_buf_iffirstout;
   const unsigned int m_first_downsample;
   const unsigned int m_second_downsample;
-  const bool m_fourth_downsampler;
+  const bool m_enable_second_downsampler;
   double m_if_level;
 
-  FourthDownconverterIQ m_downconverter;
   LowPassFilterFirIQ m_iffilter_first;
   LowPassFilterFirIQ m_iffilter_second;
 };

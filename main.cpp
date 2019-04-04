@@ -464,30 +464,34 @@ int main(int argc, char **argv) {
 
   double ifrate = srcsdr->get_sample_rate();
 
-  bool fourth_downsampler;
+  bool enable_fs_fourth_downconverter;
   unsigned int first_downsample;
   std::vector<IQSample::value_type> first_coeff;
+  bool enable_second_downsampler;
   unsigned int second_downsample;
   std::vector<IQSample::value_type> second_coeff;
   unsigned int if_blocksize;
 
   // Configure filter and downsampler.
   if (strcasecmp(devtype_str.c_str(), "airspy") == 0) {
-    fourth_downsampler = false;
     if (ifrate == 10000000.0) {
       if_blocksize = 65536;
+      enable_fs_fourth_downconverter = false;
       // decimation rate: 32 = 8 * 4
       // 312.5kHz = +-156.25kHz
       first_downsample = 8;
       first_coeff = FilterParameters::jj1bdx_10000khz_div8;
+      enable_second_downsampler = true;
       second_downsample = 4;
       second_coeff = FilterParameters::jj1bdx_1250khz_div4;
     } else if (ifrate == 2500000.0) {
       if_blocksize = 65536;
+      enable_fs_fourth_downconverter = false;
       // decimation rate: 8 = 4 * 2
       // 312.5kHz = +-156.25kHz
       first_downsample = 4;
       first_coeff = FilterParameters::jj1bdx_2500khz_div4;
+      enable_second_downsampler = true;
       second_downsample = 2;
       second_coeff = FilterParameters::jj1bdx_600khz_625khz_div2;
     } else {
@@ -500,9 +504,10 @@ int main(int argc, char **argv) {
   } else if (strcasecmp(devtype_str.c_str(), "airspyhf") == 0) {
     if (ifrate == 768000.0) {
       if_blocksize = 16384;
-      fourth_downsampler = true;
+      enable_fs_fourth_downconverter = true;
       first_downsample = 2;
       first_coeff = FilterParameters::jj1bdx_768kHz_div2;
+      enable_second_downsampler = false;
       second_downsample = 1;                                // placeholder
       second_coeff = FilterParameters::delay_3taps_only_iq; // placeholder
     } else {
@@ -515,9 +520,10 @@ int main(int argc, char **argv) {
   } else if (strcasecmp(devtype_str.c_str(), "rtlsdr") == 0) {
     if ((ifrate >= 900001.0) && (ifrate <= 937500.0)) {
       if_blocksize = 65536;
-      fourth_downsampler = true;
+      enable_fs_fourth_downconverter = true;
       first_downsample = 3;
       first_coeff = FilterParameters::jj1bdx_900kHz_div3;
+      enable_second_downsampler = false;
       second_downsample = 1;                                // placeholder
       second_coeff = FilterParameters::delay_3taps_only_iq; // placeholder
     } else {
@@ -582,12 +588,16 @@ int main(int argc, char **argv) {
           total_decimation_ratio);
   fprintf(stderr, "deemphasis: %.9g [µs]\n", deemphasis);
 
+  // Prepare Fs/4 downconverter.
+  FourthDownconverterIQ fourth_downconverter;
+
   // Prepare IF Downsampler.
-  IfDownsampler if_downsampler(fourth_downsampler, // fourth_downsampler
-                               first_downsample,   // first_downsample
-                               first_coeff,        // first_coeff
-                               second_downsample,  // second_downsample
-                               second_coeff        // second_coeff
+  IfDownsampler if_downsampler(
+      first_downsample,          // first_downsample
+      first_coeff,               // first_coeff
+      enable_second_downsampler, // enable_second_downsampler
+      second_downsample,         // second_downsample
+      second_coeff               // second_coeff
   );
 
   // Prepare FM decoder.
@@ -630,6 +640,7 @@ int main(int argc, char **argv) {
 
     // Pull next block from source buffer.
     IQSampleVector iqsamples = source_buffer.pull();
+    IQSampleVector if_shifted_samples;
     IQSampleVector if_samples;
 
     if (iqsamples.empty()) {
@@ -639,8 +650,21 @@ int main(int argc, char **argv) {
     double prev_block_time = block_time;
     block_time = get_time();
 
+    // Fine tuning is not needed
+    // so long as the stability of the receiver device is
+    // within the range of +- 1ppm (~100Hz or less).
+
+    if (enable_fs_fourth_downconverter) {
+      // Fs/4 downconvering is required
+      // to avoid frequency zero offset
+      // because Airspy HF+ and RTL-SDR are Zero IF receivers
+      fourth_downconverter.process(iqsamples, if_shifted_samples);
+    } else {
+      if_shifted_samples = iqsamples;
+    }
+
     // Downsample IF for the decoder.
-    if_downsampler.process(iqsamples, if_samples);
+    if_downsampler.process(if_shifted_samples, if_samples);
 
     // Decode FM signal.
     fm.process(if_samples, audiosamples);

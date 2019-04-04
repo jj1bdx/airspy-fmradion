@@ -30,7 +30,7 @@ FourthDownconverterIQ::FourthDownconverterIQ() : m_index(0) {}
 // Process samples.
 // See Richard G. Lyons' explanation at
 // https://www.embedded.com/print/4007186
-inline void FourthDownconverterIQ::process(const IQSampleVector &samples_in,
+void FourthDownconverterIQ::process(const IQSampleVector &samples_in,
                                            IQSampleVector &samples_out) {
   unsigned int tblidx = m_index;
   unsigned int n = samples_in.size();
@@ -77,15 +77,15 @@ inline void FourthDownconverterIQ::process(const IQSampleVector &samples_in,
 // Class IfDownsampler
 
 IfDownsampler::IfDownsampler(
-    bool fourth_downsampler, unsigned int first_downsample,
+    unsigned int first_downsample,
     const std::vector<IQSample::value_type> &first_coeff,
-    unsigned int second_downsample,
+    bool enable_second_downsampler, unsigned int second_downsample,
     const std::vector<IQSample::value_type> &second_coeff)
 
     // Initialize member fields
     : m_first_downsample(first_downsample),
       m_second_downsample(second_downsample),
-      m_fourth_downsampler(fourth_downsampler), m_if_level(0),
+      m_enable_second_downsampler(enable_second_downsampler), m_if_level(0),
       // Construct LowPassFilterFirIQ
       m_iffilter_first(first_coeff, m_first_downsample),
       m_iffilter_second(second_coeff, m_second_downsample)
@@ -97,25 +97,11 @@ IfDownsampler::IfDownsampler(
 void IfDownsampler::process(const IQSampleVector &samples_in,
                             IQSampleVector &samples_out) {
 
-  // Fine tuning is not needed
-  // so long as the stability of the receiver device is
-  // within the range of +- 1ppm (~100Hz or less).
-
-  if (m_fourth_downsampler) {
-    // Fs/4 downconvering is required
-    // to avoid frequency zero offset
-    // because Airspy HF+ is a Zero IF receiver
-    m_downconverter.process(samples_in, m_buf_iftuned);
-  } else {
-    // No shifting here
-    m_buf_iftuned = samples_in;
-  }
-
   // First stage of the low pass filters to isolate station,
   // and perform first stage decimation.
-  m_iffilter_first.process(m_buf_iftuned, m_buf_iffirstout);
+  m_iffilter_first.process(samples_in, m_buf_iffirstout);
 
-  if (m_second_downsample > 1) {
+  if (m_enable_second_downsampler) {
     // Second stage of the low pass filters to isolate station,
     m_iffilter_second.process(m_buf_iffirstout, samples_out);
   } else {
