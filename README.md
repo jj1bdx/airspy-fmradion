@@ -120,7 +120,8 @@ Compile and install
  - `-c config` Comma separated list of configuration options as key=value pairs or just key for switches. Depends on device type (see next paragraph).
  - `-d devidx` Device index, 'list' to show device list (default 0)
  - `-M` Disable stereo decoding
- - `-R filename` Write audio data as raw S16_LE samples. Use filename `-` to write to stdout
+ - `-R filename` Write audio data as raw `S16_LE` samples. Use filename `-` to write to stdout
+ - `-F filename` Write audio data as raw `FLOAT_LE` samples. Use filename `-` to write to stdout
  - `-W filename` Write audio data to .WAV file
  - `-P [device]` Play audio via ALSA device (default `default`). Use `aplay -L` to get the list of devices for your system
  - `-T filename` Write pulse-per-second timestamps. Use filename '-' to write to stdout
