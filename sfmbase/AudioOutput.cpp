@@ -35,6 +35,12 @@
 
 /* ****************  class AudioOutput  **************** */
 
+// Set type conversion function of samples.
+void AudioOutput::SetConvertFunction(
+    void (*converter)(const SampleVector &, std::vector<std::uint8_t> &)) {
+  m_converter = converter;
+}
+
 // Encode a list of samples as signed 16-bit little-endian integers.
 void AudioOutput::samplesToInt16(const SampleVector &samples,
                                  std::vector<uint8_t> &bytes) {
@@ -116,64 +122,7 @@ bool RawAudioOutput::write(const SampleVector &samples) {
   }
 
   // Convert samples to bytes.
-  samplesToInt16(samples, m_bytebuf);
-
-  // Write data.
-  std::size_t p = 0;
-  std::size_t n = m_bytebuf.size();
-  while (p < n) {
-
-    ssize_t k = ::write(m_fd, m_bytebuf.data() + p, n - p);
-    if (k <= 0) {
-      if (k == 0 || errno != EINTR) {
-        m_error = "write failed (";
-        m_error += strerror(errno);
-        m_error += ")";
-        return false;
-      }
-    } else {
-      p += k;
-    }
-  }
-
-  return true;
-}
-
-// class FloatAudioOutput
-
-// Construct raw audio writer.
-FloatAudioOutput::FloatAudioOutput(const std::string &filename) {
-  if (filename == "-") {
-
-    m_fd = STDOUT_FILENO;
-
-  } else {
-
-    m_fd = open(filename.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0666);
-    if (m_fd < 0) {
-      m_error = "can not open '" + filename + "' (" + strerror(errno) + ")";
-      m_zombie = true;
-      return;
-    }
-  }
-}
-
-// Destructor.
-FloatAudioOutput::~FloatAudioOutput() {
-  // Close file descriptor.
-  if (m_fd >= 0 && m_fd != STDOUT_FILENO) {
-    close(m_fd);
-  }
-}
-
-// Write audio data.
-bool FloatAudioOutput::write(const SampleVector &samples) {
-  if (m_fd < 0) {
-    return false;
-  }
-
-  // Convert samples to bytes.
-  samplesToFloat32(samples, m_bytebuf);
+  m_converter(samples, m_bytebuf);
 
   // Write data.
   std::size_t p = 0;

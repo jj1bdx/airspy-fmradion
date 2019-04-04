@@ -408,12 +408,14 @@ int main(int argc, char **argv) {
             "writing raw 16-bit integer little-endian audio samples to '%s'\n",
             filename.c_str());
     audio_output.reset(new RawAudioOutput(filename));
+    audio_output->SetConvertFunction(AudioOutput::samplesToInt16);
     break;
   case MODE_FLOAT:
     fprintf(stderr,
             "writing raw 32-bit float little-endian audio samples to '%s'\n",
             filename.c_str());
-    audio_output.reset(new FloatAudioOutput(filename));
+    audio_output.reset(new RawAudioOutput(filename));
+    audio_output->SetConvertFunction(AudioOutput::samplesToFloat32);
     break;
   case MODE_WAV:
     fprintf(stderr, "writing audio samples to '%s'\n", filename.c_str());
