@@ -117,6 +117,8 @@ void usage() {
       "  -M             Disable stereo decoding\n"
       "  -R filename    Write audio data as raw S16_LE samples\n"
       "                 use filename '-' to write to stdout\n"
+      "  -F filename    Write audio data as raw FLOAT_LE samples\n"
+      "                 use filename '-' to write to stdout\n"
       "  -W filename    Write audio data to .WAV file\n"
       "  -P [device]    Play audio via ALSA device (default 'default')\n"
       "  -T filename    Write pulse-per-second timestamps\n"
@@ -246,7 +248,7 @@ int main(int argc, char **argv) {
   int devidx = 0;
   int pcmrate = FmDecoder::sample_rate_pcm;
   bool stereo = true;
-  enum OutputMode { MODE_RAW, MODE_WAV, MODE_ALSA };
+  enum OutputMode { MODE_RAW, MODE_FLOAT, MODE_WAV, MODE_ALSA };
 #ifdef USE_ALSA
   OutputMode outmode = MODE_ALSA;
   std::string filename;
@@ -270,22 +272,17 @@ int main(int argc, char **argv) {
   fprintf(stderr, "Software FM radio for ");
   fprintf(stderr, "Airspy R2, Airspy HF+, and RTL-SDR\n");
 
-  const struct option longopts[] = {{"devtype", 2, NULL, 't'},
-                                    {"config", 2, NULL, 'c'},
-                                    {"dev", 1, NULL, 'd'},
-                                    {"mono", 0, NULL, 'M'},
-                                    {"raw", 1, NULL, 'R'},
-                                    {"wav", 1, NULL, 'W'},
-                                    {"play", 2, NULL, 'P'},
-                                    {"pps", 1, NULL, 'T'},
-                                    {"buffer", 1, NULL, 'b'},
-                                    {"quiet", 1, NULL, 'q'},
-                                    {"pilotshift", 0, NULL, 'X'},
-                                    {"usa", 0, NULL, 'U'},
-                                    {NULL, 0, NULL, 0}};
+  const struct option longopts[] = {
+      {"devtype", 2, NULL, 't'}, {"config", 2, NULL, 'c'},
+      {"dev", 1, NULL, 'd'},     {"mono", 0, NULL, 'M'},
+      {"raw", 1, NULL, 'R'},     {"float", 1, NULL, 'F'},
+      {"wav", 1, NULL, 'W'},     {"play", 2, NULL, 'P'},
+      {"pps", 1, NULL, 'T'},     {"buffer", 1, NULL, 'b'},
+      {"quiet", 1, NULL, 'q'},   {"pilotshift", 0, NULL, 'X'},
+      {"usa", 0, NULL, 'U'},     {NULL, 0, NULL, 0}};
 
   int c, longindex;
-  while ((c = getopt_long(argc, argv, "t:c:d:MR:W:P::T:b:qXU", longopts,
+  while ((c = getopt_long(argc, argv, "t:c:d:MR:F:W:P::T:b:qXU", longopts,
                           &longindex)) >= 0) {
     switch (c) {
     case 't':
@@ -304,6 +301,10 @@ int main(int argc, char **argv) {
       break;
     case 'R':
       outmode = MODE_RAW;
+      filename = optarg;
+      break;
+    case 'F':
+      outmode = MODE_FLOAT;
       filename = optarg;
       break;
     case 'W':
@@ -387,7 +388,8 @@ int main(int argc, char **argv) {
   unsigned int outputbuf_samples = 0;
 
   if (bufsecs < 0 &&
-      (outmode == MODE_ALSA || (outmode == MODE_RAW && filename == "-"))) {
+      (outmode == MODE_ALSA || (outmode == MODE_RAW && filename == "-") ||
+       (outmode == MODE_FLOAT && filename == "-"))) {
     // Set default buffer to 1 second for interactive output streams.
     outputbuf_samples = pcmrate;
   } else if (bufsecs > 0) {
@@ -402,9 +404,16 @@ int main(int argc, char **argv) {
 
   switch (outmode) {
   case MODE_RAW:
-    fprintf(stderr, "writing raw 16-bit audio samples to '%s'\n",
+    fprintf(stderr,
+            "writing raw 16-bit integer little-endian audio samples to '%s'\n",
             filename.c_str());
     audio_output.reset(new RawAudioOutput(filename));
+    break;
+  case MODE_FLOAT:
+    fprintf(stderr,
+            "writing raw 32-bit float little-endian audio samples to '%s'\n",
+            filename.c_str());
+    audio_output.reset(new FloatAudioOutput(filename));
     break;
   case MODE_WAV:
     fprintf(stderr, "writing audio samples to '%s'\n", filename.c_str());
@@ -672,7 +681,7 @@ int main(int argc, char **argv) {
       }
       // Show per-block statistics.
       if (stereo_change ||
-	 (((block % stat_rate) == 0) && (block > discarding_blocks))) {
+          (((block % stat_rate) == 0) && (block > discarding_blocks))) {
         fprintf(stderr,
                 "\rblk=%8d:ppm=%+6.2f:IF=%+5.1fdB:AF=%+5.1fdB:buf=%.2fs", block,
                 ppm_value_average, if_level_db, audio_level_db, buflen_sec);

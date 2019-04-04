@@ -58,6 +58,10 @@ protected:
   static void samplesToInt16(const SampleVector &samples,
                              std::vector<std::uint8_t> &bytes);
 
+  /** Encode a list of samples as signed 32-bit little-endian floats. */
+  static void samplesToFloat32(const SampleVector &samples,
+                               std::vector<std::uint8_t> &bytes);
+
   std::string m_error;
   bool m_zombie;
 
@@ -77,6 +81,24 @@ public:
   RawAudioOutput(const std::string &filename);
 
   ~RawAudioOutput();
+  bool write(const SampleVector &samples);
+
+private:
+  int m_fd;
+  std::vector<std::uint8_t> m_bytebuf;
+};
+
+/** Write audio data as raw 32-bit float little-endian data. */
+class FloatAudioOutput : public AudioOutput {
+public:
+  /**
+   * Construct raw audio writer.
+   *
+   * filename :: file name (including path) or "-" to write to stdout
+   */
+  FloatAudioOutput(const std::string &filename);
+
+  ~FloatAudioOutput();
   bool write(const SampleVector &samples);
 
 private:
