@@ -27,18 +27,6 @@
 #include "FilterParameters.h"
 #include "SoftFM.h"
 
-// Downconverting Fs/4 tuner.
-class FourthDownconverterIQ {
-public:
-  // Construct Fs/4 downconverting tuner.
-  FourthDownconverterIQ();
-  // Process samples.
-  void process(const IQSampleVector &samples_in, IQSampleVector &samples_out);
-
-private:
-  unsigned int m_index;
-};
-
 // IF single/2-stage Downsampler.
 class IfDownsampler {
 public:

@@ -144,6 +144,7 @@ set(sfmbase_HEADERS
     include/Filter.h
     include/FilterParameters.h
     include/FmDecode.h
+    include/FourthDownconverterIQ.h
     include/IfDownsampler.h
     include/MovingAverage.h
     include/Source.h

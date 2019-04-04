@@ -35,6 +35,7 @@
 #include "DataBuffer.h"
 #include "FilterParameters.h"
 #include "FmDecode.h"
+#include "FourthDownconverterIQ.h"
 #include "IfDownsampler.h"
 #include "MovingAverage.h"
 #include "SoftFM.h"
