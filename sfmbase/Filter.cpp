@@ -258,64 +258,6 @@ void LowPassFilterRC::process_interleaved_inplace(SampleVector &samples) {
   m_y1_1 = y1;
 }
 
-/* ****************  class LowPassFilterIir  **************** */
-
-// Construct 4th order low-pass IIR filter.
-LowPassFilterIir::LowPassFilterIir(double cutoff) : y1(0), y2(0), y3(0), y4(0) {
-  typedef std::complex<double> CDbl;
-
-  // Angular cutoff frequency.
-  double w = 2 * M_PI * cutoff;
-
-  // Poles 1 and 4 are a conjugate pair, and poles 2 and 3 are another pair.
-  // Continuous domain:
-  //   p_k = w * exp( (2*k + n - 1) / (2*n) * pi * j)
-  CDbl p1s = w * exp((2 * 1 + 4 - 1) / double(2 * 4) * CDbl(0, M_PI));
-  CDbl p2s = w * exp((2 * 2 + 4 - 1) / double(2 * 4) * CDbl(0, M_PI));
-
-  // Map poles to discrete-domain via matched Z transform.
-  CDbl p1z = exp(p1s);
-  CDbl p2z = exp(p2s);
-
-  // Discrete-domain transfer function:
-  //   H(z) = b0 / ( (1 - p1/z) * (1 - p4/z) * (1 - p2/z) * (1 - p3/z) )
-  //        = b0 / ( (1 - (p1+p4)/z + p1*p4/z**2) *
-  //                 (1 - (p2+p3)/z + p2*p3/z**2) )
-  //        = b0 / (1 - (p1 + p4 + p2 + p3)/z
-  //                  + (p1*p4 + p2*p3 + (p1+p4)*(p2+p3))/z**2
-  //                  - ((p1+p4)*p2*p3 + (p2+p3)*p1*p4)/z**3
-  //                  + p1*p4*p2*p3/z**4
-  //
-  // Note that p3 = conj(p2), p4 = conj(p1)
-  // Therefore p1+p4 == 2*real(p1), p1*p4 == abs(p1*p1)
-  //
-  a1 = -(2 * real(p1z) + 2 * real(p2z));
-  a2 = (abs(p1z * p1z) + abs(p2z * p2z) + 2 * real(p1z) * 2 * real(p2z));
-  a3 = -(2 * real(p1z) * abs(p2z * p2z) + 2 * real(p2z) * abs(p1z * p1z));
-  a4 = abs(p1z * p1z) * abs(p2z * p2z);
-
-  // Choose b0 to get unit DC gain.
-  b0 = 1 + a1 + a2 + a3 + a4;
-}
-
-// Process samples.
-void LowPassFilterIir::process(const SampleVector &samples_in,
-                               SampleVector &samples_out) {
-  unsigned int n = samples_in.size();
-
-  samples_out.resize(n);
-
-  for (unsigned int i = 0; i < n; i++) {
-    Sample x = samples_in[i];
-    Sample y = b0 * x - a1 * y1 - a2 * y2 - a3 * y3 - a4 * y4;
-    y4 = y3;
-    y3 = y2;
-    y2 = y1;
-    y1 = y;
-    samples_out[i] = y;
-  }
-}
-
 /* ****************  class HighPassFilterIir  **************** */
 
 // Construct 2nd order high-pass IIR filter.

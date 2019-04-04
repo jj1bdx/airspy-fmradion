@@ -97,25 +97,6 @@ private:
   Sample m_y1_1;
 };
 
-/** Low-pass filter for real-valued signals based on Butterworth IIR filter. */
-class LowPassFilterIir {
-public:
-  /**
-   * Construct 4th order low-pass IIR filter.
-   *
-   * cutoff   :: Low-pass cutoff relative to the sample frequency
-   *             (valid range 0.0 .. 0.5, 0.5 = Nyquist)
-   */
-  LowPassFilterIir(double cutoff);
-
-  /** Process samples. */
-  void process(const SampleVector &samples_in, SampleVector &samples_out);
-
-private:
-  Sample b0, a1, a2, a3, a4;
-  Sample y1, y2, y3, y4;
-};
-
 /** High-pass filter for real-valued signals based on Butterworth IIR filter. */
 class HighPassFilterIir {
 public:
