@@ -52,7 +52,9 @@ void AudioOutput::samplesToInt16(const SampleVector &samples,
 
   while (i != n) {
     Sample s = *(i++);
+    // Limit output within [-1.0, 1.0].
     s = std::max(Sample(-1.0), std::min(Sample(1.0), s));
+    // Convert output to [-32767, 32767].
     long v = lrint(s * 32767);
     unsigned long u = v;
     *(k++) = u & 0xff;
@@ -60,13 +62,8 @@ void AudioOutput::samplesToInt16(const SampleVector &samples,
   }
 }
 
-// Union for converting float and uint32_t
-union FloatToInt {
-  float f;
-  uint32_t u32;
-};
-
 // Encode a list of samples as signed 32-bit little-endian floats.
+// Note: no output range limitation.
 void AudioOutput::samplesToFloat32(const SampleVector &samples,
                                    std::vector<uint8_t> &bytes) {
   bytes.resize(4 * samples.size());
@@ -76,9 +73,13 @@ void AudioOutput::samplesToFloat32(const SampleVector &samples,
   std::vector<uint8_t>::iterator k = bytes.begin();
 
   while (i != n) {
+    // Union for converting float and uint32_t.
+    union {
+      float f;
+      uint32_t u32;
+    } v;
     Sample s = *(i++);
-    s = std::max(Sample(-1.0), std::min(Sample(1.0), s));
-    FloatToInt v;
+    // Note: no output range limitation.
     v.f = (float)s;
     uint32_t u = v.u32;
     *(k++) = u & 0xff;
