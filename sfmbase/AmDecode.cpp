@@ -63,8 +63,8 @@ const double AmDecoder::default_deemphasis = 100;
 AmDecoder::AmDecoder(double sample_rate_demod)
     // Initialize member fields
     : m_sample_rate_demod(sample_rate_demod), m_baseband_mean(0),
-      m_baseband_level(0), m_agc_peak1(0), m_agc_peak2(0),
-      m_agc_reference(0.9), m_agc_last_gain(1.0)
+      m_baseband_level(0), m_agc_peak1(0), m_agc_peak2(0), m_agc_reference(0.9),
+      m_agc_last_gain(1.0)
 
       // Construct AudioResampler for mono and stereo channels
       ,
@@ -141,7 +141,7 @@ inline void AmDecoder::demodulate(const IQSampleVector &samples_in,
 // Algorithm: function fastagc_ff() in
 // https://github.com/simonyiszk/csdr/blob/master/libcsdr.c
 inline void AmDecoder::audio_agc(const SampleVector &samples_in,
-                                  SampleVector &samples_out) {
+                                 SampleVector &samples_out) {
   const double agc_max_gain = 50;
   unsigned int n = samples_in.size();
   samples_out.resize(n);
@@ -170,9 +170,9 @@ inline void AmDecoder::audio_agc(const SampleVector &samples_in,
   }
 
   for (unsigned int i = 0; i < n; i++) {
-     double rate = (double)i / (double)n;
-     double gain = (m_agc_last_gain * (1.0 - rate)) + (target_gain * rate);
-     samples_out[i] = m_agc_buf1[i] * gain;
+    double rate = (double)i / (double)n;
+    double gain = (m_agc_last_gain * (1.0 - rate)) + (target_gain * rate);
+    samples_out[i] = m_agc_buf1[i] * gain;
   }
 
   m_agc_buf1 = m_agc_buf2;
@@ -180,6 +180,5 @@ inline void AmDecoder::audio_agc(const SampleVector &samples_in,
   m_agc_buf2 = samples_in;
   m_agc_peak2 = agc_peak;
   m_agc_last_gain = target_gain;
-
 }
 // end
