@@ -630,8 +630,9 @@ int main(int argc, char **argv) {
     fprintf(stderr, "IF 2nd rate: %.8g [Hz] (divided by %u)\n",
             ifrate / first_downsample / second_downsample, second_downsample);
   }
-  fprintf(stderr, "Demodulator rate: %.8g [Hz],", demodulator_rate);
-  fprintf(stderr, " audio decimated from demodulator by: %.9g\n",
+  fprintf(stderr, "Demodulator rate: %.8g [Hz]\n", demodulator_rate);
+
+  fprintf(stderr, "Audio decimated from demodulator by: %.9g\n",
           audio_decimation_ratio);
 
   MovingAverage<float> ppm_average(100, 0.0f);
@@ -660,13 +661,6 @@ int main(int argc, char **argv) {
   double deemphasis = deemphasis_na ? FmDecoder::default_deemphasis_na
                                     : FmDecoder::default_deemphasis_eu;
 
-  fprintf(stderr, "audio sample rate: %u [Hz],", pcmrate);
-  fprintf(stderr, " audio bandwidth: %u [Hz]\n",
-          (unsigned int)FmDecoder::bandwidth_pcm);
-  fprintf(stderr, "audio totally decimated from IF by: %.9g\n",
-          total_decimation_ratio);
-  fprintf(stderr, "deemphasis: %.9g [µs]\n", deemphasis);
-
   // Prepare Fs/4 downconverter.
   FourthDownconverterIQ fourth_downconverter;
 
@@ -689,6 +683,21 @@ int main(int argc, char **argv) {
   // Prepare AM decoder.
   AmDecoder am(demodulator_rate // sample_rate_demod
   );
+
+  switch (modtype) {
+  case MOD_FM:
+    fprintf(stderr, "audio sample rate: %u [Hz],", pcmrate);
+    fprintf(stderr, " audio bandwidth: %u [Hz]\n",
+            (unsigned int)FmDecoder::bandwidth_pcm);
+    fprintf(stderr, "audio totally decimated from IF by: %.9g\n",
+            total_decimation_ratio);
+    fprintf(stderr, "FM demodulator deemphasis: %.9g [µs]\n", deemphasis);
+    break;
+  case MOD_AM:
+    fprintf(stderr, "AM demodulator deemphasis: %.9g [µs]\n",
+            AmDecoder::default_deemphasis);
+    break;
+  }
 
   // If buffering enabled, start background output thread.
   DataBuffer<Sample> output_buffer;
