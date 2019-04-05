@@ -144,7 +144,7 @@ inline void AmDecoder::demodulate(const IQSampleVector &samples_in,
 // https://github.com/simonyiszk/csdr/blob/master/libcsdr.c
 inline void AmDecoder::audio_agc(const SampleVector &samples_in,
                                  SampleVector &samples_out) {
-  const double agc_max_gain = 10.0;
+  const double agc_max_gain = 5.0;
   unsigned int n = samples_in.size();
   samples_out.resize(n);
   m_agc_buf1.resize(n);
