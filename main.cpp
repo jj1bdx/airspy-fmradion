@@ -46,7 +46,7 @@
 #include "AirspySource.h"
 #include "RtlSdrSource.h"
 
-#define AIRSPY_FMRADION_VERSION "v0.6.0-pre0"
+#define AIRSPY_FMRADION_VERSION "v0.6.0-pre1"
 
 /** Flag is set on SIGINT / SIGTERM. */
 static std::atomic_bool stop_flag(false);
@@ -651,7 +651,7 @@ int main(int argc, char **argv) {
   );
 
   // Prepare AM decoder.
-  AmDecoder am(demodulator_rate  // sample_rate_demod
+  AmDecoder am(demodulator_rate // sample_rate_demod
   );
 
   // If buffering enabled, start background output thread.

@@ -1,8 +1,8 @@
 # airspy-fmradion
 
-* Version v0.6.0-pre0, 5-APR-2019
+* Version v0.6.0-pre1, 5-APR-2019
 * For MacOS and Linux
-* *NOTE: this release has a major change adding the usage of libsoxr.*
+* *NOTE: this release has a major change adding the am reception function*
 
 ### What is airspy-fmradion?
 
