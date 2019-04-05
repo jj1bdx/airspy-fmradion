@@ -17,7 +17,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// For the audio_agc function:
+// For the audio_agc and if_agc functions:
 /*
 This software is part of libcsdr, a set of simple DSP routines for
 Software Defined Radio.
@@ -64,7 +64,8 @@ AmDecoder::AmDecoder(double sample_rate_demod)
     // Initialize member fields
     : m_sample_rate_demod(sample_rate_demod), m_baseband_mean(0),
       m_baseband_level(0), m_agc_peak1(0), m_agc_peak2(0), m_agc_reference(0.9),
-      m_agc_last_gain(1.0)
+      m_agc_last_gain(1.0), m_if_agc_current_gain(1.0), m_if_agc_rate(0.00005),
+      m_if_agc_reference(0.5)
 
       // Construct AudioResampler for mono and stereo channels
       ,
@@ -93,8 +94,11 @@ void AmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
 
   // TODO: narrower filter here
 
+  // If AGC
+  if_agc(m_buf_downsampled, m_buf_downsampled2);
+
   // Demodulate AM signal.
-  demodulate(m_buf_downsampled, m_buf_baseband_demod);
+  demodulate(m_buf_downsampled2, m_buf_baseband_demod);
 
   // DC blocking.
   m_dcblock.process_inplace(m_buf_baseband_demod);
@@ -142,7 +146,7 @@ inline void AmDecoder::demodulate(const IQSampleVector &samples_in,
 // https://github.com/simonyiszk/csdr/blob/master/libcsdr.c
 inline void AmDecoder::audio_agc(const SampleVector &samples_in,
                                  SampleVector &samples_out) {
-  const double agc_max_gain = 50;
+  const double agc_max_gain = 10.0;
   unsigned int n = samples_in.size();
   samples_out.resize(n);
   m_agc_buf1.resize(n);
@@ -180,5 +184,36 @@ inline void AmDecoder::audio_agc(const SampleVector &samples_in,
   m_agc_buf2 = samples_in;
   m_agc_peak2 = agc_peak;
   m_agc_last_gain = target_gain;
+
+  fprintf(stderr, "m_agc_last_gain= %f\n", m_agc_last_gain);
 }
+
+// IF AGC.
+// Algorithm: function simple_agc_ff() in
+// https://github.com/simonyiszk/csdr/blob/master/libcsdr.c
+inline void AmDecoder::if_agc(const IQSampleVector &samples_in,
+                              IQSampleVector &samples_out) {
+  const double if_agc_max_gain = 1000.0;
+  double rate = m_if_agc_rate;
+  double rate_1minus = 1 - rate;
+  unsigned int n = samples_in.size();
+  samples_out.resize(n);
+
+  for (unsigned int i = 0; i < n; i++) {
+    double amplitude = std::abs(samples_in[i]);
+    double ideal_gain = m_if_agc_reference / amplitude;
+    if (ideal_gain > if_agc_max_gain) {
+      ideal_gain = if_agc_max_gain;
+    }
+    if (ideal_gain <= 0) {
+      ideal_gain = 0;
+    }
+    m_if_agc_current_gain = ((ideal_gain - m_if_agc_current_gain) * rate) +
+                            (m_if_agc_current_gain * rate_1minus);
+    fprintf(stderr, "m_if_agc_current_gain = %f\n", m_if_agc_current_gain);
+    samples_out[i] = IQSample(samples_in[i].real() * m_if_agc_current_gain,
+                              samples_in[i].imag() * m_if_agc_current_gain);
+  }
+}
+
 // end

@@ -52,6 +52,8 @@ private:
   void demodulate(const IQSampleVector &samples_in, SampleVector &samples_out);
   // Audio AGC function.
   void audio_agc(const SampleVector &samples_in, SampleVector &samples_out);
+  // IF AGC function.
+  void if_agc(const IQSampleVector &samples_in, IQSampleVector &samples_out);
 
   // Data members.
   const double m_sample_rate_demod;
@@ -65,7 +67,12 @@ private:
   double m_agc_peak2;
   double m_agc_reference;
 
+  double m_if_agc_current_gain;
+  const double m_if_agc_rate;
+  const double m_if_agc_reference;
+
   IQSampleVector m_buf_downsampled;
+  IQSampleVector m_buf_downsampled2;
   SampleVector m_buf_baseband_demod;
   SampleVector m_buf_baseband;
   SampleVector m_buf_mono;
