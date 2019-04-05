@@ -46,7 +46,7 @@
 #include "AirspySource.h"
 #include "RtlSdrSource.h"
 
-#define AIRSPY_FMRADION_VERSION "v0.6.0-pre3"
+#define AIRSPY_FMRADION_VERSION "v0.6.0-pre4"
 
 /** Flag is set on SIGINT / SIGTERM. */
 static std::atomic_bool stop_flag(false);
@@ -381,6 +381,15 @@ int main(int argc, char **argv) {
     exit(1);
   }
 
+  if (strcasecmp(modtype_str.c_str(), "fm") == 0) {
+    modtype = MOD_FM;
+  } else if (strcasecmp(modtype_str.c_str(), "am") == 0) {
+    modtype = MOD_AM;
+  } else {
+    fprintf(stderr, "Modulation type string unsuppored\n");
+    exit(1);
+  }
+
   // Catch Ctrl-C and SIGTERM
   struct sigaction sigact;
   sigact.sa_handler = handle_sigterm;
@@ -414,17 +423,15 @@ int main(int argc, char **argv) {
       }
     }
 
-    fprintf(ppsfile, "#pps_index sample_index   unix_time\n");
+    switch (modtype) {
+    case MOD_FM:
+      fprintf(ppsfile, "#pps_index sample_index   unix_time\n");
+      break;
+    case MOD_AM:
+      fprintf(ppsfile, "#  block   unix_time\n");
+      break;
+    }
     fflush(ppsfile);
-  }
-
-  if (strcasecmp(modtype_str.c_str(), "fm") == 0) {
-    modtype = MOD_FM;
-  } else if (strcasecmp(modtype_str.c_str(), "am") == 0) {
-    modtype = MOD_AM;
-  } else {
-    fprintf(stderr, "Modulation type string unsuppored\n");
-    exit(1);
   }
 
   // Calculate number of samples in audio buffer.
@@ -516,7 +523,7 @@ int main(int argc, char **argv) {
   unsigned int if_blocksize;
 
   // Configure filter and downsampler.
-  switch(modtype) {
+  switch (modtype) {
   case MOD_FM:
     // Configure FM mode constants.
     if (strcasecmp(devtype_str.c_str(), "airspy") == 0) {
@@ -704,7 +711,7 @@ int main(int argc, char **argv) {
   unsigned int stat_rate =
       lrint(5120 / (if_blocksize / total_decimation_ratio));
   unsigned int discarding_blocks;
-  switch(modtype) {
+  switch (modtype) {
   case MOD_FM:
     discarding_blocks = stat_rate * 4;
     break;
@@ -751,7 +758,7 @@ int main(int argc, char **argv) {
     if_downsampler.process(if_shifted_samples, if_samples);
 
     // Decode signal.
-    switch(modtype) {
+    switch (modtype) {
     case MOD_FM:
       // Decode FM signal.
       fm.process(if_samples, audiosamples);
@@ -811,13 +818,23 @@ int main(int argc, char **argv) {
 
     // Write PPS markers.
     if ((ppsfile != NULL) && audio_exists) {
-      for (const PilotPhaseLock::PpsEvent &ev : fm.get_pps_events()) {
-        double ts = prev_block_time;
-        ts += ev.block_position * (block_time - prev_block_time);
-        fprintf(ppsfile, "%8s %14s %18.6f\n",
-                std::to_string(ev.pps_index).c_str(),
-                std::to_string(ev.sample_index).c_str(), ts);
-        fflush(ppsfile);
+      switch (modtype) {
+      case MOD_FM:
+        for (const PilotPhaseLock::PpsEvent &ev : fm.get_pps_events()) {
+          double ts = prev_block_time;
+          ts += ev.block_position * (block_time - prev_block_time);
+          fprintf(ppsfile, "%8s %14s %18.6f\n",
+                  std::to_string(ev.pps_index).c_str(),
+                  std::to_string(ev.sample_index).c_str(), ts);
+          fflush(ppsfile);
+        }
+        break;
+      case MOD_AM:
+        if ((block % (stat_rate * 10)) == 0) {
+          fprintf(ppsfile, "%8d %18.6f\n", block, prev_block_time);
+          fflush(ppsfile);
+        }
+        break;
       }
     }
 
