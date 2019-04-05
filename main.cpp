@@ -46,7 +46,7 @@
 #include "AirspySource.h"
 #include "RtlSdrSource.h"
 
-#define AIRSPY_FMRADION_VERSION "v0.6.0-pre4"
+#define AIRSPY_FMRADION_VERSION "v0.6.0-pre5"
 
 /** Flag is set on SIGINT / SIGTERM. */
 static std::atomic_bool stop_flag(false);
@@ -106,6 +106,9 @@ void usage() {
   fprintf(
       stderr,
       "Usage: airspy-fmradion [options]\n"
+      "  -m modtype     Modulation type:\n"
+      "                   - fm (default)\n"
+      "                   - am (Currently supported by Airspy HF+ only)\n"
       "  -t devtype     Device type:\n"
       "                   - rtlsdr: RTL-SDR devices\n"
       "                   - airspy: Airspy R2\n"

@@ -1,8 +1,8 @@
 # airspy-fmradion
 
-* Version v0.6.0-pre4, 5-APR-2019
+* Version v0.6.0-pre5, 5-APR-2019
 * For MacOS and Linux
-* *NOTE: this release has a major change adding the am reception function*
+* *NOTE: this release has a major change adding the AM reception function* (AM reception function is supported by Airspy HF+ only)
 
 ### What is airspy-fmradion?
 
@@ -27,6 +27,12 @@ airspy-fmradion -t airspyhf -q \
     -c freq=88100000 \
     -b 1.0 -R - | \
     play -t raw -esigned-integer -b16 -r 48000 -c 2 -q -
+
+airspy-fmradion -m am -t airspyhf -q \
+    -c freq=666000 \
+    -b 0.5 -F - | \
+    play --buffer=1024 -t raw -e floating-point -b32 -r 48000 -c 1 -q -
+
 ```
 
 ### airspy-fmradion requires
@@ -115,7 +121,7 @@ Compile and install
 
 ## Basic command options
 
- - `-m devtype` is modulation type, either `fm` or `am` (default fm)
+ - `-m devtype` is modulation type, either `fm` or `am` (default fm) (am for Airspy HF+ only)
  - `-t devtype` is mandatory and must be `airspy` for Airspy R2 and `airspyhf` for Airspy HF+.
  - `-q` Quiet mode.
  - `-c config` Comma separated list of configuration options as key=value pairs or just key for switches. Depends on device type (see next paragraph).
@@ -212,7 +218,7 @@ Compile and install
 
 ### Airspy HF configuration options
 
-  - `freq=<int>` Desired tune frequency in Hz. Valid range from 60M to 240M. (default 100M: `100000000`)
+  - `freq=<int>` Desired tune frequency in Hz. Valid range from 0 to 31M, and from 60M to 240M. (default 100M: `100000000`)
   - `srate=<int>` Device sample rate. `list` lists valid values and exits. (default `768000`). Valid values depend on the Airspy HF firmware. Airspy HF firmware and library must support dynamic sample rate query.
 
 ## RTL-SDR
