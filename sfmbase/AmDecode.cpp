@@ -63,8 +63,8 @@ const double AmDecoder::default_deemphasis = 100;
 AmDecoder::AmDecoder(double sample_rate_demod)
     // Initialize member fields
     : m_sample_rate_demod(sample_rate_demod), m_baseband_mean(0),
-      m_baseband_level(0), m_agc_peak1(0), m_agc_peak2(0), m_agc_reference(0.9),
-      m_agc_last_gain(1.0), m_if_agc_current_gain(1.0), m_if_agc_rate(0.00005),
+      m_baseband_level(0), m_agc_last_gain(1.0), m_agc_peak1(0), m_agc_peak2(0),
+      m_agc_reference(0.9), m_if_agc_current_gain(1.0), m_if_agc_rate(0.00005),
       m_if_agc_reference(0.5)
 
       // Construct AudioResampler for mono and stereo channels
@@ -185,7 +185,7 @@ inline void AmDecoder::audio_agc(const SampleVector &samples_in,
   m_agc_peak2 = agc_peak;
   m_agc_last_gain = target_gain;
 
-  fprintf(stderr, "m_agc_last_gain= %f\n", m_agc_last_gain);
+  // fprintf(stderr, "m_agc_last_gain= %f\n", m_agc_last_gain);
 }
 
 // IF AGC.
@@ -210,7 +210,7 @@ inline void AmDecoder::if_agc(const IQSampleVector &samples_in,
     }
     m_if_agc_current_gain = ((ideal_gain - m_if_agc_current_gain) * rate) +
                             (m_if_agc_current_gain * rate_1minus);
-    fprintf(stderr, "m_if_agc_current_gain = %f\n", m_if_agc_current_gain);
+    // fprintf(stderr, "m_if_agc_current_gain = %f\n", m_if_agc_current_gain);
     samples_out[i] = IQSample(samples_in[i].real() * m_if_agc_current_gain,
                               samples_in[i].imag() * m_if_agc_current_gain);
   }
