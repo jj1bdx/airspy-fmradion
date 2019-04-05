@@ -35,7 +35,8 @@ const double AmDecoder::default_deemphasis = 100;
 AmDecoder::AmDecoder(double sample_rate_demod)
     // Initialize member fields
     : m_sample_rate_demod(sample_rate_demod), m_baseband_mean(0),
-      m_baseband_level(0)
+      m_baseband_level(0), m_agc_peak1(0), m_agc_peak2(0),
+      m_agc_reference(0.9), m_agc_last_gain(1.0)
 
       // Construct AudioResampler for mono and stereo channels
       ,
@@ -65,10 +66,13 @@ void AmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
   // TODO: narrower filter here
 
   // Demodulate AM signal.
-  demodulate(m_buf_downsampled, m_buf_baseband);
+  demodulate(m_buf_downsampled, m_buf_baseband_demod);
 
   // DC blocking.
-  m_dcblock.process_inplace(m_buf_baseband);
+  m_dcblock.process_inplace(m_buf_baseband_demod);
+
+  // Audio AGC
+  audio_agc(m_buf_baseband_demod, m_buf_baseband);
 
   // TODO: AGC here
 
@@ -101,8 +105,53 @@ inline void AmDecoder::demodulate(const IQSampleVector &samples_in,
   samples_out.resize(n);
 
   for (unsigned int i = 0; i < n; i++) {
-    samples_out[i] = std::abs(samples_in[i]) * 1000;
+    samples_out[i] = std::abs(samples_in[i]);
   }
 }
 
+// Audio AGC.
+// Algorithm: function fastagc_ff() in
+// https://github.com/simonyiszk/csdr/blob/master/libcsdr.c
+inline void AmDecoder::audio_agc(const SampleVector &samples_in,
+                                  SampleVector &samples_out) {
+  const double agc_max_gain = 50;
+  unsigned int n = samples_in.size();
+  samples_out.resize(n);
+  m_agc_buf1.resize(n);
+  m_agc_buf2.resize(n);
+
+  double agc_peak = 0;
+  for (unsigned int i = 0; i < n; i++) {
+    double v = fabs(samples_in[i]);
+    if (v > agc_peak) {
+      agc_peak = v;
+    }
+  }
+
+  double target_peak = agc_peak;
+  if (target_peak < m_agc_peak2) {
+    target_peak = m_agc_peak2;
+  }
+  if (target_peak < m_agc_peak1) {
+    target_peak = m_agc_peak1;
+  }
+
+  double target_gain = m_agc_reference / target_peak;
+  if (target_gain > agc_max_gain) {
+    target_gain = agc_max_gain;
+  }
+
+  for (unsigned int i = 0; i < n; i++) {
+     double rate = (double)i / (double)n;
+     double gain = (m_agc_last_gain * (1.0 - rate)) + (target_gain * rate);
+     samples_out[i] = m_agc_buf1[i] * gain;
+  }
+
+  m_agc_buf1 = m_agc_buf2;
+  m_agc_peak1 = m_agc_peak2;
+  m_agc_buf2 = samples_in;
+  m_agc_peak2 = agc_peak;
+  m_agc_last_gain = target_gain;
+
+}
 // end

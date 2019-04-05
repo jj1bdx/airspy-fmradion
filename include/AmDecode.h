@@ -50,13 +50,23 @@ public:
 private:
   // Demodulate AM signal.
   void demodulate(const IQSampleVector &samples_in, SampleVector &samples_out);
+  // Audio AGC function.
+  void audio_agc(const SampleVector &samples_in, SampleVector &samples_out);
 
   // Data members.
   const double m_sample_rate_demod;
   double m_baseband_mean;
   double m_baseband_level;
 
+  SampleVector m_agc_buf1;
+  SampleVector m_agc_buf2;
+  double m_agc_last_gain;
+  double m_agc_peak1;
+  double m_agc_peak2;
+  double m_agc_reference;
+
   IQSampleVector m_buf_downsampled;
+  SampleVector m_buf_baseband_demod;
   SampleVector m_buf_baseband;
   SampleVector m_buf_mono;
 
