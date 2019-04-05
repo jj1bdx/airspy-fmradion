@@ -31,6 +31,7 @@
 #include <thread>
 #include <unistd.h>
 
+#include "AmDecode.h"
 #include "AudioOutput.h"
 #include "DataBuffer.h"
 #include "FilterParameters.h"
@@ -45,7 +46,7 @@
 #include "AirspySource.h"
 #include "RtlSdrSource.h"
 
-#define AIRSPY_FMRADION_VERSION "v0.5.3"
+#define AIRSPY_FMRADION_VERSION "v0.6.0-pre0"
 
 /** Flag is set on SIGINT / SIGTERM. */
 static std::atomic_bool stop_flag(false);
@@ -520,7 +521,7 @@ int main(int argc, char **argv) {
         if_blocksize = 16384;
         enable_fs_fourth_downconverter = true;
         first_downsample = 2;
-        first_coeff = FilterParameters::jj1bdx_768kHz_div2;
+        first_coeff = FilterParameters::jj1bdx_768khz_div2;
         enable_second_downsampler = false;
         second_downsample = 1;                                // placeholder
         second_coeff = FilterParameters::delay_3taps_only_iq; // placeholder
@@ -536,7 +537,7 @@ int main(int argc, char **argv) {
         if_blocksize = 65536;
         enable_fs_fourth_downconverter = true;
         first_downsample = 3;
-        first_coeff = FilterParameters::jj1bdx_900kHz_div3;
+        first_coeff = FilterParameters::jj1bdx_900khz_div3;
         enable_second_downsampler = false;
         second_downsample = 1;                                // placeholder
         second_coeff = FilterParameters::delay_3taps_only_iq; // placeholder
@@ -559,10 +560,10 @@ int main(int argc, char **argv) {
         if_blocksize = 16384;
         enable_fs_fourth_downconverter = true;
         first_downsample = 4;
-        first_coeff = FilterParameters::jj1bdx_am_768kHz_div4;
+        first_coeff = FilterParameters::jj1bdx_am_768khz_div4;
         enable_second_downsampler = false;
         second_downsample = 4;
-        second_coeff = FilterParameters::jj1bdx_am_192kHz_div4;
+        second_coeff = FilterParameters::jj1bdx_am_192khz_div4;
       } else {
         fprintf(stderr, "Sample rate unsupported\n");
         fprintf(stderr, "Supported rate:\n");
@@ -649,6 +650,10 @@ int main(int argc, char **argv) {
                pilot_shift       // pilot_shift
   );
 
+  // Prepare AM decoder.
+  AmDecoder am(demodulator_rate  // sample_rate_demod
+  );
+
   // If buffering enabled, start background output thread.
   DataBuffer<Sample> output_buffer;
   std::thread output_thread;
@@ -708,8 +713,19 @@ int main(int argc, char **argv) {
     // Downsample IF for the decoder.
     if_downsampler.process(if_shifted_samples, if_samples);
 
-    // Decode FM signal.
-    fm.process(if_samples, audiosamples);
+    // Decode signal.
+    if (strcasecmp(modtype_str.c_str(), "fm") == 0) {
+      // Decode FM signal.
+      fm.process(if_samples, audiosamples);
+    } else if (strcasecmp(modtype_str.c_str(), "am") == 0) {
+      // Decode AM signal.
+      am.process(if_samples, audiosamples);
+    } else {
+      fprintf(stderr, "Unable to demodulate\n");
+      delete srcsdr;
+      exit(1);
+    }
+
     bool audio_exists = audiosamples.size() > 0;
 
     // Measure audio level when audio exists
