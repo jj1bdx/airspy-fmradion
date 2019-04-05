@@ -42,6 +42,7 @@ public:
 private:
   const double m_irate;
   const double m_orate;
+  const double m_ratio;
   soxr_t m_soxr;
 };
 

@@ -25,7 +25,7 @@
 
 AudioResampler::AudioResampler(const double input_rate,
                                const double output_rate)
-    : m_irate(input_rate), m_orate(output_rate) {
+    : m_irate(input_rate), m_orate(output_rate), m_ratio(output_rate/input_rate) {
   soxr_error_t error;
   // Use double
   soxr_io_spec_t io_spec = soxr_io_spec(SOXR_FLOAT64_I, SOXR_FLOAT64_I);
@@ -45,8 +45,8 @@ AudioResampler::AudioResampler(const double input_rate,
 void AudioResampler::process(const SampleVector &samples_in,
                              SampleVector &samples_out) {
   size_t input_size = samples_in.size();
-  size_t output_size = input_size;
-  samples_out.resize(input_size);
+  size_t output_size = (size_t)lrint((input_size * m_ratio) + 1);
+  samples_out.resize(output_size);
   size_t output_length;
   soxr_error_t error;
 
