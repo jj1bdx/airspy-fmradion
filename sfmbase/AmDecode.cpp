@@ -106,8 +106,6 @@ void AmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
   // Audio AGC
   audio_agc(m_buf_baseband_demod, m_buf_baseband);
 
-  // TODO: AGC here
-
   // Measure baseband level after DC blocking.
   double baseband_mean, baseband_rms;
   samples_mean_rms(m_buf_baseband, baseband_mean, baseband_rms);
