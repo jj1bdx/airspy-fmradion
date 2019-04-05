@@ -561,7 +561,7 @@ int main(int argc, char **argv) {
         enable_fs_fourth_downconverter = true;
         first_downsample = 4;
         first_coeff = FilterParameters::jj1bdx_am_768khz_div4;
-        enable_second_downsampler = false;
+        enable_second_downsampler = true;
         second_downsample = 4;
         second_coeff = FilterParameters::jj1bdx_am_192khz_div4;
       } else {
