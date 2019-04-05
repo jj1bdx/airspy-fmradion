@@ -200,20 +200,22 @@ double get_time() {
   return tv.tv_sec + 1.0e-6 * tv.tv_usec;
 }
 
-static bool get_device(std::vector<std::string> &devnames, std::string &devtype,
+// Device type identifiers.
+enum DevType { DEV_AIRSPY, DEV_AIRSPYHF, DEV_RTLSDR };
+
+static bool get_device(std::vector<std::string> &devnames, DevType devtype,
                        Source **srcsdr, int devidx) {
-  if (strcasecmp(devtype.c_str(), "rtlsdr") == 0) {
+  // Get device names.
+  switch (devtype) {
+  case DEV_RTLSDR:
     RtlSdrSource::get_device_names(devnames);
-  } else if (strcasecmp(devtype.c_str(), "airspy") == 0) {
+    break;
+  case DEV_AIRSPY:
     AirspySource::get_device_names(devnames);
-  } else if (strcasecmp(devtype.c_str(), "airspyhf") == 0) {
+    break;
+  case DEV_AIRSPYHF:
     AirspyHFSource::get_device_names(devnames);
-  } else {
-    fprintf(
-        stderr,
-        "ERROR: wrong device type (-t option) must be one of the following:\n");
-    fprintf(stderr, "        rtlsdr, airspy, airspyhf\n");
-    return false;
+    break;
   }
 
   if (devidx < 0 || (unsigned int)devidx >= devnames.size()) {
@@ -232,15 +234,17 @@ static bool get_device(std::vector<std::string> &devnames, std::string &devtype,
 
   fprintf(stderr, "using device %d: %s\n", devidx, devnames[devidx].c_str());
 
-  if (strcasecmp(devtype.c_str(), "rtlsdr") == 0) {
-    // Open RTL-SDR device.
+  // Open receiver devices.
+  switch (devtype) {
+  case DEV_RTLSDR:
     *srcsdr = new RtlSdrSource(devidx);
-  } else if (strcasecmp(devtype.c_str(), "airspy") == 0) {
-    // Open Airspy device.
+    break;
+  case DEV_AIRSPY:
     *srcsdr = new AirspySource(devidx);
-  } else if (strcasecmp(devtype.c_str(), "airspyhf") == 0) {
-    // Open Airspy HF device.
+    break;
+  case DEV_AIRSPYHF:
     *srcsdr = new AirspyHFSource(devidx);
+    break;
   }
 
   return true;
@@ -251,6 +255,7 @@ int main(int argc, char **argv) {
   int pcmrate = FmDecoder::sample_rate_pcm;
   bool stereo = true;
   enum OutputMode { MODE_RAW_INT16, MODE_RAW_FLOAT32, MODE_WAV, MODE_ALSA };
+  enum ModType { MOD_FM, MOD_AM };
 #ifdef USE_ALSA
   OutputMode outmode = MODE_ALSA;
   std::string filename;
@@ -267,7 +272,9 @@ int main(int argc, char **argv) {
   bool deemphasis_na = false;
   std::string config_str;
   std::string devtype_str;
+  DevType devtype;
   std::string modtype_str("fm");
+  ModType modtype = MOD_FM;
   std::vector<std::string> devnames;
   Source *srcsdr = 0;
 
@@ -360,6 +367,20 @@ int main(int argc, char **argv) {
     exit(1);
   }
 
+  if (strcasecmp(devtype_str.c_str(), "rtlsdr") == 0) {
+    devtype = DEV_RTLSDR;
+  } else if (strcasecmp(devtype_str.c_str(), "airspy") == 0) {
+    devtype = DEV_AIRSPY;
+  } else if (strcasecmp(devtype_str.c_str(), "airspyhf") == 0) {
+    devtype = DEV_AIRSPYHF;
+  } else {
+    fprintf(
+        stderr,
+        "ERROR: wrong device type (-t option) must be one of the following:\n");
+    fprintf(stderr, "        rtlsdr, airspy, airspyhf\n");
+    exit(1);
+  }
+
   // Catch Ctrl-C and SIGTERM
   struct sigaction sigact;
   sigact.sa_handler = handle_sigterm;
@@ -395,6 +416,15 @@ int main(int argc, char **argv) {
 
     fprintf(ppsfile, "#pps_index sample_index   unix_time\n");
     fflush(ppsfile);
+  }
+
+  if (strcasecmp(modtype_str.c_str(), "fm") == 0) {
+    modtype = MOD_FM;
+  } else if (strcasecmp(modtype_str.c_str(), "am") == 0) {
+    modtype = MOD_AM;
+  } else {
+    fprintf(stderr, "Modulation type string unsuppored\n");
+    exit(1);
   }
 
   // Calculate number of samples in audio buffer.
@@ -450,7 +480,7 @@ int main(int argc, char **argv) {
     exit(1);
   }
 
-  if (!get_device(devnames, devtype_str, &srcsdr, devidx)) {
+  if (!get_device(devnames, devtype, &srcsdr, devidx)) {
     exit(1);
   }
 
@@ -486,7 +516,8 @@ int main(int argc, char **argv) {
   unsigned int if_blocksize;
 
   // Configure filter and downsampler.
-  if (strcasecmp(modtype_str.c_str(), "fm") == 0) {
+  switch(modtype) {
+  case MOD_FM:
     // Configure FM mode constants.
     if (strcasecmp(devtype_str.c_str(), "airspy") == 0) {
       if (ifrate == 10000000.0) {
@@ -553,7 +584,8 @@ int main(int argc, char **argv) {
       delete srcsdr;
       exit(1);
     }
-  } else if (strcasecmp(modtype_str.c_str(), "am") == 0) {
+    break;
+  case MOD_AM:
     // Configure AM mode constants.
     if (strcasecmp(devtype_str.c_str(), "airspyhf") == 0) {
       if (ifrate == 768000.0) {
@@ -576,10 +608,7 @@ int main(int argc, char **argv) {
       delete srcsdr;
       exit(1);
     }
-  } else {
-    fprintf(stderr, "Modulation type string unsuppored\n");
-    delete srcsdr;
-    exit(1);
+    break;
   }
 
   double demodulator_rate = ifrate / first_downsample / second_downsample;
@@ -674,7 +703,15 @@ int main(int argc, char **argv) {
   // TODO: ~0.1sec / display (should be tuned)
   unsigned int stat_rate =
       lrint(5120 / (if_blocksize / total_decimation_ratio));
-  unsigned int discarding_blocks = stat_rate * 4;
+  unsigned int discarding_blocks;
+  switch(modtype) {
+  case MOD_FM:
+    discarding_blocks = stat_rate * 4;
+    break;
+  case MOD_AM:
+    discarding_blocks = 0;
+    break;
+  }
 
   // Main loop.
   for (unsigned int block = 0; !stop_flag.load(); block++) {
@@ -714,16 +751,15 @@ int main(int argc, char **argv) {
     if_downsampler.process(if_shifted_samples, if_samples);
 
     // Decode signal.
-    if (strcasecmp(modtype_str.c_str(), "fm") == 0) {
+    switch(modtype) {
+    case MOD_FM:
       // Decode FM signal.
       fm.process(if_samples, audiosamples);
-    } else if (strcasecmp(modtype_str.c_str(), "am") == 0) {
+      break;
+    case MOD_AM:
       // Decode AM signal.
       am.process(if_samples, audiosamples);
-    } else {
-      fprintf(stderr, "Unable to demodulate\n");
-      delete srcsdr;
-      exit(1);
+      break;
     }
 
     bool audio_exists = audiosamples.size() > 0;
