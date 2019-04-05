@@ -38,6 +38,9 @@ public:
 
   static const std::vector<SampleVector::value_type> jj1bdx_48khz_fmaudio;
   static const std::vector<SampleVector::value_type> delay_3taps_only_audio;
+
+  static const std::vector<IQSample::value_type> jj1bdx_am_768kHz_div4;
+  static const std::vector<IQSample::value_type> jj1bdx_am_192kHz_div4;
 };
 
 #endif // SOFTFM_EQPARAMETERS_H
