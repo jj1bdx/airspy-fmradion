@@ -237,7 +237,8 @@ bool AirspyHFSource::configure(std::string configurationStr) {
 #endif
       frequency = atoi(m["freq"].c_str());
 
-      if ((frequency < 60000000) || (frequency > 260000000)) {
+      if (((frequency > 31000000) && (frequency < 60000000)) ||
+          (frequency > 260000000)) {
         m_error = "Invalid frequency";
         return false;
       }
