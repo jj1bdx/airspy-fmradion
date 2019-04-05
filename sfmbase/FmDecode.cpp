@@ -324,9 +324,10 @@ FmDecoder::FmDecoder(double sample_rate_demod, bool stereo, double deemphasis,
                  0.01)                               // minsignal (was 0.04)
 
       // Construct HighPassFilterIir
+      // cutoff: 4.8Hz for 48kHz sampling rate
       ,
-      m_dcblock_mono(30.0 / sample_rate_pcm),
-      m_dcblock_stereo(30.0 / sample_rate_pcm)
+      m_dcblock_mono(0.0001),
+      m_dcblock_stereo(0.0001)
 
       // Construct LowPassFilterRC
       ,
