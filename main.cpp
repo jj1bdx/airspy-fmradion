@@ -669,6 +669,26 @@ int main(int argc, char **argv) {
         exit(1);
       }
       break;
+    case DEV_RTLSDR:
+      if ((ifrate >= 900001.0) && (ifrate <= 937500.0)) {
+        // 900kHz: /4/5 -> 45kHz
+	// No problem up to 960kHz
+        if_blocksize = 65536;
+        enable_fs_fourth_downconverter = true;
+        enable_two_downsampler_stages = false;
+        first_downsample = 4;
+        first_coeff = FilterParameters::jj1bdx_am_if_div4;
+        enable_second_downsampler = true;
+        second_downsample = 5;
+        second_coeff = FilterParameters::jj1bdx_am_if_div5;
+      } else {
+        fprintf(stderr, "Sample rate unsupported\n");
+        fprintf(stderr, "Supported rate:\n");
+        fprintf(stderr, "RTL-SDR: 900001 ~ 937500 \n");
+        delete srcsdr;
+        exit(1);
+      }
+      break;
     default:
       fprintf(stderr, "For the device, am modulation is unsupported\n");
       delete srcsdr;
