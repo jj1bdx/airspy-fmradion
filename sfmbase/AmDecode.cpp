@@ -191,7 +191,7 @@ inline void AmDecoder::audio_agc(const SampleVector &samples_in,
 // https://github.com/simonyiszk/csdr/blob/master/libcsdr.c
 inline void AmDecoder::if_agc(const IQSampleVector &samples_in,
                               IQSampleVector &samples_out) {
-  const double if_agc_max_gain = 1000.0;
+  const double if_agc_max_gain = 10000.0; // 80dB
   double rate = m_if_agc_rate;
   double rate_1minus = 1 - rate;
   unsigned int n = samples_in.size();
