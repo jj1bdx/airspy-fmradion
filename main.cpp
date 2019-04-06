@@ -283,7 +283,7 @@ int main(int argc, char **argv) {
   Source *srcsdr = 0;
 
   fprintf(stderr, "airspy-fmradion " AIRSPY_FMRADION_VERSION "\n");
-  fprintf(stderr, "Software FM radio for ");
+  fprintf(stderr, "Software FM/AM radio for ");
   fprintf(stderr, "Airspy R2, Airspy HF+, and RTL-SDR\n");
 
   const struct option longopts[] = {{"modtype", 2, NULL, 'm'},
