@@ -548,8 +548,6 @@ int main(int argc, char **argv) {
         if_blocksize = 65536;
         enable_fs_fourth_downconverter = false;
         enable_two_downsampler_stages = false;
-        // decimation rate: 32 = 8 * 4
-        // 312.5kHz = +-156.25kHz
         first_downsample = 8;
         first_coeff = FilterParameters::jj1bdx_10000khz_div8;
         enable_second_downsampler = true;
@@ -559,8 +557,6 @@ int main(int argc, char **argv) {
         if_blocksize = 65536;
         enable_fs_fourth_downconverter = false;
         enable_two_downsampler_stages = false;
-        // decimation rate: 8 = 4 * 2
-        // 312.5kHz = +-156.25kHz
         first_downsample = 4;
         first_coeff = FilterParameters::jj1bdx_2500khz_div4;
         enable_second_downsampler = true;
@@ -611,8 +607,45 @@ int main(int argc, char **argv) {
     break;
   case MOD_AM:
     // Configure AM mode constants.
-    if (strcasecmp(devtype_str.c_str(), "airspyhf") == 0) {
+    if (strcasecmp(devtype_str.c_str(), "airspy") == 0) {
+        // 10000kHz: /2/3/5/7 -> 47.6190476kHz
+      if (ifrate == 10000000.0) {
+        if_blocksize = 65536;
+        enable_fs_fourth_downconverter = false;
+        enable_two_downsampler_stages = true;
+        first_downsample = 2;
+        first_coeff = FilterParameters::jj1bdx_am_if_div2;
+        enable_second_downsampler = true;
+        second_downsample = 3;
+        second_coeff = FilterParameters::jj1bdx_am_if_div3;
+        third_downsample = 5;
+        third_coeff = FilterParameters::jj1bdx_am_if_div5;
+        enable_fourth_downsampler = true;
+        fourth_downsample = 7;
+        fourth_coeff = FilterParameters::jj1bdx_am_if_div7;
+      } else if (ifrate == 2500000.0) {
+        // 2500kHz: /2/5/5 -> 50kHz
+        if_blocksize = 65536;
+        enable_fs_fourth_downconverter = false;
+        enable_two_downsampler_stages = true;
+        first_downsample = 2;
+        first_coeff = FilterParameters::jj1bdx_am_if_div2;
+        enable_second_downsampler = true;
+        second_downsample = 5;
+        second_coeff = FilterParameters::jj1bdx_am_if_div5;
+        third_downsample = 5;
+        third_coeff = FilterParameters::jj1bdx_am_if_div5;
+        enable_fourth_downsampler = false;
+      } else {
+        fprintf(stderr, "Sample rate unsupported\n");
+        fprintf(stderr, "Supported rate:\n");
+        fprintf(stderr, "Airspy R2: 2500000, 10000000\n");
+        delete srcsdr;
+        exit(1);
+      }
+    } else if (strcasecmp(devtype_str.c_str(), "airspyhf") == 0) {
       if (ifrate == 768000.0) {
+        // 768kHz: /4/4 -> 48kHz
         if_blocksize = 16384;
         enable_fs_fourth_downconverter = true;
         enable_two_downsampler_stages = false;
