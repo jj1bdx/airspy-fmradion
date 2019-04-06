@@ -394,6 +394,7 @@ int main(int argc, char **argv) {
     modtype = MOD_FM;
   } else if (strcasecmp(modtype_str.c_str(), "am") == 0) {
     modtype = MOD_AM;
+    stereo = false;
   } else {
     fprintf(stderr, "Modulation type string unsuppored\n");
     exit(1);
