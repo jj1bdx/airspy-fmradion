@@ -39,7 +39,11 @@ public:
   static const std::vector<SampleVector::value_type> jj1bdx_48khz_fmaudio;
   static const std::vector<SampleVector::value_type> delay_3taps_only_audio;
 
+  static const std::vector<IQSample::value_type> jj1bdx_am_if_div2;
+  static const std::vector<IQSample::value_type> jj1bdx_am_if_div3;
   static const std::vector<IQSample::value_type> jj1bdx_am_if_div4;
+  static const std::vector<IQSample::value_type> jj1bdx_am_if_div5;
+  static const std::vector<IQSample::value_type> jj1bdx_am_if_div7;
 
   static const std::vector<IQSample::value_type> jj1bdx_am_48khz_div2;
   static const std::vector<IQSample::value_type> jj1bdx_am_24khz_div2;
