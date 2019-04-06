@@ -31,6 +31,8 @@
 #include <thread>
 #include <unistd.h>
 
+#include "AirspyHFSource.h"
+#include "AirspySource.h"
 #include "AmDecode.h"
 #include "AudioOutput.h"
 #include "DataBuffer.h"
@@ -39,20 +41,17 @@
 #include "FourthDownconverterIQ.h"
 #include "IfDownsampler.h"
 #include "MovingAverage.h"
+#include "RtlSdrSource.h"
 #include "SoftFM.h"
 #include "util.h"
 
-#include "AirspyHFSource.h"
-#include "AirspySource.h"
-#include "RtlSdrSource.h"
-
-#define AIRSPY_FMRADION_VERSION "v0.6.0"
+#define AIRSPY_FMRADION_VERSION "v0.6.1-dev"
 
 /** Flag is set on SIGINT / SIGTERM. */
 static std::atomic_bool stop_flag(false);
 
 /** Simple linear gain adjustment. */
-void adjust_gain(SampleVector &samples, double gain) {
+inline void adjust_gain(SampleVector &samples, double gain) {
   for (unsigned int i = 0, n = samples.size(); i < n; i++) {
     samples[i] *= gain;
   }

@@ -1,6 +1,6 @@
 # airspy-fmradion
 
-* Version v0.6.0, 6-APR-2019
+* Version v0.6.1-dev0, 6-APR-2019
 * For MacOS and Linux
 * *NOTE: this release has a major change adding the AM reception function*
 
@@ -174,7 +174,8 @@ Compile and install
 * AM Filter coefficients are listed under `doc/filter-design-am`
 * AM IF filters are configured by the downsampling rate only
 * Up to -1dB rolloff allowed for all IF filters
-* Max 6kHz IF filter width without aliasing set for all IF filters
+* Max +-6kHz IF filter width without aliasing set for all IF filters
+* Narrower filters by `-f` options: `middle` +-4kHz, `narrow` +-3kHz
 
 ## AM AGC
 
