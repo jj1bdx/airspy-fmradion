@@ -624,15 +624,15 @@ int main(int argc, char **argv) {
         fourth_downsample = 7;
         fourth_coeff = FilterParameters::jj1bdx_am_if_div7;
       } else if (ifrate == 2500000.0) {
-        // 2500kHz: /2/5/5 -> 50kHz
+        // 2500kHz: /3/4/5 -> 41.666666kHz
         if_blocksize = 65536;
         enable_fs_fourth_downconverter = false;
         enable_two_downsampler_stages = true;
-        first_downsample = 2;
-        first_coeff = FilterParameters::jj1bdx_am_if_div2;
+        first_downsample = 3;
+        first_coeff = FilterParameters::jj1bdx_am_if_div3;
         enable_second_downsampler = true;
-        second_downsample = 5;
-        second_coeff = FilterParameters::jj1bdx_am_if_div5;
+        second_downsample = 4;
+        second_coeff = FilterParameters::jj1bdx_am_if_div4;
         third_downsample = 5;
         third_coeff = FilterParameters::jj1bdx_am_if_div5;
         enable_fourth_downsampler = false;
