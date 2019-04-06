@@ -609,6 +609,7 @@ int main(int argc, char **argv) {
       exit(1);
       break;
     }
+    break;
   case MOD_AM:
     // Configure AM mode constants.
     switch (devtype) {
@@ -674,6 +675,7 @@ int main(int argc, char **argv) {
       exit(1);
       break;
     }
+    break;
   }
 
   unsigned int if_decimation_ratio = first_downsample * second_downsample *
