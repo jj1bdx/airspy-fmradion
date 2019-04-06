@@ -38,7 +38,7 @@ const std::vector<int> AirspySource::m_vgains({0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
 // Open Airspy device.
 AirspySource::AirspySource(int dev_index)
     : m_dev(0), m_sampleRate(10000000), m_frequency(100000000), m_lnaGain(8),
-      m_mixGain(8), m_vgaGain(0), m_biasAnt(false), m_lnaAGC(false),
+      m_mixGain(0), m_vgaGain(10), m_biasAnt(false), m_lnaAGC(false),
       m_mixAGC(false), m_running(false), m_thread(0) {
   airspy_error rc = (airspy_error)airspy_init();
 
