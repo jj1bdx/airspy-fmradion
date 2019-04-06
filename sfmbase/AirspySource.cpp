@@ -345,8 +345,8 @@ bool AirspySource::configure(std::string configurationStr) {
   int sampleRateIndex = 0;
   uint32_t frequency = 100000000;
   int lnaGain = 8;
-  int mixGain = 8;
-  int vgaGain = 0;
+  int mixGain = 0;
+  int vgaGain = 10;
   bool antBias = false;
   bool lnaAGC = false;
   bool mixAGC = false;
