@@ -543,7 +543,8 @@ int main(int argc, char **argv) {
   switch (modtype) {
   case MOD_FM:
     // Configure FM mode constants.
-    if (strcasecmp(devtype_str.c_str(), "airspy") == 0) {
+    switch (devtype) {
+    case DEV_AIRSPY:
       if (ifrate == 10000000.0) {
         if_blocksize = 65536;
         enable_fs_fourth_downconverter = false;
@@ -569,7 +570,8 @@ int main(int argc, char **argv) {
         delete srcsdr;
         exit(1);
       }
-    } else if (strcasecmp(devtype_str.c_str(), "airspyhf") == 0) {
+      break;
+    case DEV_AIRSPYHF:
       if (ifrate == 768000.0) {
         if_blocksize = 16384;
         enable_fs_fourth_downconverter = true;
@@ -584,7 +586,8 @@ int main(int argc, char **argv) {
         delete srcsdr;
         exit(1);
       }
-    } else if (strcasecmp(devtype_str.c_str(), "rtlsdr") == 0) {
+      break;
+    case DEV_RTLSDR:
       if ((ifrate >= 900001.0) && (ifrate <= 937500.0)) {
         if_blocksize = 65536;
         enable_fs_fourth_downconverter = true;
@@ -599,17 +602,19 @@ int main(int argc, char **argv) {
         delete srcsdr;
         exit(1);
       }
-    } else {
-      fprintf(stderr, "Device type string unsuppored\n");
+      break;
+    default:
+      fprintf(stderr, "For the device, fm modulation is unsupported\n");
       delete srcsdr;
       exit(1);
+      break;
     }
-    break;
   case MOD_AM:
     // Configure AM mode constants.
-    if (strcasecmp(devtype_str.c_str(), "airspy") == 0) {
-        // 10000kHz: /2/3/5/7 -> 47.6190476kHz
+    switch (devtype) {
+    case DEV_AIRSPY:
       if (ifrate == 10000000.0) {
+        // 10000kHz: /2/3/5/7 -> 47.6190476kHz
         if_blocksize = 65536;
         enable_fs_fourth_downconverter = false;
         enable_two_downsampler_stages = true;
@@ -643,7 +648,8 @@ int main(int argc, char **argv) {
         delete srcsdr;
         exit(1);
       }
-    } else if (strcasecmp(devtype_str.c_str(), "airspyhf") == 0) {
+      break;
+    case DEV_AIRSPYHF:
       if (ifrate == 768000.0) {
         // 768kHz: /4/4 -> 48kHz
         if_blocksize = 16384;
@@ -661,12 +667,13 @@ int main(int argc, char **argv) {
         delete srcsdr;
         exit(1);
       }
-    } else {
+      break;
+    default:
       fprintf(stderr, "For the device, am modulation is unsupported\n");
       delete srcsdr;
       exit(1);
+      break;
     }
-    break;
   }
 
   unsigned int if_decimation_ratio = first_downsample * second_downsample *
