@@ -1,8 +1,8 @@
 # airspy-fmradion
 
-* Version v0.6.0-pre5, 5-APR-2019
+* Version v0.6.0, 6-APR-2019
 * For MacOS and Linux
-* *NOTE: this release has a major change adding the AM reception function* (AM reception function is supported by Airspy HF+ only)
+* *NOTE: this release has a major change adding the AM reception function*
 
 ### What is airspy-fmradion?
 
@@ -32,7 +32,6 @@ airspy-fmradion -m am -t airspyhf -q \
     -c freq=666000 \
     -b 0.5 -F - | \
     play --buffer=1024 -t raw -e floating-point -b32 -r 48000 -c 1 -q -
-
 ```
 
 ### airspy-fmradion requires
@@ -121,7 +120,7 @@ Compile and install
 
 ## Basic command options
 
- - `-m devtype` is modulation type, either `fm` or `am` (default fm) (am for Airspy HF+ only)
+ - `-m devtype` is modulation type, either `fm` or `am` (default fm)
  - `-t devtype` is mandatory and must be `airspy` for Airspy R2 and `airspyhf` for Airspy HF+.
  - `-q` Quiet mode.
  - `-c config` Comma separated list of configuration options as key=value pairs or just key for switches. Depends on device type (see next paragraph).
@@ -158,12 +157,29 @@ Compile and install
 
 ## Filter design documentation
 
-* Filter coefficients are listed under `doc/filter-design`
-* Unused filter coefficients are listed under `doc/filter-design/not-used`
+### General characteristics
+
+* Aliasing allowed outside the -90dB width for the 1st-stage IF filters to reduce CPU power
+
+### For FM
+
+* FM Filter coefficients are listed under `doc/filter-design-fm`
+* FM unused filter coefficients are listed under `doc/filter-design-fm/not-used`
 * DiscriminatorEqualizer IF range: 200kHz ~ 1MHz (nyquist: 100kHz ~ 500kHz)
 * -90dB IF filter width: +-~188kHz for RTL-SDR and AirSpy R2, +-~138kHz for AirSpy HF+
 * <0.01dB IF filter width: at least +-75kHz for all receivers
-* Aliasing allowed outside the -90dB width for the 1st-stage IF filters to reduce CPU power
+
+### For AM
+
+* AM Filter coefficients are listed under `doc/filter-design-am`
+* AM IF filters are configured by the downsampling rate only
+* Up to -1dB rolloff allowed for all IF filters
+* Max 6kHz IF filter width without aliasing set for all IF filters
+
+## AM AGC
+
+* IF AGC: gain up to 80dB (10000)
+* Audio AGC: gain up to 7dB (5.0), fast AGC with peak detection
 
 ## Airspy R2 modification from ngsoftfm-jj1bdx
 
@@ -246,19 +262,21 @@ Compile and install
   - `srate=<int>` Device sample rate. valid values in the [225001, 300000], [900001, 3200000] ranges. (default `1000000`)
   - `blklen=<int>` Device block length in bytes (default RTL-SDR default i.e. 64k)
   - `agc` Activates device AGC (default off)
+  - `antbias` Turn on the antenna bias for remote LNA (default off)
 
 ## Authors
 
 * Joris van Rantwijk
 * Edouard Griffiths, F4EXB (no longer involving in maintaining NGSoftFM)
 * Kenji Rikitake, JJ1BDX (maintainer)
+* András Retzler, HA7ILM (for AM AGC code in [csdr](https://github.com/simonyiszk/csdr))
 
 ## Acknowledgments
 
-* András Retzler, HA7ILM
 * Twitter [@lambdaprog](https://twitter.com/lambdaprog/)
 
 ## License
 
 * As a whole package: GPLv3 (and later). See [LICENSE](LICENSE).
+* [csdr](https://github.com/simonyiszk/csdr) AGC code: BSD license.
 * Some source code files are stating GPL "v2 and later" license.
