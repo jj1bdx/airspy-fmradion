@@ -108,7 +108,7 @@ void usage() {
       "Usage: airspy-fmradion [options]\n"
       "  -m modtype     Modulation type:\n"
       "                   - fm (default)\n"
-      "                   - am (Currently supported by Airspy HF+ only)\n"
+      "                   - am \n"
       "  -t devtype     Device type:\n"
       "                   - rtlsdr: RTL-SDR devices\n"
       "                   - airspy: Airspy R2\n"
@@ -145,6 +145,7 @@ void usage() {
       "  blklen=<int>   Set audio buffer size in seconds (default RTL-SDR "
       "default)\n"
       "  agc            Enable RTL AGC mode (default disabled)\n"
+      "  antbias        Enable antenna bias (default disabled)\n"
       "\n"
       "Configuration options for Airspy devices:\n"
       "  freq=<int>     Frequency of radio station in Hz (default 100000000)\n"
@@ -159,7 +160,7 @@ void usage() {
       "values: (default 8)\n"
       "  vgain=<int>    VGA gain in dB. 'list' to just get a list of valid "
       "values: (default 8)\n"
-      "  antbias        Enable antemma bias (default disabled)\n"
+      "  antbias        Enable antenna bias (default disabled)\n"
       "  lagc           Enable LNA AGC (default disabled)\n"
       "  magc           Enable mixer AGC (default disabled)\n"
       "\n"
@@ -672,7 +673,7 @@ int main(int argc, char **argv) {
     case DEV_RTLSDR:
       if ((ifrate >= 900001.0) && (ifrate <= 937500.0)) {
         // 900kHz: /4/5 -> 45kHz
-	// No problem up to 960kHz
+        // No problem up to 960kHz
         if_blocksize = 65536;
         enable_fs_fourth_downconverter = true;
         enable_two_downsampler_stages = false;
@@ -706,12 +707,9 @@ int main(int argc, char **argv) {
 
   // Display filter configuration.
   fprintf(stderr, "IF sample rate: %.9g [Hz], ", ifrate);
-  fprintf(stderr, "IF decimation divided by %d\n", if_decimation_ratio);
-  fprintf(stderr, "Demodulator rate: %.8g [Hz]\n", demodulator_rate);
-  fprintf(stderr, "Audio decimated from demodulator by: %.9g\n",
-          audio_decimation_ratio);
-
-  MovingAverage<float> ppm_average(100, 0.0f);
+  fprintf(stderr, "IF decimation: / %d\n", if_decimation_ratio);
+  fprintf(stderr, "Demodulator rate: %.8g [Hz], ", demodulator_rate);
+  fprintf(stderr, "audio decimation: / %.9g\n", audio_decimation_ratio);
 
   srcsdr->print_specific_parms();
 
@@ -782,6 +780,9 @@ int main(int argc, char **argv) {
             AmDecoder::default_deemphasis);
     break;
   }
+
+  // Initialize moving average object for FM ppm monitoring.
+  MovingAverage<float> ppm_average(100, 0.0f);
 
   // If buffering enabled, start background output thread.
   DataBuffer<Sample> output_buffer;
@@ -883,10 +884,15 @@ int main(int argc, char **argv) {
       adjust_gain(audiosamples, 0.5);
     }
 
-    // the minus factor is to show the ppm correction
-    // to make and not the one made
-    ppm_average.feed((fm.get_tuning_offset() / tuner_freq) * -1.0e6);
-    double ppm_value_average = ppm_average.average();
+    double ppm_value_average;
+
+    if (modtype == MOD_FM) {
+      // the minus factor is to show the ppm correction
+      // to make and not the one made
+      ppm_average.feed((fm.get_tuning_offset() / tuner_freq) * -1.0e6);
+      ppm_value_average = ppm_average.average();
+    }
+
     double if_level_db = 20 * log10(if_downsampler.get_if_level());
     double audio_level_db = 20 * log10(audio_level) + 3.01;
 
@@ -896,25 +902,39 @@ int main(int argc, char **argv) {
     buflen_sec = buflen / nchannel / double(pcmrate);
 
     // Show status messages for each block if not in quiet mode.
+    bool stereo_change = false;
     if (!quietmode) {
-      bool stereo_change = (fm.stereo_detected() != got_stereo);
-      // Show stereo status.
-      if (stereo_change) {
-        got_stereo = fm.stereo_detected();
-        if (got_stereo) {
-          fprintf(stderr, "\ngot stereo signal, pilot level = %.7f\n",
-                  fm.get_pilot_level());
-        } else {
-          fprintf(stderr, "\nlost stereo signal\n");
+      switch (modtype) {
+      case MOD_FM:
+        stereo_change = (fm.stereo_detected() != got_stereo);
+        // Show stereo status.
+        if (stereo_change) {
+          got_stereo = fm.stereo_detected();
+          if (got_stereo) {
+            fprintf(stderr, "\ngot stereo signal, pilot level = %.7f\n",
+                    fm.get_pilot_level());
+          } else {
+            fprintf(stderr, "\nlost stereo signal\n");
+          }
         }
-      }
-      // Show per-block statistics.
-      if (stereo_change ||
-          (((block % stat_rate) == 0) && (block > discarding_blocks))) {
-        fprintf(stderr,
-                "\rblk=%8d:ppm=%+6.2f:IF=%+5.1fdB:AF=%+5.1fdB:buf=%.2fs", block,
-                ppm_value_average, if_level_db, audio_level_db, buflen_sec);
-        fflush(stderr);
+        // Show per-block statistics.
+        if (stereo_change ||
+            (((block % stat_rate) == 0) && (block > discarding_blocks))) {
+          fprintf(stderr,
+                  "\rblk=%8d:ppm=%+6.2f:IF=%+6.1fdB:AF=%+6.1fdB:buf=%.2fs",
+                  block, ppm_value_average, if_level_db, audio_level_db,
+                  buflen_sec);
+          fflush(stderr);
+        }
+        break;
+      case MOD_AM:
+        // Show per-block statistics without ppm offset.
+        if (((block % stat_rate) == 0) && (block > discarding_blocks)) {
+          fprintf(stderr, "\rblk=%8d:IF=%+6.1fdB:AF=%+6.1fdB:buf=%.2fs", block,
+                  if_level_db, audio_level_db, buflen_sec);
+          fflush(stderr);
+        }
+        break;
       }
     }
 
