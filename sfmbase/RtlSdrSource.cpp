@@ -80,6 +80,7 @@ bool RtlSdrSource::configure(std::string configurationStr) {
   int tuner_gain = INT_MIN;
   int block_length = default_block_length;
   bool agcmode = false;
+  bool antbias = false;
 
   parsekv::key_value_sequence<std::string::iterator> p;
   parsekv::pairs_type m;
@@ -157,19 +158,25 @@ bool RtlSdrSource::configure(std::string configurationStr) {
       agcmode = true;
     }
 
+    if (m.find("antbias") != m.end()) {
+      std::cerr << "RtlSdrSource::configure: agc" << std::endl;
+      antbias = true;
+    }
+
     // Intentionally tune at a higher frequency to avoid DC offset.
     m_confFreq = frequency;
     m_confAgc = agcmode;
     double tuner_freq = frequency - sample_rate / 4.0;
 
-    return configure(sample_rate, tuner_freq, tuner_gain, block_length,
-                     agcmode);
+    return configure(sample_rate, tuner_freq, tuner_gain, block_length, agcmode,
+                     antbias);
   }
 }
 
 // Configure RTL-SDR tuner and prepare for streaming.
 bool RtlSdrSource::configure(uint32_t sample_rate, uint32_t frequency,
-                             int tuner_gain, int block_length, bool agcmode) {
+                             int tuner_gain, int block_length, bool agcmode,
+                             bool antbias) {
   int r;
 
   if (!m_dev) {
@@ -212,6 +219,14 @@ bool RtlSdrSource::configure(uint32_t sample_rate, uint32_t frequency,
   r = rtlsdr_set_agc_mode(m_dev, int(agcmode));
   if (r < 0) {
     m_error = "rtlsdr_set_agc_mode failed";
+    return false;
+  }
+
+  // set RTL antenna Bias Tee
+  // Note: not all device supports this
+  r = rtlsdr_set_bias_tee(m_dev, int(antbias));
+  if (r < 0) {
+    m_error = "rtlsdr_set_bias_tee failed";
     return false;
   }
 

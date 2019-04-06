@@ -64,12 +64,14 @@ private:
    * frequency    :: desired center frequency in Hz.
    * tuner_gain   :: desired tuner gain in 0.1 dB, or INT_MIN for auto-gain.
    * block_length :: preferred number of samples per block.
+   * agcmode      :: enable AGC mode.
+   * antbias      :: enable antenna bias tee.
    *
    * Return true for success, false if an error occurred.
    */
   bool configure(std::uint32_t sample_rate, std::uint32_t frequency,
                  int tuner_gain, int block_length = default_block_length,
-                 bool agcmode = false);
+                 bool agcmode = false, bool antbias = false);
 
   /** Return a list of supported tuner gain settings in units of 0.1 dB. */
   std::vector<int> get_tuner_gains();
