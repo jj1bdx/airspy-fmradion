@@ -30,6 +30,8 @@
 #include "IfDownsampler.h"
 #include "SoftFM.h"
 
+enum AmFilterType { AMFILTER_DEFAULT, AMFILTER_MIDDLE, AMFILTER_NARROW };
+
 /** Complete decoder for FM broadcast signal. */
 class AmDecoder {
 public:
@@ -42,7 +44,8 @@ public:
    *
    * sample_rate_demod :: Demodulator IQ sample rate.
    */
-  AmDecoder(double sample_rate_demod);
+  AmDecoder(double sample_rate_demod,
+            std::vector<IQSample::value_type> &amfilter_coeff);
 
   // Process IQ samples and return audio samples.
   void process(const IQSampleVector &samples_in, SampleVector &audio);
@@ -57,6 +60,7 @@ private:
 
   // Data members.
   const double m_sample_rate_demod;
+  const std::vector<IQSample::value_type> &m_amfilter_coeff;
   double m_baseband_mean;
   double m_baseband_level;
 
@@ -73,12 +77,14 @@ private:
 
   IQSampleVector m_buf_downsampled;
   IQSampleVector m_buf_downsampled2;
+  IQSampleVector m_buf_downsampled3;
   SampleVector m_buf_baseband_demod;
   SampleVector m_buf_baseband;
   SampleVector m_buf_mono;
 
   AudioResampler m_audioresampler;
   IfDownsampler m_ifdownsampler;
+  IfDownsampler m_amfilter;
   HighPassFilterIir m_dcblock;
   LowPassFilterRC m_deemph;
 };

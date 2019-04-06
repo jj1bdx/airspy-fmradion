@@ -132,6 +132,10 @@ void usage() {
       "  -X             Shift pilot phase (for Quadrature Multipath Monitor)\n"
       "                 (-X is ignored under mono mode (-M))\n"
       "  -U             Set deemphasis to 75 microseconds (default: 50)\n"
+      "  -f filtername  AM Filter type:\n"
+      "                   - default: +-6kHz\n"
+      "                   - middle:  +-4kHz\n"
+      "                   - narrow:  +-3kHz\n"
       "\n"
       "Configuration options for RTL-SDR devices\n"
       "  freq=<int>     Frequency of radio station in Hz (default 100000000)\n"
@@ -255,11 +259,14 @@ static bool get_device(std::vector<std::string> &devnames, DevType devtype,
 }
 
 int main(int argc, char **argv) {
+
+  enum OutputMode { MODE_RAW_INT16, MODE_RAW_FLOAT32, MODE_WAV, MODE_ALSA };
+  enum ModType { MOD_FM, MOD_AM };
+  enum AmFilterType { AMFILTER_DEFAULT, AMFILTER_MIDDLE, AMFILTER_NARROW };
+
   int devidx = 0;
   int pcmrate = FmDecoder::sample_rate_pcm;
   bool stereo = true;
-  enum OutputMode { MODE_RAW_INT16, MODE_RAW_FLOAT32, MODE_WAV, MODE_ALSA };
-  enum ModType { MOD_FM, MOD_AM };
 #ifdef USE_ALSA
   OutputMode outmode = MODE_ALSA;
   std::string filename;
@@ -279,6 +286,8 @@ int main(int argc, char **argv) {
   DevType devtype;
   std::string modtype_str("fm");
   ModType modtype = MOD_FM;
+  std::string amfiltertype_str("default");
+  AmFilterType amfiltertype = AMFILTER_DEFAULT;
   std::vector<std::string> devnames;
   Source *srcsdr = 0;
 
@@ -286,24 +295,18 @@ int main(int argc, char **argv) {
   fprintf(stderr, "Software FM/AM radio for ");
   fprintf(stderr, "Airspy R2, Airspy HF+, and RTL-SDR\n");
 
-  const struct option longopts[] = {{"modtype", 2, NULL, 'm'},
-                                    {"devtype", 2, NULL, 't'},
-                                    {"config", 2, NULL, 'c'},
-                                    {"dev", 1, NULL, 'd'},
-                                    {"mono", 0, NULL, 'M'},
-                                    {"raw", 1, NULL, 'R'},
-                                    {"float", 1, NULL, 'F'},
-                                    {"wav", 1, NULL, 'W'},
-                                    {"play", 2, NULL, 'P'},
-                                    {"pps", 1, NULL, 'T'},
-                                    {"buffer", 1, NULL, 'b'},
-                                    {"quiet", 1, NULL, 'q'},
-                                    {"pilotshift", 0, NULL, 'X'},
-                                    {"usa", 0, NULL, 'U'},
-                                    {NULL, 0, NULL, 0}};
+  const struct option longopts[] = {
+      {"modtype", 2, NULL, 'm'},      {"devtype", 2, NULL, 't'},
+      {"config", 2, NULL, 'c'},       {"dev", 1, NULL, 'd'},
+      {"mono", 0, NULL, 'M'},         {"raw", 1, NULL, 'R'},
+      {"float", 1, NULL, 'F'},        {"wav", 1, NULL, 'W'},
+      {"amfiltertype", 2, NULL, 'f'}, {"play", 2, NULL, 'P'},
+      {"pps", 1, NULL, 'T'},          {"buffer", 1, NULL, 'b'},
+      {"quiet", 1, NULL, 'q'},        {"pilotshift", 0, NULL, 'X'},
+      {"usa", 0, NULL, 'U'},          {NULL, 0, NULL, 0}};
 
   int c, longindex;
-  while ((c = getopt_long(argc, argv, "m:t:c:d:MR:F:W:P::T:b:qXU", longopts,
+  while ((c = getopt_long(argc, argv, "m:t:c:d:MR:F:W:f:P::T:b:qXU", longopts,
                           &longindex)) >= 0) {
     switch (c) {
     case 'm':
@@ -334,6 +337,9 @@ int main(int argc, char **argv) {
     case 'W':
       outmode = MODE_WAV;
       filename = optarg;
+      break;
+    case 'f':
+      amfiltertype_str.assign(optarg);
       break;
     case 'P':
       outmode = MODE_ALSA;
@@ -391,6 +397,17 @@ int main(int argc, char **argv) {
     modtype = MOD_AM;
   } else {
     fprintf(stderr, "Modulation type string unsuppored\n");
+    exit(1);
+  }
+
+  if (strcasecmp(amfiltertype_str.c_str(), "default") == 0) {
+    amfiltertype = AMFILTER_DEFAULT;
+  } else if (strcasecmp(amfiltertype_str.c_str(), "middle") == 0) {
+    amfiltertype = AMFILTER_MIDDLE;
+  } else if (strcasecmp(amfiltertype_str.c_str(), "narrow") == 0) {
+    amfiltertype = AMFILTER_NARROW;
+  } else {
+    fprintf(stderr, "AM filter type string unsuppored\n");
     exit(1);
   }
 
@@ -762,8 +779,23 @@ int main(int argc, char **argv) {
                pilot_shift       // pilot_shift
   );
 
+  std::vector<IQSample::value_type> amfilter_coeff;
+
+  switch (amfiltertype) {
+  case AMFILTER_DEFAULT:
+    amfilter_coeff = FilterParameters::delay_3taps_only_iq;
+    break;
+  case AMFILTER_MIDDLE:
+    amfilter_coeff = FilterParameters::jj1bdx_am_12khz_middle;
+    break;
+  case AMFILTER_NARROW:
+    amfilter_coeff = FilterParameters::jj1bdx_am_12khz_narrow;
+    break;
+  }
+
   // Prepare AM decoder.
-  AmDecoder am(demodulator_rate // sample_rate_demod
+  AmDecoder am(demodulator_rate, // sample_rate_demod
+               amfilter_coeff    // amfilter_coeff
   );
 
   switch (modtype) {
@@ -776,6 +808,7 @@ int main(int argc, char **argv) {
     fprintf(stderr, "FM demodulator deemphasis: %.9g [µs]\n", deemphasis);
     break;
   case MOD_AM:
+    fprintf(stderr, "AM filter type: %s\n", amfiltertype_str.c_str());
     fprintf(stderr, "AM demodulator deemphasis: %.9g [µs]\n",
             AmDecoder::default_deemphasis);
     break;

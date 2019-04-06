@@ -47,6 +47,9 @@ public:
 
   static const std::vector<IQSample::value_type> jj1bdx_am_48khz_div2;
   static const std::vector<IQSample::value_type> jj1bdx_am_24khz_div2;
+
+  static const std::vector<IQSample::value_type> jj1bdx_am_12khz_middle;
+  static const std::vector<IQSample::value_type> jj1bdx_am_12khz_narrow;
 };
 
 #endif // SOFTFM_EQPARAMETERS_H

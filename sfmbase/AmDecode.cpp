@@ -60,11 +60,13 @@ const double AmDecoder::bandwidth_pcm = 4500;
 // Deemphasis constant in microseconds.
 const double AmDecoder::default_deemphasis = 100;
 
-AmDecoder::AmDecoder(double sample_rate_demod)
+AmDecoder::AmDecoder(double sample_rate_demod,
+                     std::vector<IQSample::value_type> &amfilter_coeff)
     // Initialize member fields
-    : m_sample_rate_demod(sample_rate_demod), m_baseband_mean(0),
-      m_baseband_level(0), m_agc_last_gain(1.0), m_agc_peak1(0), m_agc_peak2(0),
-      m_agc_reference(0.9), m_if_agc_current_gain(1.0), m_if_agc_rate(0.00005),
+    : m_sample_rate_demod(sample_rate_demod), m_amfilter_coeff(amfilter_coeff),
+      m_baseband_mean(0), m_baseband_level(0), m_agc_last_gain(1.0),
+      m_agc_peak1(0), m_agc_peak2(0), m_agc_reference(0.9),
+      m_if_agc_current_gain(1.0), m_if_agc_rate(0.00005),
       m_if_agc_reference(0.5)
 
       // Construct AudioResampler for mono and stereo channels
@@ -76,6 +78,11 @@ AmDecoder::AmDecoder(double sample_rate_demod)
       m_ifdownsampler(2, FilterParameters::jj1bdx_am_48khz_div2, true, 2,
                       FilterParameters::jj1bdx_am_24khz_div2)
 
+      // Construct AM narrow filter
+      ,
+      m_amfilter(1, m_amfilter_coeff, false, 1,
+                 FilterParameters::delay_3taps_only_iq)
+
       // Construct HighPassFilterIir
       // cutoff: 60Hz for 12kHz sampling rate
       ,
@@ -84,7 +91,7 @@ AmDecoder::AmDecoder(double sample_rate_demod)
       // Construct LowPassFilterRC
       ,
       m_deemph(default_deemphasis * sample_rate_pcm * 1.0e-6) {
-  // Do nothing
+  // do nothing
 }
 
 void AmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
@@ -92,13 +99,14 @@ void AmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
   // Downsample input signal to /4
   m_ifdownsampler.process(samples_in, m_buf_downsampled);
 
-  // TODO: narrower filter here
+  // Apply narrower filters
+  m_amfilter.process(m_buf_downsampled, m_buf_downsampled2);
 
   // If AGC
-  if_agc(m_buf_downsampled, m_buf_downsampled2);
+  if_agc(m_buf_downsampled2, m_buf_downsampled3);
 
   // Demodulate AM signal.
-  demodulate(m_buf_downsampled2, m_buf_baseband_demod);
+  demodulate(m_buf_downsampled3, m_buf_baseband_demod);
 
   // DC blocking.
   m_dcblock.process_inplace(m_buf_baseband_demod);
