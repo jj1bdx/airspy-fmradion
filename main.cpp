@@ -617,10 +617,10 @@ int main(int argc, char **argv) {
         enable_fs_fourth_downconverter = true;
         enable_two_downsampler_stages = false;
         first_downsample = 4;
-        first_coeff = FilterParameters::jj1bdx_am_768khz_div4;
+        first_coeff = FilterParameters::jj1bdx_am_if_div4;
         enable_second_downsampler = true;
         second_downsample = 4;
-        second_coeff = FilterParameters::jj1bdx_am_192khz_div4;
+        second_coeff = FilterParameters::jj1bdx_am_if_div4;
       } else {
         fprintf(stderr, "Sample rate unsupported\n");
         fprintf(stderr, "Supported rate:\n");
