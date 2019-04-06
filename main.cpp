@@ -517,13 +517,23 @@ int main(int argc, char **argv) {
 
   double ifrate = srcsdr->get_sample_rate();
 
-  bool enable_fs_fourth_downconverter;
-  unsigned int first_downsample;
-  std::vector<IQSample::value_type> first_coeff;
-  bool enable_second_downsampler;
-  unsigned int second_downsample;
-  std::vector<IQSample::value_type> second_coeff;
   unsigned int if_blocksize;
+
+  bool enable_fs_fourth_downconverter = false;
+
+  bool enable_two_downsampler_stages = false;
+
+  unsigned int first_downsample = 1;
+  std::vector<IQSample::value_type> first_coeff;
+  bool enable_second_downsampler = false;
+  unsigned int second_downsample = 1;
+  std::vector<IQSample::value_type> second_coeff;
+
+  unsigned int third_downsample = 1;
+  std::vector<IQSample::value_type> third_coeff;
+  bool enable_fourth_downsampler = false;
+  unsigned int fourth_downsample = 1;
+  std::vector<IQSample::value_type> fourth_coeff;
 
   // Configure filter and downsampler.
   switch (modtype) {
@@ -533,6 +543,7 @@ int main(int argc, char **argv) {
       if (ifrate == 10000000.0) {
         if_blocksize = 65536;
         enable_fs_fourth_downconverter = false;
+        enable_two_downsampler_stages = false;
         // decimation rate: 32 = 8 * 4
         // 312.5kHz = +-156.25kHz
         first_downsample = 8;
@@ -543,6 +554,7 @@ int main(int argc, char **argv) {
       } else if (ifrate == 2500000.0) {
         if_blocksize = 65536;
         enable_fs_fourth_downconverter = false;
+        enable_two_downsampler_stages = false;
         // decimation rate: 8 = 4 * 2
         // 312.5kHz = +-156.25kHz
         first_downsample = 4;
@@ -561,11 +573,10 @@ int main(int argc, char **argv) {
       if (ifrate == 768000.0) {
         if_blocksize = 16384;
         enable_fs_fourth_downconverter = true;
+        enable_two_downsampler_stages = false;
         first_downsample = 2;
         first_coeff = FilterParameters::jj1bdx_768khz_div2;
         enable_second_downsampler = false;
-        second_downsample = 1;                                // placeholder
-        second_coeff = FilterParameters::delay_3taps_only_iq; // placeholder
       } else {
         fprintf(stderr, "Sample rate unsupported\n");
         fprintf(stderr, "Supported rate:\n");
@@ -577,11 +588,10 @@ int main(int argc, char **argv) {
       if ((ifrate >= 900001.0) && (ifrate <= 937500.0)) {
         if_blocksize = 65536;
         enable_fs_fourth_downconverter = true;
+        enable_two_downsampler_stages = false;
         first_downsample = 3;
         first_coeff = FilterParameters::jj1bdx_900khz_div3;
         enable_second_downsampler = false;
-        second_downsample = 1;                                // placeholder
-        second_coeff = FilterParameters::delay_3taps_only_iq; // placeholder
       } else {
         fprintf(stderr, "Sample rate unsupported\n");
         fprintf(stderr, "Supported rate:\n");
@@ -601,6 +611,7 @@ int main(int argc, char **argv) {
       if (ifrate == 768000.0) {
         if_blocksize = 16384;
         enable_fs_fourth_downconverter = true;
+        enable_two_downsampler_stages = false;
         first_downsample = 4;
         first_coeff = FilterParameters::jj1bdx_am_768khz_div4;
         enable_second_downsampler = true;
@@ -621,20 +632,15 @@ int main(int argc, char **argv) {
     break;
   }
 
-  double demodulator_rate = ifrate / first_downsample / second_downsample;
+  unsigned int if_decimation_ratio = first_downsample * second_downsample * third_downsample * fourth_downsample;
+  double demodulator_rate = ifrate / if_decimation_ratio;
   double total_decimation_ratio = ifrate / pcmrate;
   double audio_decimation_ratio = demodulator_rate / pcmrate;
 
   // Display filter configuration.
-  fprintf(stderr, "IF sample rate: %.9g,", ifrate);
-  fprintf(stderr, " IF 1st rate: %.8g [Hz] (divided by %u)\n",
-          ifrate / first_downsample, first_downsample);
-  if (second_downsample != 1) {
-    fprintf(stderr, "IF 2nd rate: %.8g [Hz] (divided by %u)\n",
-            ifrate / first_downsample / second_downsample, second_downsample);
-  }
+  fprintf(stderr, "IF sample rate: %.9g [Hz], ", ifrate);
+  fprintf(stderr, "IF decimation divided by %d\n", if_decimation_ratio);
   fprintf(stderr, "Demodulator rate: %.8g [Hz]\n", demodulator_rate);
-
   fprintf(stderr, "Audio decimated from demodulator by: %.9g\n",
           audio_decimation_ratio);
 
@@ -667,13 +673,21 @@ int main(int argc, char **argv) {
   // Prepare Fs/4 downconverter.
   FourthDownconverterIQ fourth_downconverter;
 
-  // Prepare IF Downsampler.
+  // Prepare IF Downsamplers.
   IfDownsampler if_downsampler(
       first_downsample,          // first_downsample
       first_coeff,               // first_coeff
       enable_second_downsampler, // enable_second_downsampler
       second_downsample,         // second_downsample
       second_coeff               // second_coeff
+  );
+
+  IfDownsampler if_downsampler_second(
+      third_downsample,          // first_downsample
+      third_coeff,               // first_coeff
+      enable_fourth_downsampler, // enable_second_downsampler
+      fourth_downsample,         // second_downsample
+      fourth_coeff               // second_coeff
   );
 
   // Prepare FM decoder.
@@ -743,8 +757,10 @@ int main(int argc, char **argv) {
 
     // Pull next block from source buffer.
     IQSampleVector iqsamples = source_buffer.pull();
+
     IQSampleVector if_shifted_samples;
     IQSampleVector if_samples;
+    IQSampleVector if_samples_second;
 
     if (iqsamples.empty()) {
       break;
@@ -767,7 +783,14 @@ int main(int argc, char **argv) {
     }
 
     // Downsample IF for the decoder.
-    if_downsampler.process(if_shifted_samples, if_samples);
+
+    if_downsampler.process(if_shifted_samples, if_samples_second);
+
+    if (enable_two_downsampler_stages) {
+      if_downsampler_second.process(if_samples_second, if_samples);
+    } else {
+      if_samples = if_samples_second;
+    }
 
     // Decode signal.
     switch (modtype) {
