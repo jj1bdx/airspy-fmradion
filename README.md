@@ -1,6 +1,6 @@
 # airspy-fmradion
 
-* Version v0.6.1-dev0, 6-APR-2019
+* Version v0.6.1, 7-APR-2019
 * For MacOS and Linux
 * *NOTE: this release has a major change adding the AM reception function*
 
@@ -134,6 +134,7 @@ Compile and install
  - `-b seconds` Set audio buffer size in seconds
  - `-X` Shift pilot phase (for Quadrature Multipath Monitor) (-X is ignored under mono mode (-M))
  - `-U` Set deemphasis to 75 microseconds (default: 50)
+ - `-f` Set AM Filter type: default: +-6kHz, middle: +-4kHz, narrow: +-3kHz
 
 ## Major changes
 
