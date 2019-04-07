@@ -21,6 +21,7 @@
 #include <cmath>
 
 #include "FmDecode.h"
+#include "fastatan2.h"
 
 /* ****************  class PhaseDiscriminator  **************** */
 
@@ -29,46 +30,23 @@ PhaseDiscriminator::PhaseDiscriminator(double max_freq_dev)
     : m_freq_scale_factor(1.0 / (max_freq_dev * 2.0 * M_PI)) {}
 
 // Process samples.
-// A vectorized quadratic discrimination algorithm written by
-// András Retzler, HA7ILM, is used here, as
-// presented in https://github.com/simonyiszk/csdr/blob/master/libcsdr.c
-// as fmdemod_quadri_cf().
+//
 inline void PhaseDiscriminator::process(const IQSampleVector &samples_in,
                                         SampleVector &samples_out) {
   unsigned int n = samples_in.size();
+  IQSample s0 = m_last1_sample;
 
   samples_out.resize(n);
-  m_temp.resize(n);
-  m_temp_dq.resize(n);
-  m_temp_di.resize(n);
 
-  // Compute dq.
-  m_temp_dq[0] = samples_in[0].real() - m_last1_sample.real();
-  for (unsigned int i = 1; i < n; i++) {
-    m_temp_dq[i] = samples_in[i].real() - samples_in[i - 1].real();
-  }
-  // Compute di.
-  m_temp_di[0] = samples_in[0].imag() - m_last1_sample.imag();
-  for (unsigned int i = 1; i < n; i++) {
-    m_temp_di[i] = samples_in[i].imag() - samples_in[i - 1].imag();
-  }
-  // Compute output numerator.
   for (unsigned int i = 0; i < n; i++) {
-    samples_out[i] = (samples_in[i].imag() * m_temp_dq[i]) -
-                     (samples_in[i].real() * m_temp_di[i]);
-  }
-  // Compute output denominator.
-  for (unsigned int i = 0; i < n; i++) {
-    m_temp[i] = (samples_in[i].imag() * samples_in[i].imag()) +
-                (samples_in[i].real() * samples_in[i].real());
-  }
-  // Scale output.
-  for (unsigned int i = 0; i < n; i++) {
-    samples_out[i] =
-        (m_temp[i]) ? m_freq_scale_factor * samples_out[i] / m_temp[i] : 0;
+    IQSample s1(samples_in[i]);
+    IQSample d(conj(s0) * s1);
+    Sample w = fastatan2(d.imag(), d.real());
+    samples_out[i] = w * m_freq_scale_factor;
+    s0 = s1;
   }
 
-  m_last1_sample = samples_in[n - 1];
+  m_last1_sample = s0;
 }
 
 // class DiscriminatorEqualizer

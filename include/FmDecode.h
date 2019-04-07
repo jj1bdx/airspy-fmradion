@@ -50,9 +50,6 @@ public:
 private:
   const Sample m_freq_scale_factor;
   IQSample m_last1_sample;
-  SampleVector m_temp;
-  std::vector<IQSample::value_type> m_temp_dq;
-  std::vector<IQSample::value_type> m_temp_di;
 };
 
 class DiscriminatorEqualizer {

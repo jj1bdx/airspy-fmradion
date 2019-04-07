@@ -1,6 +1,6 @@
 # airspy-fmradion
 
-* Version v0.6.1, 7-APR-2019
+* Version v0.6.2, 7-APR-2019
 * For MacOS and Linux
 * *NOTE: this release has a major change adding the AM reception function*
 
