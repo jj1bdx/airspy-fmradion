@@ -205,6 +205,7 @@ private:
   double m_baseband_level;
 
   SampleVector m_buf_baseband;
+  SampleVector m_buf_baseband_mpx;
   SampleVector m_buf_baseband_raw;
   SampleVector m_buf_mono_firstout;
   SampleVector m_buf_mono;
@@ -212,6 +213,7 @@ private:
   SampleVector m_buf_stereo_firstout;
   SampleVector m_buf_stereo;
 
+  AudioResampler m_audioresampler_mpx;
   AudioResampler m_audioresampler_mono;
   AudioResampler m_audioresampler_stereo;
   LowPassFilterFirAudio m_pilotcut_mono;
