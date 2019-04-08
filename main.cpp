@@ -45,7 +45,7 @@
 #include "SoftFM.h"
 #include "util.h"
 
-#define AIRSPY_FMRADION_VERSION "v0.6.3-dev"
+#define AIRSPY_FMRADION_VERSION "v0.6.3-dev1"
 
 /** Flag is set on SIGINT / SIGTERM. */
 static std::atomic_bool stop_flag(false);
@@ -570,7 +570,7 @@ int main(int argc, char **argv) {
         first_downsample = 8;
         first_coeff = FilterParameters::jj1bdx_10000khz_div8;
         enable_second_downsampler = true;
-        second_downsample = 4;
+        second_downsample = 2; // wider deviation of 625kHz required
         second_coeff = FilterParameters::jj1bdx_1250khz_div4;
       } else if (ifrate == 2500000.0) {
         if_blocksize = 65536;
@@ -579,7 +579,7 @@ int main(int argc, char **argv) {
         first_downsample = 4;
         first_coeff = FilterParameters::jj1bdx_2500khz_div4;
         enable_second_downsampler = true;
-        second_downsample = 2;
+        second_downsample = 1; // wider deviation of 600~625kHz required
         second_coeff = FilterParameters::jj1bdx_600khz_625khz_div2;
       } else {
         fprintf(stderr, "Sample rate unsupported\n");
@@ -594,7 +594,7 @@ int main(int argc, char **argv) {
         if_blocksize = 16384;
         enable_fs_fourth_downconverter = true;
         enable_two_downsampler_stages = false;
-        first_downsample = 2;
+        first_downsample = 1; // wider deviation of 768kHz required
         first_coeff = FilterParameters::jj1bdx_768khz_div2;
         enable_second_downsampler = false;
       } else {
@@ -610,7 +610,7 @@ int main(int argc, char **argv) {
         if_blocksize = 65536;
         enable_fs_fourth_downconverter = true;
         enable_two_downsampler_stages = false;
-        first_downsample = 3;
+        first_downsample = 1; // wider deviation of 900kHz required
         first_coeff = FilterParameters::jj1bdx_900khz_div3;
         enable_second_downsampler = false;
       } else {

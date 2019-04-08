@@ -272,10 +272,14 @@ FmDecoder::FmDecoder(double sample_rate_demod, bool stereo, double deemphasis,
       m_stereo_enabled(stereo), m_stereo_detected(false), m_baseband_mean(0),
       m_baseband_level(0)
 
+      // Construct AudioResampler for MPX signal
+      ,
+      m_audioresampler_mpx(m_sample_rate_fmdemod, sample_rate_pcm * 4)
+
       // Construct AudioResampler for mono and stereo channels
       ,
-      m_audioresampler_mono(m_sample_rate_fmdemod, FmDecoder::sample_rate_pcm),
-      m_audioresampler_stereo(m_sample_rate_fmdemod, FmDecoder::sample_rate_pcm)
+      m_audioresampler_mono(sample_rate_pcm * 4, sample_rate_pcm),
+      m_audioresampler_stereo(sample_rate_pcm * 4, sample_rate_pcm)
 
       // Construct 19kHz pilot signal cut filter
       ,
@@ -324,7 +328,10 @@ void FmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
 
   // Compensate 0th-hold aperture effect
   // by applying the equalizer to the discriminator output.
-  m_disceq.process(m_buf_baseband_raw, m_buf_baseband);
+  m_disceq.process(m_buf_baseband_raw, m_buf_baseband_mpx);
+
+  // Resample to sample_rate_pcm * 4 (192kHz)
+  m_audioresampler_mpx.process(m_buf_baseband_mpx, m_buf_baseband);
 
   // Measure baseband level.
   double baseband_mean, baseband_rms;
