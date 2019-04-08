@@ -577,7 +577,7 @@ int main(int argc, char **argv) {
         if_blocksize = 65536;
         enable_fs_fourth_downconverter = false;
         enable_two_downsampler_stages = false;
-        first_downsample = 2;
+        first_downsample = 4;
         first_coeff = FilterParameters::jj1bdx_2500khz_div4;
         enable_second_downsampler = true;
         second_downsample = 2;
