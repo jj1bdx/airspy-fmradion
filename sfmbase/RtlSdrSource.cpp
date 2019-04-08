@@ -313,7 +313,7 @@ void RtlSdrSource::run() {
   IQSampleVector iqsamples;
 
   while (!m_this->m_stop_flag->load() && get_samples(&iqsamples)) {
-    m_this->m_buf->push(move(iqsamples));
+    m_this->m_buf->push(std::move(iqsamples));
   }
 }
 

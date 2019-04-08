@@ -34,7 +34,7 @@ public:
     if (!samples.empty()) {
       std::unique_lock<std::mutex> lock(m_mutex);
       m_qlen += samples.size();
-      m_queue.push(move(samples));
+      m_queue.push(std::move(samples));
       lock.unlock();
       m_cond.notify_all();
     }

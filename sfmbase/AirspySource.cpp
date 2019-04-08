@@ -555,5 +555,5 @@ void AirspySource::callback(const float *buf, int len) {
     iqsamples[j] = IQSample(re, im);
   }
 
-  m_buf->push(move(iqsamples));
+  m_buf->push(std::move(iqsamples));
 }

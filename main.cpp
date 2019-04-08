@@ -1001,7 +1001,7 @@ int main(int argc, char **argv) {
       // Write samples to output.
       if (outputbuf_samples > 0) {
         // Buffered write.
-        output_buffer.push(move(audiosamples));
+        output_buffer.push(std::move(audiosamples));
       } else {
         // Direct write.
         audio_output->write(audiosamples);
