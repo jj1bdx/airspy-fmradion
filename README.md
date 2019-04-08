@@ -1,6 +1,6 @@
 # airspy-fmradion
 
-* Version v0.6.2, 7-APR-2019
+* Version v0.6.3-dev2, 8-APR-2019
 * For MacOS and Linux
 * *NOTE: this release has a major change adding the AM reception function*
 
@@ -202,7 +202,7 @@ Compile and install
 * An integer downsampler is added to the first-stage LowPassFilterFirIQ (LPFIQ)
 * Use pre-built optimized filter coefficients for LPFIQ and audio filters
 * Input -> LPFIQ 1st -> LPFIQ 2nd -> PhaseDiscriminator
-* 10MHz -> 1.25MHz -> 312.5kHz (/8 and /4)
+* 10MHz -> 312.5kHz (/32)
 * Use `AIRSPY_SAMPLE_FLOAT32_IQ` to directly obtain float IQ sample data from Airspy: IF level is now -24.08dB than the previous (pre-v0.2.2) version
 * Use sparse debug output for ppm and other level status
 * CPU usage: ~56% -> ~31% on Mac mini 2018, with debug output on, comparing with ngsoftfm-jj1bdx 0.1.14
@@ -226,9 +226,8 @@ Compile and install
 * LPFIQ is single-stage
 * IF center frequency is down Fs/4 than the station frequency, i.e: when the station is 76.5MHz, the tuned frequency is 76.308MHz
 * Airspy HF+ allows only 660kHz alias-free BW, so the maximum alias-free BW for IF is (660/2)kHz - 192kHz = 138kHz
-* FM demodulation rate: 384kHz
+* FM demodulation rate: 384kHz (/2)
 * 48 * 16 = 768, so all filters are in integer sampling rates
-* CPU usage: ~11% on Mac mini 2018 / macOS 10.14.3
 
 ### Filter characteristics
 
@@ -245,10 +244,11 @@ Compile and install
 
 * Valid sample rates are from 900001 to 937500 [Hz].
 * The default value is 937500Hz.
+* FM demodulation rate: 300~312.5kHz (/3)
 
 ### Conversion process
 
-* 937.5kHz -> 312.5kHz (/3)
+* No decimation
 * The audio stage is the same as in Airspy
 
 ### RTL-SDR configuration options
