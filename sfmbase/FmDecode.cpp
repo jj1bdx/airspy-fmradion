@@ -391,7 +391,7 @@ void FmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
   } else {
     m_deemph_mono.process_inplace(m_buf_mono); //  De-emphasis.
     // Just return mono channel.
-    audio = move(m_buf_mono);
+    audio = std::move(m_buf_mono);
   }
 }
 

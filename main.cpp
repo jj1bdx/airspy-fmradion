@@ -881,7 +881,7 @@ int main(int argc, char **argv) {
       // because Airspy HF+ and RTL-SDR are Zero IF receivers
       fourth_downconverter.process(iqsamples, if_shifted_samples);
     } else {
-      if_shifted_samples = iqsamples;
+      if_shifted_samples = std::move(iqsamples);
     }
 
     // Downsample IF for the decoder.
@@ -891,7 +891,7 @@ int main(int argc, char **argv) {
     if (enable_two_downsampler_stages) {
       if_downsampler_second.process(if_samples_second, if_samples);
     } else {
-      if_samples = if_samples_second;
+      if_samples = std::move(if_samples_second);
     }
 
     // Decode signal.

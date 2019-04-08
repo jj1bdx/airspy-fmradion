@@ -133,7 +133,7 @@ void AmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
   m_deemph.process_inplace(m_buf_mono);
 
   // Return mono channel.
-  audio = move(m_buf_mono);
+  audio = std::move(m_buf_mono);
 }
 
 // Demodulate AM signal.
