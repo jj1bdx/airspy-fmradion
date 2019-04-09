@@ -564,7 +564,9 @@ int main(int argc, char **argv) {
     // Target frequency: 768~1250kHz
     switch (devtype) {
     case DEV_AIRSPY:
-      if (ifrate == 10000000.0) {
+      // switch statement only accepts integer rate values...
+      switch (int(ifrate)) {
+      case 10000000:
         if_blocksize = 65536;
         enable_fs_fourth_downconverter = false;
         enable_two_downsampler_stages = false;
@@ -573,7 +575,8 @@ int main(int argc, char **argv) {
         enable_second_downsampler = true;
         second_downsample = 4;
         second_coeff = FilterParameters::jj1bdx_1250khz_div4;
-      } else if (ifrate == 2500000.0) {
+	break;
+      case 2500000:
         if_blocksize = 65536;
         enable_fs_fourth_downconverter = false;
         enable_two_downsampler_stages = false;
@@ -582,12 +585,35 @@ int main(int argc, char **argv) {
         enable_second_downsampler = true;
         second_downsample = 2;
         second_coeff = FilterParameters::jj1bdx_625khz_div2;
-      } else {
+	break;
+      case 6000000:
+        if_blocksize = 65536;
+        enable_fs_fourth_downconverter = false;
+        enable_two_downsampler_stages = false;
+        first_downsample = 5;
+        first_coeff = FilterParameters::jj1bdx_6000khz_div5;
+        enable_second_downsampler = true;
+        second_downsample = 4;
+        second_coeff = FilterParameters::jj1bdx_1250khz_div4;
+	break;
+      case 3000000:
+        if_blocksize = 65536;
+        enable_fs_fourth_downconverter = false;
+        enable_two_downsampler_stages = false;
+        first_downsample = 5;
+        first_coeff = FilterParameters::jj1bdx_6000khz_div5;
+        enable_second_downsampler = true;
+        second_downsample = 2;
+        second_coeff = FilterParameters::jj1bdx_625khz_div2;
+	break;
+      default:
         fprintf(stderr, "Sample rate unsupported\n");
         fprintf(stderr, "Supported rate:\n");
         fprintf(stderr, "Airspy R2: 2500000, 10000000\n");
+        fprintf(stderr, "Airspy Mini: 3000000, 6000000\n");
         delete srcsdr;
         exit(1);
+	break;
       }
       break;
     case DEV_AIRSPYHF:
@@ -633,7 +659,9 @@ int main(int argc, char **argv) {
     // Configure AM mode constants.
     switch (devtype) {
     case DEV_AIRSPY:
-      if (ifrate == 10000000.0) {
+      // switch statement only accepts integer rate values...
+      switch (int(ifrate)) {
+      case 10000000:
         // 10000kHz: /2/3/5/7 -> 47.6190476kHz
         if_blocksize = 65536;
         enable_fs_fourth_downconverter = false;
@@ -648,7 +676,8 @@ int main(int argc, char **argv) {
         enable_fourth_downsampler = true;
         fourth_downsample = 7;
         fourth_coeff = FilterParameters::jj1bdx_am_if_div7;
-      } else if (ifrate == 2500000.0) {
+	break;
+      case 2500000:
         // 2500kHz: /3/4/5 -> 41.666666kHz
         if_blocksize = 65536;
         enable_fs_fourth_downconverter = false;
@@ -661,12 +690,43 @@ int main(int argc, char **argv) {
         third_downsample = 5;
         third_coeff = FilterParameters::jj1bdx_am_if_div5;
         enable_fourth_downsampler = false;
-      } else {
+	break;
+      case 6000000:
+        // 6000kHz: /5/5/5 -> 48kHz
+        if_blocksize = 65536;
+        enable_fs_fourth_downconverter = false;
+        enable_two_downsampler_stages = true;
+        first_downsample = 5;
+        first_coeff = FilterParameters::jj1bdx_am_if_div5;
+        enable_second_downsampler = true;
+        second_downsample = 5;
+        second_coeff = FilterParameters::jj1bdx_am_if_div5;
+        third_downsample = 5;
+        third_coeff = FilterParameters::jj1bdx_am_if_div5;
+        enable_fourth_downsampler = false;
+	break;
+      case 2500000:
+        // 3000kHz: /3/3/7 -> 47.6190476kHz
+        if_blocksize = 65536;
+        enable_fs_fourth_downconverter = false;
+        enable_two_downsampler_stages = true;
+        first_downsample = 3;
+        first_coeff = FilterParameters::jj1bdx_am_if_div3;
+        enable_second_downsampler = true;
+        second_downsample = 3;
+        second_coeff = FilterParameters::jj1bdx_am_if_div3;
+        third_downsample = 7;
+        third_coeff = FilterParameters::jj1bdx_am_if_div7;
+        enable_fourth_downsampler = false;
+	break;
+      default:
         fprintf(stderr, "Sample rate unsupported\n");
         fprintf(stderr, "Supported rate:\n");
         fprintf(stderr, "Airspy R2: 2500000, 10000000\n");
+        fprintf(stderr, "Airspy Mini: 3000000, 6000000\n");
         delete srcsdr;
         exit(1);
+	break;
       }
       break;
     case DEV_AIRSPYHF:

@@ -29,6 +29,7 @@
 class FilterParameters {
 public:
   static const std::vector<IQSample::value_type> jj1bdx_10000khz_div8;
+  static const std::vector<IQSample::value_type> jj1bdx_6000khz_div5;
   static const std::vector<IQSample::value_type> jj1bdx_1250khz_div4;
   static const std::vector<IQSample::value_type> jj1bdx_2500khz_div4;
   static const std::vector<IQSample::value_type> jj1bdx_625khz_div2;
