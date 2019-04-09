@@ -45,7 +45,7 @@
 #include "SoftFM.h"
 #include "util.h"
 
-#define AIRSPY_FMRADION_VERSION "v0.6.3"
+#define AIRSPY_FMRADION_VERSION "v0.6.4-dev"
 
 /** Flag is set on SIGINT / SIGTERM. */
 static std::atomic_bool stop_flag(false);
@@ -581,7 +581,7 @@ int main(int argc, char **argv) {
         first_coeff = FilterParameters::jj1bdx_2500khz_div4;
         enable_second_downsampler = true;
         second_downsample = 2;
-        second_coeff = FilterParameters::jj1bdx_600khz_625khz_div2;
+        second_coeff = FilterParameters::jj1bdx_625khz_div2;
       } else {
         fprintf(stderr, "Sample rate unsupported\n");
         fprintf(stderr, "Supported rate:\n");

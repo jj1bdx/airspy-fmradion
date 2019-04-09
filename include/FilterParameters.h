@@ -31,7 +31,7 @@ public:
   static const std::vector<IQSample::value_type> jj1bdx_10000khz_div8;
   static const std::vector<IQSample::value_type> jj1bdx_1250khz_div4;
   static const std::vector<IQSample::value_type> jj1bdx_2500khz_div4;
-  static const std::vector<IQSample::value_type> jj1bdx_600khz_625khz_div2;
+  static const std::vector<IQSample::value_type> jj1bdx_625khz_div2;
   static const std::vector<IQSample::value_type> jj1bdx_768khz_div2;
   static const std::vector<IQSample::value_type> jj1bdx_900khz_div3;
   static const std::vector<IQSample::value_type> delay_3taps_only_iq;
