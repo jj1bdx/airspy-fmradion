@@ -45,7 +45,7 @@
 #include "SoftFM.h"
 #include "util.h"
 
-#define AIRSPY_FMRADION_VERSION "v0.6.3-dev2"
+#define AIRSPY_FMRADION_VERSION "v0.6.3-dev3"
 
 /** Flag is set on SIGINT / SIGTERM. */
 static std::atomic_bool stop_flag(false);
@@ -963,9 +963,12 @@ int main(int argc, char **argv) {
         break;
       case MOD_AM:
         // Show per-block statistics without ppm offset.
+        double if_agc_gain_db = 20 * log10(am.get_if_agc_current_gain());
         if (((block % stat_rate) == 0) && (block > discarding_blocks)) {
-          fprintf(stderr, "\rblk=%8d:IF=%+6.1fdB:AF=%+6.1fdB:buf=%.2fs", block,
-                  if_level_db, audio_level_db, buflen_sec);
+          fprintf(stderr,
+                  "\rblk=%8d:IF=%+6.1fdB:AGC=%+6.1fdB:AF=%+6.1fdB:buf=%.2fs",
+                  block, if_level_db, if_agc_gain_db, audio_level_db,
+                  buflen_sec);
           fflush(stderr);
         }
         break;

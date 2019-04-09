@@ -1,6 +1,6 @@
 # airspy-fmradion
 
-* Version v0.6.3-dev2, 8-APR-2019
+* Version v0.6.3-dev3, 9-APR-2019
 * For MacOS and Linux
 * *NOTE: this release has a major change adding the AM reception function*
 
@@ -146,9 +146,9 @@ Compile and install
 
 ### Audio downsampling is now performed by libsoxr
 
-* Output of FM demodulator is downsampled by libsoxr
+* Output of FM demodulator is downsampled by libsoxr to 192kHz
+* Output of the stereo decoder is downsampled by libsoxr to 48kHz
 * Quality: `SOXR_HQ` (`SOXR_VHQ` is overkill)
-* FM demodulator data is now buffered to 8192 samples so that the output of the audio downsampler doesn't get stuck
 * 19kHz cut LPF implemented for post-processing libsoxr output
 
 ## No-goals
@@ -203,6 +203,7 @@ Compile and install
 * Use pre-built optimized filter coefficients for LPFIQ and audio filters
 * Input -> LPFIQ 1st -> LPFIQ 2nd -> PhaseDiscriminator
 * 10MHz -> 312.5kHz (/32)
+* 2.5MHz -> 312.5kHz (/8)
 * Use `AIRSPY_SAMPLE_FLOAT32_IQ` to directly obtain float IQ sample data from Airspy: IF level is now -24.08dB than the previous (pre-v0.2.2) version
 * Use sparse debug output for ppm and other level status
 * CPU usage: ~56% -> ~31% on Mac mini 2018, with debug output on, comparing with ngsoftfm-jj1bdx 0.1.14
