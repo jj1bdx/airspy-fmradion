@@ -50,6 +50,15 @@ public:
   // Process IQ samples and return audio samples.
   void process(const IQSampleVector &samples_in, SampleVector &audio);
 
+  // Return RMS baseband signal level (where nominal level is 0.707).
+  double get_baseband_level() const { return m_baseband_level; }
+
+  // Return Audio AGC last gain.
+  double get_agc_last_gain() const { return m_agc_last_gain; }
+
+  // Return IF AGC current gain.
+  double get_if_agc_current_gain() const { return m_if_agc_current_gain; }
+
 private:
   // Demodulate AM signal.
   void demodulate(const IQSampleVector &samples_in, SampleVector &samples_out);
