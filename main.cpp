@@ -740,8 +740,6 @@ int main(int argc, char **argv) {
   std::unique_ptr<Source> up_srcsdr(srcsdr);
 
   // Start reading from device in separate thread.
-  // std::thread source_thread(read_source_data, std::move(up_srcsdr),
-  // &source_buffer);
   up_srcsdr->start(&source_buffer, &stop_flag);
 
   if (!up_srcsdr) {
@@ -818,12 +816,13 @@ int main(int argc, char **argv) {
   // Initialize moving average object for FM ppm monitoring.
   MovingAverage<float> ppm_average(100, 0.0f);
 
+  unsigned int nchannel = stereo ? 2 : 1;
+
   // If buffering enabled, start background output thread.
   DataBuffer<Sample> output_buffer;
   std::thread output_thread;
 
   if (outputbuf_samples > 0) {
-    unsigned int nchannel = stereo ? 2 : 1;
     output_thread = std::thread(write_output_data, audio_output.get(),
                                 &output_buffer, outputbuf_samples * nchannel);
   }
@@ -929,11 +928,8 @@ int main(int argc, char **argv) {
 
     double if_level_db = 20 * log10(if_downsampler.get_if_level());
     double audio_level_db = 20 * log10(audio_level) + 3.01;
-
-    double buflen_sec;
-    unsigned int nchannel = stereo ? 2 : 1;
     std::size_t buflen = output_buffer.queued_samples();
-    buflen_sec = buflen / nchannel / double(pcmrate);
+    double buflen_sec = buflen / nchannel / double(pcmrate);
 
     // Show status messages for each block if not in quiet mode.
     bool stereo_change = false;
@@ -1015,7 +1011,6 @@ int main(int argc, char **argv) {
   fprintf(stderr, "\n");
 
   // Join background threads.
-  // source_thread.join();
   up_srcsdr->stop();
 
   if (outputbuf_samples > 0) {
