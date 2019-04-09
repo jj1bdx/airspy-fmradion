@@ -705,7 +705,7 @@ int main(int argc, char **argv) {
         third_coeff = FilterParameters::jj1bdx_am_if_div5;
         enable_fourth_downsampler = false;
 	break;
-      case 2500000:
+      case 3000000:
         // 3000kHz: /3/3/7 -> 47.6190476kHz
         if_blocksize = 65536;
         enable_fs_fourth_downconverter = false;
