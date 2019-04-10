@@ -65,8 +65,8 @@ AmDecoder::AmDecoder(double sample_rate_demod,
     // Initialize member fields
     : m_sample_rate_demod(sample_rate_demod), m_amfilter_coeff(amfilter_coeff),
       m_baseband_mean(0), m_baseband_level(0), m_agc_last_gain(1.0),
-      m_agc_peak1(0), m_agc_peak2(0), m_agc_reference(0.9),
-      m_if_agc_current_gain(10.0), m_if_agc_rate(0.001), m_if_agc_reference(0.5)
+      m_agc_peak1(0), m_agc_peak2(0), m_agc_reference(0.95),
+      m_if_agc_current_gain(10.0), m_if_agc_rate(0.0007), m_if_agc_reference(0.5)
 
       // Construct AudioResampler for mono and stereo channels
       ,
@@ -151,7 +151,7 @@ inline void AmDecoder::demodulate(const IQSampleVector &samples_in,
 // https://github.com/simonyiszk/csdr/blob/master/libcsdr.c
 inline void AmDecoder::audio_agc(const SampleVector &samples_in,
                                  SampleVector &samples_out) {
-  const double agc_max_gain = 5.0;
+  const double agc_max_gain = 4.0;
   unsigned int n = samples_in.size();
   samples_out.resize(n);
   m_agc_buf1.resize(n);
