@@ -277,6 +277,7 @@ Compile and install
 ## Acknowledgments
 
 * Twitter [@lambdaprog](https://twitter.com/lambdaprog/)
+* [Iowa Hills Software](http://iowahills.com) for their FIR and IIR filter design tools
 
 ## License
 
