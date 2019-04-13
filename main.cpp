@@ -45,7 +45,7 @@
 #include "SoftFM.h"
 #include "util.h"
 
-#define AIRSPY_FMRADION_VERSION "v0.6.4"
+#define AIRSPY_FMRADION_VERSION "v0.6.5-dev"
 
 /** Flag is set on SIGINT / SIGTERM. */
 static std::atomic_bool stop_flag(false);
@@ -575,7 +575,7 @@ int main(int argc, char **argv) {
         enable_second_downsampler = true;
         second_downsample = 4;
         second_coeff = FilterParameters::jj1bdx_1250khz_div4;
-	break;
+        break;
       case 2500000:
         if_blocksize = 65536;
         enable_fs_fourth_downconverter = false;
@@ -585,7 +585,7 @@ int main(int argc, char **argv) {
         enable_second_downsampler = true;
         second_downsample = 2;
         second_coeff = FilterParameters::jj1bdx_625khz_div2;
-	break;
+        break;
       case 6000000:
         if_blocksize = 65536;
         enable_fs_fourth_downconverter = false;
@@ -595,7 +595,7 @@ int main(int argc, char **argv) {
         enable_second_downsampler = true;
         second_downsample = 4;
         second_coeff = FilterParameters::jj1bdx_1250khz_div4;
-	break;
+        break;
       case 3000000:
         if_blocksize = 65536;
         enable_fs_fourth_downconverter = false;
@@ -605,7 +605,7 @@ int main(int argc, char **argv) {
         enable_second_downsampler = true;
         second_downsample = 2;
         second_coeff = FilterParameters::jj1bdx_625khz_div2;
-	break;
+        break;
       default:
         fprintf(stderr, "Sample rate unsupported\n");
         fprintf(stderr, "Supported rate:\n");
@@ -613,7 +613,7 @@ int main(int argc, char **argv) {
         fprintf(stderr, "Airspy Mini: 3000000, 6000000\n");
         delete srcsdr;
         exit(1);
-	break;
+        break;
       }
       break;
     case DEV_AIRSPYHF:
@@ -662,35 +662,35 @@ int main(int argc, char **argv) {
       // switch statement only accepts integer rate values...
       switch (int(ifrate)) {
       case 10000000:
-        // 10000kHz: /2/3/5/7 -> 47.6190476kHz
+        // 10000kHz: /7/5/3/2 -> 47.6190476kHz
         if_blocksize = 65536;
         enable_fs_fourth_downconverter = false;
         enable_two_downsampler_stages = true;
-        first_downsample = 2;
-        first_coeff = FilterParameters::jj1bdx_am_if_div2;
+        first_downsample = 7;
+        first_coeff = FilterParameters::jj1bdx_am_if_div7;
         enable_second_downsampler = true;
-        second_downsample = 3;
-        second_coeff = FilterParameters::jj1bdx_am_if_div3;
-        third_downsample = 5;
-        third_coeff = FilterParameters::jj1bdx_am_if_div5;
+        second_downsample = 5;
+        second_coeff = FilterParameters::jj1bdx_am_if_div5;
+        third_downsample = 3;
+        third_coeff = FilterParameters::jj1bdx_am_if_div3;
         enable_fourth_downsampler = true;
-        fourth_downsample = 7;
-        fourth_coeff = FilterParameters::jj1bdx_am_if_div7;
-	break;
+        fourth_downsample = 2;
+        fourth_coeff = FilterParameters::jj1bdx_am_if_div2;
+        break;
       case 2500000:
-        // 2500kHz: /3/4/5 -> 41.666666kHz
+        // 2500kHz: /5/4/3 -> 41.666666kHz
         if_blocksize = 65536;
         enable_fs_fourth_downconverter = false;
         enable_two_downsampler_stages = true;
-        first_downsample = 3;
-        first_coeff = FilterParameters::jj1bdx_am_if_div3;
+        first_downsample = 5;
+        first_coeff = FilterParameters::jj1bdx_am_if_div5;
         enable_second_downsampler = true;
         second_downsample = 4;
         second_coeff = FilterParameters::jj1bdx_am_if_div4;
-        third_downsample = 5;
-        third_coeff = FilterParameters::jj1bdx_am_if_div5;
+        third_downsample = 3;
+        third_coeff = FilterParameters::jj1bdx_am_if_div3;
         enable_fourth_downsampler = false;
-	break;
+        break;
       case 6000000:
         // 6000kHz: /5/5/5 -> 48kHz
         if_blocksize = 65536;
@@ -704,21 +704,21 @@ int main(int argc, char **argv) {
         third_downsample = 5;
         third_coeff = FilterParameters::jj1bdx_am_if_div5;
         enable_fourth_downsampler = false;
-	break;
+        break;
       case 3000000:
-        // 3000kHz: /3/3/7 -> 47.6190476kHz
+        // 3000kHz: /7/3/3 -> 47.6190476kHz
         if_blocksize = 65536;
         enable_fs_fourth_downconverter = false;
         enable_two_downsampler_stages = true;
-        first_downsample = 3;
-        first_coeff = FilterParameters::jj1bdx_am_if_div3;
+        first_downsample = 7;
+        first_coeff = FilterParameters::jj1bdx_am_if_div7;
         enable_second_downsampler = true;
         second_downsample = 3;
         second_coeff = FilterParameters::jj1bdx_am_if_div3;
-        third_downsample = 7;
-        third_coeff = FilterParameters::jj1bdx_am_if_div7;
+        third_downsample = 3;
+        third_coeff = FilterParameters::jj1bdx_am_if_div3;
         enable_fourth_downsampler = false;
-	break;
+        break;
       default:
         fprintf(stderr, "Sample rate unsupported\n");
         fprintf(stderr, "Supported rate:\n");
@@ -726,7 +726,7 @@ int main(int argc, char **argv) {
         fprintf(stderr, "Airspy Mini: 3000000, 6000000\n");
         delete srcsdr;
         exit(1);
-	break;
+        break;
       }
       break;
     case DEV_AIRSPYHF:
@@ -750,16 +750,16 @@ int main(int argc, char **argv) {
       break;
     case DEV_RTLSDR:
       if ((ifrate >= 900001.0) && (ifrate <= 937500.0)) {
-        // 900kHz: /4/5 -> 45kHz
+        // 900kHz: /5/4 -> 45kHz
         // No problem up to 960kHz
         if_blocksize = 65536;
         enable_fs_fourth_downconverter = true;
         enable_two_downsampler_stages = false;
-        first_downsample = 4;
-        first_coeff = FilterParameters::jj1bdx_am_if_div4;
+        first_downsample = 5;
+        first_coeff = FilterParameters::jj1bdx_am_if_div5;
         enable_second_downsampler = true;
-        second_downsample = 5;
-        second_coeff = FilterParameters::jj1bdx_am_if_div5;
+        second_downsample = 4;
+        second_coeff = FilterParameters::jj1bdx_am_if_div4;
       } else {
         fprintf(stderr, "Sample rate unsupported\n");
         fprintf(stderr, "Supported rate:\n");
