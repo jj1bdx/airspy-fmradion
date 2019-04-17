@@ -5,7 +5,7 @@
 
 ### What is airspy-fmradion?
 
-* **airspy-fmradion** is a software-defined radio receiver for FM and AM broadcast radio, specifically designed for Airspy R2 and Airspy HF+, and RTL-SDR.
+* **airspy-fmradion** is a software-defined radio receiver for FM and AM broadcast radio, specifically designed for Airspy R2, Airspy Mini, Airspy HF+, and RTL-SDR.
 * This repository is forked from [ngsoftfm-jj1bdx](https://github.com/jj1bdx/ngsoftfm-jj1bdx) 0.1.14 and merged with [airspfhf-fmradion](https://github.com/jj1bdx/airspyhf-fmradion)
 
 ### What does airspy-fmradion provide?
@@ -42,7 +42,7 @@ airspy-fmradion -m am -t airspyhf -q \
  - [RTL-SDR library](http://sdr.osmocom.org/trac/wiki/rtl-sdr)
  - [sox](http://sox.sourceforge.net/)
  - [The SoX Resampler library aka libsoxr](https://sourceforge.net/p/soxr/wiki/Home/)
- - Tested: Airspy R2 and Airspy HF+, RTL-SDR V3
+ - Tested: Airspy R2, Airspy Mini, Airspy HF+, RTL-SDR V3
  - Fast computer
  - Medium-strong FM and/or AM radio signals
 
@@ -120,7 +120,7 @@ Compile and install
 ## Basic command options
 
  - `-m devtype` is modulation type, either `fm` or `am` (default fm)
- - `-t devtype` is mandatory and must be `airspy` for Airspy R2 and `airspyhf` for Airspy HF+.
+ - `-t devtype` is mandatory and must be `airspy` for Airspy R2 / Airspy Mini, `airspyhf` for Airspy HF+, and `rtlsdr` for RTL-SDR.
  - `-q` Quiet mode.
  - `-c config` Comma separated list of configuration options as key=value pairs or just key for switches. Depends on device type (see next paragraph).
  - `-d devidx` Device index, 'list' to show device list (default 0)
@@ -166,7 +166,7 @@ Compile and install
 * FM Filter coefficients are listed under `doc/filter-design-fm`
 * FM unused filter coefficients are listed under `doc/filter-design-fm/not-used`
 * DiscriminatorEqualizer IF range: 200kHz ~ 1MHz (nyquist: 100kHz ~ 500kHz)
-* -90dB IF filter width: +-~188kHz for RTL-SDR and AirSpy R2, +-~138kHz for AirSpy HF+
+* -90dB IF filter width: +-~188kHz for RTL-SDR and AirSpy R2 / Mini, +-~138kHz for AirSpy HF+
 * <0.01dB IF filter width: at least +-75kHz for all receivers
 
 ### For AM
@@ -182,7 +182,7 @@ Compile and install
 * IF AGC: gain up to 80dB (10000)
 * Audio AGC: gain up to 7dB (5.0), fast AGC with peak detection
 
-## Airspy R2 modification from ngsoftfm-jj1bdx
+## Airspy R2 / Mini modification from ngsoftfm-jj1bdx
 
 ### The modification strategy
 
@@ -208,7 +208,7 @@ Compile and install
 * CPU usage: ~56% -> ~31% on Mac mini 2018, with debug output on, comparing with ngsoftfm-jj1bdx 0.1.14
 * More optimization on LPFIQ and audio filters by assuming symmetric coefficients (-5% of Mac mini 2018 CPU usage)
 
-### Airspy configuration options
+### Airspy R2 / Mini configuration options
 
   - `freq=<int>` Desired tune frequency in Hz. Valid range from 1M to 1.8G. (default 100M: `100000000`)
   - `srate=<int>` Device sample rate. `list` lists valid values and exits. (default `10000000`). Valid values depend on the Airspy firmware. Airspy firmware and library must support dynamic sample rate query.
