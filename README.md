@@ -1,17 +1,16 @@
 # airspy-fmradion
 
-* Version v0.6.4, 13-APR-2019
+* Version v0.6.5, 17-APR-2019
 * For MacOS and Linux
-* *NOTE: this release has a major change adding the AM reception function*
 
 ### What is airspy-fmradion?
 
-* **airspy-fmradion** is a software-defined radio receiver for FM broadcast radio, specifically designed for Airspy R2 and Airspy HF+, and RTL-SDR.
+* **airspy-fmradion** is a software-defined radio receiver for FM and AM broadcast radio, specifically designed for Airspy R2 and Airspy HF+, and RTL-SDR.
 * This repository is forked from [ngsoftfm-jj1bdx](https://github.com/jj1bdx/ngsoftfm-jj1bdx) 0.1.14 and merged with [airspfhf-fmradion](https://github.com/jj1bdx/airspyhf-fmradion)
 
 ### What does airspy-fmradion provide?
 
-- mono or stereo decoding of FM broadcasting stations
+- mono or stereo decoding of FM and AM broadcasting stations
 - buffered real-time playback to soundcard or dumping to file
 - command-line interface (*only*)
 
@@ -45,7 +44,7 @@ airspy-fmradion -m am -t airspyhf -q \
  - [The SoX Resampler library aka libsoxr](https://sourceforge.net/p/soxr/wiki/Home/)
  - Tested: Airspy R2 and Airspy HF+, RTL-SDR V3
  - Fast computer
- - Medium-strong FM radio signal
+ - Medium-strong FM and/or AM radio signals
 
 For the latest version, see https://github.com/jj1bdx/airspy-fmradion
 
