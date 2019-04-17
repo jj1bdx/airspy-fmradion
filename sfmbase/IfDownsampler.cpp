@@ -54,7 +54,7 @@ void IfDownsampler::process(const IQSampleVector &samples_in,
     m_iffilter_second.process(m_buf_iffirstout, samples_out);
   } else {
     // No second downsampling here
-    samples_out = m_buf_iffirstout;
+    samples_out = std::move(m_buf_iffirstout);
   }
 
   // Measure IF level.
