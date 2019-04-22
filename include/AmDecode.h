@@ -30,8 +30,6 @@
 #include "IfDownsampler.h"
 #include "SoftFM.h"
 
-enum AmFilterType { AMFILTER_DEFAULT, AMFILTER_MIDDLE, AMFILTER_NARROW };
-
 /** Complete decoder for FM broadcast signal. */
 class AmDecoder {
 public:

@@ -28,6 +28,11 @@ typedef std::vector<IQSample> IQSampleVector;
 typedef double Sample;
 typedef std::vector<Sample> SampleVector;
 
+enum class AmFilterType { DEFAULT, MIDDLE, NARROW };
+enum class DevType { AIRSPY, AIRSPYHF, RTLSDR };
+enum class ModType { FM, AM };
+enum class OutputMode { RAW_INT16, RAW_FLOAT32, WAV, ALSA };
+
 /** Compute mean and RMS over a sample vector. */
 inline void samples_mean_rms(const SampleVector &samples, double &mean,
                              double &rms) {

@@ -207,20 +207,17 @@ double get_time() {
   return tv.tv_sec + 1.0e-6 * tv.tv_usec;
 }
 
-// Device type identifiers.
-enum DevType { DEV_AIRSPY, DEV_AIRSPYHF, DEV_RTLSDR };
-
 static bool get_device(std::vector<std::string> &devnames, DevType devtype,
                        Source **srcsdr, int devidx) {
   // Get device names.
   switch (devtype) {
-  case DEV_RTLSDR:
+  case DevType::RTLSDR:
     RtlSdrSource::get_device_names(devnames);
     break;
-  case DEV_AIRSPY:
+  case DevType::AIRSPY:
     AirspySource::get_device_names(devnames);
     break;
-  case DEV_AIRSPYHF:
+  case DevType::AIRSPYHF:
     AirspyHFSource::get_device_names(devnames);
     break;
   }
@@ -243,13 +240,13 @@ static bool get_device(std::vector<std::string> &devnames, DevType devtype,
 
   // Open receiver devices.
   switch (devtype) {
-  case DEV_RTLSDR:
+  case DevType::RTLSDR:
     *srcsdr = new RtlSdrSource(devidx);
     break;
-  case DEV_AIRSPY:
+  case DevType::AIRSPY:
     *srcsdr = new AirspySource(devidx);
     break;
-  case DEV_AIRSPYHF:
+  case DevType::AIRSPYHF:
     *srcsdr = new AirspyHFSource(devidx);
     break;
   }
@@ -259,18 +256,14 @@ static bool get_device(std::vector<std::string> &devnames, DevType devtype,
 
 int main(int argc, char **argv) {
 
-  enum OutputMode { MODE_RAW_INT16, MODE_RAW_FLOAT32, MODE_WAV, MODE_ALSA };
-  enum ModType { MOD_FM, MOD_AM };
-  enum AmFilterType { AMFILTER_DEFAULT, AMFILTER_MIDDLE, AMFILTER_NARROW };
-
   int devidx = 0;
   int pcmrate = FmDecoder::sample_rate_pcm;
   bool stereo = true;
 #ifdef USE_ALSA
-  OutputMode outmode = MODE_ALSA;
+  OutputMode outmode = OutputMode::ALSA;
   std::string filename;
 #else  // !USE_ALSA
-  OutputMode outmode = MODE_RAW_INT16;
+  OutputMode outmode = OutputMode::RAW_INT16;
   std::string filename("-");
 #endif // USE_ALSA
   std::string alsadev("default");
@@ -284,9 +277,9 @@ int main(int argc, char **argv) {
   std::string devtype_str;
   DevType devtype;
   std::string modtype_str("fm");
-  ModType modtype = MOD_FM;
+  ModType modtype = ModType::FM;
   std::string amfiltertype_str("default");
-  AmFilterType amfiltertype = AMFILTER_DEFAULT;
+  AmFilterType amfiltertype = AmFilterType::DEFAULT;
   std::vector<std::string> devnames;
   Source *srcsdr = 0;
 
@@ -326,22 +319,22 @@ int main(int argc, char **argv) {
       stereo = false;
       break;
     case 'R':
-      outmode = MODE_RAW_INT16;
+      outmode = OutputMode::RAW_INT16;
       filename = optarg;
       break;
     case 'F':
-      outmode = MODE_RAW_FLOAT32;
+      outmode = OutputMode::RAW_FLOAT32;
       filename = optarg;
       break;
     case 'W':
-      outmode = MODE_WAV;
+      outmode = OutputMode::WAV;
       filename = optarg;
       break;
     case 'f':
       amfiltertype_str.assign(optarg);
       break;
     case 'P':
-      outmode = MODE_ALSA;
+      outmode = OutputMode::ALSA;
       if (optarg != NULL) {
         alsadev = optarg;
       }
@@ -377,11 +370,11 @@ int main(int argc, char **argv) {
   }
 
   if (strcasecmp(devtype_str.c_str(), "rtlsdr") == 0) {
-    devtype = DEV_RTLSDR;
+    devtype = DevType::RTLSDR;
   } else if (strcasecmp(devtype_str.c_str(), "airspy") == 0) {
-    devtype = DEV_AIRSPY;
+    devtype = DevType::AIRSPY;
   } else if (strcasecmp(devtype_str.c_str(), "airspyhf") == 0) {
-    devtype = DEV_AIRSPYHF;
+    devtype = DevType::AIRSPYHF;
   } else {
     fprintf(
         stderr,
@@ -391,9 +384,9 @@ int main(int argc, char **argv) {
   }
 
   if (strcasecmp(modtype_str.c_str(), "fm") == 0) {
-    modtype = MOD_FM;
+    modtype = ModType::FM;
   } else if (strcasecmp(modtype_str.c_str(), "am") == 0) {
-    modtype = MOD_AM;
+    modtype = ModType::AM;
     stereo = false;
   } else {
     fprintf(stderr, "Modulation type string unsuppored\n");
@@ -401,11 +394,11 @@ int main(int argc, char **argv) {
   }
 
   if (strcasecmp(amfiltertype_str.c_str(), "default") == 0) {
-    amfiltertype = AMFILTER_DEFAULT;
+    amfiltertype = AmFilterType::DEFAULT;
   } else if (strcasecmp(amfiltertype_str.c_str(), "middle") == 0) {
-    amfiltertype = AMFILTER_MIDDLE;
+    amfiltertype = AmFilterType::MIDDLE;
   } else if (strcasecmp(amfiltertype_str.c_str(), "narrow") == 0) {
-    amfiltertype = AMFILTER_NARROW;
+    amfiltertype = AmFilterType::NARROW;
   } else {
     fprintf(stderr, "AM filter type string unsuppored\n");
     exit(1);
@@ -445,10 +438,10 @@ int main(int argc, char **argv) {
     }
 
     switch (modtype) {
-    case MOD_FM:
+    case ModType::FM:
       fprintf(ppsfile, "#pps_index sample_index   unix_time\n");
       break;
-    case MOD_AM:
+    case ModType::AM:
       fprintf(ppsfile, "#  block   unix_time\n");
       break;
     }
@@ -459,8 +452,9 @@ int main(int argc, char **argv) {
   unsigned int outputbuf_samples = 0;
 
   if (bufsecs < 0 &&
-      (outmode == MODE_ALSA || (outmode == MODE_RAW_INT16 && filename == "-") ||
-       (outmode == MODE_RAW_FLOAT32 && filename == "-"))) {
+      (outmode == OutputMode::ALSA ||
+       (outmode == OutputMode::RAW_INT16 && filename == "-") ||
+       (outmode == OutputMode::RAW_FLOAT32 && filename == "-"))) {
     // Set default buffer to 1 second for interactive output streams.
     outputbuf_samples = pcmrate;
   } else if (bufsecs > 0) {
@@ -474,25 +468,25 @@ int main(int argc, char **argv) {
   std::unique_ptr<AudioOutput> audio_output;
 
   switch (outmode) {
-  case MODE_RAW_INT16:
+  case OutputMode::RAW_INT16:
     fprintf(stderr,
             "writing raw 16-bit integer little-endian audio samples to '%s'\n",
             filename.c_str());
     audio_output.reset(new RawAudioOutput(filename));
     audio_output->SetConvertFunction(AudioOutput::samplesToInt16);
     break;
-  case MODE_RAW_FLOAT32:
+  case OutputMode::RAW_FLOAT32:
     fprintf(stderr,
             "writing raw 32-bit float little-endian audio samples to '%s'\n",
             filename.c_str());
     audio_output.reset(new RawAudioOutput(filename));
     audio_output->SetConvertFunction(AudioOutput::samplesToFloat32);
     break;
-  case MODE_WAV:
+  case OutputMode::WAV:
     fprintf(stderr, "writing audio samples to '%s'\n", filename.c_str());
     audio_output.reset(new WavAudioOutput(filename, pcmrate, stereo));
     break;
-  case MODE_ALSA:
+  case OutputMode::ALSA:
 #ifdef USE_ALSA
     fprintf(stderr, "playing audio to ALSA device '%s'\n", alsadev.c_str());
     audio_output.reset(new AlsaAudioOutput(alsadev, pcmrate, stereo));
@@ -559,11 +553,11 @@ int main(int argc, char **argv) {
 
   // Configure filter and downsampler.
   switch (modtype) {
-  case MOD_FM:
+  case ModType::FM:
     // Configure FM mode constants.
     // Target frequency: 768~1250kHz
     switch (devtype) {
-    case DEV_AIRSPY:
+    case DevType::AIRSPY:
       // switch statement only accepts integer rate values...
       switch (int(ifrate)) {
       case 10000000:
@@ -616,7 +610,7 @@ int main(int argc, char **argv) {
         break;
       }
       break;
-    case DEV_AIRSPYHF:
+    case DevType::AIRSPYHF:
       if (ifrate == 768000.0) {
         if_blocksize = 16384;
         enable_fs_fourth_downconverter = true;
@@ -632,7 +626,7 @@ int main(int argc, char **argv) {
         exit(1);
       }
       break;
-    case DEV_RTLSDR:
+    case DevType::RTLSDR:
       if ((ifrate >= 900001.0) && (ifrate <= 937500.0)) {
         if_blocksize = 65536;
         enable_fs_fourth_downconverter = true;
@@ -655,10 +649,10 @@ int main(int argc, char **argv) {
       break;
     }
     break;
-  case MOD_AM:
+  case ModType::AM:
     // Configure AM mode constants.
     switch (devtype) {
-    case DEV_AIRSPY:
+    case DevType::AIRSPY:
       // switch statement only accepts integer rate values...
       switch (int(ifrate)) {
       case 10000000:
@@ -729,7 +723,7 @@ int main(int argc, char **argv) {
         break;
       }
       break;
-    case DEV_AIRSPYHF:
+    case DevType::AIRSPYHF:
       if (ifrate == 768000.0) {
         // 768kHz: /4/4 -> 48kHz
         if_blocksize = 16384;
@@ -748,7 +742,7 @@ int main(int argc, char **argv) {
         exit(1);
       }
       break;
-    case DEV_RTLSDR:
+    case DevType::RTLSDR:
       if ((ifrate >= 900001.0) && (ifrate <= 937500.0)) {
         // 900kHz: /5/4 -> 45kHz
         // No problem up to 960kHz
@@ -841,13 +835,13 @@ int main(int argc, char **argv) {
   std::vector<IQSample::value_type> amfilter_coeff;
 
   switch (amfiltertype) {
-  case AMFILTER_DEFAULT:
+  case AmFilterType::DEFAULT:
     amfilter_coeff = FilterParameters::delay_3taps_only_iq;
     break;
-  case AMFILTER_MIDDLE:
+  case AmFilterType::MIDDLE:
     amfilter_coeff = FilterParameters::jj1bdx_am_12khz_middle;
     break;
-  case AMFILTER_NARROW:
+  case AmFilterType::NARROW:
     amfilter_coeff = FilterParameters::jj1bdx_am_12khz_narrow;
     break;
   }
@@ -858,7 +852,7 @@ int main(int argc, char **argv) {
   );
 
   switch (modtype) {
-  case MOD_FM:
+  case ModType::FM:
     fprintf(stderr, "audio sample rate: %u [Hz],", pcmrate);
     fprintf(stderr, " audio bandwidth: %u [Hz]\n",
             (unsigned int)FmDecoder::bandwidth_pcm);
@@ -866,7 +860,7 @@ int main(int argc, char **argv) {
             total_decimation_ratio);
     fprintf(stderr, "FM demodulator deemphasis: %.9g [µs]\n", deemphasis);
     break;
-  case MOD_AM:
+  case ModType::AM:
     fprintf(stderr, "AM filter type: %s\n", amfiltertype_str.c_str());
     fprintf(stderr, "AM demodulator deemphasis: %.9g [µs]\n",
             AmDecoder::default_deemphasis);
@@ -899,10 +893,10 @@ int main(int argc, char **argv) {
       lrint(5120 / (if_blocksize / total_decimation_ratio));
   unsigned int discarding_blocks;
   switch (modtype) {
-  case MOD_FM:
+  case ModType::FM:
     discarding_blocks = stat_rate * 4;
     break;
-  case MOD_AM:
+  case ModType::AM:
     discarding_blocks = 0;
     break;
   }
@@ -955,11 +949,11 @@ int main(int argc, char **argv) {
 
     // Decode signal.
     switch (modtype) {
-    case MOD_FM:
+    case ModType::FM:
       // Decode FM signal.
       fm.process(if_samples, audiosamples);
       break;
-    case MOD_AM:
+    case ModType::AM:
       // Decode AM signal.
       am.process(if_samples, audiosamples);
       break;
@@ -979,7 +973,7 @@ int main(int argc, char **argv) {
 
     double ppm_value_average;
 
-    if (modtype == MOD_FM) {
+    if (modtype == ModType::FM) {
       // the minus factor is to show the ppm correction
       // to make and not the one made
       ppm_average.feed((fm.get_tuning_offset() / tuner_freq) * -1.0e6);
@@ -995,7 +989,7 @@ int main(int argc, char **argv) {
     bool stereo_change = false;
     if (!quietmode) {
       switch (modtype) {
-      case MOD_FM:
+      case ModType::FM:
         stereo_change = (fm.stereo_detected() != got_stereo);
         // Show stereo status.
         if (stereo_change) {
@@ -1017,7 +1011,7 @@ int main(int argc, char **argv) {
           fflush(stderr);
         }
         break;
-      case MOD_AM:
+      case ModType::AM:
         // Show per-block statistics without ppm offset.
         double if_agc_gain_db = 20 * log10(am.get_if_agc_current_gain());
         if (((block % stat_rate) == 0) && (block > discarding_blocks)) {
@@ -1034,7 +1028,7 @@ int main(int argc, char **argv) {
     // Write PPS markers.
     if ((ppsfile != NULL) && audio_exists) {
       switch (modtype) {
-      case MOD_FM:
+      case ModType::FM:
         for (const PilotPhaseLock::PpsEvent &ev : fm.get_pps_events()) {
           double ts = prev_block_time;
           ts += ev.block_position * (block_time - prev_block_time);
@@ -1044,7 +1038,7 @@ int main(int argc, char **argv) {
           fflush(ppsfile);
         }
         break;
-      case MOD_AM:
+      case ModType::AM:
         if ((block % (stat_rate * 10)) == 0) {
           fprintf(ppsfile, "%8d %18.6f\n", block, prev_block_time);
           fflush(ppsfile);

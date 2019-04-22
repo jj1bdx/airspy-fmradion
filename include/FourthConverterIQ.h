@@ -31,12 +31,10 @@ class FourthConverterIQ {
 public:
   // Construct Fs/4 downconverting tuner.
   // up : true if upconverting
-  //    : false if downconverting 
-  FourthConverterIQ(bool up) : m_index(0),
-    m_tblidx0(up ? 3 : 1),
-    m_tblidx1(up ? 0 : 2),
-    m_tblidx2(up ? 1 : 3),
-    m_tblidx3(up ? 2 : 0) {
+  //    : false if downconverting
+  FourthConverterIQ(bool up)
+      : m_index(0), m_tblidx0(up ? 3 : 1), m_tblidx1(up ? 0 : 2),
+        m_tblidx2(up ? 1 : 3), m_tblidx3(up ? 2 : 0) {
     // do nothing
   }
   // Process samples.
@@ -63,7 +61,7 @@ public:
         tblidx = m_tblidx0;
         break;
       case 1:
-        // multiply +j 
+        // multiply +j
         y = IQSample(im, -re);
         tblidx = m_tblidx1;
         break;
