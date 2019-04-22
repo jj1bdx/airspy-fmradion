@@ -61,12 +61,13 @@ const double AmDecoder::bandwidth_pcm = 4500;
 const double AmDecoder::default_deemphasis = 100;
 
 AmDecoder::AmDecoder(double sample_rate_demod,
-                     std::vector<IQSample::value_type> &amfilter_coeff)
+                     std::vector<IQSample::value_type> &amfilter_coeff,
+                     const ModType mode)
     // Initialize member fields
     : m_sample_rate_demod(sample_rate_demod), m_amfilter_coeff(amfilter_coeff),
-      m_baseband_mean(0), m_baseband_level(0), m_agc_last_gain(1.0),
-      m_agc_peak1(0), m_agc_peak2(0), m_agc_reference(0.95),
-      m_if_agc_current_gain(10.0), m_if_agc_rate(0.0007),
+      m_mode(mode), m_baseband_mean(0), m_baseband_level(0),
+      m_agc_last_gain(1.0), m_agc_peak1(0), m_agc_peak2(0),
+      m_agc_reference(0.95), m_if_agc_current_gain(10.0), m_if_agc_rate(0.0007),
       m_if_agc_reference(0.5)
 
       // Construct AudioResampler for mono and stereo channels
@@ -105,8 +106,19 @@ void AmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
   // If AGC
   if_agc(m_buf_downsampled2, m_buf_downsampled3);
 
-  // Demodulate AM signal.
-  demodulate(m_buf_downsampled3, m_buf_baseband_demod);
+  // Demodulate AM/DSB signal.
+  switch (m_mode) {
+  case ModType::FM:
+    // Force error
+    assert(m_mode != ModType::FM);
+    break;
+  case ModType::AM:
+    demodulate_am(m_buf_downsampled3, m_buf_baseband_demod);
+    break;
+  case ModType::DSB:
+    demodulate_dsb(m_buf_downsampled3, m_buf_baseband_demod);
+    break;
+  }
 
   // DC blocking.
   m_dcblock.process_inplace(m_buf_baseband_demod);
@@ -137,13 +149,24 @@ void AmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
 }
 
 // Demodulate AM signal.
-inline void AmDecoder::demodulate(const IQSampleVector &samples_in,
-                                  SampleVector &samples_out) {
+inline void AmDecoder::demodulate_am(const IQSampleVector &samples_in,
+                                     SampleVector &samples_out) {
   unsigned int n = samples_in.size();
   samples_out.resize(n);
 
   for (unsigned int i = 0; i < n; i++) {
     samples_out[i] = std::abs(samples_in[i]);
+  }
+}
+
+// Demodulate DSB signal.
+inline void AmDecoder::demodulate_dsb(const IQSampleVector &samples_in,
+                                      SampleVector &samples_out) {
+  unsigned int n = samples_in.size();
+  samples_out.resize(n);
+
+  for (unsigned int i = 0; i < n; i++) {
+    samples_out[i] = samples_in[i].real();
   }
 }
 

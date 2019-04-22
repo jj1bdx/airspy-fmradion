@@ -388,6 +388,9 @@ int main(int argc, char **argv) {
   } else if (strcasecmp(modtype_str.c_str(), "am") == 0) {
     modtype = ModType::AM;
     stereo = false;
+  } else if (strcasecmp(modtype_str.c_str(), "dsb") == 0) {
+    modtype = ModType::DSB;
+    stereo = false;
   } else {
     fprintf(stderr, "Modulation type string unsuppored\n");
     exit(1);
@@ -442,6 +445,7 @@ int main(int argc, char **argv) {
       fprintf(ppsfile, "#pps_index sample_index   unix_time\n");
       break;
     case ModType::AM:
+    case ModType::DSB:
       fprintf(ppsfile, "#  block   unix_time\n");
       break;
     }
@@ -650,6 +654,7 @@ int main(int argc, char **argv) {
     }
     break;
   case ModType::AM:
+  case ModType::DSB:
     // Configure AM mode constants.
     switch (devtype) {
     case DevType::Airspy:
@@ -848,7 +853,8 @@ int main(int argc, char **argv) {
 
   // Prepare AM decoder.
   AmDecoder am(demodulator_rate, // sample_rate_demod
-               amfilter_coeff    // amfilter_coeff
+               amfilter_coeff,   // amfilter_coeff
+               modtype           // mode
   );
 
   switch (modtype) {
@@ -861,6 +867,7 @@ int main(int argc, char **argv) {
     fprintf(stderr, "FM demodulator deemphasis: %.9g [µs]\n", deemphasis);
     break;
   case ModType::AM:
+  case ModType::DSB:
     fprintf(stderr, "AM filter type: %s\n", amfiltertype_str.c_str());
     fprintf(stderr, "AM demodulator deemphasis: %.9g [µs]\n",
             AmDecoder::default_deemphasis);
@@ -897,6 +904,7 @@ int main(int argc, char **argv) {
     discarding_blocks = stat_rate * 4;
     break;
   case ModType::AM:
+  case ModType::DSB:
     discarding_blocks = 0;
     break;
   }
@@ -954,7 +962,8 @@ int main(int argc, char **argv) {
       fm.process(if_samples, audiosamples);
       break;
     case ModType::AM:
-      // Decode AM signal.
+    case ModType::DSB:
+      // Decode AM/DSB signals.
       am.process(if_samples, audiosamples);
       break;
     }
@@ -1012,6 +1021,7 @@ int main(int argc, char **argv) {
         }
         break;
       case ModType::AM:
+      case ModType::DSB:
         // Show per-block statistics without ppm offset.
         double if_agc_gain_db = 20 * log10(am.get_if_agc_current_gain());
         if (((block % stat_rate) == 0) && (block > discarding_blocks)) {
@@ -1039,6 +1049,7 @@ int main(int argc, char **argv) {
         }
         break;
       case ModType::AM:
+      case ModType::DSB:
         if ((block % (stat_rate * 10)) == 0) {
           fprintf(ppsfile, "%8d %18.6f\n", block, prev_block_time);
           fflush(ppsfile);

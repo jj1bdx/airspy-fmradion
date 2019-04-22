@@ -41,9 +41,12 @@ public:
    * Construct AM decoder.
    *
    * sample_rate_demod :: Demodulator IQ sample rate.
+   * amfilter_coeff    :: IQSample Filter Coefficients.
+   * mode              :: ModType for decoding mode.
    */
   AmDecoder(double sample_rate_demod,
-            std::vector<IQSample::value_type> &amfilter_coeff);
+            std::vector<IQSample::value_type> &amfilter_coeff,
+            const ModType mode);
 
   // Process IQ samples and return audio samples.
   void process(const IQSampleVector &samples_in, SampleVector &audio);
@@ -59,15 +62,22 @@ public:
 
 private:
   // Demodulate AM signal.
-  void demodulate(const IQSampleVector &samples_in, SampleVector &samples_out);
+  inline void demodulate_am(const IQSampleVector &samples_in,
+                            SampleVector &samples_out);
+  // Demodulate DSB signal.
+  inline void demodulate_dsb(const IQSampleVector &samples_in,
+                             SampleVector &samples_out);
   // Audio AGC function.
-  void audio_agc(const SampleVector &samples_in, SampleVector &samples_out);
+  inline void audio_agc(const SampleVector &samples_in,
+                        SampleVector &samples_out);
   // IF AGC function.
-  void if_agc(const IQSampleVector &samples_in, IQSampleVector &samples_out);
+  inline void if_agc(const IQSampleVector &samples_in,
+                     IQSampleVector &samples_out);
 
   // Data members.
   const double m_sample_rate_demod;
   const std::vector<IQSample::value_type> &m_amfilter_coeff;
+  const ModType m_mode;
   double m_baseband_mean;
   double m_baseband_level;
 
