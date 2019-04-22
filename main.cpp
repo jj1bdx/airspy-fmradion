@@ -45,7 +45,7 @@
 #include "SoftFM.h"
 #include "util.h"
 
-#define AIRSPY_FMRADION_VERSION "v0.6.5"
+#define AIRSPY_FMRADION_VERSION "v0.6.6"
 
 /** Flag is set on SIGINT / SIGTERM. */
 static std::atomic_bool stop_flag(false);
@@ -108,6 +108,7 @@ void usage() {
       "  -m modtype     Modulation type:\n"
       "                   - fm (default)\n"
       "                   - am \n"
+      "                   - dsb \n"
       "  -t devtype     Device type:\n"
       "                   - rtlsdr: RTL-SDR devices\n"
       "                   - airspy: Airspy R2\n"

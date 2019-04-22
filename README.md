@@ -1,6 +1,6 @@
 # airspy-fmradion
 
-* Version v0.6.5, 17-APR-2019
+* Version v0.6.6, 22-APR-2019
 * For MacOS and Linux
 
 ### What is airspy-fmradion?
@@ -119,7 +119,7 @@ Compile and install
 
 ## Basic command options
 
- - `-m devtype` is modulation type, either `fm` or `am` (default fm)
+ - `-m devtype` is modulation type, either `fm`, `am`, or `dsb` (default fm)
  - `-t devtype` is mandatory and must be `airspy` for Airspy R2 / Airspy Mini, `airspyhf` for Airspy HF+, and `rtlsdr` for RTL-SDR.
  - `-q` Quiet mode.
  - `-c config` Comma separated list of configuration options as key=value pairs or just key for switches. Depends on device type (see next paragraph).
