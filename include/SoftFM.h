@@ -28,8 +28,8 @@ typedef std::vector<IQSample> IQSampleVector;
 typedef double Sample;
 typedef std::vector<Sample> SampleVector;
 
-enum class AmFilterType { DEFAULT, MIDDLE, NARROW };
-enum class DevType { AIRSPY, AIRSPYHF, RTLSDR };
+enum class AmFilterType { Default, Middle, Narrow };
+enum class DevType { Airspy, AirspyHF, RTLSDR };
 enum class ModType { FM, AM };
 enum class OutputMode { RAW_INT16, RAW_FLOAT32, WAV, ALSA };
 

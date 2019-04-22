@@ -214,10 +214,10 @@ static bool get_device(std::vector<std::string> &devnames, DevType devtype,
   case DevType::RTLSDR:
     RtlSdrSource::get_device_names(devnames);
     break;
-  case DevType::AIRSPY:
+  case DevType::Airspy:
     AirspySource::get_device_names(devnames);
     break;
-  case DevType::AIRSPYHF:
+  case DevType::AirspyHF:
     AirspyHFSource::get_device_names(devnames);
     break;
   }
@@ -243,10 +243,10 @@ static bool get_device(std::vector<std::string> &devnames, DevType devtype,
   case DevType::RTLSDR:
     *srcsdr = new RtlSdrSource(devidx);
     break;
-  case DevType::AIRSPY:
+  case DevType::Airspy:
     *srcsdr = new AirspySource(devidx);
     break;
-  case DevType::AIRSPYHF:
+  case DevType::AirspyHF:
     *srcsdr = new AirspyHFSource(devidx);
     break;
   }
@@ -279,7 +279,7 @@ int main(int argc, char **argv) {
   std::string modtype_str("fm");
   ModType modtype = ModType::FM;
   std::string amfiltertype_str("default");
-  AmFilterType amfiltertype = AmFilterType::DEFAULT;
+  AmFilterType amfiltertype = AmFilterType::Default;
   std::vector<std::string> devnames;
   Source *srcsdr = 0;
 
@@ -372,9 +372,9 @@ int main(int argc, char **argv) {
   if (strcasecmp(devtype_str.c_str(), "rtlsdr") == 0) {
     devtype = DevType::RTLSDR;
   } else if (strcasecmp(devtype_str.c_str(), "airspy") == 0) {
-    devtype = DevType::AIRSPY;
+    devtype = DevType::Airspy;
   } else if (strcasecmp(devtype_str.c_str(), "airspyhf") == 0) {
-    devtype = DevType::AIRSPYHF;
+    devtype = DevType::AirspyHF;
   } else {
     fprintf(
         stderr,
@@ -394,11 +394,11 @@ int main(int argc, char **argv) {
   }
 
   if (strcasecmp(amfiltertype_str.c_str(), "default") == 0) {
-    amfiltertype = AmFilterType::DEFAULT;
+    amfiltertype = AmFilterType::Default;
   } else if (strcasecmp(amfiltertype_str.c_str(), "middle") == 0) {
-    amfiltertype = AmFilterType::MIDDLE;
+    amfiltertype = AmFilterType::Middle;
   } else if (strcasecmp(amfiltertype_str.c_str(), "narrow") == 0) {
-    amfiltertype = AmFilterType::NARROW;
+    amfiltertype = AmFilterType::Narrow;
   } else {
     fprintf(stderr, "AM filter type string unsuppored\n");
     exit(1);
@@ -557,7 +557,7 @@ int main(int argc, char **argv) {
     // Configure FM mode constants.
     // Target frequency: 768~1250kHz
     switch (devtype) {
-    case DevType::AIRSPY:
+    case DevType::Airspy:
       // switch statement only accepts integer rate values...
       switch (int(ifrate)) {
       case 10000000:
@@ -610,7 +610,7 @@ int main(int argc, char **argv) {
         break;
       }
       break;
-    case DevType::AIRSPYHF:
+    case DevType::AirspyHF:
       if (ifrate == 768000.0) {
         if_blocksize = 16384;
         enable_fs_fourth_downconverter = true;
@@ -652,7 +652,7 @@ int main(int argc, char **argv) {
   case ModType::AM:
     // Configure AM mode constants.
     switch (devtype) {
-    case DevType::AIRSPY:
+    case DevType::Airspy:
       // switch statement only accepts integer rate values...
       switch (int(ifrate)) {
       case 10000000:
@@ -723,7 +723,7 @@ int main(int argc, char **argv) {
         break;
       }
       break;
-    case DevType::AIRSPYHF:
+    case DevType::AirspyHF:
       if (ifrate == 768000.0) {
         // 768kHz: /4/4 -> 48kHz
         if_blocksize = 16384;
@@ -835,13 +835,13 @@ int main(int argc, char **argv) {
   std::vector<IQSample::value_type> amfilter_coeff;
 
   switch (amfiltertype) {
-  case AmFilterType::DEFAULT:
+  case AmFilterType::Default:
     amfilter_coeff = FilterParameters::delay_3taps_only_iq;
     break;
-  case AmFilterType::MIDDLE:
+  case AmFilterType::Middle:
     amfilter_coeff = FilterParameters::jj1bdx_am_12khz_middle;
     break;
-  case AmFilterType::NARROW:
+  case AmFilterType::Narrow:
     amfilter_coeff = FilterParameters::jj1bdx_am_12khz_narrow;
     break;
   }
