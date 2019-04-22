@@ -16,8 +16,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef SOFTFM_FOURTHDOWNCONVERTERIQ_H
-#define SOFTFM_FOURTHDOWNCONVERTERIQ_H
+#ifndef SOFTFM_FOURTHCONVERTERIQ_H
+#define SOFTFM_FOURTHCONVERTERIQ_H
 
 #include <cassert>
 #include <cmath>
@@ -26,11 +26,19 @@
 
 #include "SoftFM.h"
 
-// Downconverting Fs/4 tuner.
-class FourthDownconverterIQ {
+// Converting Fs/4 tuner.
+class FourthConverterIQ {
 public:
   // Construct Fs/4 downconverting tuner.
-  FourthDownconverterIQ() : m_index(0) {}
+  // up : true if upconverting
+  //    : false if downconverting 
+  FourthConverterIQ(bool up) : m_index(0),
+    m_tblidx0(up ? 3 : 1),
+    m_tblidx1(up ? 0 : 2),
+    m_tblidx2(up ? 1 : 3),
+    m_tblidx3(up ? 2 : 0) {
+    // do nothing
+  }
   // Process samples.
   // See Richard G. Lyons' explanation at
   // https://www.embedded.com/print/4007186
@@ -47,25 +55,27 @@ public:
       const IQSample::value_type re = s.real();
       const IQSample::value_type im = s.imag();
       switch (tblidx) {
+      // downconvert: +1, +j, -1, -j
+      // upconvert: +1, -j, -1, +j
       case 0:
         // multiply +1
         y = s;
-        tblidx = 1;
+        tblidx = m_tblidx0;
         break;
       case 1:
-        // multiply +j
+        // multiply +j 
         y = IQSample(im, -re);
-        tblidx = 2;
+        tblidx = m_tblidx1;
         break;
       case 2:
         // multiply -1
         y = IQSample(-re, -im);
-        tblidx = 3;
+        tblidx = m_tblidx2;
         break;
       case 3:
         // multiply -j
         y = IQSample(-im, re);
-        tblidx = 0;
+        tblidx = m_tblidx3;
         break;
       default:
         // unreachable, error here;
@@ -80,6 +90,10 @@ public:
 
 private:
   unsigned int m_index;
+  const unsigned int m_tblidx0;
+  const unsigned int m_tblidx1;
+  const unsigned int m_tblidx2;
+  const unsigned int m_tblidx3;
 };
 
 #endif

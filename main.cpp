@@ -38,7 +38,7 @@
 #include "DataBuffer.h"
 #include "FilterParameters.h"
 #include "FmDecode.h"
-#include "FourthDownconverterIQ.h"
+#include "FourthConverterIQ.h"
 #include "IfDownsampler.h"
 #include "MovingAverage.h"
 #include "RtlSdrSource.h"
@@ -812,7 +812,7 @@ int main(int argc, char **argv) {
                                     : FmDecoder::default_deemphasis_eu;
 
   // Prepare Fs/4 downconverter.
-  FourthDownconverterIQ fourth_downconverter;
+  FourthConverterIQ fourth_downconverter(false);
 
   // Prepare IF Downsamplers.
   IfDownsampler if_downsampler(
