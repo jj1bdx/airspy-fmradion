@@ -1,18 +1,20 @@
 # airspy-fmradion
 
-* Version v0.6.6, 22-APR-2019
+* Version v0.6.7, 23-APR-2019
 * For MacOS and Linux
 
 ### What is airspy-fmradion?
 
-* **airspy-fmradion** is a software-defined radio receiver for FM and AM broadcast radio, specifically designed for Airspy R2, Airspy Mini, Airspy HF+, and RTL-SDR.
+* **airspy-fmradion** is a software-defined radio receiver for FM and AM broadcast radio, and also DSB/USB/LSB utility communications, specifically designed for Airspy R2, Airspy Mini, Airspy HF+, and RTL-SDR.
 * This repository is forked from [ngsoftfm-jj1bdx](https://github.com/jj1bdx/ngsoftfm-jj1bdx) 0.1.14 and merged with [airspfhf-fmradion](https://github.com/jj1bdx/airspyhf-fmradion)
 
 ### What does airspy-fmradion provide?
 
-- mono or stereo decoding of FM and AM broadcasting stations
-- buffered real-time playback to soundcard or dumping to file
-- command-line interface (*only*)
+- Mono or stereo decoding of FM broadcasting stations
+- Mono decoding of AM broadcasting stations
+- Decoding DSB/USB/LSB communication/broadcasting stations
+- Buffered real-time playback to soundcard or dumping to file
+- Command-line interface (*only*)
 
 ## Usage
 
@@ -44,7 +46,7 @@ airspy-fmradion -m am -t airspyhf -q \
  - [The SoX Resampler library aka libsoxr](https://sourceforge.net/p/soxr/wiki/Home/)
  - Tested: Airspy R2, Airspy Mini, Airspy HF+, RTL-SDR V3
  - Fast computer
- - Medium-strong FM and/or AM radio signals
+ - Medium-strong FM and/or AM radio signals, or DSB/USB/LSB signals
 
 For the latest version, see https://github.com/jj1bdx/airspy-fmradion
 
@@ -119,7 +121,7 @@ Compile and install
 
 ## Basic command options
 
- - `-m devtype` is modulation type, either `fm`, `am`, or `dsb` (default fm)
+ - `-m devtype` is modulation type, either `fm`, `am`, `dsb`, `usb`, `lsb` (default fm)
  - `-t devtype` is mandatory and must be `airspy` for Airspy R2 / Airspy Mini, `airspyhf` for Airspy HF+, and `rtlsdr` for RTL-SDR.
  - `-q` Quiet mode.
  - `-c config` Comma separated list of configuration options as key=value pairs or just key for switches. Depends on device type (see next paragraph).
@@ -176,6 +178,12 @@ Compile and install
 * Up to -1dB rolloff allowed for all IF filters
 * Max +-6kHz IF filter width without aliasing set for all IF filters
 * Narrower filters by `-f` options: `middle` +-4kHz, `narrow` +-3kHz
+
+### For SSB
+
+* Filter method applied by shifting 0~3kHz to 3~6kHz (when sampling frequency is 12kHz)
+* SSB filter: 3~6kHz, BW 2.4kHz, from 3.3~5.7kHz
+* Use `-f narrow` option
 
 ## AM AGC
 
