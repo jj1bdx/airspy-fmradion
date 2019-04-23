@@ -24,11 +24,11 @@
 
 // Class IfDownsampler
 
-IfDownsampler::IfDownsampler(
-    unsigned int first_downsample,
-    const std::vector<IQSample::value_type> &first_coeff,
-    bool enable_second_downsampler, unsigned int second_downsample,
-    const std::vector<IQSample::value_type> &second_coeff)
+IfDownsampler::IfDownsampler(unsigned int first_downsample,
+                             const IQSampleCoeff &first_coeff,
+                             bool enable_second_downsampler,
+                             unsigned int second_downsample,
+                             const IQSampleCoeff &second_coeff)
 
     // Initialize member fields
     : m_first_downsample(first_downsample),

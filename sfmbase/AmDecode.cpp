@@ -60,8 +60,7 @@ const double AmDecoder::bandwidth_pcm = 4500;
 // Deemphasis constant in microseconds.
 const double AmDecoder::default_deemphasis = 100;
 
-AmDecoder::AmDecoder(double sample_rate_demod,
-                     std::vector<IQSample::value_type> &amfilter_coeff,
+AmDecoder::AmDecoder(double sample_rate_demod, IQSampleCoeff &amfilter_coeff,
                      const ModType mode)
     // Initialize member fields
     : m_sample_rate_demod(sample_rate_demod), m_amfilter_coeff(amfilter_coeff),

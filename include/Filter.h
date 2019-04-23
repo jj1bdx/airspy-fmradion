@@ -32,14 +32,13 @@ public:
    * coeff        :: FIR filter coefficients.
    * downsample   :: Integer downsampling rate (>= 1)
    */
-  LowPassFilterFirIQ(const std::vector<IQSample::value_type> &coeff,
-                     unsigned int downsample);
+  LowPassFilterFirIQ(const IQSampleCoeff &coeff, unsigned int downsample);
 
   /** Process samples. */
   void process(const IQSampleVector &samples_in, IQSampleVector &samples_out);
 
 private:
-  const std::vector<IQSample::value_type> m_coeff;
+  const IQSampleCoeff m_coeff;
   IQSampleVector m_state;
   unsigned int m_order;
   unsigned int m_downsample;
@@ -54,13 +53,13 @@ public:
    *
    * coeff        :: FIR filter coefficients.
    */
-  LowPassFilterFirAudio(const std::vector<SampleVector::value_type> &coeff);
+  LowPassFilterFirAudio(const SampleCoeff &coeff);
 
   /** Process samples. */
   void process(const SampleVector &samples_in, SampleVector &samples_out);
 
 private:
-  std::vector<SampleVector::value_type> m_coeff;
+  SampleCoeff m_coeff;
   SampleVector m_state;
   unsigned int m_order;
   unsigned int m_pos;

@@ -541,20 +541,16 @@ int main(int argc, char **argv) {
   bool enable_two_downsampler_stages = false;
 
   unsigned int first_downsample = 1;
-  std::vector<IQSample::value_type> first_coeff =
-      FilterParameters::delay_3taps_only_iq;
+  IQSampleCoeff first_coeff = FilterParameters::delay_3taps_only_iq;
   bool enable_second_downsampler = false;
   unsigned int second_downsample = 1;
-  std::vector<IQSample::value_type> second_coeff =
-      FilterParameters::delay_3taps_only_iq;
+  IQSampleCoeff second_coeff = FilterParameters::delay_3taps_only_iq;
 
   unsigned int third_downsample = 1;
-  std::vector<IQSample::value_type> third_coeff =
-      FilterParameters::delay_3taps_only_iq;
+  IQSampleCoeff third_coeff = FilterParameters::delay_3taps_only_iq;
   bool enable_fourth_downsampler = false;
   unsigned int fourth_downsample = 1;
-  std::vector<IQSample::value_type> fourth_coeff =
-      FilterParameters::delay_3taps_only_iq;
+  IQSampleCoeff fourth_coeff = FilterParameters::delay_3taps_only_iq;
 
   // Configure filter and downsampler.
   switch (modtype) {
@@ -838,7 +834,7 @@ int main(int argc, char **argv) {
                pilot_shift       // pilot_shift
   );
 
-  std::vector<IQSample::value_type> amfilter_coeff;
+  IQSampleCoeff amfilter_coeff;
 
   switch (amfiltertype) {
   case AmFilterType::Default:

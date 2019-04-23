@@ -28,8 +28,8 @@
 /* ****************  class LowPassFilterFirIQ  **************** */
 
 // Construct low-pass filter.
-LowPassFilterFirIQ::LowPassFilterFirIQ(
-    const std::vector<IQSample::value_type> &coeff, unsigned int downsample)
+LowPassFilterFirIQ::LowPassFilterFirIQ(const IQSampleCoeff &coeff,
+                                       unsigned int downsample)
     : m_coeff(coeff), m_order(coeff.size() - 1), m_downsample(downsample),
       m_pos(0) {
   assert(downsample >= 1);
@@ -98,8 +98,7 @@ void LowPassFilterFirIQ::process(const IQSampleVector &samples_in,
 // Class LowPassFilterFirAudio
 
 // Construct low-pass filter.
-LowPassFilterFirAudio::LowPassFilterFirAudio(
-    const std::vector<SampleVector::value_type> &coeff)
+LowPassFilterFirAudio::LowPassFilterFirAudio(const SampleCoeff &coeff)
     : m_coeff(coeff), m_order(coeff.size() - 1), m_pos(0) {
   m_state.resize(m_order);
 }

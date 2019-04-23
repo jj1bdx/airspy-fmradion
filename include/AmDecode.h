@@ -44,8 +44,7 @@ public:
    * amfilter_coeff    :: IQSample Filter Coefficients.
    * mode              :: ModType for decoding mode.
    */
-  AmDecoder(double sample_rate_demod,
-            std::vector<IQSample::value_type> &amfilter_coeff,
+  AmDecoder(double sample_rate_demod, IQSampleCoeff &amfilter_coeff,
             const ModType mode);
 
   // Process IQ samples and return audio samples.
@@ -76,7 +75,7 @@ private:
 
   // Data members.
   const double m_sample_rate_demod;
-  const std::vector<IQSample::value_type> &m_amfilter_coeff;
+  const IQSampleCoeff &m_amfilter_coeff;
   const ModType m_mode;
   double m_baseband_mean;
   double m_baseband_level;

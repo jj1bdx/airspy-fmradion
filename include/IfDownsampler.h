@@ -39,10 +39,9 @@ public:
    * second_downsample         :: Integer second stage downsampling rate (>= 1)
    * second_coeff              :: Second stage filter coefficients
    */
-  IfDownsampler(unsigned int first_downsample,
-                const std::vector<IQSample::value_type> &first_coeff,
+  IfDownsampler(unsigned int first_downsample, const IQSampleCoeff &first_coeff,
                 bool enable_second_downsampler, unsigned int second_downsample,
-                const std::vector<IQSample::value_type> &second_coeff);
+                const IQSampleCoeff &second_coeff);
 
   // Process IQ samples and return downsampled output.
   void process(const IQSampleVector &samples_in, IQSampleVector &samples_out);
