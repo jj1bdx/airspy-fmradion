@@ -28,6 +28,9 @@ typedef std::vector<IQSample> IQSampleVector;
 typedef double Sample;
 typedef std::vector<Sample> SampleVector;
 
+typedef std::vector<IQSample::value_type> IQSampleCoeff;
+typedef std::vector<SampleVector::value_type> SampleCoeff;
+
 enum class AmFilterType { Default, Middle, Narrow };
 enum class DevType { Airspy, AirspyHF, RTLSDR };
 enum class ModType { FM, AM, DSB };

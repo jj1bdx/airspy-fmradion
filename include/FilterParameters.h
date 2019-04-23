@@ -28,29 +28,29 @@
 
 class FilterParameters {
 public:
-  static const std::vector<IQSample::value_type> jj1bdx_10000khz_div8;
-  static const std::vector<IQSample::value_type> jj1bdx_6000khz_div5;
-  static const std::vector<IQSample::value_type> jj1bdx_1250khz_div4;
-  static const std::vector<IQSample::value_type> jj1bdx_2500khz_div4;
-  static const std::vector<IQSample::value_type> jj1bdx_625khz_div2;
-  static const std::vector<IQSample::value_type> jj1bdx_768khz_div2;
-  static const std::vector<IQSample::value_type> jj1bdx_900khz_div3;
-  static const std::vector<IQSample::value_type> delay_3taps_only_iq;
+  static const IQSampleCoeff jj1bdx_10000khz_div8;
+  static const IQSampleCoeff jj1bdx_6000khz_div5;
+  static const IQSampleCoeff jj1bdx_1250khz_div4;
+  static const IQSampleCoeff jj1bdx_2500khz_div4;
+  static const IQSampleCoeff jj1bdx_625khz_div2;
+  static const IQSampleCoeff jj1bdx_768khz_div2;
+  static const IQSampleCoeff jj1bdx_900khz_div3;
+  static const IQSampleCoeff delay_3taps_only_iq;
 
-  static const std::vector<SampleVector::value_type> jj1bdx_48khz_fmaudio;
-  static const std::vector<SampleVector::value_type> delay_3taps_only_audio;
+  static const SampleCoeff jj1bdx_48khz_fmaudio;
+  static const SampleCoeff delay_3taps_only_audio;
 
-  static const std::vector<IQSample::value_type> jj1bdx_am_if_div2;
-  static const std::vector<IQSample::value_type> jj1bdx_am_if_div3;
-  static const std::vector<IQSample::value_type> jj1bdx_am_if_div4;
-  static const std::vector<IQSample::value_type> jj1bdx_am_if_div5;
-  static const std::vector<IQSample::value_type> jj1bdx_am_if_div7;
+  static const IQSampleCoeff jj1bdx_am_if_div2;
+  static const IQSampleCoeff jj1bdx_am_if_div3;
+  static const IQSampleCoeff jj1bdx_am_if_div4;
+  static const IQSampleCoeff jj1bdx_am_if_div5;
+  static const IQSampleCoeff jj1bdx_am_if_div7;
 
-  static const std::vector<IQSample::value_type> jj1bdx_am_48khz_div2;
-  static const std::vector<IQSample::value_type> jj1bdx_am_24khz_div2;
+  static const IQSampleCoeff jj1bdx_am_48khz_div2;
+  static const IQSampleCoeff jj1bdx_am_24khz_div2;
 
-  static const std::vector<IQSample::value_type> jj1bdx_am_12khz_middle;
-  static const std::vector<IQSample::value_type> jj1bdx_am_12khz_narrow;
+  static const IQSampleCoeff jj1bdx_am_12khz_middle;
+  static const IQSampleCoeff jj1bdx_am_12khz_narrow;
 };
 
 #endif // SOFTFM_EQPARAMETERS_H
