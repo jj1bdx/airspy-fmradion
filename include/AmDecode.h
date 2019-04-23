@@ -27,6 +27,7 @@
 #include "EqParameters.h"
 #include "Filter.h"
 #include "FilterParameters.h"
+#include "FourthConverterIQ.h"
 #include "IfDownsampler.h"
 #include "SoftFM.h"
 
@@ -93,6 +94,8 @@ private:
 
   IQSampleVector m_buf_downsampled;
   IQSampleVector m_buf_downsampled2;
+  IQSampleVector m_buf_downsampled2a;
+  IQSampleVector m_buf_downsampled2b;
   IQSampleVector m_buf_downsampled3;
   SampleVector m_buf_baseband_demod;
   SampleVector m_buf_baseband;
@@ -101,6 +104,9 @@ private:
   AudioResampler m_audioresampler;
   IfDownsampler m_ifdownsampler;
   IfDownsampler m_amfilter;
+  FourthConverterIQ m_upshifter;
+  FourthConverterIQ m_downshifter;
+  IfDownsampler m_ssbshiftfilter;
   HighPassFilterIir m_dcblock;
   LowPassFilterRC m_deemph;
 };

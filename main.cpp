@@ -45,7 +45,7 @@
 #include "SoftFM.h"
 #include "util.h"
 
-#define AIRSPY_FMRADION_VERSION "v0.6.6"
+#define AIRSPY_FMRADION_VERSION "v0.6.7-dev"
 
 /** Flag is set on SIGINT / SIGTERM. */
 static std::atomic_bool stop_flag(false);
@@ -109,6 +109,8 @@ void usage() {
       "                   - fm (default)\n"
       "                   - am \n"
       "                   - dsb \n"
+      "                   - usb \n"
+      "                   - lsb \n"
       "  -t devtype     Device type:\n"
       "                   - rtlsdr: RTL-SDR devices\n"
       "                   - airspy: Airspy R2\n"
@@ -392,6 +394,12 @@ int main(int argc, char **argv) {
   } else if (strcasecmp(modtype_str.c_str(), "dsb") == 0) {
     modtype = ModType::DSB;
     stereo = false;
+  } else if (strcasecmp(modtype_str.c_str(), "usb") == 0) {
+    modtype = ModType::USB;
+    stereo = false;
+  } else if (strcasecmp(modtype_str.c_str(), "lsb") == 0) {
+    modtype = ModType::LSB;
+    stereo = false;
   } else {
     fprintf(stderr, "Modulation type string unsuppored\n");
     exit(1);
@@ -447,6 +455,8 @@ int main(int argc, char **argv) {
       break;
     case ModType::AM:
     case ModType::DSB:
+    case ModType::USB:
+    case ModType::LSB:
       fprintf(ppsfile, "#  block   unix_time\n");
       break;
     }
@@ -652,6 +662,8 @@ int main(int argc, char **argv) {
     break;
   case ModType::AM:
   case ModType::DSB:
+  case ModType::USB:
+  case ModType::LSB:
     // Configure AM mode constants.
     switch (devtype) {
     case DevType::Airspy:
@@ -773,6 +785,9 @@ int main(int argc, char **argv) {
     break;
   }
 
+  // Show decoding modulation type.
+  fprintf(stderr, "Decoding modulation type: %s\n", modtype_str.c_str());
+
   unsigned int if_decimation_ratio = first_downsample * second_downsample *
                                      third_downsample * fourth_downsample;
   double demodulator_rate = ifrate / if_decimation_ratio;
@@ -854,6 +869,7 @@ int main(int argc, char **argv) {
                modtype           // mode
   );
 
+  // Initialize moving average object for FM ppm monitoring.
   switch (modtype) {
   case ModType::FM:
     fprintf(stderr, "audio sample rate: %u [Hz],", pcmrate);
@@ -865,6 +881,8 @@ int main(int argc, char **argv) {
     break;
   case ModType::AM:
   case ModType::DSB:
+  case ModType::USB:
+  case ModType::LSB:
     fprintf(stderr, "AM filter type: %s\n", amfiltertype_str.c_str());
     fprintf(stderr, "AM demodulator deemphasis: %.9g [µs]\n",
             AmDecoder::default_deemphasis);
@@ -902,6 +920,8 @@ int main(int argc, char **argv) {
     break;
   case ModType::AM:
   case ModType::DSB:
+  case ModType::USB:
+  case ModType::LSB:
     discarding_blocks = 0;
     break;
   }
@@ -960,7 +980,9 @@ int main(int argc, char **argv) {
       break;
     case ModType::AM:
     case ModType::DSB:
-      // Decode AM/DSB signals.
+    case ModType::USB:
+    case ModType::LSB:
+      // Decode AM/DSB/USB/LSB signals.
       am.process(if_samples, audiosamples);
       break;
     }
@@ -1019,6 +1041,8 @@ int main(int argc, char **argv) {
         break;
       case ModType::AM:
       case ModType::DSB:
+      case ModType::USB:
+      case ModType::LSB:
         // Show per-block statistics without ppm offset.
         double if_agc_gain_db = 20 * log10(am.get_if_agc_current_gain());
         if (((block % stat_rate) == 0) && (block > discarding_blocks)) {
@@ -1047,6 +1071,8 @@ int main(int argc, char **argv) {
         break;
       case ModType::AM:
       case ModType::DSB:
+      case ModType::USB:
+      case ModType::LSB:
         if ((block % (stat_rate * 10)) == 0) {
           fprintf(ppsfile, "%8d %18.6f\n", block, prev_block_time);
           fflush(ppsfile);

@@ -51,6 +51,8 @@ public:
 
   static const IQSampleCoeff jj1bdx_am_12khz_middle;
   static const IQSampleCoeff jj1bdx_am_12khz_narrow;
+
+  static const IQSampleCoeff jj1bdx_ssb_3to6khz;
 };
 
 #endif // SOFTFM_EQPARAMETERS_H

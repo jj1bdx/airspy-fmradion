@@ -83,6 +83,15 @@ AmDecoder::AmDecoder(double sample_rate_demod, IQSampleCoeff &amfilter_coeff,
       m_amfilter(1, m_amfilter_coeff, false, 1,
                  FilterParameters::delay_3taps_only_iq)
 
+      // IF down/upshifter
+      ,
+      m_upshifter(true), m_downshifter(false)
+
+      // SSB shifted-audio filter from 3 to 6kHz
+      ,
+      m_ssbshiftfilter(1, FilterParameters::jj1bdx_ssb_3to6khz, false, 1,
+                       FilterParameters::delay_3taps_only_iq)
+
       // Construct HighPassFilterIir
       // cutoff: 60Hz for 12kHz sampling rate
       ,
@@ -90,7 +99,9 @@ AmDecoder::AmDecoder(double sample_rate_demod, IQSampleCoeff &amfilter_coeff,
 
       // Construct LowPassFilterRC
       ,
-      m_deemph(default_deemphasis * sample_rate_pcm * 1.0e-6) {
+      m_deemph(default_deemphasis * sample_rate_pcm * 1.0e-6)
+
+{
   // do nothing
 }
 
@@ -101,6 +112,23 @@ void AmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
 
   // Apply narrower filters
   m_amfilter.process(m_buf_downsampled, m_buf_downsampled2);
+
+  // Shift Fs/4 and filter Fs/4~Fs/2 frequency bandwidth only
+  switch (m_mode) {
+  case ModType::USB:
+    m_upshifter.process(m_buf_downsampled2, m_buf_downsampled2a);
+    m_ssbshiftfilter.process(m_buf_downsampled2a, m_buf_downsampled2b);
+    m_downshifter.process(m_buf_downsampled2b, m_buf_downsampled2);
+    break;
+  case ModType::LSB:
+    m_downshifter.process(m_buf_downsampled2, m_buf_downsampled2a);
+    m_ssbshiftfilter.process(m_buf_downsampled2a, m_buf_downsampled2b);
+    m_upshifter.process(m_buf_downsampled2b, m_buf_downsampled2);
+    break;
+  default:
+    // Do nothing here
+    break;
+  }
 
   // If AGC
   if_agc(m_buf_downsampled2, m_buf_downsampled3);
@@ -115,6 +143,8 @@ void AmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
     demodulate_am(m_buf_downsampled3, m_buf_baseband_demod);
     break;
   case ModType::DSB:
+  case ModType::USB:
+  case ModType::LSB:
     demodulate_dsb(m_buf_downsampled3, m_buf_baseband_demod);
     break;
   }
