@@ -150,7 +150,8 @@ std::uint32_t AirspyHFSource::get_frequency() { return m_frequency; }
 
 void AirspyHFSource::print_specific_parms() {}
 
-bool AirspyHFSource::configure(int sampleRateIndex, uint32_t frequency) {
+bool AirspyHFSource::configure(int sampleRateIndex, uint8_t hfAttLevel,
+                               uint32_t frequency) {
 
   m_frequency = frequency;
 
@@ -183,6 +184,48 @@ bool AirspyHFSource::configure(int sampleRateIndex, uint32_t frequency) {
     m_sampleRate = m_srates[sampleRateIndex];
   }
 
+  if (hfAttLevel > 0) {
+
+    rc = (airspyhf_error)airspyhf_set_hf_agc(m_dev, 0);
+
+    if (rc != AIRSPYHF_SUCCESS) {
+      std::ostringstream err_ostr;
+      err_ostr << "Could not turn off HF AGC";
+      m_error = err_ostr.str();
+      return false;
+    }
+
+    rc = (airspyhf_error)airspyhf_set_hf_att(m_dev, hfAttLevel);
+
+    if (rc != AIRSPYHF_SUCCESS) {
+      std::ostringstream err_ostr;
+      err_ostr << "Could not set HF attenuation level to " << hfAttLevel
+               << " dB";
+      m_error = err_ostr.str();
+      return false;
+    }
+
+  } else {
+
+    rc = (airspyhf_error)airspyhf_set_hf_agc(m_dev, 1);
+
+    if (rc != AIRSPYHF_SUCCESS) {
+      std::ostringstream err_ostr;
+      err_ostr << "Could not turn on HF AGC";
+      m_error = err_ostr.str();
+      return false;
+    }
+
+    rc = (airspyhf_error)airspyhf_set_hf_att(m_dev, 0);
+
+    if (rc != AIRSPYHF_SUCCESS) {
+      std::ostringstream err_ostr;
+      err_ostr << "Could not set HF attenuation level to zero dB";
+      m_error = err_ostr.str();
+      return false;
+    }
+  }
+
   return true;
 }
 
@@ -193,6 +236,7 @@ bool AirspyHFSource::configure(std::string configurationStr) {
 
   int sampleRateIndex = 0;
   uint32_t frequency = 100000000;
+  uint8_t hfAttLevel = 0;
 
   m_sampleRate = 768000;
 
@@ -243,12 +287,26 @@ bool AirspyHFSource::configure(std::string configurationStr) {
         return false;
       }
     }
+
+    if (m.find("hf_att") != m.end()) {
+#ifdef DEBUG_AIRSPYHFSOURCE
+      std::cerr << "AirspyHFSource::configure: hf_att: " << m["hf_att"]
+                << std::endl;
+#endif
+      hfAttLevel = atoi(m["hf_att"].c_str());
+
+      if ((hfAttLevel > 8) || (hfAttLevel < 0)) {
+        m_error = "Invalid HF att level";
+        return false;
+      }
+    }
   }
 
   m_confFreq = frequency;
   // tuned frequency is up Fs/4 (downconverted in main.cpp)
   double tuner_freq = frequency - 0.25 * m_srates[sampleRateIndex];
-  return configure(sampleRateIndex, tuner_freq);
+
+  return configure(sampleRateIndex, hfAttLevel, tuner_freq);
 }
 
 bool AirspyHFSource::start(DataBuffer<IQSample> *buf,

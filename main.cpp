@@ -45,7 +45,7 @@
 #include "SoftFM.h"
 #include "util.h"
 
-#define AIRSPY_FMRADION_VERSION "v0.6.7"
+#define AIRSPY_FMRADION_VERSION "v0.6.8-dev0"
 
 /** Flag is set on SIGINT / SIGTERM. */
 static std::atomic_bool stop_flag(false);
@@ -173,10 +173,13 @@ void usage() {
       "Configuration options for Airspy HF devices:\n"
       "  freq=<int>     Frequency of radio station in Hz (default 100000000)\n"
       "                 valid values: 60M to 260M\n"
-      "  srate=<int>    IF sample rate in Hz."
-      "Depends on Airspy HF firmware and libairspyhf support\n"
-      "                 Airspy HF firmware and library must support dynamic "
-      "sample rate query. (default 768000)\n"
+      "  srate=<int>    IF sample rate in Hz.\n"
+      "                 Depends on Airspy HF firmware and libairspyhf support\n"
+      "                 Airspy HF firmware and library must support dynamic\n"
+      "                 sample rate query. (default 768000)\n"
+      "  hf_att=<int>   HF attenuation level and AGC control\n"
+      "                 0: enable AGC, no attenuation\n"
+      "                 1 ~ 8: disable AGC, apply attenuation of value * 6dB\n"
       "\n");
 }
 
