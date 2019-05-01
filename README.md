@@ -1,6 +1,6 @@
 # airspy-fmradion
 
-* Version v0.6.7, 23-APR-2019
+* Version v0.6.8-dev0, 1-MAY-2019
 * For MacOS and Linux
 
 ### What is airspy-fmradion?
@@ -245,6 +245,9 @@ Compile and install
 
   - `freq=<int>` Desired tune frequency in Hz. Valid range from 0 to 31M, and from 60M to 240M. (default 100M: `100000000`)
   - `srate=<int>` Device sample rate. `list` lists valid values and exits. (default `768000`). Valid values depend on the Airspy HF firmware. Airspy HF firmware and library must support dynamic sample rate query.
+  - `hf_att=<int>` HF attenuation level and AGC control.
+     - 0: enable AGC, no attenuation
+     - 1 - 8: disable AGC, apply attenuation of value * 6dB
 
 ## RTL-SDR
 
