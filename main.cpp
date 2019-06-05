@@ -45,7 +45,7 @@
 #include "SoftFM.h"
 #include "util.h"
 
-#define AIRSPY_FMRADION_VERSION "v0.6.8"
+#define AIRSPY_FMRADION_VERSION "v0.6.9"
 
 /** Flag is set on SIGINT / SIGTERM. */
 static std::atomic_bool stop_flag(false);
@@ -120,7 +120,6 @@ void usage() {
       "key for switches\n"
       "                 See below for valid values per device type\n"
       "  -d devidx      Device index, 'list' to show device list (default 0)\n"
-      "  -r pcmrate     Audio sample rate in Hz (default 48000 Hz)\n"
       "  -M             Disable stereo decoding\n"
       "  -R filename    Write audio data as raw S16_LE samples\n"
       "                 use filename '-' to write to stdout\n"
@@ -295,13 +294,13 @@ int main(int argc, char **argv) {
 
   const struct option longopts[] = {
       {"modtype", 2, NULL, 'm'},      {"devtype", 2, NULL, 't'},
-      {"config", 2, NULL, 'c'},       {"dev", 1, NULL, 'd'},
-      {"mono", 0, NULL, 'M'},         {"raw", 1, NULL, 'R'},
-      {"float", 1, NULL, 'F'},        {"wav", 1, NULL, 'W'},
-      {"amfiltertype", 2, NULL, 'f'}, {"play", 2, NULL, 'P'},
+      {"quiet", 1, NULL, 'q'},        {"config", 2, NULL, 'c'},
+      {"dev", 1, NULL, 'd'},          {"mono", 0, NULL, 'M'},
+      {"raw", 1, NULL, 'R'},          {"float", 1, NULL, 'F'},
+      {"wav", 1, NULL, 'W'},          {"play", 2, NULL, 'P'},
       {"pps", 1, NULL, 'T'},          {"buffer", 1, NULL, 'b'},
-      {"quiet", 1, NULL, 'q'},        {"pilotshift", 0, NULL, 'X'},
-      {"usa", 0, NULL, 'U'},          {NULL, 0, NULL, 0}};
+      {"pilotshift", 0, NULL, 'X'},   {"usa", 0, NULL, 'U'},
+      {"amfiltertype", 2, NULL, 'f'}, {NULL, 0, NULL, 0}};
 
   int c, longindex;
   while ((c = getopt_long(argc, argv, "m:t:c:d:MR:F:W:f:P::T:b:qXU", longopts,
