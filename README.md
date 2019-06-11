@@ -1,6 +1,6 @@
 # airspy-fmradion
 
-* Version v0.6.9, 5-JUN-2019
+* Version v0.6.10-pre0, 11-JUN-2019
 * For MacOS and Linux
 
 ### What is airspy-fmradion?
@@ -162,6 +162,7 @@ Compile and install
 ### General characteristics
 
 * Aliasing allowed outside the -90dB width for the 1st-stage IF filters to reduce CPU power
+* For FM: set very low ripple (<0.0001dB) within the passband (Raised Cosine method with Kaiser window is more preferable than Perks-McClellan method)
 
 ### For FM
 
