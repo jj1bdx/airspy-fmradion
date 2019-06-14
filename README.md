@@ -3,6 +3,10 @@
 * Version v0.6.10-pre0, 11-JUN-2019
 * For MacOS and Linux
 
+### Known issues
+
+* This software does not work on Airspy HF+ Firmware R2.2.0-BB. Please use [R2.1.0-BB](https://airspy.com/downloads/airspy-hf-flash-20190531-bb.zip) instead.
+
 ### What is airspy-fmradion?
 
 * **airspy-fmradion** is a software-defined radio receiver for FM and AM broadcast radio, and also DSB/USB/LSB utility communications, specifically designed for Airspy R2, Airspy Mini, Airspy HF+, and RTL-SDR.
