@@ -1,11 +1,11 @@
 # airspy-fmradion
 
-* Version v0.6.10-pre0, 11-JUN-2019
+* Version v0.6.10, 15-JUN-2019
 * For MacOS and Linux
 
 ### Known issues
 
-* This software does not work on Airspy HF+ Firmware R2.2.0-BB. Please use [R2.1.0-BB](https://airspy.com/downloads/airspy-hf-flash-20190531-bb.zip) instead.
+* Version v0.6.9 and before of this software did not work on Airspy HF+ Firmware R2.2.0-BB. Initialization and device listing sequences redesigned on v0.6.10.
 
 ### What is airspy-fmradion?
 
