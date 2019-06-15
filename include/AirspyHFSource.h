@@ -83,6 +83,10 @@ private:
   static AirspyHFSource *m_this;
   std::vector<int> m_srates;
   std::string m_sratesStr;
+
+  airspyhf_lib_version_t m_libv;
+  int m_ndev;
+  std::vector<uint64_t> m_serials;
 };
 
 #endif /* INCLUDE_AIRSPYSOURCE_H_ */

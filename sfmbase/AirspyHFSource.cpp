@@ -36,8 +36,38 @@ AirspyHFSource *AirspyHFSource::m_this = 0;
 AirspyHFSource::AirspyHFSource(int dev_index)
     : m_dev(0), m_sampleRate(768000), m_frequency(100000000), m_running(false),
       m_thread(0) {
-  for (int i = 0; i < AIRSPYHF_MAX_DEVICE; i++) {
-    airspyhf_error rc = (airspyhf_error)airspyhf_open(&m_dev);
+  // Get library version number first.
+  airspyhf_lib_version(&m_libv);
+#ifdef DEBUG_AIRSPYHFSOURCE
+  std::cerr << "AirspyHF Library Version: " << m_libv.major_version << "."
+            << m_libv.minor_version << "." << m_libv.revision << std::endl;
+#endif
+
+  // Scan all devices, return how many are attached.
+  m_ndev = airspyhf_list_devices(0, 0);
+  if (m_ndev <= 0) {
+    std::ostringstream err_ostr;
+    err_ostr << "No Airspy HF device found";
+    m_error = err_ostr.str();
+    m_dev = 0;
+    m_this = this;
+    return;
+  }
+
+  // List all available devices.
+  m_serials.resize(m_ndev);
+  if (m_ndev != airspyhf_list_devices(m_serials.data(), m_ndev)) {
+    std::ostringstream err_ostr;
+    err_ostr << "Failed to obtain Airspy HF device serial numbers";
+    m_error = err_ostr.str();
+    m_dev = 0;
+    m_this = this;
+    return;
+  }
+
+  // Open the first device.
+  for (int i = 0; i < m_ndev; i++) {
+    airspyhf_error rc = (airspyhf_error)airspyhf_open_sn(&m_dev, m_serials[i]);
 
     if (rc == AIRSPYHF_SUCCESS) {
       if (i == dev_index) {
@@ -98,49 +128,36 @@ AirspyHFSource::~AirspyHFSource() {
 }
 
 void AirspyHFSource::get_device_names(std::vector<std::string> &devices) {
-  airspyhf_device *airspyhf_ptr;
-  airspyhf_read_partid_serialno_t read_partid_serialno;
-  uint32_t serial_msb = 0;
-  uint32_t serial_lsb = 0;
-  airspyhf_error rc;
-  int i;
+  int ndev;
+  std::vector<uint64_t> serials;
 
-  for (i = 0; i < AIRSPYHF_MAX_DEVICE; i++) {
-    rc = (airspyhf_error)airspyhf_open(&airspyhf_ptr);
+  // Scan all devices, return how many are attached.
+  ndev = airspyhf_list_devices(0, 0);
 #ifdef DEBUG_AIRSPYHFSOURCE
-    std::cerr << "AirspyHFSource::get_device_names: try to get device " << i
-              << " serial number" << std::endl;
+  std::cerr << "AirspyHFSource::get_device_names: "
+            << "try to get available device numbers" << std::endl;
 #endif
-
-    if (rc == AIRSPYHF_SUCCESS) {
-#ifdef DEBUG_AIRSPYHFSOURCE
-      std::cerr << "AirspySHFource::get_device_names: device " << i
-                << " open OK" << std::endl;
-#endif
-
-      rc = (airspyhf_error)airspyhf_board_partid_serialno_read(
-          airspyhf_ptr, &read_partid_serialno);
-
-      if (rc == AIRSPYHF_SUCCESS) {
-        serial_msb = read_partid_serialno.serial_no[0];
-        serial_lsb = read_partid_serialno.serial_no[1];
-        std::ostringstream devname_ostr;
-        devname_ostr << "Serial " << std::hex << std::setw(8)
-                     << std::setfill('0') << serial_msb << serial_lsb;
-        devices.push_back(devname_ostr.str());
-      } else {
-        std::cerr << "AirspyHFSource::get_device_names: failed to get device "
-                  << i << " serial number: " << rc << std::endl;
-      }
-
-      airspyhf_close(airspyhf_ptr);
-    } else {
-#ifdef DEBUG_AIRSPYHFSOURCE
-      std::cerr << "AirspyHFSource::get_device_names: enumerated " << i
-                << " Airspy devices: " << std::endl;
-#endif
-      break; // finished
+  if (ndev <= 0) {
+    std::cerr << "AirspyHFSource::get_device_names: no available device"
+              << std::endl;
+  }
+  // List all available devices.
+  serials.resize(ndev);
+  if (ndev != airspyhf_list_devices(serials.data(), ndev)) {
+    std::cerr << "AirspyHFSource::get_device_names: "
+              << "unable to obtain device list" << std::endl;
+  } else {
+    // Use obtained info during AirspyHFSource object construction.
+    for (int i = 0; i < ndev; i++) {
+      std::ostringstream devname_ostr;
+      devname_ostr << "Serial " << std::hex << std::setw(8) << std::setfill('0')
+                   << serials[i];
+      devices.push_back(devname_ostr.str());
     }
+#ifdef DEBUG_AIRSPYHFSOURCE
+    std::cerr << "AirspyHFSource::get_device_names: enumerated " << ndev
+              << "device(s)" << std::endl;
+#endif
   }
 }
 
