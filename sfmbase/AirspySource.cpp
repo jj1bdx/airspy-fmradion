@@ -36,32 +36,26 @@ const std::vector<int> AirspySource::m_vgains({0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
                                                11, 12, 13, 14, 15});
 
 // Open Airspy device.
+// Note: airspy_list_devices() does not work yet
 AirspySource::AirspySource(int dev_index)
     : m_dev(0), m_sampleRate(10000000), m_frequency(100000000), m_lnaGain(8),
       m_mixGain(0), m_vgaGain(10), m_biasAnt(false), m_lnaAGC(false),
       m_mixAGC(false), m_running(false), m_thread(0) {
-  airspy_error rc = (airspy_error)airspy_init();
 
-  if (rc != AIRSPY_SUCCESS) {
-    std::ostringstream err_ostr;
-    err_ostr << "Failed to open Airspy library (" << rc << ": "
-             << airspy_error_name(rc) << ")";
-    m_error = err_ostr.str();
-    m_dev = 0;
-  } else {
-    for (int i = 0; i < AIRSPY_MAX_DEVICE; i++) {
-      rc = (airspy_error)airspy_open(&m_dev);
+  airspy_error rc;
 
-      if (rc == AIRSPY_SUCCESS) {
-        if (i == dev_index) {
-          break;
-        }
-      } else {
-        std::ostringstream err_ostr;
-        err_ostr << "Failed to open Airspy device at sequence " << i;
-        m_error = err_ostr.str();
-        m_dev = 0;
+  for (int i = 0; i < AIRSPY_MAX_DEVICE; i++) {
+    rc = (airspy_error)airspy_open(&m_dev);
+
+    if (rc == AIRSPY_SUCCESS) {
+      if (i == dev_index) {
+        break;
       }
+    } else {
+      std::ostringstream err_ostr;
+      err_ostr << "Failed to open Airspy device at sequence " << i;
+      m_error = err_ostr.str();
+      m_dev = 0;
     }
   }
 
@@ -136,11 +130,6 @@ AirspySource::~AirspySource() {
   if (m_dev) {
     airspy_close(m_dev);
   }
-
-  airspy_error rc = (airspy_error)airspy_exit();
-  std::cerr << "AirspySource::~AirspySource: Airspy library exit: " << rc
-            << ": " << airspy_error_name(rc) << std::endl;
-
   m_this = 0;
 }
 
@@ -151,15 +140,6 @@ void AirspySource::get_device_names(std::vector<std::string> &devices) {
   uint32_t serial_lsb = 0;
   airspy_error rc;
   int i;
-
-  rc = (airspy_error)airspy_init();
-
-  if (rc != AIRSPY_SUCCESS) {
-    std::cerr
-        << "AirspySource::get_device_names: Failed to open Airspy library: "
-        << rc << ": " << airspy_error_name(rc) << std::endl;
-    return;
-  }
 
   for (i = 0; i < AIRSPY_MAX_DEVICE; i++) {
     rc = (airspy_error)airspy_open(&airspy_ptr);
@@ -200,7 +180,6 @@ void AirspySource::get_device_names(std::vector<std::string> &devices) {
     }
   }
 
-  rc = (airspy_error)airspy_exit();
 #ifdef DEBUG_AIRSPYSOURCE
   std::cerr << "AirspySource::get_device_names: Airspy library exit: " << rc
             << ": " << airspy_error_name(rc) << std::endl;
