@@ -27,6 +27,8 @@
 #include "parsekv.h"
 #include "util.h"
 
+// #define DEBUG_AIRSPYSOURCE 1
+
 AirspySource *AirspySource::m_this = 0;
 const std::vector<int> AirspySource::m_lgains({0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
                                                11, 12, 13, 14});
@@ -35,28 +37,53 @@ const std::vector<int> AirspySource::m_mgains({0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
 const std::vector<int> AirspySource::m_vgains({0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
                                                11, 12, 13, 14, 15});
 
+// Note:
+// The following code requires the following WIP functions:
+// * working airspy_open_sn()
+// * working airspy_list_devices()
+
 // Open Airspy device.
-// Note: airspy_list_devices() does not work yet
 AirspySource::AirspySource(int dev_index)
     : m_dev(0), m_sampleRate(10000000), m_frequency(100000000), m_lnaGain(8),
       m_mixGain(0), m_vgaGain(10), m_biasAnt(false), m_lnaAGC(false),
       m_mixAGC(false), m_running(false), m_thread(0) {
 
-  airspy_error rc;
+  // Get library version number first.
+  airspy_lib_version(&m_libv);
+#ifdef DEBUG_AIRSPYSOURCE
+  std::cerr << "Airspy Library Version: " << m_libv.major_version << "."
+            << m_libv.minor_version << "." << m_libv.revision << std::endl;
+#endif
 
-  for (int i = 0; i < AIRSPY_MAX_DEVICE; i++) {
-    rc = (airspy_error)airspy_open(&m_dev);
+  // Scan all devices, return how many are attached.
+  m_ndev = airspy_list_devices(0, 0);
+  if (m_ndev <= 0) {
+    std::ostringstream err_ostr;
+    err_ostr << "No Airspy device found";
+    m_error = err_ostr.str();
+    m_dev = 0;
+    m_this = this;
+    return;
+  }
 
-    if (rc == AIRSPY_SUCCESS) {
-      if (i == dev_index) {
-        break;
-      }
-    } else {
-      std::ostringstream err_ostr;
-      err_ostr << "Failed to open Airspy device at sequence " << i;
-      m_error = err_ostr.str();
-      m_dev = 0;
-    }
+  // List all available devices.
+  m_serials.resize(m_ndev);
+  if (m_ndev != airspy_list_devices(m_serials.data(), m_ndev)) {
+    std::ostringstream err_ostr;
+    err_ostr << "Failed to obtain Airspy device serial numbers";
+    m_error = err_ostr.str();
+    m_dev = 0;
+    m_this = this;
+    return;
+  }
+
+  // Open the matched device.
+  airspy_error rc = (airspy_error)airspy_open_sn(&m_dev, m_serials[dev_index]);
+  if (rc != AIRSPY_SUCCESS) {
+    std::ostringstream err_ostr;
+    err_ostr << "Failed to open Airspy HF device at device index " << dev_index;
+    m_error = err_ostr.str();
+    m_dev = 0;
   }
 
   if (m_dev) {
@@ -134,56 +161,37 @@ AirspySource::~AirspySource() {
 }
 
 void AirspySource::get_device_names(std::vector<std::string> &devices) {
-  airspy_device *airspy_ptr;
-  airspy_read_partid_serialno_t read_partid_serialno;
-  uint32_t serial_msb = 0;
-  uint32_t serial_lsb = 0;
-  airspy_error rc;
-  int i;
+  int ndev;
+  std::vector<uint64_t> serials;
 
-  for (i = 0; i < AIRSPY_MAX_DEVICE; i++) {
-    rc = (airspy_error)airspy_open(&airspy_ptr);
+  // Scan all devices, return how many are attached.
+  ndev = airspy_list_devices(0, 0);
 #ifdef DEBUG_AIRSPYSOURCE
-    std::cerr << "AirspySource::get_device_names: try to get device " << i
-              << " serial number" << std::endl;
+  std::cerr << "AirspySource::get_device_names: "
+            << "try to get available device numbers" << std::endl;
 #endif
-
-    if (rc == AIRSPY_SUCCESS) {
-#ifdef DEBUG_AIRSPYSOURCE
-      std::cerr << "AirspySource::get_device_names: device " << i << " open OK"
-                << std::endl;
-#endif
-
-      rc = (airspy_error)airspy_board_partid_serialno_read(
-          airspy_ptr, &read_partid_serialno);
-
-      if (rc == AIRSPY_SUCCESS) {
-        serial_msb = read_partid_serialno.serial_no[2];
-        serial_lsb = read_partid_serialno.serial_no[3];
-        std::ostringstream devname_ostr;
-        devname_ostr << "Serial " << std::hex << std::setw(8)
-                     << std::setfill('0') << serial_msb << serial_lsb;
-        devices.push_back(devname_ostr.str());
-      } else {
-        std::cerr << "AirspySource::get_device_names: failed to get device "
-                  << i << " serial number: " << rc << ": "
-                  << airspy_error_name(rc) << std::endl;
-      }
-
-      airspy_close(airspy_ptr);
-    } else {
-#ifdef DEBUG_AIRSPYSOURCE
-      std::cerr << "AirspySource::get_device_names: enumerated " << i
-                << " Airspy devices: " << airspy_error_name(rc) << std::endl;
-#endif
-      break; // finished
-    }
+  if (ndev <= 0) {
+    std::cerr << "AirspySource::get_device_names: no available device"
+              << std::endl;
   }
-
-#ifdef DEBUG_AIRSPYSOURCE
-  std::cerr << "AirspySource::get_device_names: Airspy library exit: " << rc
-            << ": " << airspy_error_name(rc) << std::endl;
+  // List all available devices.
+  serials.resize(ndev);
+  if (ndev != airspy_list_devices(serials.data(), ndev)) {
+    std::cerr << "AirspySource::get_device_names: "
+              << "unable to obtain device list" << std::endl;
+  } else {
+    // Use obtained info during AirspySource object construction.
+    for (int i = 0; i < ndev; i++) {
+      std::ostringstream devname_ostr;
+      devname_ostr << "Serial " << std::hex << std::setw(8) << std::setfill('0')
+                   << serials[i];
+      devices.push_back(devname_ostr.str());
+    }
+#ifdef DEBUG_AIRSPYHFSOURCE
+    std::cerr << "AirspySource::get_device_names: enumerated " << ndev
+              << "device(s)" << std::endl;
 #endif
+  }
 }
 
 std::uint32_t AirspySource::get_sample_rate() { return m_sampleRate; }
