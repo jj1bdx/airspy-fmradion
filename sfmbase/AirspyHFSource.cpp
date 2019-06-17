@@ -66,12 +66,13 @@ AirspyHFSource::AirspyHFSource(int dev_index)
   }
 
   // Open the matched device.
-  airspyhf_error rc = (airspyhf_error)airspyhf_open_sn(&m_dev, m_serials[dev_index]);
+  airspyhf_error rc =
+      (airspyhf_error)airspyhf_open_sn(&m_dev, m_serials[dev_index]);
   if (rc != AIRSPYHF_SUCCESS) {
-      std::ostringstream err_ostr;
-      err_ostr << "Failed to open Airspy HF device at device index " << dev_index;
-      m_error = err_ostr.str();
-      m_dev = 0;
+    std::ostringstream err_ostr;
+    err_ostr << "Failed to open Airspy HF device at device index " << dev_index;
+    m_error = err_ostr.str();
+    m_dev = 0;
   }
 
   if (m_dev) {
