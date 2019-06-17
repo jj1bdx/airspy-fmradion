@@ -45,7 +45,7 @@
 #include "SoftFM.h"
 #include "util.h"
 
-#define AIRSPY_FMRADION_VERSION "v0.6.11-pre0-dev-open-sn"
+#define AIRSPY_FMRADION_VERSION "v0.6.11-pre1"
 
 /** Flag is set on SIGINT / SIGTERM. */
 static std::atomic_bool stop_flag(false);
@@ -171,7 +171,7 @@ void usage() {
       "\n"
       "Configuration options for Airspy HF devices:\n"
       "  freq=<int>     Frequency of radio station in Hz (default 100000000)\n"
-      "                 valid values: 60M to 260M\n"
+      "                 valid values: 192k to 31M, and 60M to 260M\n"
       "  srate=<int>    IF sample rate in Hz.\n"
       "                 Depends on Airspy HF firmware and libairspyhf support\n"
       "                 Airspy HF firmware and library must support dynamic\n"
