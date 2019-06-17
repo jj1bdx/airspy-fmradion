@@ -1,11 +1,12 @@
 # airspy-fmradion
 
-* Version v0.6.11-pre0, 15-JUN-2019
+* Version v0.6.11-pre1, 17-JUN-2019
 * For MacOS and Linux
 
 ### Known issues
 
 * Version v0.6.9 and before of this software did not work on Airspy HF+ Firmware R2.2.0-BB. Initialization and device listing sequences redesigned on v0.6.10.
+* Use libairspy --HEAD version for the working `airspy_open_devices()`, required by `airspy_open_sn()`. See [this commit](https://github.com/airspy/airspyone_host/commit/61fec20fbd710fc54d57dfec732d314d693b5a2f) for the details.
 
 ### What is airspy-fmradion?
 
@@ -82,7 +83,7 @@ To install the library from a Debian/Ubuntu installation just do:
 
 * Install HomeBrew `airspy`, `airspyhf`, `rtl-sdr`, and `libsoxr`
 * See <https://github.com/pothosware/homebrew-pothos/wiki>
-* Use HEAD for `airspyhf`
+* Use HEAD for `airspy` and `airspyhf`
 
 ```shell
 brew tap pothosware/homebrew-pothos
@@ -90,7 +91,7 @@ brew tap dholm/homebrew-sdr #other sdr apps
 brew update
 brew install libsoxr
 brew install rtl-sdr
-brew install airspy
+brew install airspy --HEAD
 brew install airspyhf --HEAD
 ```
 
