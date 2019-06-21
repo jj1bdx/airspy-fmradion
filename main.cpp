@@ -133,7 +133,12 @@ void usage() {
       "  -X             Shift pilot phase (for Quadrature Multipath Monitor)\n"
       "                 (-X is ignored under mono mode (-M))\n"
       "  -U             Set deemphasis to 75 microseconds (default: 50)\n"
-      "  -f filtername  AM Filter type:\n"
+      "  -f filtername  Filter type:\n"
+      "                 For FM with Airspy HF+ (-3dB width):\n"
+      "                   - default: +-154kHz\n"
+      "                   - medium:  +-134kHz\n"
+      "                   - narrow:  +-100kHz\n"
+      "                 For AM:\n"
       "                   - default: +-6kHz\n"
       "                   - medium:  +-4kHz\n"
       "                   - narrow:  +-3kHz\n"
@@ -293,13 +298,13 @@ int main(int argc, char **argv) {
   fprintf(stderr, "Airspy R2, Airspy HF+, and RTL-SDR\n");
 
   const struct option longopts[] = {
-      {"modtype", 2, NULL, 'm'},      {"devtype", 2, NULL, 't'},
-      {"quiet", 1, NULL, 'q'},        {"config", 2, NULL, 'c'},
-      {"dev", 1, NULL, 'd'},          {"mono", 0, NULL, 'M'},
-      {"raw", 1, NULL, 'R'},          {"float", 1, NULL, 'F'},
-      {"wav", 1, NULL, 'W'},          {"play", 2, NULL, 'P'},
-      {"pps", 1, NULL, 'T'},          {"buffer", 1, NULL, 'b'},
-      {"pilotshift", 0, NULL, 'X'},   {"usa", 0, NULL, 'U'},
+      {"modtype", 2, NULL, 'm'},    {"devtype", 2, NULL, 't'},
+      {"quiet", 1, NULL, 'q'},      {"config", 2, NULL, 'c'},
+      {"dev", 1, NULL, 'd'},        {"mono", 0, NULL, 'M'},
+      {"raw", 1, NULL, 'R'},        {"float", 1, NULL, 'F'},
+      {"wav", 1, NULL, 'W'},        {"play", 2, NULL, 'P'},
+      {"pps", 1, NULL, 'T'},        {"buffer", 1, NULL, 'b'},
+      {"pilotshift", 0, NULL, 'X'}, {"usa", 0, NULL, 'U'},
       {"filtertype", 2, NULL, 'f'}, {NULL, 0, NULL, 0}};
 
   int c, longindex;
@@ -630,6 +635,17 @@ int main(int argc, char **argv) {
         enable_two_downsampler_stages = false;
         first_downsample = 2;
         first_coeff = FilterParameters::jj1bdx_768khz_div2;
+  switch (filtertype) {
+  case FilterType::Default:
+        first_coeff = FilterParameters::jj1bdx_768khz_div2;
+    break;
+  case FilterType::Medium:
+        first_coeff = FilterParameters::jj1bdx_768khz_div2_medium;
+    break;
+  case FilterType::Narrow:
+        first_coeff = FilterParameters::jj1bdx_768khz_div2_narrow;
+    break;
+  }
         enable_second_downsampler = false;
       } else {
         fprintf(stderr, "Sample rate unsupported\n");
@@ -885,11 +901,11 @@ int main(int argc, char **argv) {
   case ModType::DSB:
   case ModType::USB:
   case ModType::LSB:
-    fprintf(stderr, "AM filter type: %s\n", filtertype_str.c_str());
     fprintf(stderr, "AM demodulator deemphasis: %.9g [µs]\n",
             AmDecoder::default_deemphasis);
     break;
   }
+  fprintf(stderr, "Filter type: %s\n", filtertype_str.c_str());
 
   // Initialize moving average object for FM ppm monitoring.
   MovingAverage<float> ppm_average(100, 0.0f);
