@@ -1,6 +1,6 @@
 # airspy-fmradion
 
-* Version v0.6.11-pre1, 17-JUN-2019
+* Version v0.6.11, 21-JUN-2019
 * For MacOS and Linux
 
 ### Known issues
@@ -159,6 +159,11 @@ Compile and install
 * Quality: `SOXR_HQ` (`SOXR_VHQ` is overkill)
 * 19kHz cut LPF implemented for post-processing libsoxr output
 
+### Phase discriminator now uses atan2() as is
+
+* `atan2()` is now used as is for PhaseDiscriminator
+* past `fastatan2()` is removed
+
 ## No-goals
 
 * Adaptive IF filtering (unable to obtain better results)
@@ -206,7 +211,7 @@ Compile and install
 
 > Try starting with 10MSPS and that small conversion filter (7 taps vs. the standard 47 taps), then decimate down to ~312.5 ksps (decimation by 32), then feed the FM demod. The overall CPU usage will be very low and the bit growth will give 14.5 bit resolution.
 
-### Removed features
+### Feature changes
 
 * Halfband kernel filter designed by Twitter @lambdaprog is set for Airspy conversion filter
 * Finetuner is removed (Not really needed for +-1ppm or less offset)
