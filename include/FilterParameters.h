@@ -34,6 +34,7 @@ public:
   static const IQSampleCoeff jj1bdx_2500khz_div4;
   static const IQSampleCoeff jj1bdx_625khz_div2;
   static const IQSampleCoeff jj1bdx_768khz_div2;
+  static const IQSampleCoeff jj1bdx_768khz_div2_wide;
   static const IQSampleCoeff jj1bdx_900khz_div3;
   static const IQSampleCoeff delay_3taps_only_iq;
 
