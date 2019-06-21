@@ -414,7 +414,7 @@ int main(int argc, char **argv) {
   } else if (strcasecmp(filtertype_str.c_str(), "narrow") == 0) {
     filtertype = FilterType::Narrow;
   } else {
-    fprintf(stderr, "AM filter type string unsuppored\n");
+    fprintf(stderr, "Filter type string unsuppored\n");
     exit(1);
   }
 
