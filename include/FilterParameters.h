@@ -33,8 +33,8 @@ public:
   static const IQSampleCoeff jj1bdx_1250khz_div4;
   static const IQSampleCoeff jj1bdx_2500khz_div4;
   static const IQSampleCoeff jj1bdx_625khz_div2;
+  static const IQSampleCoeff jj1bdx_768khz_div2_narrow;
   static const IQSampleCoeff jj1bdx_768khz_div2;
-  static const IQSampleCoeff jj1bdx_768khz_div2_wide;
   static const IQSampleCoeff jj1bdx_900khz_div3;
   static const IQSampleCoeff delay_3taps_only_iq;
 
@@ -50,7 +50,7 @@ public:
   static const IQSampleCoeff jj1bdx_am_48khz_div2;
   static const IQSampleCoeff jj1bdx_am_24khz_div2;
 
-  static const IQSampleCoeff jj1bdx_am_12khz_middle;
+  static const IQSampleCoeff jj1bdx_am_12khz_medium;
   static const IQSampleCoeff jj1bdx_am_12khz_narrow;
 
   static const IQSampleCoeff jj1bdx_ssb_3to6khz;
