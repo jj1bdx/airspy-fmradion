@@ -21,7 +21,6 @@
 #include <cmath>
 
 #include "FmDecode.h"
-#include "fastatan2.h"
 
 /* ****************  class PhaseDiscriminator  **************** */
 

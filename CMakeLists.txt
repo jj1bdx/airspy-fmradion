@@ -153,7 +153,6 @@ set(sfmbase_HEADERS
     include/MovingAverage.h
     include/Source.h
     include/SoftFM.h
-    include/fastatan2.h
     include/parsekv.h
     include/util.h
 )
