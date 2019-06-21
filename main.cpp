@@ -135,7 +135,7 @@ void usage() {
       "  -U             Set deemphasis to 75 microseconds (default: 50)\n"
       "  -f filtername  AM Filter type:\n"
       "                   - default: +-6kHz\n"
-      "                   - middle:  +-4kHz\n"
+      "                   - medium:  +-4kHz\n"
       "                   - narrow:  +-3kHz\n"
       "\n"
       "Configuration options for RTL-SDR devices\n"
@@ -283,8 +283,8 @@ int main(int argc, char **argv) {
   DevType devtype;
   std::string modtype_str("fm");
   ModType modtype = ModType::FM;
-  std::string amfiltertype_str("default");
-  AmFilterType amfiltertype = AmFilterType::Default;
+  std::string filtertype_str("default");
+  FilterType filtertype = FilterType::Default;
   std::vector<std::string> devnames;
   Source *srcsdr = 0;
 
@@ -300,7 +300,7 @@ int main(int argc, char **argv) {
       {"wav", 1, NULL, 'W'},          {"play", 2, NULL, 'P'},
       {"pps", 1, NULL, 'T'},          {"buffer", 1, NULL, 'b'},
       {"pilotshift", 0, NULL, 'X'},   {"usa", 0, NULL, 'U'},
-      {"amfiltertype", 2, NULL, 'f'}, {NULL, 0, NULL, 0}};
+      {"filtertype", 2, NULL, 'f'}, {NULL, 0, NULL, 0}};
 
   int c, longindex;
   while ((c = getopt_long(argc, argv, "m:t:c:d:MR:F:W:f:P::T:b:qXU", longopts,
@@ -336,7 +336,7 @@ int main(int argc, char **argv) {
       filename = optarg;
       break;
     case 'f':
-      amfiltertype_str.assign(optarg);
+      filtertype_str.assign(optarg);
       break;
     case 'P':
       outmode = OutputMode::ALSA;
@@ -407,12 +407,12 @@ int main(int argc, char **argv) {
     exit(1);
   }
 
-  if (strcasecmp(amfiltertype_str.c_str(), "default") == 0) {
-    amfiltertype = AmFilterType::Default;
-  } else if (strcasecmp(amfiltertype_str.c_str(), "middle") == 0) {
-    amfiltertype = AmFilterType::Middle;
-  } else if (strcasecmp(amfiltertype_str.c_str(), "narrow") == 0) {
-    amfiltertype = AmFilterType::Narrow;
+  if (strcasecmp(filtertype_str.c_str(), "default") == 0) {
+    filtertype = FilterType::Default;
+  } else if (strcasecmp(filtertype_str.c_str(), "medium") == 0) {
+    filtertype = FilterType::Medium;
+  } else if (strcasecmp(filtertype_str.c_str(), "narrow") == 0) {
+    filtertype = FilterType::Narrow;
   } else {
     fprintf(stderr, "AM filter type string unsuppored\n");
     exit(1);
@@ -629,7 +629,7 @@ int main(int argc, char **argv) {
         enable_fs_fourth_downconverter = true;
         enable_two_downsampler_stages = false;
         first_downsample = 2;
-        first_coeff = FilterParameters::jj1bdx_768khz_div2_wide;
+        first_coeff = FilterParameters::jj1bdx_768khz_div2;
         enable_second_downsampler = false;
       } else {
         fprintf(stderr, "Sample rate unsupported\n");
@@ -853,14 +853,14 @@ int main(int argc, char **argv) {
 
   IQSampleCoeff amfilter_coeff;
 
-  switch (amfiltertype) {
-  case AmFilterType::Default:
+  switch (filtertype) {
+  case FilterType::Default:
     amfilter_coeff = FilterParameters::delay_3taps_only_iq;
     break;
-  case AmFilterType::Middle:
-    amfilter_coeff = FilterParameters::jj1bdx_am_12khz_middle;
+  case FilterType::Medium:
+    amfilter_coeff = FilterParameters::jj1bdx_am_12khz_medium;
     break;
-  case AmFilterType::Narrow:
+  case FilterType::Narrow:
     amfilter_coeff = FilterParameters::jj1bdx_am_12khz_narrow;
     break;
   }
@@ -885,7 +885,7 @@ int main(int argc, char **argv) {
   case ModType::DSB:
   case ModType::USB:
   case ModType::LSB:
-    fprintf(stderr, "AM filter type: %s\n", amfiltertype_str.c_str());
+    fprintf(stderr, "AM filter type: %s\n", filtertype_str.c_str());
     fprintf(stderr, "AM demodulator deemphasis: %.9g [µs]\n",
             AmDecoder::default_deemphasis);
     break;
