@@ -163,9 +163,9 @@ Compile and install
 
 * `atan2()` is now used as is for PhaseDiscriminator
 * The past `fastatan2()` used in v0.6.10 and before is removed
-* Changing from the past `fastatan2()` to `atan2()` reduced the THD+N from ~0.9% to ~0.6% (measured from JOBK-FM NHK Osaka FM 88.1MHz hourly time tone 880Hz, using airwaves including the multipath distortion)
+* Changing from the past `fastatan2()` to `atan2()` reduced the THD+N from approx. 0.9% to approx. 0.6% (measured from JOBK-FM NHK Osaka FM 88.1MHz hourly time tone 880Hz, using airwaves including the multipath distortion)
 * [The past `fastatan2()` allowed +-0.005 radian max error](https://www.dsprelated.com/showarticle/1052.php)
-* libc `atan2()` allows only ~0.5 ULP as the max error for macOS 10.14.5, measured by using the code from ["Error analysis of system mathematical functions
+* libm `atan2()` allows only approx. 0.5 ULP as the max error for macOS 10.14.5, measured by using the code from ["Error analysis of system mathematical functions
 " by Gaston H. Gonnet](http://www-oldurls.inf.ethz.ch/personal/gonnet/FPAccuracy/Analysis.html) (1 ULP for macOS 64bit `double` = 2^(-53) = approx. 10^(15.95))
 
 ## No-goals
@@ -184,8 +184,8 @@ Compile and install
 
 * FM Filter coefficients are listed under `doc/filter-design-fm`
 * FM unused filter coefficients are listed under `doc/filter-design-fm/not-used`
-* DiscriminatorEqualizer IF range: 200kHz ~ 1MHz (nyquist: 100kHz ~ 500kHz)
-* -90dB IF filter width: +-~188kHz for RTL-SDR and AirSpy R2 / Mini, +-~138kHz for AirSpy HF+
+* DiscriminatorEqualizer IF range: 200kHz - 1MHz (nyquist: 100kHz - 500kHz)
+* -90dB IF filter width: +- approx. 188kHz for RTL-SDR and AirSpy R2 / Mini, +- approx. 138kHz for AirSpy HF+
 * <0.01dB IF filter width: at least +-75kHz for all receivers
 
 ### For AM
@@ -198,8 +198,8 @@ Compile and install
 
 ### For SSB
 
-* Filter method applied by shifting 0~3kHz to 3~6kHz (when sampling frequency is 12kHz)
-* SSB filter: 3~6kHz, BW 2.4kHz, from 3.3~5.7kHz
+* Filter method applied by shifting 0 - 3kHz to 3 - 6kHz (when sampling frequency is 12kHz)
+* SSB filter: designed for 3 to 6kHz, BW 2.4kHz, from 3.3 to 5.7kHz
 * Use `-f narrow` option
 
 ## AM AGC
@@ -213,7 +213,7 @@ Compile and install
 
 [Twitter @lambdaprog suggested the following strategy](https://twitter.com/lambdaprog/status/1101495337292910594):
 
-> Try starting with 10MSPS and that small conversion filter (7 taps vs. the standard 47 taps), then decimate down to ~312.5 ksps (decimation by 32), then feed the FM demod. The overall CPU usage will be very low and the bit growth will give 14.5 bit resolution.
+> Try starting with 10MSPS and that small conversion filter (7 taps vs. the standard 47 taps), then decimate down to approx. 312.5 ksps (decimation by 32), then feed the FM demod. The overall CPU usage will be very low and the bit growth will give 14.5 bit resolution.
 
 ### Feature changes
 
@@ -230,7 +230,7 @@ Compile and install
 * 2.5MHz -> 312.5kHz (/8)
 * Use `AIRSPY_SAMPLE_FLOAT32_IQ` to directly obtain float IQ sample data from Airspy: IF level is now -24.08dB than the previous (pre-v0.2.2) version
 * Use sparse debug output for ppm and other level status
-* CPU usage: ~56% -> ~31% on Mac mini 2018, with debug output on, comparing with ngsoftfm-jj1bdx 0.1.14
+* CPU usage: approx. 56% -> approx. 31% on Mac mini 2018, with debug output on, comparing with ngsoftfm-jj1bdx 0.1.14
 * More optimization on LPFIQ and audio filters by assuming symmetric coefficients (-5% of Mac mini 2018 CPU usage)
 
 ### Airspy R2 / Mini configuration options
@@ -272,7 +272,7 @@ Compile and install
 
 * Valid sample rates are from 900001 to 937500 [Hz].
 * The default value is 937500Hz.
-* FM demodulation rate: 300~312.5kHz (/3)
+* FM demodulation rate: 300kHz - 312.5kHz (/3)
 
 ### Conversion process
 
