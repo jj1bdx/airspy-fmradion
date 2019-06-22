@@ -162,7 +162,11 @@ Compile and install
 ### Phase discriminator now uses atan2() as is
 
 * `atan2()` is now used as is for PhaseDiscriminator
-* past `fastatan2()` is removed
+* The past `fastatan2()` used in v0.6.10 and before is removed
+* Changing from the past `fastatan2()` to `atan2()` reduced the THD+N from ~0.9% to ~0.6% (measured from JOBK-FM NHK Osaka FM 88.1MHz hourly time tone 880Hz, using airwaves including the multipath distortion)
+* [The past `fastatan2()` allowed +-0.005 radian max error](https://www.dsprelated.com/showarticle/1052.php)
+* libc `atan2()` allows only ~0.5 ULP as the max error for macOS 10.14.5, measured by using the code from ["Error analysis of system mathematical functions
+" by Gaston H. Gonnet](http://www-oldurls.inf.ethz.ch/personal/gonnet/FPAccuracy/Analysis.html) (1 ULP for macOS 64bit `double` = 2^(-53) = approx. 10^(15.95))
 
 ## No-goals
 
