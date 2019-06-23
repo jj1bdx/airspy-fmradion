@@ -189,8 +189,15 @@ void PilotPhaseLock::process(const SampleVector &samples_in,
     Sample phase_err;
     if (phasor_i > abs(phasor_q)) {
       // We are within +/- 45 degrees from lock.
-      // Use simple linear approximation of arctan.
-      phase_err = phasor_q / phasor_i;
+      // We use a fast estimation equation presented in
+      // S. Rajan, Sichun Wang, R. Inkol and A. Joyal,
+      // "Efficient approximations for the arctangent function,"
+      // in IEEE Signal Processing Magazine,
+      // vol. 23, no. 3, pp. 108-111, May 2006.
+      // doi: 10.1109/MSP.2006.1628884
+      // https://ieeexplore.ieee.org/document/1628884
+      Sample phasor_ratio = phasor_q / phasor_i;
+      phase_err = phasor_ratio / ( 1.0f + 0.28086f * phasor_ratio * phasor_ratio);
     } else if (phasor_q > 0) {
       // We are lagging more than 45 degrees behind the input.
       phase_err = 1;
