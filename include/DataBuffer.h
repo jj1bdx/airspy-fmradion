@@ -32,19 +32,23 @@ public:
   /** Add samples to the queue. */
   void push(std::vector<Element> &&samples) {
     if (!samples.empty()) {
-      std::unique_lock<std::mutex> lock(m_mutex);
-      m_qlen += samples.size();
-      m_queue.push(std::move(samples));
-      lock.unlock();
+      {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        m_qlen += samples.size();
+        m_queue.push(std::move(samples));
+        // unlock m_mutex here by getting out of scope
+      }
       m_cond.notify_all();
     }
   }
 
   /** Mark the end of the data stream. */
   void push_end() {
-    std::unique_lock<std::mutex> lock(m_mutex);
-    m_end_marked = true;
-    lock.unlock();
+    {
+      std::lock_guard<std::mutex> lock(m_mutex);
+      m_end_marked = true;
+      // unlock m_mutex here by getting out of scope
+    }
     m_cond.notify_all();
   }
 
