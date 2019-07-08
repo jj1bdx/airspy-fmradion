@@ -197,7 +197,8 @@ void PilotPhaseLock::process(const SampleVector &samples_in,
       // doi: 10.1109/MSP.2006.1628884
       // https://ieeexplore.ieee.org/document/1628884
       Sample phasor_ratio = phasor_q / phasor_i;
-      phase_err = phasor_ratio / ( 1.0f + 0.28086f * phasor_ratio * phasor_ratio);
+      phase_err =
+          phasor_ratio / (1.0f + 0.28086f * phasor_ratio * phasor_ratio);
     } else if (phasor_q > 0) {
       // We are lagging more than 45 degrees behind the input.
       phase_err = 1;
