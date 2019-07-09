@@ -172,8 +172,6 @@ bool AirspyHFSource::configure(int sampleRateIndex, uint8_t hfAttLevel,
     return false;
   }
 
-  fprintf(stderr, "srate index=%d, rate=%d\n", sampleRateIndex, m_srates[sampleRateIndex]);
-
   rc = (airspyhf_error)airspyhf_set_samplerate(
       m_dev, static_cast<uint32_t>(m_srates[sampleRateIndex]));
 
