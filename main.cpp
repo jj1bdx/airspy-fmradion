@@ -45,7 +45,7 @@
 #include "SoftFM.h"
 #include "util.h"
 
-#define AIRSPY_FMRADION_VERSION "v0.6.12-pre2"
+#define AIRSPY_FMRADION_VERSION "v0.6.12-pre2-lowif"
 
 /** Flag is set on SIGINT / SIGTERM. */
 static std::atomic_bool stop_flag(false);
@@ -629,7 +629,9 @@ int main(int argc, char **argv) {
       }
       break;
     case DevType::AirspyHF:
-      if (ifrate == 768000.0) {
+      // switch statement only accepts integer rate values...
+      switch (int(ifrate)) {
+      case 768000:
         if_blocksize = 16384;
         enable_fs_fourth_downconverter = true;
         enable_two_downsampler_stages = false;
@@ -646,12 +648,22 @@ int main(int argc, char **argv) {
           break;
         }
         enable_second_downsampler = false;
-      } else {
+        break;
+      case 256000:
+        if_blocksize = 16384;
+        enable_fs_fourth_downconverter = false;
+        enable_two_downsampler_stages = false;
+        first_downsample = 1;
+        first_coeff = FilterParameters::delay_3taps_only_iq;
+        enable_second_downsampler = false;
+        break;
+      default:
         fprintf(stderr, "Sample rate unsupported\n");
         fprintf(stderr, "Supported rate:\n");
-        fprintf(stderr, "Airspy HF: 768000\n");
+        fprintf(stderr, "Airspy HF: 768000, 256000\n");
         delete srcsdr;
         exit(1);
+	break;
       }
       break;
     case DevType::RTLSDR:
@@ -755,7 +767,9 @@ int main(int argc, char **argv) {
       }
       break;
     case DevType::AirspyHF:
-      if (ifrate == 768000.0) {
+      // switch statement only accepts integer rate values...
+      switch (int(ifrate)) {
+      case 768000:
         // 768kHz: /4/4 -> 48kHz
         if_blocksize = 16384;
         enable_fs_fourth_downconverter = true;
@@ -765,12 +779,23 @@ int main(int argc, char **argv) {
         enable_second_downsampler = true;
         second_downsample = 4;
         second_coeff = FilterParameters::jj1bdx_am_if_div4;
-      } else {
+	break;
+      case 256000:
+        // 256kHz: /5 -> 51.2kHz
+        if_blocksize = 16384;
+        enable_fs_fourth_downconverter = true;
+        enable_two_downsampler_stages = false;
+        first_downsample = 5;
+        first_coeff = FilterParameters::jj1bdx_am_if_div5;
+        enable_second_downsampler = false;
+	break;
+      default:
         fprintf(stderr, "Sample rate unsupported\n");
         fprintf(stderr, "Supported rate:\n");
-        fprintf(stderr, "Airspy HF: 768000\n");
+        fprintf(stderr, "Airspy HF: 768000, 256000\n");
         delete srcsdr;
         exit(1);
+	break;
       }
       break;
     case DevType::RTLSDR:
