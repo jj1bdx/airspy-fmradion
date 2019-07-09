@@ -783,7 +783,7 @@ int main(int argc, char **argv) {
       case 256000:
         // 256kHz: /5 -> 51.2kHz
         if_blocksize = 16384;
-        enable_fs_fourth_downconverter = true;
+        enable_fs_fourth_downconverter = false;
         enable_two_downsampler_stages = false;
         first_downsample = 5;
         first_coeff = FilterParameters::jj1bdx_am_if_div5;
