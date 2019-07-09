@@ -172,8 +172,10 @@ bool AirspyHFSource::configure(int sampleRateIndex, uint8_t hfAttLevel,
     return false;
   }
 
+  fprintf(stderr, "srate index=%d, rate=%d\n", sampleRateIndex, m_srates[sampleRateIndex]);
+
   rc = (airspyhf_error)airspyhf_set_samplerate(
-      m_dev, static_cast<uint32_t>(sampleRateIndex));
+      m_dev, static_cast<uint32_t>(m_srates[sampleRateIndex]));
 
   if (rc != AIRSPYHF_SUCCESS) {
     std::ostringstream err_ostr;
@@ -314,8 +316,14 @@ bool AirspyHFSource::configure(std::string configurationStr) {
   }
 
   m_confFreq = frequency;
-  // tuned frequency is up Fs/4 (downconverted in main.cpp)
-  double tuner_freq = frequency - 0.25 * m_srates[sampleRateIndex];
+  double tuner_freq;
+  if (m_srates[sampleRateIndex] == 768000) {
+    // tuned frequency is up Fs/4 (downconverted in main.cpp)
+    tuner_freq = frequency - 0.25 * m_srates[sampleRateIndex];
+  } else {
+    // tuned frequency is the same as the given frequency
+    tuner_freq = frequency;
+  }
 
   return configure(sampleRateIndex, hfAttLevel, tuner_freq);
 }
