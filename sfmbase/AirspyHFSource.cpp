@@ -172,16 +172,6 @@ bool AirspyHFSource::configure(int sampleRateIndex, uint8_t hfAttLevel,
     return false;
   }
 
-  rc = (airspyhf_error)airspyhf_set_freq(m_dev,
-                                         static_cast<uint32_t>(m_frequency));
-
-  if (rc != AIRSPYHF_SUCCESS) {
-    std::ostringstream err_ostr;
-    err_ostr << "Could not set center frequency to " << m_frequency << " Hz";
-    m_error = err_ostr.str();
-    return false;
-  }
-
   rc = (airspyhf_error)airspyhf_set_samplerate(
       m_dev, static_cast<uint32_t>(sampleRateIndex));
 
@@ -193,6 +183,16 @@ bool AirspyHFSource::configure(int sampleRateIndex, uint8_t hfAttLevel,
     return false;
   } else {
     m_sampleRate = m_srates[sampleRateIndex];
+  }
+
+  rc = (airspyhf_error)airspyhf_set_freq(m_dev,
+                                         static_cast<uint32_t>(m_frequency));
+
+  if (rc != AIRSPYHF_SUCCESS) {
+    std::ostringstream err_ostr;
+    err_ostr << "Could not set center frequency to " << m_frequency << " Hz";
+    m_error = err_ostr.str();
+    return false;
   }
 
   if (hfAttLevel > 0) {
