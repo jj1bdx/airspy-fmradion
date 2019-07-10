@@ -24,8 +24,9 @@
 // Constructor.
 // Do nothing but initializing the private member variables.
 EqParameters::EqParameters()
-    : m_freq_initial(100000.0), m_freq_step(10000.0),
+    : m_freq_initial(90000.0), m_freq_step(10000.0),
       m_vector_staticgain({
+          1.6002387175447548, //  90000.0 Hz
           1.5408838635599964, // 100000.0 Hz
           1.5004017717728035, // 110000.0 Hz
           1.471118672900754,  // 120000.0 Hz
@@ -69,6 +70,7 @@ EqParameters::EqParameters()
           1.3407556134526948, // 500000.0 Hz
       }),
       m_vector_fitlevel({
+          0.6461532833889663,  //  90000.0 Hz
           0.5711387820919492,  // 100000.0 Hz
           0.5210719504091612,  // 110000.0 Hz
           0.48570203095904574, // 120000.0 Hz
@@ -122,12 +124,12 @@ EqParameters::EqParameters()
 
 // Private function to decide whether to apply interpolation or not.
 // The interpolation will be applied when ifrate is
-// between 200kHz to 1MHz only.
-// Table frequency (Nyquist frequency): 100kHz to 500kHz.
+// between 180kHz to 1MHz only.
+// Table frequency (Nyquist frequency): 90kHz to 500kHz.
 const double
 EqParameters::fitting(double ifrate, double low_limit, double high_limit,
                       const boost::math::cubic_b_spline<double> &spline) {
-  if (ifrate < 200000.0) {
+  if (ifrate < 180000.0) {
     return low_limit;
   } else if (ifrate > 1000000.0) {
     return high_limit;
@@ -138,12 +140,12 @@ EqParameters::fitting(double ifrate, double low_limit, double high_limit,
 
 // Compute staticgain from ifrate.
 const double EqParameters::compute_staticgain(const double ifrate) {
-  return EqParameters::fitting(ifrate, 1.541, 1.33338, m_staticgain);
+  return EqParameters::fitting(ifrate, 1.601, 1.33338, m_staticgain);
 }
 
 // Compute fitlevel from ifrate.
 const double EqParameters::compute_fitlevel(const double ifrate) {
-  return EqParameters::fitting(ifrate, 0.572, 0.33338, m_fitlevel);
+  return EqParameters::fitting(ifrate, 0.647, 0.33338, m_fitlevel);
 };
 
 // end
