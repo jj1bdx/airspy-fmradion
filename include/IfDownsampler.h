@@ -46,10 +46,6 @@ public:
   // Process IQ samples and return downsampled output.
   void process(const IQSampleVector &samples_in, IQSampleVector &samples_out);
 
-  // Return RMS IF level.
-  // The output value scale depends on the receiver frontend.
-  double get_if_level() const { return m_if_level; }
-
 private:
   // Compute RMS over a small prefix of the specified sample vector.
   double rms_level_approx(const IQSampleVector &samples);
@@ -59,7 +55,6 @@ private:
   const unsigned int m_first_downsample;
   const unsigned int m_second_downsample;
   const bool m_enable_second_downsampler;
-  double m_if_level;
 
   LowPassFilterFirIQ m_iffilter_first;
   LowPassFilterFirIQ m_iffilter_second;

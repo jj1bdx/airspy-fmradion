@@ -33,7 +33,7 @@ IfDownsampler::IfDownsampler(unsigned int first_downsample,
     // Initialize member fields
     : m_first_downsample(first_downsample),
       m_second_downsample(second_downsample),
-      m_enable_second_downsampler(enable_second_downsampler), m_if_level(0),
+      m_enable_second_downsampler(enable_second_downsampler),
       // Construct LowPassFilterFirIQ
       m_iffilter_first(first_coeff, m_first_downsample),
       m_iffilter_second(second_coeff, m_second_downsample)
@@ -56,23 +56,6 @@ void IfDownsampler::process(const IQSampleVector &samples_in,
     // No second downsampling here
     samples_out = std::move(m_buf_iffirstout);
   }
-
-  // Measure IF level.
-  double if_rms = rms_level_approx(samples_out);
-  m_if_level = 0.95 * m_if_level + 0.05 * (double)if_rms;
-}
-
-// Compute RMS over a small prefix of the specified sample vector.
-double IfDownsampler::rms_level_approx(const IQSampleVector &samples) {
-  unsigned int n = samples.size();
-  n = (n + 63) / 64;
-
-  IQSample::value_type level = 0;
-  for (unsigned int i = 0; i < n; i++) {
-    level += std::norm(samples[i]);
-  }
-  // Return RMS level
-  return sqrt(level / n);
 }
 
 /* end */
