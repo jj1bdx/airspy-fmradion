@@ -660,15 +660,15 @@ int main(int argc, char **argv) {
         break;
       case 384000:
         if_blocksize = 16384;
-	enable_downsampling = false;
+        enable_downsampling = false;
         break;
       case 256000:
         if_blocksize = 16384;
-	enable_downsampling = false;
+        enable_downsampling = false;
         break;
       case 192000:
         if_blocksize = 16384;
-	enable_downsampling = false;
+        enable_downsampling = false;
         break;
       default:
         fprintf(stderr, "Sample rate unsupported\n");
