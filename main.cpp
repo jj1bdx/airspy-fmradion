@@ -45,7 +45,7 @@
 #include "SoftFM.h"
 #include "util.h"
 
-#define AIRSPY_FMRADION_VERSION "v0.6.13"
+#define AIRSPY_FMRADION_VERSION "v0.6.14-pre0"
 
 /** Flag is set on SIGINT / SIGTERM. */
 static std::atomic_bool stop_flag(false);
@@ -644,7 +644,21 @@ int main(int argc, char **argv) {
         }
         enable_second_downsampler = false;
         break;
+      case 384000:
+        if_blocksize = 16384;
+        enable_two_downsampler_stages = false;
+        first_downsample = 1;
+        first_coeff = FilterParameters::delay_3taps_only_iq;
+        enable_second_downsampler = false;
+        break;
       case 256000:
+        if_blocksize = 16384;
+        enable_two_downsampler_stages = false;
+        first_downsample = 1;
+        first_coeff = FilterParameters::delay_3taps_only_iq;
+        enable_second_downsampler = false;
+        break;
+      case 192000:
         if_blocksize = 16384;
         enable_two_downsampler_stages = false;
         first_downsample = 1;
@@ -654,7 +668,7 @@ int main(int argc, char **argv) {
       default:
         fprintf(stderr, "Sample rate unsupported\n");
         fprintf(stderr, "Supported rate:\n");
-        fprintf(stderr, "Airspy HF: 768000, 256000\n");
+        fprintf(stderr, "Airspy HF: 768000, 384000, 256000, 192000\n");
         delete srcsdr;
         exit(1);
         break;
@@ -768,8 +782,26 @@ int main(int argc, char **argv) {
         second_downsample = 4;
         second_coeff = FilterParameters::jj1bdx_am_if_div4;
         break;
+      case 384000:
+        // 384kHz: /2/4 -> 48kHz
+        if_blocksize = 16384;
+        enable_two_downsampler_stages = false;
+        first_downsample = 2;
+        first_coeff = FilterParameters::jj1bdx_am_if_div2;
+        enable_second_downsampler = true;
+        second_downsample = 4;
+        second_coeff = FilterParameters::jj1bdx_am_if_div4;
+        break;
       case 256000:
         // 256kHz: /4 -> 64kHz
+        if_blocksize = 16384;
+        enable_two_downsampler_stages = false;
+        first_downsample = 4;
+        first_coeff = FilterParameters::jj1bdx_am_if_div4;
+        enable_second_downsampler = false;
+        break;
+      case 192000:
+        // 192kHz: /4 -> 48kHz
         if_blocksize = 16384;
         enable_two_downsampler_stages = false;
         first_downsample = 4;
@@ -779,7 +811,7 @@ int main(int argc, char **argv) {
       default:
         fprintf(stderr, "Sample rate unsupported\n");
         fprintf(stderr, "Supported rate:\n");
-        fprintf(stderr, "Airspy HF: 768000, 256000\n");
+        fprintf(stderr, "Airspy HF: 768000, 384000, 256000, 192000\n");
         delete srcsdr;
         exit(1);
         break;
