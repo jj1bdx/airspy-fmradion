@@ -769,11 +769,11 @@ int main(int argc, char **argv) {
         second_coeff = FilterParameters::jj1bdx_am_if_div4;
         break;
       case 256000:
-        // 256kHz: /5 -> 51.2kHz
+        // 256kHz: /4 -> 64kHz
         if_blocksize = 16384;
         enable_two_downsampler_stages = false;
-        first_downsample = 5;
-        first_coeff = FilterParameters::jj1bdx_am_if_div5;
+        first_downsample = 4;
+        first_coeff = FilterParameters::jj1bdx_am_if_div4;
         enable_second_downsampler = false;
         break;
       default:
