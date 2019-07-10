@@ -42,6 +42,9 @@ public:
   /** Return device current center frequency in Hz. */
   virtual std::uint32_t get_frequency() = 0;
 
+  /** Return if device is using Low-IF. */
+  virtual bool is_low_if() = 0;
+
   /** Return current configured center frequency in Hz. */
   std::uint32_t get_configured_frequency() const { return m_confFreq; }
 

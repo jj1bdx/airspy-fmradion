@@ -254,6 +254,9 @@ uint32_t RtlSdrSource::get_sample_rate() {
 // Return device current center frequency in Hz.
 uint32_t RtlSdrSource::get_frequency() { return rtlsdr_get_center_freq(m_dev); }
 
+// Do not assume low-IF for RTL-SDR (Zero-IF by definition)
+bool RtlSdrSource::is_low_if() { return false; }
+
 void RtlSdrSource::print_specific_parms() {
   int lnagain = get_tuner_gain();
 

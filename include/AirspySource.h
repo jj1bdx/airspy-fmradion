@@ -44,6 +44,9 @@ public:
   /** Return device current center frequency in Hz. */
   virtual std::uint32_t get_frequency();
 
+  /** Return if device is using Low-IF. */
+  virtual bool is_low_if();
+
   /** Print current parameters specific to device type */
   virtual void print_specific_parms();
 

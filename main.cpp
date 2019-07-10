@@ -45,7 +45,7 @@
 #include "SoftFM.h"
 #include "util.h"
 
-#define AIRSPY_FMRADION_VERSION "v0.6.12-pre4"
+#define AIRSPY_FMRADION_VERSION "v0.6.12-pre5"
 
 /** Flag is set on SIGINT / SIGTERM. */
 static std::atomic_bool stop_flag(false);
@@ -553,7 +553,7 @@ int main(int argc, char **argv) {
 
   unsigned int if_blocksize;
 
-  bool enable_fs_fourth_downconverter = false;
+  bool enable_fs_fourth_downconverter = !(srcsdr->is_low_if());
 
   bool enable_two_downsampler_stages = false;
 
@@ -580,7 +580,6 @@ int main(int argc, char **argv) {
       switch (int(ifrate)) {
       case 10000000:
         if_blocksize = 65536;
-        enable_fs_fourth_downconverter = false;
         enable_two_downsampler_stages = false;
         first_downsample = 8;
         first_coeff = FilterParameters::jj1bdx_10000khz_div8;
@@ -590,7 +589,6 @@ int main(int argc, char **argv) {
         break;
       case 2500000:
         if_blocksize = 65536;
-        enable_fs_fourth_downconverter = false;
         enable_two_downsampler_stages = false;
         first_downsample = 4;
         first_coeff = FilterParameters::jj1bdx_2500khz_div4;
@@ -600,7 +598,6 @@ int main(int argc, char **argv) {
         break;
       case 6000000:
         if_blocksize = 65536;
-        enable_fs_fourth_downconverter = false;
         enable_two_downsampler_stages = false;
         first_downsample = 5;
         first_coeff = FilterParameters::jj1bdx_6000khz_div5;
@@ -610,7 +607,6 @@ int main(int argc, char **argv) {
         break;
       case 3000000:
         if_blocksize = 65536;
-        enable_fs_fourth_downconverter = false;
         enable_two_downsampler_stages = false;
         first_downsample = 5;
         first_coeff = FilterParameters::jj1bdx_6000khz_div5;
@@ -633,7 +629,6 @@ int main(int argc, char **argv) {
       switch (int(ifrate)) {
       case 768000:
         if_blocksize = 16384;
-        enable_fs_fourth_downconverter = true;
         enable_two_downsampler_stages = false;
         first_downsample = 2;
         switch (filtertype) {
@@ -651,7 +646,6 @@ int main(int argc, char **argv) {
         break;
       case 256000:
         if_blocksize = 16384;
-        enable_fs_fourth_downconverter = false;
         enable_two_downsampler_stages = false;
         first_downsample = 1;
         first_coeff = FilterParameters::delay_3taps_only_iq;
@@ -663,13 +657,12 @@ int main(int argc, char **argv) {
         fprintf(stderr, "Airspy HF: 768000, 256000\n");
         delete srcsdr;
         exit(1);
-	break;
+        break;
       }
       break;
     case DevType::RTLSDR:
       if ((ifrate >= 900001.0) && (ifrate <= 937500.0)) {
         if_blocksize = 65536;
-        enable_fs_fourth_downconverter = true;
         enable_two_downsampler_stages = false;
         first_downsample = 3;
         first_coeff = FilterParameters::jj1bdx_900khz_div3;
@@ -701,7 +694,6 @@ int main(int argc, char **argv) {
       case 10000000:
         // 10000kHz: /7/5/3/2 -> 47.6190476kHz
         if_blocksize = 65536;
-        enable_fs_fourth_downconverter = false;
         enable_two_downsampler_stages = true;
         first_downsample = 7;
         first_coeff = FilterParameters::jj1bdx_am_if_div7;
@@ -717,7 +709,6 @@ int main(int argc, char **argv) {
       case 2500000:
         // 2500kHz: /5/4/3 -> 41.666666kHz
         if_blocksize = 65536;
-        enable_fs_fourth_downconverter = false;
         enable_two_downsampler_stages = true;
         first_downsample = 5;
         first_coeff = FilterParameters::jj1bdx_am_if_div5;
@@ -731,7 +722,6 @@ int main(int argc, char **argv) {
       case 6000000:
         // 6000kHz: /5/5/5 -> 48kHz
         if_blocksize = 65536;
-        enable_fs_fourth_downconverter = false;
         enable_two_downsampler_stages = true;
         first_downsample = 5;
         first_coeff = FilterParameters::jj1bdx_am_if_div5;
@@ -745,7 +735,6 @@ int main(int argc, char **argv) {
       case 3000000:
         // 3000kHz: /7/3/3 -> 47.6190476kHz
         if_blocksize = 65536;
-        enable_fs_fourth_downconverter = false;
         enable_two_downsampler_stages = true;
         first_downsample = 7;
         first_coeff = FilterParameters::jj1bdx_am_if_div7;
@@ -772,30 +761,28 @@ int main(int argc, char **argv) {
       case 768000:
         // 768kHz: /4/4 -> 48kHz
         if_blocksize = 16384;
-        enable_fs_fourth_downconverter = true;
         enable_two_downsampler_stages = false;
         first_downsample = 4;
         first_coeff = FilterParameters::jj1bdx_am_if_div4;
         enable_second_downsampler = true;
         second_downsample = 4;
         second_coeff = FilterParameters::jj1bdx_am_if_div4;
-	break;
+        break;
       case 256000:
         // 256kHz: /5 -> 51.2kHz
         if_blocksize = 16384;
-        enable_fs_fourth_downconverter = false;
         enable_two_downsampler_stages = false;
         first_downsample = 5;
         first_coeff = FilterParameters::jj1bdx_am_if_div5;
         enable_second_downsampler = false;
-	break;
+        break;
       default:
         fprintf(stderr, "Sample rate unsupported\n");
         fprintf(stderr, "Supported rate:\n");
         fprintf(stderr, "Airspy HF: 768000, 256000\n");
         delete srcsdr;
         exit(1);
-	break;
+        break;
       }
       break;
     case DevType::RTLSDR:
@@ -803,7 +790,6 @@ int main(int argc, char **argv) {
         // 900kHz: /5/4 -> 45kHz
         // No problem up to 960kHz
         if_blocksize = 65536;
-        enable_fs_fourth_downconverter = true;
         enable_two_downsampler_stages = false;
         first_downsample = 5;
         first_coeff = FilterParameters::jj1bdx_am_if_div5;

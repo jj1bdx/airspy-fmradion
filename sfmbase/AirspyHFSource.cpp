@@ -159,30 +159,43 @@ std::uint32_t AirspyHFSource::get_sample_rate() { return m_sampleRate; }
 
 std::uint32_t AirspyHFSource::get_frequency() { return m_frequency; }
 
+bool AirspyHFSource::is_low_if() { return m_low_if; }
+
 void AirspyHFSource::print_specific_parms() {}
 
 bool AirspyHFSource::configure(int sampleRateIndex, uint8_t hfAttLevel,
                                uint32_t frequency) {
-
-  m_frequency = frequency;
-
   airspyhf_error rc;
 
   if (!m_dev) {
     return false;
   }
 
-  rc = (airspyhf_error)airspyhf_set_samplerate(
-      m_dev, static_cast<uint32_t>(m_srates[sampleRateIndex]));
+  uint32_t sampleRate = m_srates[sampleRateIndex];
+
+  rc = (airspyhf_error)airspyhf_set_samplerate(m_dev, sampleRate);
 
   if (rc != AIRSPYHF_SUCCESS) {
     std::ostringstream err_ostr;
-    err_ostr << "Could not set center sample rate to "
-             << m_srates[sampleRateIndex] << " Hz";
+    err_ostr << "Could not set center sample rate to " << sampleRate << " Hz";
     m_error = err_ostr.str();
     return false;
   } else {
-    m_sampleRate = m_srates[sampleRateIndex];
+    m_sampleRate = sampleRate;
+  }
+
+  int low_if = airspyhf_is_low_if(m_dev);
+  if (low_if != 0) {
+    m_low_if = true;
+  } else {
+    m_low_if = false;
+  }
+
+  // Shift down frequency by Fs/4 if NOT using low_if
+  if (m_low_if) {
+    m_frequency = frequency;
+  } else {
+    m_frequency = frequency - 0.25 * m_sampleRate;
   }
 
   rc = (airspyhf_error)airspyhf_set_freq(m_dev,
@@ -314,16 +327,7 @@ bool AirspyHFSource::configure(std::string configurationStr) {
   }
 
   m_confFreq = frequency;
-  double tuner_freq;
-  if (m_srates[sampleRateIndex] == 768000) {
-    // tuned frequency is up Fs/4 (downconverted in main.cpp)
-    tuner_freq = frequency - 0.25 * m_srates[sampleRateIndex];
-  } else {
-    // tuned frequency is the same as the given frequency
-    tuner_freq = frequency;
-  }
-
-  return configure(sampleRateIndex, hfAttLevel, tuner_freq);
+  return configure(sampleRateIndex, hfAttLevel, frequency);
 }
 
 bool AirspyHFSource::start(DataBuffer<IQSample> *buf,

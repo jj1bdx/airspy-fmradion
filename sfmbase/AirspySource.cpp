@@ -198,6 +198,9 @@ std::uint32_t AirspySource::get_sample_rate() { return m_sampleRate; }
 
 std::uint32_t AirspySource::get_frequency() { return m_frequency; }
 
+// Airspy R2/Mini are always using Low-IF by definition
+bool AirspySource::is_low_if() { return true; }
+
 void AirspySource::print_specific_parms() {
   fprintf(stderr, "LNA/Mix/VGA gain: %d, %d, %d dB\n", m_lnaGain, m_mixGain,
           m_vgaGain);

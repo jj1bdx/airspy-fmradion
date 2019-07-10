@@ -45,6 +45,9 @@ public:
   /** Return device current center frequency in Hz. */
   virtual std::uint32_t get_frequency();
 
+  /** Return if device is using Low-IF. */
+  virtual bool is_low_if();
+
   /** Print current parameters specific to device type */
   virtual void print_specific_parms();
 
@@ -78,6 +81,7 @@ private:
   struct airspyhf_device *m_dev;
   uint32_t m_sampleRate;
   uint32_t m_frequency;
+  bool m_low_if;
   bool m_running;
   std::thread *m_thread;
   static AirspyHFSource *m_this;
