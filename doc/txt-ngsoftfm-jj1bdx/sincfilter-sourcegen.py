@@ -45,7 +45,7 @@ def minimizer(freq):
     return optimize.minimize(sincfitting_test,
             [1.334, 0.334], args=(freq,), method="Nelder-Mead")
 
-freq_initial = 100000.0
+freq_initial = 90000.0
 freq_step = 10000.0
 freq_maximum = 5000000.0
 
