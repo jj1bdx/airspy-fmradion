@@ -45,7 +45,7 @@
 #include "SoftFM.h"
 #include "util.h"
 
-#define AIRSPY_FMRADION_VERSION "v0.6.14-pre0"
+#define AIRSPY_FMRADION_VERSION "v0.6.14-pre1"
 
 /** Flag is set on SIGINT / SIGTERM. */
 static std::atomic_bool stop_flag(false);
@@ -55,6 +55,19 @@ inline void adjust_gain(SampleVector &samples, double gain) {
   for (unsigned int i = 0, n = samples.size(); i < n; i++) {
     samples[i] *= gain;
   }
+}
+
+// Compute RMS over a small prefix of the specified sample vector.
+inline double rms_level_approx(const IQSampleVector &samples) {
+  unsigned int n = samples.size();
+  n = (n + 63) / 64;
+
+  IQSample::value_type level = 0;
+  for (unsigned int i = 0; i < n; i++) {
+    level += std::norm(samples[i]);
+  }
+  // Return RMS level
+  return sqrt(level / n);
 }
 
 /**
@@ -555,6 +568,7 @@ int main(int argc, char **argv) {
 
   bool enable_fs_fourth_downconverter = !(srcsdr->is_low_if());
 
+  bool enable_downsampling = true;
   bool enable_two_downsampler_stages = false;
 
   unsigned int first_downsample = 1;
@@ -646,24 +660,15 @@ int main(int argc, char **argv) {
         break;
       case 384000:
         if_blocksize = 16384;
-        enable_two_downsampler_stages = false;
-        first_downsample = 1;
-        first_coeff = FilterParameters::delay_3taps_only_iq;
-        enable_second_downsampler = false;
+	enable_downsampling = false;
         break;
       case 256000:
         if_blocksize = 16384;
-        enable_two_downsampler_stages = false;
-        first_downsample = 1;
-        first_coeff = FilterParameters::delay_3taps_only_iq;
-        enable_second_downsampler = false;
+	enable_downsampling = false;
         break;
       case 192000:
         if_blocksize = 16384;
-        enable_two_downsampler_stages = false;
-        first_downsample = 1;
-        first_coeff = FilterParameters::delay_3taps_only_iq;
-        enable_second_downsampler = false;
+	enable_downsampling = false;
         break;
       default:
         fprintf(stderr, "Sample rate unsupported\n");
@@ -986,6 +991,8 @@ int main(int argc, char **argv) {
     break;
   }
 
+  double if_level = 0;
+
   // Main loop.
   for (unsigned int block = 0; !stop_flag.load(); block++) {
 
@@ -1024,13 +1031,20 @@ int main(int argc, char **argv) {
 
     // Downsample IF for the decoder.
 
-    if_downsampler.process(if_shifted_samples, if_samples_second);
-
-    if (enable_two_downsampler_stages) {
-      if_downsampler_second.process(if_samples_second, if_samples);
+    if (enable_downsampling) {
+      if_downsampler.process(if_shifted_samples, if_samples_second);
+      if (enable_two_downsampler_stages) {
+        if_downsampler_second.process(if_samples_second, if_samples);
+      } else {
+        if_samples = std::move(if_samples_second);
+      }
     } else {
-      if_samples = std::move(if_samples_second);
+      if_samples = std::move(if_shifted_samples);
     }
+
+    // Measure IF level.
+    double if_rms = rms_level_approx(if_samples);
+    if_level = 0.95 * if_level + 0.05 * if_rms;
 
     // Decode signal.
     switch (modtype) {
@@ -1068,7 +1082,7 @@ int main(int argc, char **argv) {
       ppm_value_average = ppm_average.average();
     }
 
-    double if_level_db = 20 * log10(if_downsampler.get_if_level());
+    double if_level_db = 20 * log10(if_level);
     double audio_level_db = 20 * log10(audio_level) + 3.01;
     std::size_t buflen = output_buffer.queued_samples();
     double buflen_sec = buflen / nchannel / double(pcmrate);
