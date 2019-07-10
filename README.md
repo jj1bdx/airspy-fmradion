@@ -1,6 +1,6 @@
 # airspy-fmradion
 
-* Version v0.6.14-pre0, 10-JUL-2019
+* Version v0.6.14-pre1, 10-JUL-2019
 * For MacOS and Linux
 
 ### Known issues
