@@ -1,13 +1,13 @@
 # airspy-fmradion
 
-* Version v0.6.13, 10-JUL-2019
+* Version v0.6.14-pre0, 10-JUL-2019
 * For MacOS and Linux
 
 ### Known issues
 
 * Version v0.6.9 and before of this software did not work on Airspy HF+ Firmware R2.2.0-BB. Initialization and device listing sequences redesigned on v0.6.10.
 * Use libairspy --HEAD version for the working `airspy_open_devices()`, required by `airspy_open_sn()`. See [this commit](https://github.com/airspy/airspyone_host/commit/61fec20fbd710fc54d57dfec732d314d693b5a2f) for the details.
-* Airspy HF+ 256kHz I/F mode is *expenrimentally* supported.
+* Airspy HF+ 384/256/192kHz I/F modes are *expenrimentally* supported.
 
 ### What is airspy-fmradion?
 
