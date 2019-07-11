@@ -65,12 +65,30 @@ AirspyHFSource::AirspyHFSource(int dev_index)
     return;
   }
 
+  // EXPERIMENTAL:
+  // Open the device by opening-closing-opening
+  // to ensure the internal state reset.
+
   // Open the matched device.
   airspyhf_error rc =
       (airspyhf_error)airspyhf_open_sn(&m_dev, m_serials[dev_index]);
   if (rc != AIRSPYHF_SUCCESS) {
     std::ostringstream err_ostr;
-    err_ostr << "Failed to open Airspy HF device at device index " << dev_index;
+    err_ostr
+        << "Failed to open Airspy HF device for the first time at device index "
+        << dev_index;
+    m_error = err_ostr.str();
+    m_dev = 0;
+  }
+  // Close it once to reopen.
+  airspyhf_close(m_dev);
+  // Reopen the device.
+  rc = (airspyhf_error)airspyhf_open_sn(&m_dev, m_serials[dev_index]);
+  if (rc != AIRSPYHF_SUCCESS) {
+    std::ostringstream err_ostr;
+    err_ostr << "Failed to open Airspy HF device for the second time at device "
+                "index "
+             << dev_index;
     m_error = err_ostr.str();
     m_dev = 0;
   }
