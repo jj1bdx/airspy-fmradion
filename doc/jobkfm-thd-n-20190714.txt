@@ -1,0 +1,35 @@
+airspy-fmradion v0.6.14-pre2-dev commit 7abb1a980038516b092426bd69a4269f315d5c6
+NHK-FM Osaka 880Hz time tone
+sox play stats: left channel RMS Lev dB
+Audio output full-scale: -6.02dB (x 0.5) -> actual time tone level: ~-12dBFS
+
+768kHz: shifted +192kHz, default filter 
+        (-192, +138kHz, rolling off above +138kHz)
+386/256/192kHz: no software IF filter
+
+JST (Japan Standard Time) =  UTC + 9 hours
+
+Measured date/time in JST: (-5 sec to 0 sec)
+768kHz: 14-JUL-2019 0500JST
+384kHz: 15-JUL-2019 0100JST
+256kHz: 15-JUL-2019 0200JST
+192kHz: 15-JUL-2019 0300JST
+
+[dB]
+768kHz no-sound: -76.23 880Hz: -18.25 880Hz-notched: -64.10 SINAD: 45.85
+384kHz no-sound: -75.27 880Hz: -18.25 880Hz-notched: -64.24 SINAD: 45.99
+256kHz no-sound: -76.05 880Hz: -18.32 880Hz-notched: -63.96 SINAD: 45.64
+192kHz no-sound: -75.25 880Hz: -18.53 880Hz-notched: -63.86 SINAD: 45.33
+
+SINAD 45.85dB = THD+N 0.5099%
+SINAD 45.99dB = THD+N 0.5018%
+SINAD 45.64dB = THD+N 0.5224%
+SINAD 45.33dB = THD+N 0.5414%
+
+For reference only
+NHK-FM Osaka 6-JUL-2019 1100JST
+Mono (no stereo demod)
+[dB]
+768kHz no-sound: -84.87 880Hz: -18.34 880Hz-notched: -68.12 SINAD: 49.78
+THD+N: 0.3243%
+
