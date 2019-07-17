@@ -1,6 +1,7 @@
 airspy-fmradion v0.6.14-pre2-dev commit 7abb1a980038516b092426bd69a4269f315d5c6
 NHK-FM Osaka 880Hz time tone (distance 20km)
-sox play stats: left channel RMS Lev dB
+Airspy HF+ R2.6.1
+with a dipole antenna up 15m above the ground in the balcony
 
 768kHz: shifted +192kHz, default filter 
         (-192, +138kHz, rolling off above +138kHz)
@@ -13,8 +14,12 @@ JST (Japan Standard Time) =  UTC + 9 hours
 256kHz: 15-JUL-2019 0200JST
 192kHz: 15-JUL-2019 0300JST
 
-(Audio output 100% mod: -6.02dB (x 0.5) -> actual time tone level: ~-12dBFS)
-(100% mod = +-75kHz deviation)
+sox play stats: left channel RMS Lev dB
+Audio output 100% mod: -6.02dB (x 0.5) -> actual time tone level: ~-12dBFS
+100% mod = +-75kHz deviation
+880Hz: time tone (sine wave)
+880Hz: 880Hz filtered-out remainder of the time tone (for SINAD measurement)
+
 [dB]
 768kHz no-sound: -76.23 880Hz: -18.25 880Hz-notched: -64.10 SINAD: 45.85
 384kHz no-sound: -75.27 880Hz: -18.25 880Hz-notched: -64.24 SINAD: 45.99
