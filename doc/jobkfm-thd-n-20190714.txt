@@ -17,7 +17,7 @@ JST (Japan Standard Time) =  UTC + 9 hours
 sox play stats: left channel RMS Lev dB
 Audio output 100% mod: -6.02dB (x 0.5) -> actual time tone level: ~-12dBFS
 100% mod = +-75kHz deviation
-880Hz: time tone (sine wave)
+880Hz: time tone (sine wave) as is without being filtered
 880Hz: 880Hz filtered-out remainder of the time tone (for SINAD measurement)
 
 [dB]
