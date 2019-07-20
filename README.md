@@ -1,13 +1,12 @@
 # airspy-fmradion
 
-* Version v0.6.14-pre1, 10-JUL-2019
+* Version v0.6.14, 20-JUL-2019
 * For MacOS and Linux
 
 ### Known issues
 
 * Version v0.6.9 and before of this software did not work on Airspy HF+ Firmware R2.2.0-BB. Initialization and device listing sequences redesigned on v0.6.10.
 * Use libairspy --HEAD version for the working `airspy_open_devices()`, required by `airspy_open_sn()`. See [this commit](https://github.com/airspy/airspyone_host/commit/61fec20fbd710fc54d57dfec732d314d693b5a2f) for the details.
-* Airspy HF+ 384/256/192kHz I/F modes are *expenrimentally* supported.
 
 ### What is airspy-fmradion?
 
@@ -31,7 +30,7 @@ airspy-fmradion -t airspy -q \
     play -t raw -esigned-integer -b16 -r 48000 -c 2 -q -
 
 airspy-fmradion -t airspyhf -q \
-    -c freq=88100000 \
+    -c freq=88100000,srate=768000 \
     -b 1.0 -R - | \
     play -t raw -esigned-integer -b16 -r 48000 -c 2 -q -
 
@@ -50,7 +49,7 @@ airspy-fmradion -m am -t airspyhf -q \
  - [RTL-SDR library](http://sdr.osmocom.org/trac/wiki/rtl-sdr)
  - [sox](http://sox.sourceforge.net/)
  - [The SoX Resampler library aka libsoxr](https://sourceforge.net/p/soxr/wiki/Home/)
- - Tested: Airspy R2, Airspy Mini, Airspy HF+, RTL-SDR V3
+ - Tested: Airspy R2, Airspy Mini, Airspy HF+ Dual Port, RTL-SDR V3
  - Fast computer
  - Medium-strong FM and/or AM radio signals, or DSB/USB/LSB signals
 
@@ -247,17 +246,24 @@ Compile and install
 
 ## Airspy HF+ modification from airspy-fmradion v0.2.7
 
-## Conversion process
+### Sample rates and IF modes
+
+* This version supports 768kHz zero-IF mode and 384/256/192kHz low-IF modes
+
+### Conversion process for 768kHz zero-IF mode
 
 * LPFIQ is single-stage
 * IF center frequency is down Fs/4 than the station frequency, i.e: when the station is 76.5MHz, the tuned frequency is 76.308MHz
 * Airspy HF+ allows only 660kHz alias-free BW, so the maximum alias-free BW for IF is (660/2)kHz - 192kHz = 138kHz
 * FM demodulation rate: 384kHz (/2)
 * 48 * 16 = 768, so all filters are in integer sampling rates
-
-### Filter characteristics
-
 * IF first stage (768kHz -> 384kHz) : <-0.01dB: 80kHz, -3dB: 100kHz, -90dB: 135kHz
+
+### Conversion process for 384/256/192kHz low-IF mode
+
+* IF center frequency is not shifted
+* No FIR filter is applied in the software
+* FM demodulation rate is the same as the IF rate
 
 ### Airspy HF configuration options
 
