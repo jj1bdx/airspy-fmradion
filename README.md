@@ -310,8 +310,9 @@ Compile and install
 
 ## Acknowledgments
 
-* Twitter [@lambdaprog](https://twitter.com/lambdaprog/)
-* [Iowa Hills Software](http://iowahills.com) for their FIR and IIR filter design tools
+* Twitter [@lambdaprog](https://twitter.com/lambdaprog/), for the intriguing exchange of Airspy product design details and the technical support
+* [Iowa Hills Software](http://iowahills.com), for their FIR and IIR filter design tools
+* [Brian Beezley, K6STI](http://ham-radio.com/k6sti/), for his comprehensive Web site of FM broadcasting reception expertise and the idea of [Quadrature Multipath Monitor](http://ham-radio.com/k6sti/qmm.htm)
 
 ## License
 
