@@ -5,7 +5,7 @@ with a dipole antenna up 15m above the ground in the balcony
 
 768kHz: shifted +192kHz, default filter 
         (-192, +138kHz, rolling off above +138kHz)
-386/256/192kHz: no software IF filter
+384/256/192kHz: no software IF filter
 
 Measured date/time in JST: (-5 sec to 0 sec)
 JST (Japan Standard Time) =  UTC + 9 hours
