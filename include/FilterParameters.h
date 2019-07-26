@@ -54,6 +54,10 @@ public:
   static const IQSampleCoeff jj1bdx_am_12khz_medium;
   static const IQSampleCoeff jj1bdx_am_12khz_narrow;
 
+  static const IQSampleCoeff jj1bdx_fm_if_div2;
+  static const IQSampleCoeff jj1bdx_fm_if_div3;
+  static const IQSampleCoeff jj1bdx_fm_if_div4;
+
   static const IQSampleCoeff jj1bdx_ssb_3to6khz;
 
   // TODO: Hilbert filter coefficients are ASYMMETRIC,
