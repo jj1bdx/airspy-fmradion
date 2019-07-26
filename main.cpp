@@ -45,7 +45,7 @@
 #include "SoftFM.h"
 #include "util.h"
 
-#define AIRSPY_FMRADION_VERSION "v0.6.14"
+#define AIRSPY_FMRADION_VERSION "v0.6.15"
 
 /** Flag is set on SIGINT / SIGTERM. */
 static std::atomic_bool stop_flag(false);
@@ -639,10 +639,13 @@ int main(int argc, char **argv) {
       }
       break;
     case DevType::AirspyHF:
+      // Common settings.
+      if_blocksize = 2048;
+      enable_downsampling = false;
       // switch statement only accepts integer rate values...
       switch (int(ifrate)) {
       case 768000:
-        if_blocksize = 16384;
+        enable_downsampling = true;
         enable_two_downsampler_stages = false;
         first_downsample = 2;
         switch (filtertype) {
@@ -659,16 +662,10 @@ int main(int argc, char **argv) {
         enable_second_downsampler = false;
         break;
       case 384000:
-        if_blocksize = 16384;
-        enable_downsampling = false;
         break;
       case 256000:
-        if_blocksize = 16384;
-        enable_downsampling = false;
         break;
       case 192000:
-        if_blocksize = 16384;
-        enable_downsampling = false;
         break;
       default:
         fprintf(stderr, "Sample rate unsupported\n");
@@ -775,12 +772,13 @@ int main(int argc, char **argv) {
       }
       break;
     case DevType::AirspyHF:
+      // Common settings.
+      if_blocksize = 2048;
+      enable_two_downsampler_stages = false;
       // switch statement only accepts integer rate values...
       switch (int(ifrate)) {
       case 768000:
         // 768kHz: /4/4 -> 48kHz
-        if_blocksize = 16384;
-        enable_two_downsampler_stages = false;
         first_downsample = 4;
         first_coeff = FilterParameters::jj1bdx_am_if_div4;
         enable_second_downsampler = true;
@@ -789,8 +787,6 @@ int main(int argc, char **argv) {
         break;
       case 384000:
         // 384kHz: /2/4 -> 48kHz
-        if_blocksize = 16384;
-        enable_two_downsampler_stages = false;
         first_downsample = 2;
         first_coeff = FilterParameters::jj1bdx_am_if_div2;
         enable_second_downsampler = true;
@@ -799,16 +795,12 @@ int main(int argc, char **argv) {
         break;
       case 256000:
         // 256kHz: /4 -> 64kHz
-        if_blocksize = 16384;
-        enable_two_downsampler_stages = false;
         first_downsample = 4;
         first_coeff = FilterParameters::jj1bdx_am_if_div4;
         enable_second_downsampler = false;
         break;
       case 192000:
         // 192kHz: /4 -> 48kHz
-        if_blocksize = 16384;
-        enable_two_downsampler_stages = false;
         first_downsample = 4;
         first_coeff = FilterParameters::jj1bdx_am_if_div4;
         enable_second_downsampler = false;
@@ -1019,7 +1011,6 @@ int main(int argc, char **argv) {
     // Fine tuning is not needed
     // so long as the stability of the receiver device is
     // within the range of +- 1ppm (~100Hz or less).
-
     if (enable_fs_fourth_downconverter) {
       // Fs/4 downconvering is required
       // to avoid frequency zero offset
@@ -1030,7 +1021,6 @@ int main(int argc, char **argv) {
     }
 
     // Downsample IF for the decoder.
-
     if (enable_downsampling) {
       if_downsampler.process(if_shifted_samples, if_samples_second);
       if (enable_two_downsampler_stages) {
