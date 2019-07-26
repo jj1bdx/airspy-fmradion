@@ -45,7 +45,7 @@
 #include "SoftFM.h"
 #include "util.h"
 
-#define AIRSPY_FMRADION_VERSION "v0.6.15"
+#define AIRSPY_FMRADION_VERSION "v0.6.16-pre0"
 
 /** Flag is set on SIGINT / SIGTERM. */
 static std::atomic_bool stop_flag(false);
@@ -594,39 +594,45 @@ int main(int argc, char **argv) {
       switch (int(ifrate)) {
       case 10000000:
         if_blocksize = 65536;
-        enable_two_downsampler_stages = false;
-        first_downsample = 8;
-        first_coeff = FilterParameters::jj1bdx_10000khz_div8;
+        enable_two_downsampler_stages = true;
+        first_downsample = 4;
+        first_coeff = FilterParameters::jj1bdx_fm_if_div4;
         enable_second_downsampler = true;
-        second_downsample = 4;
-        second_coeff = FilterParameters::jj1bdx_1250khz_div4;
+        second_downsample = 3;
+        second_coeff = FilterParameters::jj1bdx_fm_if_div3;
+        third_downsample = 2;
+        third_coeff = FilterParameters::jj1bdx_fm_if_div2;
+        enable_fourth_downsampler = false;
         break;
       case 2500000:
         if_blocksize = 65536;
         enable_two_downsampler_stages = false;
-        first_downsample = 4;
-        first_coeff = FilterParameters::jj1bdx_2500khz_div4;
+        first_downsample = 3;
+        first_coeff = FilterParameters::jj1bdx_fm_if_div3;
         enable_second_downsampler = true;
         second_downsample = 2;
-        second_coeff = FilterParameters::jj1bdx_625khz_div2;
+        fourth_coeff = FilterParameters::jj1bdx_fm_if_div2;
         break;
       case 6000000:
         if_blocksize = 65536;
-        enable_two_downsampler_stages = false;
-        first_downsample = 5;
-        first_coeff = FilterParameters::jj1bdx_6000khz_div5;
+        enable_two_downsampler_stages = true;
+        first_downsample = 4;
+        first_coeff = FilterParameters::jj1bdx_fm_if_div4;
         enable_second_downsampler = true;
-        second_downsample = 4;
-        second_coeff = FilterParameters::jj1bdx_1250khz_div4;
+        second_downsample = 2;
+        second_coeff = FilterParameters::jj1bdx_fm_if_div2;
+        third_downsample = 2;
+        third_coeff = FilterParameters::jj1bdx_fm_if_div2;
+        enable_fourth_downsampler = false;
         break;
       case 3000000:
         if_blocksize = 65536;
         enable_two_downsampler_stages = false;
-        first_downsample = 5;
-        first_coeff = FilterParameters::jj1bdx_6000khz_div5;
+        first_downsample = 4;
+        first_coeff = FilterParameters::jj1bdx_fm_if_div4;
         enable_second_downsampler = true;
         second_downsample = 2;
-        second_coeff = FilterParameters::jj1bdx_625khz_div2;
+        second_coeff = FilterParameters::jj1bdx_fm_if_div2;
         break;
       default:
         fprintf(stderr, "Sample rate unsupported\n");
