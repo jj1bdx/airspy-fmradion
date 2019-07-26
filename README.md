@@ -1,12 +1,14 @@
 # airspy-fmradion
 
-* Version v0.6.14, 20-JUL-2019
+* Version v0.6.15, 26-JUL-2019
 * For MacOS and Linux
 
 ### Known issues
 
-* Version v0.6.9 and before of this software did not work on Airspy HF+ Firmware R2.2.0-BB. Initialization and device listing sequences redesigned on v0.6.10.
-* Use libairspy --HEAD version for the working `airspy_open_devices()`, required by `airspy_open_sn()`. See [this commit](https://github.com/airspy/airspyone_host/commit/61fec20fbd710fc54d57dfec732d314d693b5a2f) for the details.
+*Use the latest libairspy --HEAD version* (v1.6.7) for:
+
+* Working `airspy_open_devices()`, required by `airspy_open_sn()`. See [this commit](https://github.com/airspy/airspyone_host/commit/61fec20fbd710fc54d57dfec732d314d693b5a2f) for the details.
+* Proper transfer block size. `if_blocksize` for Airspy HF+ is reduced from 16384 to 2048, following [this commit](https://github.com/airspy/airspyhf/commit/a1f6f4a0537f53bede6e80c51826fc9d45061c28).
 
 ### What is airspy-fmradion?
 
