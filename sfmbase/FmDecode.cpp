@@ -341,6 +341,13 @@ void FmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
   // Downsample decoded MPX signal to 192kHz (48kHz * 4).
   m_audioresampler_mpx.process(m_buf_baseband_mpx, m_buf_baseband);
 
+  // If no downsampled baseband signal comes out,
+  // terminate and wait for next block,
+  if (m_buf_baseband.size() == 0) {
+    audio.resize(0);
+    return;
+  }
+
   // Measure baseband level.
   double baseband_mean, baseband_rms;
   samples_mean_rms(m_buf_baseband, baseband_mean, baseband_rms);
