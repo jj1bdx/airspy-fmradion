@@ -683,16 +683,16 @@ int main(int argc, char **argv) {
       }
       break;
     case DevType::RTLSDR:
-      if ((ifrate >= 900001.0) && (ifrate <= 937500.0)) {
+      if ((ifrate >= 1000000.0) && (ifrate <= 1250000.0)) {
         if_blocksize = 65536;
         enable_two_downsampler_stages = false;
         first_downsample = 3;
-        first_coeff = FilterParameters::jj1bdx_900khz_div3;
+        first_coeff = FilterParameters::jj1bdx_fm_if_div3;
         enable_second_downsampler = false;
       } else {
         fprintf(stderr, "Sample rate unsupported\n");
         fprintf(stderr, "Supported rate:\n");
-        fprintf(stderr, "RTL-SDR: 900001 ~ 937500 \n");
+        fprintf(stderr, "RTL-SDR: 1000000 ~ 1250000 (use 1200000)\n");
         delete srcsdr;
         exit(1);
       }
@@ -821,20 +821,21 @@ int main(int argc, char **argv) {
       }
       break;
     case DevType::RTLSDR:
-      if ((ifrate >= 900001.0) && (ifrate <= 937500.0)) {
-        // 900kHz: /5/4 -> 45kHz
-        // No problem up to 960kHz
+      if ((ifrate >= 1000000.0) && (ifrate <= 1250000.0)) {
+        // 1000kHz: /5/5 -> 40kHz
+        // 1200kHz: /5/5 -> 48kHz (nominal)
+        // 1250kHz: /5/5 -> 50kHz
         if_blocksize = 65536;
         enable_two_downsampler_stages = false;
         first_downsample = 5;
         first_coeff = FilterParameters::jj1bdx_am_if_div5;
         enable_second_downsampler = true;
-        second_downsample = 4;
-        second_coeff = FilterParameters::jj1bdx_am_if_div4;
+        second_downsample = 5;
+        second_coeff = FilterParameters::jj1bdx_am_if_div5;
       } else {
         fprintf(stderr, "Sample rate unsupported\n");
         fprintf(stderr, "Supported rate:\n");
-        fprintf(stderr, "RTL-SDR: 900001 ~ 937500 \n");
+        fprintf(stderr, "RTL-SDR: 1000000 ~ 1250000 (use 1200000)\n");
         delete srcsdr;
         exit(1);
       }
