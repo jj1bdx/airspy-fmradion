@@ -1,6 +1,6 @@
 # airspy-fmradion
 
-* Version v0.6.15, 26-JUL-2019
+* Version v0.6.16-pre1, 27-JUL-2019
 * For MacOS and Linux
 
 ### Known issues
@@ -187,8 +187,8 @@ Compile and install
 * FM Filter coefficients are listed under `doc/filter-design-fm`
 * FM unused filter coefficients are listed under `doc/filter-design-fm/not-used`
 * DiscriminatorEqualizer IF range: 200kHz - 1MHz (nyquist: 100kHz - 500kHz)
-* -90dB IF filter width: +- approx. 188kHz for RTL-SDR and AirSpy R2 / Mini, +- approx. 138kHz for AirSpy HF+
-* <0.01dB IF filter width: at least +-75kHz for all receivers
+* -90dB IF filter width: +- approx. 200kHz for RTL-SDR and AirSpy R2 / Mini, +- approx. 138kHz for AirSpy HF+
+* <0.01dB IF filter width: minimum +-75kHz for all receivers
 
 ### For AM
 
@@ -279,9 +279,10 @@ Compile and install
 
 ### Sample rate
 
-* Valid sample rates are from 900001 to 937500 [Hz].
-* The default value is 937500Hz.
-* FM demodulation rate: 300kHz - 312.5kHz (/3)
+* Valid sample rates are from 1000000 to 1250000 [Hz].
+* The default value is 1200000Hz.
+* FM demodulation rate: 333kHz - 416.6666kHz (/3), nominal 400kHz
+* AM demodulation rate: 40kHz - 50kHz (/25), nominal 48kHz
 
 ### Conversion process
 
