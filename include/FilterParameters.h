@@ -28,15 +28,9 @@
 
 class FilterParameters {
 public:
-  static const IQSampleCoeff jj1bdx_10000khz_div8;
-  static const IQSampleCoeff jj1bdx_6000khz_div5;
-  static const IQSampleCoeff jj1bdx_1250khz_div4;
-  static const IQSampleCoeff jj1bdx_2500khz_div4;
-  static const IQSampleCoeff jj1bdx_625khz_div2;
   static const IQSampleCoeff jj1bdx_768khz_div2_narrow;
   static const IQSampleCoeff jj1bdx_768khz_div2_medium;
   static const IQSampleCoeff jj1bdx_768khz_div2;
-  static const IQSampleCoeff jj1bdx_900khz_div3;
   static const IQSampleCoeff delay_3taps_only_iq;
 
   static const SampleCoeff jj1bdx_48khz_fmaudio;
