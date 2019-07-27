@@ -45,7 +45,7 @@
 #include "SoftFM.h"
 #include "util.h"
 
-#define AIRSPY_FMRADION_VERSION "v0.6.16-pre1"
+#define AIRSPY_FMRADION_VERSION "v0.6.16-pre2"
 
 /** Flag is set on SIGINT / SIGTERM. */
 static std::atomic_bool stop_flag(false);
@@ -800,9 +800,9 @@ int main(int argc, char **argv) {
         second_coeff = FilterParameters::jj1bdx_am_if_div4;
         break;
       case 256000:
-        // 256kHz: /4 -> 64kHz
-        first_downsample = 4;
-        first_coeff = FilterParameters::jj1bdx_am_if_div4;
+        // 256kHz: /6 -> 42.66666667kHz
+        first_downsample = 6;
+        first_coeff = FilterParameters::jj1bdx_am_if_div6;
         enable_second_downsampler = false;
         break;
       case 192000:
