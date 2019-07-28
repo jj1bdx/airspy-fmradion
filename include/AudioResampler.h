@@ -22,7 +22,6 @@
 #include <cstdint>
 #include <vector>
 
-#include "AudioResampler.h"
 #include "SoftFM.h"
 
 #include "soxr.h"
