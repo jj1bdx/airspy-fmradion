@@ -17,7 +17,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// For the audio_agc and if_agc functions:
+// For the af_agc and if_agc functions:
 /*
 This software is part of libcsdr, a set of simple DSP routines for
 Software Defined Radio.
@@ -245,7 +245,7 @@ inline void AmDecoder::if_agc(const IQSampleVector &samples_in,
 
 // Divided by 2 at output
 // See adjust_gain() in main.cpp
-#define LIMIT_LEVEL (1.999)
+#define LIMIT_LEVEL (1.9)
 
 // AF AGC.
 // Algorithm: function simple_agc_ff() in
