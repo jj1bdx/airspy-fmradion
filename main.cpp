@@ -773,25 +773,23 @@ int main(int argc, char **argv) {
       // switch statement only accepts integer rate values...
       switch (int(ifrate)) {
       case 768000:
-        // 768kHz: /4/4 -> 48kHz
-        first_downsample = 4;
-        first_coeff = FilterParameters::jj1bdx_am_if_div4;
+        // 768kHz: /8/2 -> 48kHz
+        first_downsample = 8;
+        first_coeff = FilterParameters::jj1bdx_am_if_div8;
         enable_second_downsampler = true;
-        second_downsample = 4;
-        second_coeff = FilterParameters::jj1bdx_am_if_div4;
+        second_downsample = 2;
+        second_coeff = FilterParameters::jj1bdx_am_if_div2;
         break;
       case 384000:
-        // 384kHz: /2/4 -> 48kHz
-        first_downsample = 2;
-        first_coeff = FilterParameters::jj1bdx_am_if_div2;
-        enable_second_downsampler = true;
-        second_downsample = 4;
-        second_coeff = FilterParameters::jj1bdx_am_if_div4;
+        // 384kHz: /8 -> 48kHz
+        first_downsample = 8;
+        first_coeff = FilterParameters::jj1bdx_am_if_div8;
+        enable_second_downsampler = false;
         break;
       case 256000:
-        // 256kHz: /4 -> 64kHz
-        first_downsample = 4;
-        first_coeff = FilterParameters::jj1bdx_am_if_div4;
+        // 256kHz: /5 -> 51.2kHz
+        first_downsample = 5;
+        first_coeff = FilterParameters::jj1bdx_am_if_div5;
         enable_second_downsampler = false;
         break;
       case 192000:
