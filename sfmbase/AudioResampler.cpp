@@ -37,8 +37,7 @@ AudioResampler::AudioResampler(const double input_rate,
       soxr_create(m_irate, m_orate, 1, &error, &io_spec, &quality_spec, NULL);
   if (error) {
     soxr_delete(m_soxr);
-    fprintf(stderr, "AudioResampler: unable to create soxr: %s\n",
-            error);
+    fprintf(stderr, "AudioResampler: unable to create soxr: %s\n", error);
     exit(1);
   }
 }
@@ -62,8 +61,7 @@ void AudioResampler::process(const SampleVector &samples_in,
 
   if (error) {
     soxr_delete(m_soxr);
-    fprintf(stderr, "AudioResampler: soxr_process error: %s\n",
-            error);
+    fprintf(stderr, "AudioResampler: soxr_process error: %s\n", error);
     exit(1);
   }
 
