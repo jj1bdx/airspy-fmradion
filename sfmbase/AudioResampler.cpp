@@ -19,7 +19,7 @@
 #include <cassert>
 #include <cmath>
 
-#include "FmDecode.h"
+#include "AudioResampler.h"
 
 // class AudioResampler
 
