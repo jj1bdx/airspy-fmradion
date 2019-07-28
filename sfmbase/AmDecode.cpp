@@ -65,9 +65,10 @@ AmDecoder::AmDecoder(double sample_rate_demod, IQSampleCoeff &amfilter_coeff,
     // Initialize member fields
     : m_sample_rate_demod(sample_rate_demod), m_amfilter_coeff(amfilter_coeff),
       m_mode(mode), m_baseband_mean(0), m_baseband_level(0),
-      m_af_agc_current_gain(1.0), m_af_agc_rate(0.001), m_af_agc_reference(0.8),
+      m_af_agc_current_gain(1.0), m_af_agc_rate(0.0010),
+      m_af_agc_reference(1.2), m_af_agc_max_gain(5.0),
       m_if_agc_current_gain(1.0), m_if_agc_rate(0.0007),
-      m_if_agc_reference(0.5)
+      m_if_agc_reference(0.7), m_if_agc_max_gain(10000.0)
 
       // Construct AudioResampler for mono and stereo channels
       ,
@@ -220,7 +221,6 @@ inline void AmDecoder::demodulate_dsb(const IQSampleVector &samples_in,
 // https://github.com/simonyiszk/csdr/blob/master/libcsdr.c
 inline void AmDecoder::if_agc(const IQSampleVector &samples_in,
                               IQSampleVector &samples_out) {
-  const double if_agc_max_gain = 10000.0; // 80dB
   double rate = m_if_agc_rate;
   double rate_1minus = 1 - rate;
   unsigned int n = samples_in.size();
@@ -229,8 +229,8 @@ inline void AmDecoder::if_agc(const IQSampleVector &samples_in,
   for (unsigned int i = 0; i < n; i++) {
     double amplitude = std::abs(samples_in[i]);
     double ideal_gain = m_if_agc_reference / amplitude;
-    if (ideal_gain > if_agc_max_gain) {
-      ideal_gain = if_agc_max_gain;
+    if (ideal_gain > m_if_agc_max_gain) {
+      ideal_gain = m_if_agc_max_gain;
     }
     if (ideal_gain <= 0) {
       ideal_gain = 0;
@@ -252,8 +252,6 @@ inline void AmDecoder::if_agc(const IQSampleVector &samples_in,
 // https://github.com/simonyiszk/csdr/blob/master/libcsdr.c
 inline void AmDecoder::af_agc(const SampleVector &samples_in,
                               SampleVector &samples_out) {
-
-  const double af_agc_max_gain = 5.0; // 14dB
   double rate = m_af_agc_rate;
   double rate_1minus = 1 - rate;
   unsigned int n = samples_in.size();
@@ -262,8 +260,8 @@ inline void AmDecoder::af_agc(const SampleVector &samples_in,
   for (unsigned int i = 0; i < n; i++) {
     double amplitude = fabs(samples_in[i]);
     double ideal_gain = m_af_agc_reference / amplitude;
-    if (ideal_gain > af_agc_max_gain) {
-      ideal_gain = af_agc_max_gain;
+    if (ideal_gain > m_af_agc_max_gain) {
+      ideal_gain = m_af_agc_max_gain;
     }
     if (ideal_gain <= 0) {
       ideal_gain = 0;

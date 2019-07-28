@@ -92,12 +92,14 @@ private:
   double m_agc_reference;
 
   double m_af_agc_current_gain;
-  const double m_af_agc_rate;
+  double m_af_agc_rate;
   double m_af_agc_reference;
+  double m_af_agc_max_gain;
 
   double m_if_agc_current_gain;
-  const double m_if_agc_rate;
+  double m_if_agc_rate;
   double m_if_agc_reference;
+  double m_if_agc_max_gain;
 
   IQSampleVector m_buf_downsampled;
   IQSampleVector m_buf_downsampled2;
