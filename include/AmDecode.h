@@ -37,6 +37,7 @@ class AmDecoder {
 public:
   static const double sample_rate_pcm;
   static const double bandwidth_pcm;
+  static const double default_deemphasis;
 
   /**
    * Construct AM decoder.
@@ -114,6 +115,7 @@ private:
   FourthConverterIQ m_downshifter;
   IfDownsampler m_ssbshiftfilter;
   HighPassFilterIir m_dcblock;
+  LowPassFilterRC m_deemph;
 };
 
 #endif

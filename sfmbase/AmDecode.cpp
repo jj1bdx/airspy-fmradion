@@ -57,6 +57,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 const double AmDecoder::sample_rate_pcm = 48000;
 // Half bandwidth of audio signal in Hz (4.5kHz for AM)
 const double AmDecoder::bandwidth_pcm = 4500;
+// Deemphasis constant in microseconds.
+const double AmDecoder::default_deemphasis = 100;
 
 AmDecoder::AmDecoder(double sample_rate_demod, IQSampleCoeff &amfilter_coeff,
                      const ModType mode)
@@ -93,6 +95,10 @@ AmDecoder::AmDecoder(double sample_rate_demod, IQSampleCoeff &amfilter_coeff,
       // cutoff: 60Hz for 12kHz sampling rate
       ,
       m_dcblock(0.005)
+
+      // Construct LowPassFilterRC
+      ,
+      m_deemph(default_deemphasis * sample_rate_pcm * 1.0e-6)
 
 {
   switch (m_mode) {
@@ -179,6 +185,9 @@ void AmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
     audio.resize(0);
     return;
   }
+
+  // Deemphasis
+  m_deemph.process_inplace(m_buf_mono);
 
   // Return mono channel.
   audio = std::move(m_buf_mono);
