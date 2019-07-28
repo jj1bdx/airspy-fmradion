@@ -65,18 +65,17 @@ AmDecoder::AmDecoder(double sample_rate_demod, IQSampleCoeff &amfilter_coeff,
     // Initialize member fields
     : m_sample_rate_demod(sample_rate_demod), m_amfilter_coeff(amfilter_coeff),
       m_mode(mode), m_baseband_mean(0), m_baseband_level(0),
-      m_agc_last_gain(1.0), m_agc_peak1(0), m_agc_peak2(0),
-      m_agc_reference(0.95), m_if_agc_current_gain(10.0), m_if_agc_rate(0.0007),
-      m_if_agc_reference(0.5)
+      m_af_agc_current_gain(1.0), m_af_agc_rate(0.001),
+      m_af_agc_reference(0.9), m_if_agc_current_gain(10.0),
+      m_if_agc_rate(0.0007), m_if_agc_reference(0.5)
 
       // Construct AudioResampler for mono and stereo channels
       ,
-      m_audioresampler(m_sample_rate_demod / 4.0, sample_rate_pcm)
+      m_audioresampler(sample_rate_pcm / 4.0, sample_rate_pcm)
 
-      // Construct IfDownsampler
+      // Construct IfResampler to first convert to 48kHz
       ,
-      m_ifdownsampler(2, FilterParameters::jj1bdx_am_48khz_div2, true, 2,
-                      FilterParameters::jj1bdx_am_24khz_div2)
+      m_ifresampler(m_sample_rate_demod, sample_rate_pcm / 4.0)
 
       // Construct AM narrow filter
       ,
@@ -102,13 +101,28 @@ AmDecoder::AmDecoder(double sample_rate_demod, IQSampleCoeff &amfilter_coeff,
       m_deemph(default_deemphasis * sample_rate_pcm * 1.0e-6)
 
 {
-  // do nothing
+  switch (m_mode) {
+  // Reduce output level for SSB to prevent clipping
+  case ModType::USB:
+  case ModType::LSB:
+    m_af_agc_reference = 0.25;
+    m_if_agc_reference = 0.25;
+    break;
+  default:
+    break;
+  }
 }
 
 void AmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
 
   // Downsample input signal to /4
-  m_ifdownsampler.process(samples_in, m_buf_downsampled);
+  m_ifresampler.process(samples_in, m_buf_downsampled);
+
+  // If no downsampled signal comes out, terminate and wait for next block.
+  if (m_buf_downsampled.size() == 0) {
+    audio.resize(0);
+    return;
+  }
 
   // Apply narrower filters
   m_amfilter.process(m_buf_downsampled, m_buf_downsampled2);
@@ -153,7 +167,9 @@ void AmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
   m_dcblock.process_inplace(m_buf_baseband_demod);
 
   // Audio AGC
-  audio_agc(m_buf_baseband_demod, m_buf_baseband);
+  // audio_agc(m_buf_baseband_demod, m_buf_baseband);
+  af_agc(m_buf_baseband_demod, m_buf_baseband);
+  // m_buf_baseband = std::move(m_buf_baseband_demod);
 
   // Measure baseband level after DC blocking.
   double baseband_mean, baseband_rms;
@@ -199,53 +215,6 @@ inline void AmDecoder::demodulate_dsb(const IQSampleVector &samples_in,
   }
 }
 
-// Audio AGC.
-// Algorithm: function fastagc_ff() in
-// https://github.com/simonyiszk/csdr/blob/master/libcsdr.c
-inline void AmDecoder::audio_agc(const SampleVector &samples_in,
-                                 SampleVector &samples_out) {
-  const double agc_max_gain = 4.0;
-  unsigned int n = samples_in.size();
-  samples_out.resize(n);
-  m_agc_buf1.resize(n);
-  m_agc_buf2.resize(n);
-
-  double agc_peak = 0;
-  for (unsigned int i = 0; i < n; i++) {
-    double v = fabs(samples_in[i]);
-    if (v > agc_peak) {
-      agc_peak = v;
-    }
-  }
-
-  double target_peak = agc_peak;
-  if (target_peak < m_agc_peak2) {
-    target_peak = m_agc_peak2;
-  }
-  if (target_peak < m_agc_peak1) {
-    target_peak = m_agc_peak1;
-  }
-
-  double target_gain = m_agc_reference / target_peak;
-  if (target_gain > agc_max_gain) {
-    target_gain = agc_max_gain;
-  }
-
-  for (unsigned int i = 0; i < n; i++) {
-    double rate = (double)i / (double)n;
-    double gain = (m_agc_last_gain * (1.0 - rate)) + (target_gain * rate);
-    samples_out[i] = m_agc_buf1[i] * gain;
-  }
-
-  m_agc_buf1 = m_agc_buf2;
-  m_agc_peak1 = m_agc_peak2;
-  m_agc_buf2 = samples_in;
-  m_agc_peak2 = agc_peak;
-  m_agc_last_gain = target_gain;
-
-  // fprintf(stderr, "m_agc_last_gain= %f\n", m_agc_last_gain);
-}
-
 // IF AGC.
 // Algorithm: function simple_agc_ff() in
 // https://github.com/simonyiszk/csdr/blob/master/libcsdr.c
@@ -268,10 +237,38 @@ inline void AmDecoder::if_agc(const IQSampleVector &samples_in,
     }
     m_if_agc_current_gain = ((ideal_gain - m_if_agc_current_gain) * rate) +
                             (m_if_agc_current_gain * rate_1minus);
-    // fprintf(stderr, "m_if_agc_current_gain = %f\n", m_if_agc_current_gain);
     samples_out[i] = IQSample(samples_in[i].real() * m_if_agc_current_gain,
                               samples_in[i].imag() * m_if_agc_current_gain);
   }
+  // fprintf(stderr, "m_if_agc_current_gain = %f\n", m_if_agc_current_gain);
+}
+
+// AF AGC.
+// Algorithm: function simple_agc_ff() in
+// https://github.com/simonyiszk/csdr/blob/master/libcsdr.c
+inline void AmDecoder::af_agc(const SampleVector &samples_in,
+                              SampleVector &samples_out) {
+
+  const double af_agc_max_gain = 5.0; // 14dB
+  double rate = m_af_agc_rate;
+  double rate_1minus = 1 - rate;
+  unsigned int n = samples_in.size();
+  samples_out.resize(n);
+
+  for (unsigned int i = 0; i < n; i++) {
+    double amplitude = fabs(samples_in[i]);
+    double ideal_gain = m_af_agc_reference / amplitude;
+    if (ideal_gain > af_agc_max_gain) {
+      ideal_gain = af_agc_max_gain;
+    }
+    if (ideal_gain <= 0) {
+      ideal_gain = 0;
+    }
+    m_af_agc_current_gain = ((ideal_gain - m_af_agc_current_gain) * rate) +
+                            (m_af_agc_current_gain * rate_1minus);
+    samples_out[i] = samples_in[i] * m_af_agc_current_gain;
+  }
+  // fprintf(stderr, "m_af_agc_current_gain = %f\n", m_af_agc_current_gain);
 }
 
 // end

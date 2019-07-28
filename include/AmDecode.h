@@ -29,6 +29,7 @@
 #include "FilterParameters.h"
 #include "FourthConverterIQ.h"
 #include "IfDownsampler.h"
+#include "IfResampler.h"
 #include "SoftFM.h"
 
 /** Complete decoder for FM broadcast signal. */
@@ -55,7 +56,7 @@ public:
   double get_baseband_level() const { return m_baseband_level; }
 
   // Return Audio AGC last gain.
-  double get_agc_last_gain() const { return m_agc_last_gain; }
+  double get_agc_last_gain() const { return m_af_agc_current_gain; }
 
   // Return IF AGC current gain.
   double get_if_agc_current_gain() const { return m_if_agc_current_gain; }
@@ -73,6 +74,8 @@ private:
   // IF AGC function.
   inline void if_agc(const IQSampleVector &samples_in,
                      IQSampleVector &samples_out);
+  // AF AGC function.
+  inline void af_agc(const SampleVector &samples_in, SampleVector &samples_out);
 
   // Data members.
   const double m_sample_rate_demod;
@@ -88,9 +91,13 @@ private:
   double m_agc_peak2;
   double m_agc_reference;
 
+  double m_af_agc_current_gain;
+  const double m_af_agc_rate;
+  double m_af_agc_reference;
+
   double m_if_agc_current_gain;
   const double m_if_agc_rate;
-  const double m_if_agc_reference;
+  double m_if_agc_reference;
 
   IQSampleVector m_buf_downsampled;
   IQSampleVector m_buf_downsampled2;
@@ -102,7 +109,7 @@ private:
   SampleVector m_buf_mono;
 
   AudioResampler m_audioresampler;
-  IfDownsampler m_ifdownsampler;
+  IfResampler m_ifresampler;
   IfDownsampler m_amfilter;
   FourthConverterIQ m_upshifter;
   FourthConverterIQ m_downshifter;
