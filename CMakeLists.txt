@@ -137,6 +137,7 @@ set(sfmbase_SOURCES
     sfmbase/FilterParameters.cpp
     sfmbase/FmDecode.cpp
     sfmbase/IfDownsampler.cpp
+    sfmbase/IfResampler.cpp
 )
 
 set(sfmbase_HEADERS
@@ -150,6 +151,7 @@ set(sfmbase_HEADERS
     include/FmDecode.h
     include/FourthConverterIQ.h
     include/IfDownsampler.h
+    include/IfResampler.h
     include/MovingAverage.h
     include/Source.h
     include/SoftFM.h
