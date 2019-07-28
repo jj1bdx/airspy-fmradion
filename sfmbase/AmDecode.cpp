@@ -65,7 +65,7 @@ AmDecoder::AmDecoder(double sample_rate_demod, IQSampleCoeff &amfilter_coeff,
     // Initialize member fields
     : m_sample_rate_demod(sample_rate_demod), m_amfilter_coeff(amfilter_coeff),
       m_mode(mode), m_baseband_mean(0), m_baseband_level(0),
-      m_af_agc_current_gain(1.0), m_af_agc_rate(0.001), m_af_agc_reference(0.9),
+      m_af_agc_current_gain(1.0), m_af_agc_rate(0.001), m_af_agc_reference(0.8),
       m_if_agc_current_gain(1.0), m_if_agc_rate(0.0007),
       m_if_agc_reference(0.5)
 
@@ -245,7 +245,7 @@ inline void AmDecoder::if_agc(const IQSampleVector &samples_in,
 
 // Divided by 2 at output
 // See adjust_gain() in main.cpp
-#define LIMIT_LEVEL (1.9)
+#define LIMIT_LEVEL (1.7)
 
 // AF AGC.
 // Algorithm: function simple_agc_ff() in
@@ -274,8 +274,10 @@ inline void AmDecoder::af_agc(const SampleVector &samples_in,
     // hard limiting
     if (output_amplitude > LIMIT_LEVEL) {
       output_amplitude = LIMIT_LEVEL;
+      // fprintf(stderr, "af_agc: plus limit level\n");
     } else if (output_amplitude < -(LIMIT_LEVEL)) {
       output_amplitude = -(LIMIT_LEVEL);
+      // fprintf(stderr, "af_agc: minus limit level\n");
     }
     samples_out[i] = output_amplitude;
   }
