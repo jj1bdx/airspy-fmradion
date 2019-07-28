@@ -66,7 +66,7 @@ AmDecoder::AmDecoder(double sample_rate_demod, IQSampleCoeff &amfilter_coeff,
     : m_sample_rate_demod(sample_rate_demod), m_amfilter_coeff(amfilter_coeff),
       m_mode(mode), m_baseband_mean(0), m_baseband_level(0),
       m_af_agc_current_gain(1.0), m_af_agc_rate(0.001), m_af_agc_reference(0.9),
-      m_if_agc_current_gain(10.0), m_if_agc_rate(0.0007),
+      m_if_agc_current_gain(1.0), m_if_agc_rate(0.0007),
       m_if_agc_reference(0.5)
 
       // Construct AudioResampler for mono and stereo channels
