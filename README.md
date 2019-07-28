@@ -1,6 +1,6 @@
 # airspy-fmradion
 
-* Version v0.6.16-pre1, 27-JUL-2019
+* Version v0.6.16-pre3, 28-JUL-2019
 * For MacOS and Linux
 
 ### Known issues
@@ -206,8 +206,11 @@ Compile and install
 
 ## AM AGC
 
+* Use csdr's `simple_agc_cc` algorithm for IF and Audio AGC functions
 * IF AGC: gain up to 80dB (10000)
-* Audio AGC: gain up to 7dB (5.0), fast AGC with peak detection
+* Audio AGC: gain up to 7dB (5.0)
+* csdr's `fastagc_ff` is not applicable due to variable-length downsampled block output
+* TODO: an audio compression algorithm?
 
 ## Airspy R2 / Mini modification from ngsoftfm-jj1bdx
 
