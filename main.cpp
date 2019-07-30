@@ -706,6 +706,7 @@ int main(int argc, char **argv) {
       break;
     case DevType::RTLSDR:
       if ((ifrate >= 1000000.0) && (ifrate <= 1250000.0)) {
+        if_blocksize = 65536;
         if_decimation_ratio = ifrate / 24000.0;
         break;
       } else {
