@@ -45,7 +45,7 @@
 #include "SoftFM.h"
 #include "util.h"
 
-#define AIRSPY_FMRADION_VERSION "v0.6.18-pre1"
+#define AIRSPY_FMRADION_VERSION "v0.6.18"
 
 /** Flag is set on SIGINT / SIGTERM. */
 static std::atomic_bool stop_flag(false);
@@ -147,10 +147,10 @@ void usage() {
       "                 (-X is ignored under mono mode (-M))\n"
       "  -U             Set deemphasis to 75 microseconds (default: 50)\n"
       "  -f filtername  Filter type:\n"
-      "                 For FM with Airspy HF+ (-3dB width):\n"
-      "                   - default: +-154kHz\n"
-      "                   - medium:  +-134kHz\n"
-      "                   - narrow:  +-100kHz\n"
+      "                 For FM:\n"
+      "                   - default: +-176kHz\n"
+      "                   - medium:  +-145kHz\n"
+      "                   - narrow:  +-112kHz\n"
       "                 For AM:\n"
       "                   - default: +-6kHz\n"
       "                   - medium:  +-4kHz\n"
@@ -570,6 +570,23 @@ int main(int argc, char **argv) {
 
   bool enable_downsampling = true;
   double if_decimation_ratio = 1.0;
+  double fm_target_rate;
+  double am_target_rate = 24000.0;
+
+  switch (filtertype) {
+  case FilterType::Default:
+    // 384 * 0.913 ~= 351kHz
+    fm_target_rate = 384000;
+    break;
+  case FilterType::Medium:
+    // 318 * 0.913 ~= 289kHz
+    fm_target_rate = 318000;
+    break;
+  case FilterType::Narrow:
+    // 246 * 0.913 ~= 224kHz
+    fm_target_rate = 246000;
+    break;
+  }
 
   // Configure filter and downsampler.
   switch (modtype) {
@@ -581,16 +598,10 @@ int main(int argc, char **argv) {
       // switch statement only accepts integer rate values...
       switch (int(ifrate)) {
       case 10000000:
-        if_decimation_ratio = ifrate / 400000.0;
-        break;
-      case 2500000:
-        if_decimation_ratio = ifrate / 400000.0;
-        break;
       case 6000000:
-        if_decimation_ratio = ifrate / 400000.0;
-        break;
       case 3000000:
-        if_decimation_ratio = ifrate / 400000.0;
+      case 2500000:
+        if_decimation_ratio = ifrate / fm_target_rate;
         break;
       default:
         fprintf(stderr, "Sample rate unsupported\n");
@@ -605,18 +616,13 @@ int main(int argc, char **argv) {
     case DevType::AirspyHF:
       // Common settings.
       if_blocksize = 2048;
-      enable_downsampling = false;
       // switch statement only accepts integer rate values...
       switch (int(ifrate)) {
       case 768000:
-        enable_downsampling = true;
-        if_decimation_ratio = ifrate / 384000.0;
-        break;
       case 384000:
-        break;
       case 256000:
-        break;
       case 192000:
+        if_decimation_ratio = ifrate / fm_target_rate;
         break;
       default:
         fprintf(stderr, "Sample rate unsupported\n");
@@ -628,9 +634,9 @@ int main(int argc, char **argv) {
       }
       break;
     case DevType::RTLSDR:
+      if_blocksize = 65536;
       if ((ifrate >= 1000000.0) && (ifrate <= 1250000.0)) {
-        if_blocksize = 65536;
-        if_decimation_ratio = ifrate / 400000.0;
+        if_decimation_ratio = ifrate / fm_target_rate;
       } else {
         fprintf(stderr, "Sample rate unsupported\n");
         fprintf(stderr, "Supported rate:\n");
@@ -657,16 +663,10 @@ int main(int argc, char **argv) {
       // switch statement only accepts integer rate values...
       switch (int(ifrate)) {
       case 10000000:
-        if_decimation_ratio = ifrate / 24000.0;
-        break;
-      case 2500000:
-        if_decimation_ratio = ifrate / 24000.0;
-        break;
       case 6000000:
-        if_decimation_ratio = ifrate / 24000.0;
-        break;
       case 3000000:
-        if_decimation_ratio = ifrate / 24000.0;
+      case 2500000:
+        if_decimation_ratio = ifrate / am_target_rate;
         break;
       default:
         fprintf(stderr, "Sample rate unsupported\n");
@@ -684,16 +684,10 @@ int main(int argc, char **argv) {
       // switch statement only accepts integer rate values...
       switch (int(ifrate)) {
       case 768000:
-        if_decimation_ratio = ifrate / 24000.0;
-        break;
       case 384000:
-        if_decimation_ratio = ifrate / 24000.0;
-        break;
       case 256000:
-        if_decimation_ratio = ifrate / 32000.0;
-        break;
       case 192000:
-        if_decimation_ratio = ifrate / 24000.0;
+        if_decimation_ratio = ifrate / am_target_rate;
         break;
       default:
         fprintf(stderr, "Sample rate unsupported\n");
@@ -705,9 +699,9 @@ int main(int argc, char **argv) {
       }
       break;
     case DevType::RTLSDR:
+      if_blocksize = 65536;
       if ((ifrate >= 1000000.0) && (ifrate <= 1250000.0)) {
-        if_blocksize = 65536;
-        if_decimation_ratio = ifrate / 24000.0;
+        if_decimation_ratio = ifrate / am_target_rate;
         break;
       } else {
         fprintf(stderr, "Sample rate unsupported\n");

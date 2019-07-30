@@ -1,6 +1,6 @@
 # airspy-fmradion
 
-* Version v0.6.18-pre0, 28-JUL-2019
+* Version v0.6.18, 30-JUL-2019
 * For MacOS and Linux
 
 ### Known issues
@@ -143,7 +143,7 @@ Compile and install
  - `-X` Shift pilot phase (for Quadrature Multipath Monitor) (-X is ignored under mono mode (-M))
  - `-U` Set deemphasis to 75 microseconds (default: 50)
  - `-f` Set Filter type
-   - for FM with Airspy HF+: default: +-154kHz, middle: +-134kHz, narrow: +-100kHz
+   - for FM: default: +-176kHz, middle: +-145kHz, narrow: +-112kHz
    - for AM: default: +-6kHz, middle: +-4kHz, narrow: +-3kHz
 
 ## Major changes
@@ -154,11 +154,11 @@ Compile and install
 * During v0.2.7 to v0.4.1, output level was at unity (`adjust_gain()` is removed)
 * Before v0.2.7, output maximum level is at -6dB (0.5) 
 
-### Audio downsampling is now performed by libsoxr
+### Audio and IF downsampling is now performed by libsoxr
 
 * Output of FM demodulator is downsampled by libsoxr to 192kHz
 * Output of the stereo decoder is downsampled by libsoxr to 48kHz
-* Quality: `SOXR_HQ` (`SOXR_VHQ` is overkill)
+* Quality: `SOXR_VHQ`
 * 19kHz cut LPF implemented for post-processing libsoxr output
 
 ### Phase discriminator now uses atan2() as is
@@ -179,23 +179,18 @@ Compile and install
 
 ### General characteristics
 
-* Aliasing allowed outside the -90dB width for the 1st-stage IF filters to reduce CPU power
-* For FM: set very low ripple (<0.0001dB) within the passband (Raised Cosine method with Kaiser window is more preferable than Perks-McClellan method)
+* Filter is implemented as the libsoxr sampling converter
+* Filter cutoff by libsoxr: 0.913 * sampling frequency
 
 ### For FM
 
 * FM Filter coefficients are listed under `doc/filter-design-fm`
-* FM unused filter coefficients are listed under `doc/filter-design-fm/not-used`
-* DiscriminatorEqualizer IF range: 200kHz - 1MHz (nyquist: 100kHz - 500kHz)
-* -90dB IF filter width: +- approx. 200kHz for RTL-SDR and AirSpy R2 / Mini, +- approx. 138kHz for AirSpy HF+
-* <0.01dB IF filter width: minimum +-75kHz for all receivers
+* DiscriminatorEqualizer IF range: 180kHz - 1MHz (nyquist: 180kHz - 500kHz)
 
 ### For AM
 
 * AM Filter coefficients are listed under `doc/filter-design-am`
-* AM IF filters are configured by the downsampling rate only
-* Up to -1dB rolloff allowed for all IF filters
-* Max +-6kHz IF filter width without aliasing set for all IF filters
+* Max +-5.5kHz IF filter width without aliasing set for all IF filters
 * Narrower filters by `-f` options: `middle` +-4kHz, `narrow` +-3kHz
 
 ### For SSB
@@ -207,7 +202,7 @@ Compile and install
 ## AM AGC
 
 * Use csdr's `simple_agc_cc` algorithm for IF and Audio AGC functions
-* IF AGC: gain up to 80dB (10000)
+* IF AGC: gain up to 100dB (100000)
 * Audio AGC: gain up to 7dB (5.0)
 * csdr's `fastagc_ff` is not applicable due to variable-length downsampled block output
 * TODO: an audio compression algorithm?
@@ -225,18 +220,6 @@ Compile and install
 * Halfband kernel filter designed by Twitter @lambdaprog is set for Airspy conversion filter
 * Finetuner is removed (Not really needed for +-1ppm or less offset)
 * Audio sample rate is fixed to 48000Hz
-
-### Conversion process
-
-* An integer downsampler is added to the first-stage LowPassFilterFirIQ (LPFIQ)
-* Use pre-built optimized filter coefficients for LPFIQ and audio filters
-* Input -> LPFIQ 1st -> LPFIQ 2nd -> PhaseDiscriminator
-* 10MHz -> 312.5kHz (/32)
-* 2.5MHz -> 312.5kHz (/8)
-* Use `AIRSPY_SAMPLE_FLOAT32_IQ` to directly obtain float IQ sample data from Airspy: IF level is now -24.08dB than the previous (pre-v0.2.2) version
-* Use sparse debug output for ppm and other level status
-* CPU usage: approx. 56% -> approx. 31% on Mac mini 2018, with debug output on, comparing with ngsoftfm-jj1bdx 0.1.14
-* More optimization on LPFIQ and audio filters by assuming symmetric coefficients (-5% of Mac mini 2018 CPU usage)
 
 ### Airspy R2 / Mini configuration options
 
@@ -260,15 +243,10 @@ Compile and install
 * LPFIQ is single-stage
 * IF center frequency is down Fs/4 than the station frequency, i.e: when the station is 76.5MHz, the tuned frequency is 76.308MHz
 * Airspy HF+ allows only 660kHz alias-free BW, so the maximum alias-free BW for IF is (660/2)kHz - 192kHz = 138kHz
-* FM demodulation rate: 384kHz (/2)
-* 48 * 16 = 768, so all filters are in integer sampling rates
-* IF first stage (768kHz -> 384kHz) : <-0.01dB: 80kHz, -3dB: 100kHz, -90dB: 135kHz
 
 ### Conversion process for 384/256/192kHz low-IF mode
 
 * IF center frequency is not shifted
-* No FIR filter is applied in the software
-* FM demodulation rate is the same as the IF rate
 
 ### Airspy HF configuration options
 
@@ -282,15 +260,8 @@ Compile and install
 
 ### Sample rate
 
-* Valid sample rates are from 1000000 to 1250000 [Hz].
-* The default value is 1200000Hz.
-* FM demodulation rate: 333kHz - 416.6666kHz (/3), nominal 400kHz
-* AM demodulation rate: 40kHz - 50kHz (/25), nominal 48kHz
-
-### Conversion process
-
-* No decimation
-* The audio stage is the same as in Airspy
+* Valid sample rates are from 1000000 to 1250000 [Hz]
+* The default value is 1200000Hz
 
 ### RTL-SDR configuration options
 
