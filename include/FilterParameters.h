@@ -28,28 +28,13 @@
 
 class FilterParameters {
 public:
-  static const IQSampleCoeff jj1bdx_768khz_div2_narrow;
-  static const IQSampleCoeff jj1bdx_768khz_div2_medium;
-  static const IQSampleCoeff jj1bdx_768khz_div2;
   static const IQSampleCoeff delay_3taps_only_iq;
 
   static const SampleCoeff jj1bdx_48khz_fmaudio;
   static const SampleCoeff delay_3taps_only_audio;
 
-  static const IQSampleCoeff jj1bdx_am_if_div2;
-  static const IQSampleCoeff jj1bdx_am_if_div3;
-  static const IQSampleCoeff jj1bdx_am_if_div4;
-  static const IQSampleCoeff jj1bdx_am_if_div5;
-  static const IQSampleCoeff jj1bdx_am_if_div6;
-  static const IQSampleCoeff jj1bdx_am_if_div7;
-  static const IQSampleCoeff jj1bdx_am_if_div8;
-
   static const IQSampleCoeff jj1bdx_am_12khz_medium;
   static const IQSampleCoeff jj1bdx_am_12khz_narrow;
-
-  static const IQSampleCoeff jj1bdx_fm_if_div2;
-  static const IQSampleCoeff jj1bdx_fm_if_div3;
-  static const IQSampleCoeff jj1bdx_fm_if_div4;
 
   static const IQSampleCoeff jj1bdx_ssb_3to6khz;
 
