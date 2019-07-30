@@ -64,7 +64,7 @@ void IfResampler::process(const IQSampleVector &samples_in,
   samples_out_interleaved.resize(output_size * 2);
 
   // Create real and imaginary part vectors from sample input.
-  for (int i = 0, j = 0; i < input_size; i++, j += 2) {
+  for (unsigned int i = 0, j = 0; i < input_size; i++, j += 2) {
     IQSample value = samples_in[i];
     samples_in_interleaved[j] = value.real();
     samples_in_interleaved[j + 1] = value.imag();
@@ -82,10 +82,9 @@ void IfResampler::process(const IQSampleVector &samples_in,
   }
 
   // Create complex sample output from the real and imaginary part vectors.
-  for (int i = 0, j = 0; i < output_length; i++, j += 2) {
-    IQSample value =
+  for (unsigned int i = 0, j = 0; i < output_length; i++, j += 2) {
+    samples_out[i] =
         IQSample(samples_out_interleaved[j], samples_out_interleaved[j + 1]);
-    samples_out[i] = value;
   }
 
   samples_out.resize(output_length);
