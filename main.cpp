@@ -45,7 +45,7 @@
 #include "SoftFM.h"
 #include "util.h"
 
-#define AIRSPY_FMRADION_VERSION "v0.6.18-pre0"
+#define AIRSPY_FMRADION_VERSION "v0.6.18-pre1"
 
 /** Flag is set on SIGINT / SIGTERM. */
 static std::atomic_bool stop_flag(false);
@@ -569,19 +569,7 @@ int main(int argc, char **argv) {
   bool enable_fs_fourth_downconverter = !(srcsdr->is_low_if());
 
   bool enable_downsampling = true;
-  bool enable_two_downsampler_stages = false;
-
-  unsigned int first_downsample = 1;
-  IQSampleCoeff first_coeff = FilterParameters::delay_3taps_only_iq;
-  bool enable_second_downsampler = false;
-  unsigned int second_downsample = 1;
-  IQSampleCoeff second_coeff = FilterParameters::delay_3taps_only_iq;
-
-  unsigned int third_downsample = 1;
-  IQSampleCoeff third_coeff = FilterParameters::delay_3taps_only_iq;
-  bool enable_fourth_downsampler = false;
-  unsigned int fourth_downsample = 1;
-  IQSampleCoeff fourth_coeff = FilterParameters::delay_3taps_only_iq;
+  double if_decimation_ratio = 1.0;
 
   // Configure filter and downsampler.
   switch (modtype) {
@@ -593,42 +581,16 @@ int main(int argc, char **argv) {
       // switch statement only accepts integer rate values...
       switch (int(ifrate)) {
       case 10000000:
-        enable_two_downsampler_stages = true;
-        first_downsample = 4;
-        first_coeff = FilterParameters::jj1bdx_fm_if_div4;
-        enable_second_downsampler = true;
-        second_downsample = 3;
-        second_coeff = FilterParameters::jj1bdx_fm_if_div3;
-        third_downsample = 2;
-        third_coeff = FilterParameters::jj1bdx_fm_if_div2;
-        enable_fourth_downsampler = false;
+        if_decimation_ratio = ifrate / 400000.0;
         break;
       case 2500000:
-        enable_two_downsampler_stages = false;
-        first_downsample = 3;
-        first_coeff = FilterParameters::jj1bdx_fm_if_div3;
-        enable_second_downsampler = true;
-        second_downsample = 2;
-        second_coeff = FilterParameters::jj1bdx_fm_if_div2;
+        if_decimation_ratio = ifrate / 400000.0;
         break;
       case 6000000:
-        enable_two_downsampler_stages = true;
-        first_downsample = 4;
-        first_coeff = FilterParameters::jj1bdx_fm_if_div4;
-        enable_second_downsampler = true;
-        second_downsample = 2;
-        second_coeff = FilterParameters::jj1bdx_fm_if_div2;
-        third_downsample = 2;
-        third_coeff = FilterParameters::jj1bdx_fm_if_div2;
-        enable_fourth_downsampler = false;
+        if_decimation_ratio = ifrate / 400000.0;
         break;
       case 3000000:
-        enable_two_downsampler_stages = false;
-        first_downsample = 4;
-        first_coeff = FilterParameters::jj1bdx_fm_if_div4;
-        enable_second_downsampler = true;
-        second_downsample = 2;
-        second_coeff = FilterParameters::jj1bdx_fm_if_div2;
+        if_decimation_ratio = ifrate / 400000.0;
         break;
       default:
         fprintf(stderr, "Sample rate unsupported\n");
@@ -648,20 +610,7 @@ int main(int argc, char **argv) {
       switch (int(ifrate)) {
       case 768000:
         enable_downsampling = true;
-        enable_two_downsampler_stages = false;
-        first_downsample = 2;
-        switch (filtertype) {
-        case FilterType::Default:
-          first_coeff = FilterParameters::jj1bdx_768khz_div2;
-          break;
-        case FilterType::Medium:
-          first_coeff = FilterParameters::jj1bdx_768khz_div2_medium;
-          break;
-        case FilterType::Narrow:
-          first_coeff = FilterParameters::jj1bdx_768khz_div2_narrow;
-          break;
-        }
-        enable_second_downsampler = false;
+        if_decimation_ratio = ifrate / 384000.0;
         break;
       case 384000:
         break;
@@ -681,10 +630,7 @@ int main(int argc, char **argv) {
     case DevType::RTLSDR:
       if ((ifrate >= 1000000.0) && (ifrate <= 1250000.0)) {
         if_blocksize = 65536;
-        enable_two_downsampler_stages = false;
-        first_downsample = 3;
-        first_coeff = FilterParameters::jj1bdx_fm_if_div3;
-        enable_second_downsampler = false;
+        if_decimation_ratio = ifrate / 400000.0;
       } else {
         fprintf(stderr, "Sample rate unsupported\n");
         fprintf(stderr, "Supported rate:\n");
@@ -711,46 +657,16 @@ int main(int argc, char **argv) {
       // switch statement only accepts integer rate values...
       switch (int(ifrate)) {
       case 10000000:
-        // 10000kHz: /8/8/8 -> 19.53125kHz
-        enable_two_downsampler_stages = true;
-        first_downsample = 8;
-        first_coeff = FilterParameters::jj1bdx_am_if_div8;
-        enable_second_downsampler = true;
-        second_downsample = 8;
-        second_coeff = FilterParameters::jj1bdx_am_if_div8;
-        third_downsample = 8;
-        third_coeff = FilterParameters::jj1bdx_am_if_div8;
-        enable_fourth_downsampler = false;
+        if_decimation_ratio = ifrate / 24000.0;
         break;
       case 2500000:
-        // 2500kHz: /8/8 -> 39.0625kHz
-        enable_two_downsampler_stages = false;
-        first_downsample = 8;
-        first_coeff = FilterParameters::jj1bdx_am_if_div8;
-        enable_second_downsampler = true;
-        second_downsample = 8;
-        second_coeff = FilterParameters::jj1bdx_am_if_div8;
+        if_decimation_ratio = ifrate / 24000.0;
         break;
       case 6000000:
-        // 6000kHz: /8/8/5 -> 18.75kHz
-        enable_two_downsampler_stages = true;
-        first_downsample = 8;
-        first_coeff = FilterParameters::jj1bdx_am_if_div8;
-        enable_second_downsampler = true;
-        second_downsample = 8;
-        second_coeff = FilterParameters::jj1bdx_am_if_div8;
-        third_downsample = 5;
-        third_coeff = FilterParameters::jj1bdx_am_if_div5;
-        enable_fourth_downsampler = false;
+        if_decimation_ratio = ifrate / 24000.0;
         break;
       case 3000000:
-        // 3000kHz: /8/8 -> 46.875kHz
-        enable_two_downsampler_stages = false;
-        first_downsample = 8;
-        first_coeff = FilterParameters::jj1bdx_am_if_div8;
-        enable_second_downsampler = true;
-        second_downsample = 8;
-        second_coeff = FilterParameters::jj1bdx_am_if_div8;
+        if_decimation_ratio = ifrate / 24000.0;
         break;
       default:
         fprintf(stderr, "Sample rate unsupported\n");
@@ -765,34 +681,19 @@ int main(int argc, char **argv) {
     case DevType::AirspyHF:
       // Common settings.
       if_blocksize = 2048;
-      enable_two_downsampler_stages = false;
       // switch statement only accepts integer rate values...
       switch (int(ifrate)) {
       case 768000:
-        // 768kHz: /8/2 -> 48kHz
-        first_downsample = 8;
-        first_coeff = FilterParameters::jj1bdx_am_if_div8;
-        enable_second_downsampler = true;
-        second_downsample = 2;
-        second_coeff = FilterParameters::jj1bdx_am_if_div2;
+        if_decimation_ratio = ifrate / 24000.0;
         break;
       case 384000:
-        // 384kHz: /8 -> 48kHz
-        first_downsample = 8;
-        first_coeff = FilterParameters::jj1bdx_am_if_div8;
-        enable_second_downsampler = false;
+        if_decimation_ratio = ifrate / 24000.0;
         break;
       case 256000:
-        // 256kHz: /8 -> 32kHz
-        first_downsample = 8;
-        first_coeff = FilterParameters::jj1bdx_am_if_div8;
-        enable_second_downsampler = false;
+        if_decimation_ratio = ifrate / 32000.0;
         break;
       case 192000:
-        // 192kHz: /8 -> 24kHz
-        first_downsample = 8;
-        first_coeff = FilterParameters::jj1bdx_am_if_div8;
-        enable_second_downsampler = false;
+        if_decimation_ratio = ifrate / 24000.0;
         break;
       default:
         fprintf(stderr, "Sample rate unsupported\n");
@@ -805,16 +706,8 @@ int main(int argc, char **argv) {
       break;
     case DevType::RTLSDR:
       if ((ifrate >= 1000000.0) && (ifrate <= 1250000.0)) {
-        // 1000kHz: /5/5 -> 40kHz
-        // 1200kHz: /5/5 -> 48kHz (nominal)
-        // 1250kHz: /5/5 -> 50kHz
-        if_blocksize = 65536;
-        enable_two_downsampler_stages = false;
-        first_downsample = 5;
-        first_coeff = FilterParameters::jj1bdx_am_if_div5;
-        enable_second_downsampler = true;
-        second_downsample = 5;
-        second_coeff = FilterParameters::jj1bdx_am_if_div5;
+        if_decimation_ratio = ifrate / 24000.0;
+        break;
       } else {
         fprintf(stderr, "Sample rate unsupported\n");
         fprintf(stderr, "Supported rate:\n");
@@ -835,15 +728,13 @@ int main(int argc, char **argv) {
   // Show decoding modulation type.
   fprintf(stderr, "Decoding modulation type: %s\n", modtype_str.c_str());
 
-  unsigned int if_decimation_ratio = first_downsample * second_downsample *
-                                     third_downsample * fourth_downsample;
   double demodulator_rate = ifrate / if_decimation_ratio;
   double total_decimation_ratio = ifrate / pcmrate;
   double audio_decimation_ratio = demodulator_rate / pcmrate;
 
   // Display filter configuration.
   fprintf(stderr, "IF sample rate: %.9g [Hz], ", ifrate);
-  fprintf(stderr, "IF decimation: / %d\n", if_decimation_ratio);
+  fprintf(stderr, "IF decimation: / %.9g\n", if_decimation_ratio);
   fprintf(stderr, "Demodulator rate: %.8g [Hz], ", demodulator_rate);
   fprintf(stderr, "audio decimation: / %.9g\n", audio_decimation_ratio);
 
@@ -872,21 +763,8 @@ int main(int argc, char **argv) {
   // Prepare Fs/4 downconverter.
   FourthConverterIQ fourth_downconverter(false);
 
-  // Prepare IF Downsamplers.
-  IfDownsampler if_downsampler(
-      first_downsample,          // first_downsample
-      first_coeff,               // first_coeff
-      enable_second_downsampler, // enable_second_downsampler
-      second_downsample,         // second_downsample
-      second_coeff               // second_coeff
-  );
-
-  IfDownsampler if_downsampler_second(
-      third_downsample,          // first_downsample
-      third_coeff,               // first_coeff
-      enable_fourth_downsampler, // enable_second_downsampler
-      fourth_downsample,         // second_downsample
-      fourth_coeff               // second_coeff
+  IfResampler if_resampler(ifrate,          // input_rate
+                           demodulator_rate // output_rate
   );
 
   // Prepare FM decoder.
@@ -1012,33 +890,34 @@ int main(int argc, char **argv) {
 
     // Downsample IF for the decoder.
     if (enable_downsampling) {
-      if_downsampler.process(if_shifted_samples, if_samples_second);
-      if (enable_two_downsampler_stages) {
-        if_downsampler_second.process(if_samples_second, if_samples);
-      } else {
-        if_samples = std::move(if_samples_second);
-      }
+      if_resampler.process(if_shifted_samples, if_samples);
     } else {
       if_samples = std::move(if_shifted_samples);
     }
 
-    // Measure IF level.
-    double if_rms = rms_level_approx(if_samples);
-    if_level = 0.95 * if_level + 0.05 * if_rms;
+    // Downsample IF for the decoder.
+    bool if_exists = if_samples.size() > 0;
 
-    // Decode signal.
-    switch (modtype) {
-    case ModType::FM:
-      // Decode FM signal.
-      fm.process(if_samples, audiosamples);
-      break;
-    case ModType::AM:
-    case ModType::DSB:
-    case ModType::USB:
-    case ModType::LSB:
-      // Decode AM/DSB/USB/LSB signals.
-      am.process(if_samples, audiosamples);
-      break;
+    if (if_exists) {
+      // Measure IF level when IF exists.
+      double if_rms = rms_level_approx(if_samples);
+      if_level = 0.95 * if_level + 0.05 * if_rms;
+
+      // Decode signal.
+
+      switch (modtype) {
+      case ModType::FM:
+        // Decode FM signal.
+        fm.process(if_samples, audiosamples);
+        break;
+      case ModType::AM:
+      case ModType::DSB:
+      case ModType::USB:
+      case ModType::LSB:
+        // Decode AM/DSB/USB/LSB signals.
+        am.process(if_samples, audiosamples);
+        break;
+      }
     }
 
     bool audio_exists = audiosamples.size() > 0;
