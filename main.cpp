@@ -39,7 +39,6 @@
 #include "FilterParameters.h"
 #include "FmDecode.h"
 #include "FourthConverterIQ.h"
-#include "IfDownsampler.h"
 #include "MovingAverage.h"
 #include "RtlSdrSource.h"
 #include "SoftFM.h"

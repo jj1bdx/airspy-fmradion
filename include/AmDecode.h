@@ -28,7 +28,6 @@
 #include "Filter.h"
 #include "FilterParameters.h"
 #include "FourthConverterIQ.h"
-#include "IfDownsampler.h"
 #include "IfResampler.h"
 #include "SoftFM.h"
 
@@ -112,10 +111,10 @@ private:
 
   AudioResampler m_audioresampler;
   IfResampler m_ifresampler;
-  IfDownsampler m_amfilter;
+  LowPassFilterFirIQ m_amfilter;
   FourthConverterIQ m_upshifter;
   FourthConverterIQ m_downshifter;
-  IfDownsampler m_ssbshiftfilter;
+  LowPassFilterFirIQ m_ssbshiftfilter;
   HighPassFilterIir m_dcblock;
   LowPassFilterRC m_deemph;
 };

@@ -80,8 +80,7 @@ AmDecoder::AmDecoder(double sample_rate_demod, IQSampleCoeff &amfilter_coeff,
 
       // Construct AM narrow filter
       ,
-      m_amfilter(1, m_amfilter_coeff, false, 1,
-                 FilterParameters::delay_3taps_only_iq)
+      m_amfilter(m_amfilter_coeff, 1)
 
       // IF down/upshifter
       ,
@@ -89,8 +88,7 @@ AmDecoder::AmDecoder(double sample_rate_demod, IQSampleCoeff &amfilter_coeff,
 
       // SSB shifted-audio filter from 3 to 6kHz
       ,
-      m_ssbshiftfilter(1, FilterParameters::jj1bdx_ssb_3to6khz, false, 1,
-                       FilterParameters::delay_3taps_only_iq)
+      m_ssbshiftfilter(FilterParameters::jj1bdx_ssb_3to6khz, 1)
 
       // Construct HighPassFilterIir
       // cutoff: 60Hz for 12kHz sampling rate
