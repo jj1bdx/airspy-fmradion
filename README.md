@@ -1,6 +1,6 @@
 # airspy-fmradion
 
-* Version v0.6.19-pre1, 10-AUG-2019
+* Version v0.6.19-pre2, 10-AUG-2019
 * For MacOS and Linux
 
 ### Known issues
@@ -20,6 +20,7 @@
 - Mono or stereo decoding of FM broadcasting stations
 - Mono decoding of AM broadcasting stations
 - Decoding DSB/USB/LSB/CW communication/broadcasting stations
+- Decoding narrow band FM communication/broadcasting stations (experimental)
 - Buffered real-time playback to soundcard or dumping to file
 - Command-line interface (*only*)
 
