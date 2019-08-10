@@ -600,13 +600,13 @@ int main(int argc, char **argv) {
 
   switch (filtertype) {
   case FilterType::Default:
-    nbfm_target_rate = 24000;
-    break;
-  case FilterType::Medium:
     nbfm_target_rate = 20000;
     break;
-  case FilterType::Narrow:
+  case FilterType::Medium:
     nbfm_target_rate = 16000;
+    break;
+  case FilterType::Narrow:
+    nbfm_target_rate = 12500;
     break;
   }
 
