@@ -33,7 +33,7 @@ typedef std::vector<SampleVector::value_type> SampleCoeff;
 
 enum class FilterType { Default, Medium, Narrow };
 enum class DevType { Airspy, AirspyHF, RTLSDR };
-enum class ModType { FM, AM, DSB, USB, LSB };
+enum class ModType { FM, AM, DSB, USB, LSB, CW };
 enum class OutputMode { RAW_INT16, RAW_FLOAT32, WAV, ALSA };
 
 /** Compute mean and RMS over a sample vector. */

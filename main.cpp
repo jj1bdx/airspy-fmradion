@@ -44,7 +44,7 @@
 #include "SoftFM.h"
 #include "util.h"
 
-#define AIRSPY_FMRADION_VERSION "v0.6.19-pre0"
+#define AIRSPY_FMRADION_VERSION "v0.6.19-pre1"
 
 /** Flag is set on SIGINT / SIGTERM. */
 static std::atomic_bool stop_flag(false);
@@ -123,6 +123,7 @@ void usage() {
       "                   - dsb \n"
       "                   - usb \n"
       "                   - lsb \n"
+      "                   - cw (pitch and width: 500Hz) \n"
       "  -t devtype     Device type:\n"
       "                   - rtlsdr: RTL-SDR devices\n"
       "                   - airspy: Airspy R2\n"
@@ -419,6 +420,9 @@ int main(int argc, char **argv) {
   } else if (strcasecmp(modtype_str.c_str(), "lsb") == 0) {
     modtype = ModType::LSB;
     stereo = false;
+  } else if (strcasecmp(modtype_str.c_str(), "cw") == 0) {
+    modtype = ModType::CW;
+    stereo = false;
   } else {
     fprintf(stderr, "Modulation type string unsuppored\n");
     exit(1);
@@ -476,6 +480,7 @@ int main(int argc, char **argv) {
     case ModType::DSB:
     case ModType::USB:
     case ModType::LSB:
+    case ModType::CW:
       fprintf(ppsfile, "#  block   unix_time\n");
       break;
     }
@@ -655,6 +660,7 @@ int main(int argc, char **argv) {
   case ModType::DSB:
   case ModType::USB:
   case ModType::LSB:
+  case ModType::CW:
     // Configure AM mode constants.
     switch (devtype) {
     case DevType::Airspy:
@@ -802,6 +808,7 @@ int main(int argc, char **argv) {
   case ModType::DSB:
   case ModType::USB:
   case ModType::LSB:
+  case ModType::CW:
     fprintf(stderr, "AM demodulator deemphasis: %.9g [µs]\n",
             AmDecoder::default_deemphasis);
     break;
@@ -841,7 +848,8 @@ int main(int argc, char **argv) {
   case ModType::DSB:
   case ModType::USB:
   case ModType::LSB:
-    discarding_blocks = 0;
+  case ModType::CW:
+    discarding_blocks = stat_rate * 2;
     break;
   }
 
@@ -908,7 +916,8 @@ int main(int argc, char **argv) {
       case ModType::DSB:
       case ModType::USB:
       case ModType::LSB:
-        // Decode AM/DSB/USB/LSB signals.
+      case ModType::CW:
+        // Decode AM/DSB/USB/LSB/CW signals.
         am.process(if_samples, audiosamples);
         break;
       }
@@ -970,6 +979,7 @@ int main(int argc, char **argv) {
       case ModType::DSB:
       case ModType::USB:
       case ModType::LSB:
+      case ModType::CW:
         // Show per-block statistics without ppm offset.
         double if_agc_gain_db = 20 * log10(am.get_if_agc_current_gain());
         if (((block % stat_rate) == 0) && (block > discarding_blocks)) {
@@ -1000,6 +1010,7 @@ int main(int argc, char **argv) {
       case ModType::DSB:
       case ModType::USB:
       case ModType::LSB:
+      case ModType::CW:
         if ((block % (stat_rate * 10)) == 0) {
           fprintf(ppsfile, "%8d %18.6f\n", block, prev_block_time);
           fflush(ppsfile);

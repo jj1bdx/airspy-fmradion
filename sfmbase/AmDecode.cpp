@@ -56,6 +56,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 const double AmDecoder::sample_rate_pcm = 48000;
 const double AmDecoder::internal_rate_pcm = 12000;
+const double AmDecoder::cw_rate_pcm = 2000;
 // Half bandwidth of audio signal in Hz (4.5kHz for AM)
 const double AmDecoder::bandwidth_pcm = 4500;
 // Deemphasis constant in microseconds.
@@ -66,9 +67,8 @@ AmDecoder::AmDecoder(double sample_rate_demod, IQSampleCoeff &amfilter_coeff,
     // Initialize member fields
     : m_sample_rate_demod(sample_rate_demod), m_amfilter_coeff(amfilter_coeff),
       m_mode(mode), m_baseband_mean(0), m_baseband_level(0),
-      m_af_agc_current_gain(1.0), m_af_agc_rate(0.01),
-      m_af_agc_reference(1.0), m_af_agc_max_gain(5.0),
-      m_if_agc_current_gain(1.0), m_if_agc_rate(0.002),
+      m_af_agc_current_gain(1.0), m_af_agc_rate(0.01), m_af_agc_reference(1.0),
+      m_af_agc_max_gain(5.0), m_if_agc_current_gain(1.0), m_if_agc_rate(0.002),
       m_if_agc_reference(0.7), m_if_agc_max_gain(100000.0)
 
       // Construct AudioResampler
@@ -89,7 +89,17 @@ AmDecoder::AmDecoder(double sample_rate_demod, IQSampleCoeff &amfilter_coeff,
 
       // SSB shifted-audio filter from 3 to 6kHz
       ,
-      m_ssbshiftfilter(FilterParameters::jj1bdx_ssb_3to6khz, 1)
+      m_ssbshiftfilter(FilterParameters::jj1bdx_ssb_3to6khz, 1),
+      m_cwshiftfilter(FilterParameters::jj1bdx_cw_250hz, 1)
+
+      // Construct IfResampler to first convert to internal PCM rate
+      ,
+      m_cw_downsampler(internal_rate_pcm, cw_rate_pcm),
+      m_cw_upsampler(cw_rate_pcm, internal_rate_pcm)
+
+      // IF upshifter for CW
+      ,
+      m_upshifter_cw(true)
 
       // Construct HighPassFilterIir
       // cutoff: 60Hz for 12kHz sampling rate
@@ -108,6 +118,9 @@ AmDecoder::AmDecoder(double sample_rate_demod, IQSampleCoeff &amfilter_coeff,
     m_af_agc_reference = 0.5;
     m_if_agc_reference = 0.25;
     break;
+  case ModType::CW:
+    m_af_agc_reference = 0.25;
+    m_if_agc_reference = 0.2;
   default:
     break;
   }
@@ -139,9 +152,27 @@ void AmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
     m_ssbshiftfilter.process(m_buf_downsampled2a, m_buf_downsampled2b);
     m_upshifter.process(m_buf_downsampled2b, m_buf_downsampled2);
     break;
+  case ModType::CW:
+    m_cw_downsampler.process(m_buf_downsampled2, m_buf_downsampled2a);
+    // If no downsampled signal comes out, terminate and wait for next block.
+    if (m_buf_downsampled2a.size() == 0) {
+      audio.resize(0);
+      return;
+    }
+    m_cwshiftfilter.process(m_buf_downsampled2a, m_buf_downsampled2b);
+    // CW pitch: 500Hz
+    m_upshifter_cw.process(m_buf_downsampled2b, m_buf_downsampled2c);
+    m_cw_upsampler.process(m_buf_downsampled2c, m_buf_downsampled2);
+    break;
   default:
     // Do nothing here
     break;
+  }
+
+  // If no processed signal comes out, terminate and wait for next block.
+  if (m_buf_downsampled2.size() == 0) {
+    audio.resize(0);
+    return;
   }
 
   // If AGC
@@ -159,6 +190,7 @@ void AmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
   case ModType::DSB:
   case ModType::USB:
   case ModType::LSB:
+  case ModType::CW:
     demodulate_dsb(m_buf_downsampled3, m_buf_baseband_demod);
     break;
   }

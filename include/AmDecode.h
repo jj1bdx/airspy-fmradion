@@ -36,6 +36,7 @@ class AmDecoder {
 public:
   static const double sample_rate_pcm;
   static const double internal_rate_pcm;
+  static const double cw_rate_pcm;
   static const double bandwidth_pcm;
   static const double default_deemphasis;
 
@@ -105,6 +106,7 @@ private:
   IQSampleVector m_buf_downsampled2;
   IQSampleVector m_buf_downsampled2a;
   IQSampleVector m_buf_downsampled2b;
+  IQSampleVector m_buf_downsampled2c;
   IQSampleVector m_buf_downsampled3;
   SampleVector m_buf_baseband_demod;
   SampleVector m_buf_baseband;
@@ -116,6 +118,10 @@ private:
   FourthConverterIQ m_upshifter;
   FourthConverterIQ m_downshifter;
   LowPassFilterFirIQ m_ssbshiftfilter;
+  IfResampler m_cw_downsampler;
+  IfResampler m_cw_upsampler;
+  FourthConverterIQ m_upshifter_cw;
+  LowPassFilterFirIQ m_cwshiftfilter;
   HighPassFilterIir m_dcblock;
   LowPassFilterRC m_deemph;
 };
