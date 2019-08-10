@@ -22,32 +22,6 @@
 
 #include "FmDecode.h"
 
-/* ****************  class PhaseDiscriminator  **************** */
-
-// Construct phase discriminator.
-PhaseDiscriminator::PhaseDiscriminator(double max_freq_dev)
-    : m_freq_scale_factor(1.0 / (max_freq_dev * 2.0 * M_PI)) {}
-
-// Process samples.
-//
-inline void PhaseDiscriminator::process(const IQSampleVector &samples_in,
-                                        SampleVector &samples_out) {
-  unsigned int n = samples_in.size();
-  IQSample s0 = m_last1_sample;
-
-  samples_out.resize(n);
-
-  for (unsigned int i = 0; i < n; i++) {
-    IQSample s1(samples_in[i]);
-    IQSample d(conj(s0) * s1);
-    Sample w = atan2(d.imag(), d.real());
-    samples_out[i] = w * m_freq_scale_factor;
-    s0 = s1;
-  }
-
-  m_last1_sample = s0;
-}
-
 // class DiscriminatorEqualizer
 
 // Construct equalizer for phase discriminator.

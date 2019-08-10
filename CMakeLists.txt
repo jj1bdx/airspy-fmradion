@@ -138,6 +138,7 @@ set(sfmbase_SOURCES
     sfmbase/FmDecode.cpp
     sfmbase/IfDownsampler.cpp
     sfmbase/IfResampler.cpp
+    sfmbase/PhaseDiscriminator.cpp
 )
 
 set(sfmbase_HEADERS
@@ -153,6 +154,7 @@ set(sfmbase_HEADERS
     include/IfDownsampler.h
     include/IfResampler.h
     include/MovingAverage.h
+    include/PhaseDiscriminator.h
     include/Source.h
     include/SoftFM.h
     include/parsekv.h
