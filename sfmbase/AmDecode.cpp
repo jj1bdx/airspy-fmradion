@@ -55,6 +55,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // Static constants.
 
 const double AmDecoder::sample_rate_pcm = 48000;
+const double AmDecoder::internal_rate_pcm = 12000;
 // Half bandwidth of audio signal in Hz (4.5kHz for AM)
 const double AmDecoder::bandwidth_pcm = 4500;
 // Deemphasis constant in microseconds.
@@ -70,13 +71,13 @@ AmDecoder::AmDecoder(double sample_rate_demod, IQSampleCoeff &amfilter_coeff,
       m_if_agc_current_gain(1.0), m_if_agc_rate(0.002),
       m_if_agc_reference(0.7), m_if_agc_max_gain(100000.0)
 
-      // Construct AudioResampler for mono and stereo channels
+      // Construct AudioResampler
       ,
-      m_audioresampler(sample_rate_pcm / 4.0, sample_rate_pcm)
+      m_audioresampler(internal_rate_pcm, sample_rate_pcm)
 
-      // Construct IfResampler to first convert to 48kHz
+      // Construct IfResampler to first convert to internal PCM rate
       ,
-      m_ifresampler(m_sample_rate_demod, sample_rate_pcm / 4.0)
+      m_ifresampler(m_sample_rate_demod, internal_rate_pcm)
 
       // Construct AM narrow filter
       ,
@@ -114,7 +115,7 @@ AmDecoder::AmDecoder(double sample_rate_demod, IQSampleCoeff &amfilter_coeff,
 
 void AmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
 
-  // Downsample input signal to /4
+  // Downsample input signal to internal PCM rate
   m_ifresampler.process(samples_in, m_buf_downsampled);
 
   // If no downsampled signal comes out, terminate and wait for next block.

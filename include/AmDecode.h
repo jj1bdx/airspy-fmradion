@@ -35,6 +35,7 @@
 class AmDecoder {
 public:
   static const double sample_rate_pcm;
+  static const double internal_rate_pcm;
   static const double bandwidth_pcm;
   static const double default_deemphasis;
 
