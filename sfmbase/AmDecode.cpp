@@ -187,6 +187,10 @@ void AmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
     // Force error
     assert(m_mode != ModType::FM);
     break;
+  case ModType::NBFM:
+    // Force error
+    assert(m_mode != ModType::NBFM);
+    break;
   case ModType::AM:
     demodulate_am(m_buf_downsampled3, m_buf_baseband_demod);
     break;

@@ -40,6 +40,7 @@
 #include "FmDecode.h"
 #include "FourthConverterIQ.h"
 #include "MovingAverage.h"
+#include "NbfmDecode.h"
 #include "RtlSdrSource.h"
 #include "SoftFM.h"
 #include "util.h"
@@ -423,6 +424,9 @@ int main(int argc, char **argv) {
   } else if (strcasecmp(modtype_str.c_str(), "cw") == 0) {
     modtype = ModType::CW;
     stereo = false;
+  } else if (strcasecmp(modtype_str.c_str(), "nbfm") == 0) {
+    modtype = ModType::NBFM;
+    stereo = false;
   } else {
     fprintf(stderr, "Modulation type string unsuppored\n");
     exit(1);
@@ -481,6 +485,7 @@ int main(int argc, char **argv) {
     case ModType::USB:
     case ModType::LSB:
     case ModType::CW:
+    case ModType::NBFM:
       fprintf(ppsfile, "#  block   unix_time\n");
       break;
     }
@@ -576,6 +581,7 @@ int main(int argc, char **argv) {
   double if_decimation_ratio = 1.0;
   double fm_target_rate;
   double am_target_rate = 24000.0;
+  double nbfm_target_rate;
 
   switch (filtertype) {
   case FilterType::Default:
@@ -592,136 +598,46 @@ int main(int argc, char **argv) {
     break;
   }
 
-  // Configure filter and downsampler.
+  switch (filtertype) {
+  case FilterType::Default:
+    nbfm_target_rate = 24000;
+    break;
+  case FilterType::Medium:
+    nbfm_target_rate = 20000;
+    break;
+  case FilterType::Narrow:
+    nbfm_target_rate = 16000;
+    break;
+  }
+
+  // Configure blocksize.
+  switch (devtype) {
+  case DevType::Airspy:
+    if_blocksize = 65536;
+    break;
+  case DevType::AirspyHF:
+    // Common settings.
+    if_blocksize = 2048;
+    break;
+  case DevType::RTLSDR:
+    if_blocksize = 65536;
+    break;
+  }
+
+  // Configure if_decimation_ratio.
   switch (modtype) {
   case ModType::FM:
-    // Configure FM mode constants.
-    switch (devtype) {
-    case DevType::Airspy:
-      if_blocksize = 65536;
-      // switch statement only accepts integer rate values...
-      switch (int(ifrate)) {
-      case 10000000:
-      case 6000000:
-      case 3000000:
-      case 2500000:
-        if_decimation_ratio = ifrate / fm_target_rate;
-        break;
-      default:
-        fprintf(stderr, "Sample rate unsupported\n");
-        fprintf(stderr, "Supported rate:\n");
-        fprintf(stderr, "Airspy R2: 2500000, 10000000\n");
-        fprintf(stderr, "Airspy Mini: 3000000, 6000000\n");
-        delete srcsdr;
-        exit(1);
-        break;
-      }
-      break;
-    case DevType::AirspyHF:
-      // Common settings.
-      if_blocksize = 2048;
-      // switch statement only accepts integer rate values...
-      switch (int(ifrate)) {
-      case 768000:
-      case 384000:
-      case 256000:
-      case 192000:
-        if_decimation_ratio = ifrate / fm_target_rate;
-        break;
-      default:
-        fprintf(stderr, "Sample rate unsupported\n");
-        fprintf(stderr, "Supported rate:\n");
-        fprintf(stderr, "Airspy HF: 768000, 384000, 256000, 192000\n");
-        delete srcsdr;
-        exit(1);
-        break;
-      }
-      break;
-    case DevType::RTLSDR:
-      if_blocksize = 65536;
-      if ((ifrate >= 1000000.0) && (ifrate <= 1250000.0)) {
-        if_decimation_ratio = ifrate / fm_target_rate;
-      } else {
-        fprintf(stderr, "Sample rate unsupported\n");
-        fprintf(stderr, "Supported rate:\n");
-        fprintf(stderr, "RTL-SDR: 1000000 ~ 1250000 (use 1200000)\n");
-        delete srcsdr;
-        exit(1);
-      }
-      break;
-    default:
-      fprintf(stderr, "For the device, fm modulation is unsupported\n");
-      delete srcsdr;
-      exit(1);
-      break;
-    }
+    if_decimation_ratio = ifrate / fm_target_rate;
     break;
   case ModType::AM:
   case ModType::DSB:
   case ModType::USB:
   case ModType::LSB:
   case ModType::CW:
-    // Configure AM mode constants.
-    switch (devtype) {
-    case DevType::Airspy:
-      if_blocksize = 65536;
-      // switch statement only accepts integer rate values...
-      switch (int(ifrate)) {
-      case 10000000:
-      case 6000000:
-      case 3000000:
-      case 2500000:
-        if_decimation_ratio = ifrate / am_target_rate;
-        break;
-      default:
-        fprintf(stderr, "Sample rate unsupported\n");
-        fprintf(stderr, "Supported rate:\n");
-        fprintf(stderr, "Airspy R2: 2500000, 10000000\n");
-        fprintf(stderr, "Airspy Mini: 3000000, 6000000\n");
-        delete srcsdr;
-        exit(1);
-        break;
-      }
-      break;
-    case DevType::AirspyHF:
-      // Common settings.
-      if_blocksize = 2048;
-      // switch statement only accepts integer rate values...
-      switch (int(ifrate)) {
-      case 768000:
-      case 384000:
-      case 256000:
-      case 192000:
-        if_decimation_ratio = ifrate / am_target_rate;
-        break;
-      default:
-        fprintf(stderr, "Sample rate unsupported\n");
-        fprintf(stderr, "Supported rate:\n");
-        fprintf(stderr, "Airspy HF: 768000, 384000, 256000, 192000\n");
-        delete srcsdr;
-        exit(1);
-        break;
-      }
-      break;
-    case DevType::RTLSDR:
-      if_blocksize = 65536;
-      if ((ifrate >= 1000000.0) && (ifrate <= 1250000.0)) {
-        if_decimation_ratio = ifrate / am_target_rate;
-        break;
-      } else {
-        fprintf(stderr, "Sample rate unsupported\n");
-        fprintf(stderr, "Supported rate:\n");
-        fprintf(stderr, "RTL-SDR: 1000000 ~ 1250000 (use 1200000)\n");
-        delete srcsdr;
-        exit(1);
-      }
-      break;
-    default:
-      fprintf(stderr, "For the device, am modulation is unsupported\n");
-      delete srcsdr;
-      exit(1);
-      break;
-    }
+    if_decimation_ratio = ifrate / am_target_rate;
+    break;
+  case ModType::NBFM:
+    if_decimation_ratio = ifrate / nbfm_target_rate;
     break;
   }
 
@@ -794,9 +710,14 @@ int main(int argc, char **argv) {
                modtype           // mode
   );
 
+  // Prepare narrow band FM decoder.
+  NbfmDecoder nbfm(demodulator_rate // sample_rate_demod
+  );
+
   // Initialize moving average object for FM ppm monitoring.
   switch (modtype) {
   case ModType::FM:
+  case ModType::NBFM:
     fprintf(stderr, "audio sample rate: %u [Hz],", pcmrate);
     fprintf(stderr, " audio bandwidth: %u [Hz]\n",
             (unsigned int)FmDecoder::bandwidth_pcm);
@@ -842,6 +763,7 @@ int main(int argc, char **argv) {
   unsigned int discarding_blocks;
   switch (modtype) {
   case ModType::FM:
+  case ModType::NBFM:
     discarding_blocks = stat_rate * 4;
     break;
   case ModType::AM:
@@ -906,7 +828,6 @@ int main(int argc, char **argv) {
       if_level = 0.95 * if_level + 0.05 * if_rms;
 
       // Decode signal.
-
       switch (modtype) {
       case ModType::FM:
         // Decode FM signal.
@@ -919,6 +840,10 @@ int main(int argc, char **argv) {
       case ModType::CW:
         // Decode AM/DSB/USB/LSB/CW signals.
         am.process(if_samples, audiosamples);
+        break;
+      case ModType::NBFM:
+        // Decode narrow band FM signal.
+        nbfm.process(if_samples, audiosamples);
         break;
       }
     }
@@ -942,6 +867,9 @@ int main(int argc, char **argv) {
       // to make and not the one made
       ppm_average.feed((fm.get_tuning_offset() / tuner_freq) * -1.0e6);
       ppm_value_average = ppm_average.average();
+    } else if (modtype == ModType::NBFM) {
+      ppm_average.feed((nbfm.get_tuning_offset() / tuner_freq) * -1.0e6);
+      ppm_value_average = ppm_average.average();
     }
 
     double if_level_db = 20 * log10(if_level);
@@ -952,8 +880,8 @@ int main(int argc, char **argv) {
     // Show status messages for each block if not in quiet mode.
     bool stereo_change = false;
     if (!quietmode) {
-      switch (modtype) {
-      case ModType::FM:
+      // Stereo detection display
+      if (modtype == ModType::FM) {
         stereo_change = (fm.stereo_detected() != got_stereo);
         // Show stereo status.
         if (stereo_change) {
@@ -965,6 +893,10 @@ int main(int argc, char **argv) {
             fprintf(stderr, "\nlost stereo signal\n");
           }
         }
+      }
+      switch (modtype) {
+      case ModType::FM:
+      case ModType::NBFM:
         // Show per-block statistics.
         if (stereo_change ||
             (((block % stat_rate) == 0) && (block > discarding_blocks))) {
@@ -1011,6 +943,7 @@ int main(int argc, char **argv) {
       case ModType::USB:
       case ModType::LSB:
       case ModType::CW:
+      case ModType::NBFM:
         if ((block % (stat_rate * 10)) == 0) {
           fprintf(ppsfile, "%8d %18.6f\n", block, prev_block_time);
           fflush(ppsfile);
