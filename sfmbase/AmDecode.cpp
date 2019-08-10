@@ -89,8 +89,7 @@ AmDecoder::AmDecoder(double sample_rate_demod, IQSampleCoeff &amfilter_coeff,
 
       // SSB shifted-audio filter from 3 to 6kHz
       ,
-      m_ssbshiftfilter(FilterParameters::jj1bdx_ssb_3to6khz, 1),
-      m_cwshiftfilter(FilterParameters::jj1bdx_cw_250hz, 1)
+      m_ssbshiftfilter(FilterParameters::jj1bdx_ssb_3to6khz, 1)
 
       // Construct IfResampler to first convert to internal PCM rate
       ,
@@ -100,6 +99,10 @@ AmDecoder::AmDecoder(double sample_rate_demod, IQSampleCoeff &amfilter_coeff,
       // IF upshifter for CW
       ,
       m_upshifter_cw(true)
+
+      // CW baseband filter for +- 250Hz
+      ,
+      m_cwshiftfilter(FilterParameters::jj1bdx_cw_250hz, 1)
 
       // Construct HighPassFilterIir
       // cutoff: 60Hz for 12kHz sampling rate
