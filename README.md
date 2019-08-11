@@ -1,6 +1,6 @@
 # airspy-fmradion
 
-* Version v0.6.19-pre2, 10-AUG-2019
+* Version v0.6.19-pre3, 11-AUG-2019
 * For MacOS and Linux
 
 ### Known issues
@@ -129,7 +129,7 @@ Compile and install
 
 ## Basic command options
 
- - `-m devtype` is modulation type, one of `fm`, `am`, `dsb`, `usb`, `lsb`, `cw` (default fm)
+ - `-m devtype` is modulation type, one of `fm`, `am`, `dsb`, `usb`, `lsb`, `cw`, `nbfm` (default fm)
  - `-t devtype` is mandatory and must be `airspy` for Airspy R2 / Airspy Mini, `airspyhf` for Airspy HF+, and `rtlsdr` for RTL-SDR.
  - `-q` Quiet mode.
  - `-c config` Comma separated list of configuration options as key=value pairs or just key for switches. Depends on device type (see next paragraph).
@@ -185,12 +185,12 @@ Compile and install
 
 ### For FM
 
-* FM Filter coefficients are listed under `doc/filter-design-fm`
+* FM Filter coefficients are listed under `doc/filter-design`
 * DiscriminatorEqualizer IF range: 180kHz - 1MHz (nyquist: 180kHz - 500kHz)
 
 ### For AM
 
-* AM Filter coefficients are listed under `doc/filter-design-am`
+* AM Filter coefficients are listed under `doc/filter-design`
 * Max +-5.5kHz IF filter width without aliasing set for all IF filters
 * Narrower filters by `-f` options: `middle` +-4kHz, `narrow` +-3kHz
 
@@ -204,6 +204,11 @@ Compile and install
 
 * Pitch: 500Hz
 * Filter width: +- 250Hz
+
+### For NBFM
+
+* Deviation: max +-8kHz
+* Output audio LPF: flat up to 3kHz
 
 ## AM AGC
 
