@@ -279,10 +279,6 @@ inline void AmDecoder::if_agc(const IQSampleVector &samples_in,
   // fprintf(stderr, "m_if_agc_current_gain = %f\n", m_if_agc_current_gain);
 }
 
-// Divided by 2 at output
-// See adjust_gain() in main.cpp
-#define LIMIT_LEVEL (1.7)
-
 // AF AGC.
 // Algorithm: function simple_agc_ff() in
 // https://github.com/simonyiszk/csdr/blob/master/libcsdr.c
@@ -305,14 +301,6 @@ inline void AmDecoder::af_agc(const SampleVector &samples_in,
     m_af_agc_current_gain = ((ideal_gain - m_af_agc_current_gain) * rate) +
                             (m_af_agc_current_gain * rate_1minus);
     double output_amplitude = samples_in[i] * m_af_agc_current_gain;
-    // hard limiting
-    if (output_amplitude > LIMIT_LEVEL) {
-      output_amplitude = LIMIT_LEVEL;
-      // fprintf(stderr, "af_agc: plus limit level\n");
-    } else if (output_amplitude < -(LIMIT_LEVEL)) {
-      output_amplitude = -(LIMIT_LEVEL);
-      // fprintf(stderr, "af_agc: minus limit level\n");
-    }
     samples_out[i] = output_amplitude;
   }
   // fprintf(stderr, "m_af_agc_current_gain = %f\n", m_af_agc_current_gain);

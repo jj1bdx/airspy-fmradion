@@ -50,10 +50,19 @@
 /** Flag is set on SIGINT / SIGTERM. */
 static std::atomic_bool stop_flag(false);
 
-/** Simple linear gain adjustment. */
-inline void adjust_gain(SampleVector &samples, double gain) {
+#define PEAK_LIMIT_LEVEL (0.9)
+
+// Simple linear gain adjustment and peak limiting.
+inline void adjust_gain_and_peak_limit(SampleVector &samples, double gain) {
   for (unsigned int i = 0, n = samples.size(); i < n; i++) {
-    samples[i] *= gain;
+    double amplitude = samples[i] * gain;
+    // hard limiting
+    if (amplitude > PEAK_LIMIT_LEVEL) {
+      amplitude = PEAK_LIMIT_LEVEL;
+    } else if (amplitude < -(PEAK_LIMIT_LEVEL)) {
+      amplitude = -(PEAK_LIMIT_LEVEL);
+    }
+    samples[i] = amplitude;
   }
 }
 
@@ -861,7 +870,7 @@ int main(int argc, char **argv) {
       audio_level = 0.95 * audio_level + 0.05 * audio_rms;
 
       // Set nominal audio volume (-6dB).
-      adjust_gain(audiosamples, 0.5);
+      adjust_gain_and_peak_limit(audiosamples, 0.5);
     }
 
     double ppm_value_average;
