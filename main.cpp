@@ -45,7 +45,7 @@
 #include "SoftFM.h"
 #include "util.h"
 
-#define AIRSPY_FMRADION_VERSION "v0.6.19-pre3"
+#define AIRSPY_FMRADION_VERSION "v0.6.19-pre4"
 
 /** Flag is set on SIGINT / SIGTERM. */
 static std::atomic_bool stop_flag(false);
@@ -940,7 +940,7 @@ int main(int argc, char **argv) {
     }
 
     // Write PPS markers.
-    if ((ppsfile != NULL) && audio_exists) {
+    if (ppsfile != NULL) {
       switch (modtype) {
       case ModType::FM:
         for (const PilotPhaseLock::PpsEvent &ev : fm.get_pps_events()) {
