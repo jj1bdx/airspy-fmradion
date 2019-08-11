@@ -26,8 +26,8 @@
 // Static constants.
 
 const double NbfmDecoder::sample_rate_pcm = 48000;
-// Full scale carrier frequency deviation (75 kHz for broadcast FM)
-const double NbfmDecoder::freq_dev = 5000;
+// Full scale carrier frequency deviation (5kHz nominal)
+const double NbfmDecoder::freq_dev = 8000;
 
 NbfmDecoder::NbfmDecoder(double sample_rate_demod)
     // Initialize member fields
