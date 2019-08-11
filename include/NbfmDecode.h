@@ -62,9 +62,11 @@ private:
 
   SampleVector m_buf_baseband;
   SampleVector m_buf_baseband_raw;
+  SampleVector m_buf_baseband_filtered;
 
   AudioResampler m_audioresampler_raw;
   PhaseDiscriminator m_phasedisc;
+  LowPassFilterFirAudio m_audiofilter;
 };
 
 #endif

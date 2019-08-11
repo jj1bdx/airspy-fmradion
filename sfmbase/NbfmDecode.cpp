@@ -40,7 +40,13 @@ NbfmDecoder::NbfmDecoder(double sample_rate_demod)
 
       // Construct PhaseDiscriminator
       ,
-      m_phasedisc(freq_dev / m_sample_rate_fmdemod) {
+      m_phasedisc(freq_dev / m_sample_rate_fmdemod)
+
+      // Construct LowPassFilterFirAudio
+      ,
+      m_audiofilter(FilterParameters::jj1bdx_48khz_nbfmaudio)
+
+{
   // Do nothing
 }
 
@@ -66,8 +72,11 @@ void NbfmDecoder::process(const IQSampleVector &samples_in,
   m_baseband_mean = 0.95 * m_baseband_mean + 0.05 * baseband_mean;
   m_baseband_level = 0.95 * m_baseband_level + 0.05 * baseband_rms;
 
+  // Filter out audio high frequency noise.
+  m_audiofilter.process(m_buf_baseband, m_buf_baseband_filtered);
+
   // Just return mono channel.
-  audio = std::move(m_buf_baseband);
+  audio = std::move(m_buf_baseband_filtered);
 }
 
 /* end */

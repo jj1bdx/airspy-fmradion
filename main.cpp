@@ -45,7 +45,7 @@
 #include "SoftFM.h"
 #include "util.h"
 
-#define AIRSPY_FMRADION_VERSION "v0.6.19-pre2"
+#define AIRSPY_FMRADION_VERSION "v0.6.19-pre3"
 
 /** Flag is set on SIGINT / SIGTERM. */
 static std::atomic_bool stop_flag(false);
@@ -64,7 +64,9 @@ inline double rms_level_approx(const IQSampleVector &samples) {
 
   IQSample::value_type level = 0;
   for (unsigned int i = 0; i < n; i++) {
-    level += std::norm(samples[i]);
+    double amplitude = std::norm(samples[i]);
+    level += amplitude;
+    // fprintf(stderr, "amplitude = %.15f\n", amplitude);
   }
   // Return RMS level
   return sqrt(level / n);
@@ -723,7 +725,6 @@ int main(int argc, char **argv) {
             (unsigned int)FmDecoder::bandwidth_pcm);
     fprintf(stderr, "audio totally decimated from IF by: %.9g\n",
             total_decimation_ratio);
-    fprintf(stderr, "FM demodulator deemphasis: %.9g [µs]\n", deemphasis);
     break;
   case ModType::AM:
   case ModType::DSB:
@@ -733,6 +734,9 @@ int main(int argc, char **argv) {
     fprintf(stderr, "AM demodulator deemphasis: %.9g [µs]\n",
             AmDecoder::default_deemphasis);
     break;
+  }
+  if (modtype == ModType::FM) {
+    fprintf(stderr, "FM demodulator deemphasis: %.9g [µs]\n", deemphasis);
   }
   fprintf(stderr, "Filter type: %s\n", filtertype_str.c_str());
 

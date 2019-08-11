@@ -31,6 +31,7 @@ public:
   static const IQSampleCoeff delay_3taps_only_iq;
 
   static const SampleCoeff jj1bdx_48khz_fmaudio;
+  static const SampleCoeff jj1bdx_48khz_nbfmaudio;
   static const SampleCoeff delay_3taps_only_audio;
 
   static const IQSampleCoeff jj1bdx_am_12khz_medium;
