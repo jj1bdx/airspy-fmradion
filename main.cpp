@@ -823,14 +823,14 @@ int main(int argc, char **argv) {
 
     if (if_exists) {
       // Measure IF level when IF exists.
-      double if_rms = rms_level_approx(if_samples);
-      if_level = 0.95 * if_level + 0.05 * if_rms;
+      double if_rms;
 
       // Decode signal.
       switch (modtype) {
       case ModType::FM:
         // Decode FM signal.
         fm.process(if_samples, audiosamples);
+        if_rms = fm.get_if_rms();
         break;
       case ModType::AM:
       case ModType::DSB:
@@ -839,12 +839,16 @@ int main(int argc, char **argv) {
       case ModType::CW:
         // Decode AM/DSB/USB/LSB/CW signals.
         am.process(if_samples, audiosamples);
+        if_rms = am.get_if_rms();
         break;
       case ModType::NBFM:
         // Decode narrow band FM signal.
         nbfm.process(if_samples, audiosamples);
+        if_rms = nbfm.get_if_rms();
         break;
       }
+
+      if_level = 0.95 * if_level + 0.05 * if_rms;
     }
 
     bool audio_exists = audiosamples.size() > 0;

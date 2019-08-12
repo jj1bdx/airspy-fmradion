@@ -255,7 +255,7 @@ FmDecoder::FmDecoder(double sample_rate_demod, bool stereo, double deemphasis,
     : m_sample_rate_fmdemod(sample_rate_demod),
       m_sample_rate_mpx(sample_rate_mpx), m_pilot_shift(pilot_shift),
       m_stereo_enabled(stereo), m_stereo_detected(false), m_baseband_mean(0),
-      m_baseband_level(0)
+      m_baseband_level(0), m_if_rms(0.0)
 
       // Construct AudioResampler for mpx
       ,
@@ -307,6 +307,9 @@ FmDecoder::FmDecoder(double sample_rate_demod, bool stereo, double deemphasis,
 }
 
 void FmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
+
+  // Measure IF RMS level.
+  m_if_rms = rms_level_approx(samples_in);
 
   // Demodulate FM to MPX signal.
   m_phasedisc.process(samples_in, m_buf_baseband_raw);

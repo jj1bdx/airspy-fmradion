@@ -30,6 +30,7 @@
 #include "FourthConverterIQ.h"
 #include "IfResampler.h"
 #include "SoftFM.h"
+#include "util.h"
 
 /** Complete decoder for FM broadcast signal. */
 class AmDecoder {
@@ -62,6 +63,9 @@ public:
   // Return IF AGC current gain.
   double get_if_agc_current_gain() const { return m_if_agc_current_gain; }
 
+  // Return RMS IF level.
+  double get_if_rms() const { return m_if_rms; }
+
 private:
   // Demodulate AM signal.
   inline void demodulate_am(const IQSampleVector &samples_in,
@@ -84,6 +88,7 @@ private:
   const ModType m_mode;
   double m_baseband_mean;
   double m_baseband_level;
+  double m_if_rms;
 
   SampleVector m_agc_buf1;
   SampleVector m_agc_buf2;

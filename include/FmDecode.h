@@ -29,6 +29,7 @@
 #include "FilterParameters.h"
 #include "PhaseDiscriminator.h"
 #include "SoftFM.h"
+#include "util.h"
 
 class DiscriminatorEqualizer {
 public:
@@ -151,6 +152,9 @@ public:
   /** Return amplitude of stereo pilot (nominal level is 0.1). */
   double get_pilot_level() const { return m_pilotpll.get_pilot_level(); }
 
+  // Return RMS IF level.
+  double get_if_rms() const { return m_if_rms; }
+
   /** Return PPS events from the most recently processed block. */
   std::vector<PilotPhaseLock::PpsEvent> get_pps_events() const {
     return m_pilotpll.get_pps_events();
@@ -183,6 +187,7 @@ private:
   bool m_stereo_detected;
   double m_baseband_mean;
   double m_baseband_level;
+  double m_if_rms;
 
   SampleVector m_buf_baseband;
   SampleVector m_buf_baseband_mpx;

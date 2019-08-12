@@ -66,7 +66,7 @@ AmDecoder::AmDecoder(double sample_rate_demod, IQSampleCoeff &amfilter_coeff,
                      const ModType mode)
     // Initialize member fields
     : m_sample_rate_demod(sample_rate_demod), m_amfilter_coeff(amfilter_coeff),
-      m_mode(mode), m_baseband_mean(0), m_baseband_level(0),
+      m_mode(mode), m_baseband_mean(0), m_baseband_level(0), m_if_rms(0.0),
       m_af_agc_current_gain(1.0), m_af_agc_rate(0.01), m_af_agc_reference(1.0),
       m_af_agc_max_gain(5.0), m_if_agc_current_gain(1.0), m_if_agc_rate(0.002),
       m_if_agc_reference(0.7), m_if_agc_max_gain(100000.0)
@@ -177,6 +177,9 @@ void AmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
     audio.resize(0);
     return;
   }
+
+  // Measure IF RMS level.
+  m_if_rms = rms_level_approx(m_buf_downsampled2);
 
   // If AGC
   if_agc(m_buf_downsampled2, m_buf_downsampled3);

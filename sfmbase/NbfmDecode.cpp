@@ -32,7 +32,7 @@ const double NbfmDecoder::freq_dev = 8000;
 NbfmDecoder::NbfmDecoder(double sample_rate_demod)
     // Initialize member fields
     : m_sample_rate_fmdemod(sample_rate_demod), m_baseband_mean(0),
-      m_baseband_level(0)
+      m_baseband_level(0), m_if_rms(0.0)
 
       // Construct AudioResampler
       ,
@@ -53,10 +53,13 @@ NbfmDecoder::NbfmDecoder(double sample_rate_demod)
 void NbfmDecoder::process(const IQSampleVector &samples_in,
                           SampleVector &audio) {
 
-  // Demodulate FM to MPX signal.
+  // Measure IF RMS level.
+  m_if_rms = rms_level_approx(samples_in);
+
+  // Demodulate FM to audio signal.
   m_phasedisc.process(samples_in, m_buf_baseband_raw);
 
-  // Upsample decoded MPX signal to 48kHz.
+  // Upsample decoded audio signal to 48kHz.
   m_audioresampler_raw.process(m_buf_baseband_raw, m_buf_baseband);
 
   // If no downsampled baseband signal comes out,

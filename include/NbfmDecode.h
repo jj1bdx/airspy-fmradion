@@ -28,6 +28,7 @@
 #include "FilterParameters.h"
 #include "PhaseDiscriminator.h"
 #include "SoftFM.h"
+#include "util.h"
 
 // Complete decoder for Narrow Band FM broadcast signal.
 
@@ -54,11 +55,15 @@ public:
   /** Return RMS baseband signal level (where nominal level is 0.707). */
   double get_baseband_level() const { return m_baseband_level; }
 
+  // Return RMS IF level.
+  double get_if_rms() const { return m_if_rms; }
+
 private:
   // Data members.
   const double m_sample_rate_fmdemod;
   double m_baseband_mean;
   double m_baseband_level;
+  double m_if_rms;
 
   SampleVector m_buf_baseband;
   SampleVector m_buf_baseband_raw;
