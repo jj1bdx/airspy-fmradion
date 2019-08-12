@@ -108,6 +108,7 @@ private:
 class FmDecoder {
 public:
   static const double sample_rate_pcm;
+  static const double sample_rate_mpx;
   static const double freq_dev;
   static const double bandwidth_pcm;
   static const double pilot_freq;

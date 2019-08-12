@@ -45,7 +45,7 @@
 #include "SoftFM.h"
 #include "util.h"
 
-#define AIRSPY_FMRADION_VERSION "v0.6.19-pre4"
+#define AIRSPY_FMRADION_VERSION "v0.6.19-pre5"
 
 /** Flag is set on SIGINT / SIGTERM. */
 static std::atomic_bool stop_flag(false);

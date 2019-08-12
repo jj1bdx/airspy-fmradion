@@ -232,11 +232,14 @@ void PilotPhaseLock::process(const SampleVector &samples_in,
   m_sample_cnt += n;
 }
 
-/* ****************  class FmDecoder  **************** */
+// class FmDecoder
 
 // Static constants.
 
+// Output sampling rate.
 const double FmDecoder::sample_rate_pcm = 48000;
+// Cover up to 96kHz MPX output
+const double FmDecoder::sample_rate_mpx = 192000;
 // Full scale carrier frequency deviation (75 kHz for broadcast FM)
 const double FmDecoder::freq_dev = 75000;
 // Half bandwidth of audio signal in Hz (15 kHz for broadcast FM)
@@ -250,7 +253,7 @@ FmDecoder::FmDecoder(double sample_rate_demod, bool stereo, double deemphasis,
                      bool pilot_shift)
     // Initialize member fields
     : m_sample_rate_fmdemod(sample_rate_demod),
-      m_sample_rate_mpx(sample_rate_pcm * 4), m_pilot_shift(pilot_shift),
+      m_sample_rate_mpx(sample_rate_mpx), m_pilot_shift(pilot_shift),
       m_stereo_enabled(stereo), m_stereo_detected(false), m_baseband_mean(0),
       m_baseband_level(0)
 
