@@ -153,6 +153,7 @@ void usage() {
       "                   - default: +-6kHz\n"
       "                   - medium:  +-4kHz\n"
       "                   - narrow:  +-3kHz\n"
+      "  -l dB          Set IF squelch level to minus given value of dB\n"
       "\n"
       "Configuration options for RTL-SDR devices\n"
       "  freq=<int>     Frequency of radio station in Hz (default 100000000)\n"
@@ -292,6 +293,7 @@ int main(int argc, char **argv) {
   std::string ppsfilename;
   FILE *ppsfile = NULL;
   double bufsecs = -1;
+  double squelch_level_db = 150.0;
   bool pilot_shift = false;
   bool deemphasis_na = false;
   std::string config_str;
@@ -308,18 +310,26 @@ int main(int argc, char **argv) {
   fprintf(stderr, "Software FM/AM radio for ");
   fprintf(stderr, "Airspy R2, Airspy HF+, and RTL-SDR\n");
 
-  const struct option longopts[] = {
-      {"modtype", 2, NULL, 'm'},    {"devtype", 2, NULL, 't'},
-      {"quiet", 1, NULL, 'q'},      {"config", 2, NULL, 'c'},
-      {"dev", 1, NULL, 'd'},        {"mono", 0, NULL, 'M'},
-      {"raw", 1, NULL, 'R'},        {"float", 1, NULL, 'F'},
-      {"wav", 1, NULL, 'W'},        {"play", 2, NULL, 'P'},
-      {"pps", 1, NULL, 'T'},        {"buffer", 1, NULL, 'b'},
-      {"pilotshift", 0, NULL, 'X'}, {"usa", 0, NULL, 'U'},
-      {"filtertype", 2, NULL, 'f'}, {NULL, 0, NULL, 0}};
+  const struct option longopts[] = {{"modtype", 2, NULL, 'm'},
+                                    {"devtype", 2, NULL, 't'},
+                                    {"quiet", 1, NULL, 'q'},
+                                    {"config", 2, NULL, 'c'},
+                                    {"dev", 1, NULL, 'd'},
+                                    {"mono", 0, NULL, 'M'},
+                                    {"raw", 1, NULL, 'R'},
+                                    {"float", 1, NULL, 'F'},
+                                    {"wav", 1, NULL, 'W'},
+                                    {"play", 2, NULL, 'P'},
+                                    {"pps", 1, NULL, 'T'},
+                                    {"buffer", 1, NULL, 'b'},
+                                    {"pilotshift", 0, NULL, 'X'},
+                                    {"usa", 0, NULL, 'U'},
+                                    {"filtertype", 2, NULL, 'f'},
+                                    {"squelch", 1, NULL, 'l'},
+                                    {NULL, 0, NULL, 0}};
 
   int c, longindex;
-  while ((c = getopt_long(argc, argv, "m:t:c:d:MR:F:W:f:P::T:b:qXU", longopts,
+  while ((c = getopt_long(argc, argv, "m:t:c:d:MR:F:W:f:l:P::T:b:qXU", longopts,
                           &longindex)) >= 0) {
     switch (c) {
     case 'm':
@@ -353,6 +363,11 @@ int main(int argc, char **argv) {
       break;
     case 'f':
       filtertype_str.assign(optarg);
+      break;
+    case 'l':
+      if (!parse_dbl(optarg, squelch_level_db) || squelch_level_db < 0) {
+        badarg("-l");
+      }
       break;
     case 'P':
       outmode = OutputMode::ALSA;
@@ -389,6 +404,8 @@ int main(int argc, char **argv) {
     fprintf(stderr, "ERROR: Unexpected command line options\n");
     exit(1);
   }
+
+  double squelch_level = pow(10.0, -(squelch_level_db / 20.0));
 
   if (strcasecmp(devtype_str.c_str(), "rtlsdr") == 0) {
     devtype = DevType::RTLSDR;
@@ -820,11 +837,9 @@ int main(int argc, char **argv) {
 
     // Downsample IF for the decoder.
     bool if_exists = if_samples.size() > 0;
+    double if_rms = 0.0;
 
     if (if_exists) {
-      // Measure IF level when IF exists.
-      double if_rms;
-
       // Decode signal.
       switch (modtype) {
       case ModType::FM:
@@ -847,8 +862,8 @@ int main(int argc, char **argv) {
         if_rms = nbfm.get_if_rms();
         break;
       }
-
-      if_level = 0.95 * if_level + 0.05 * if_rms;
+      // Measure the average IF level.
+      if_level = 0.9 * if_level + 0.1 * if_rms;
     }
 
     bool audio_exists = audiosamples.size() > 0;
@@ -857,10 +872,12 @@ int main(int argc, char **argv) {
     if (audio_exists) {
       double audio_mean, audio_rms;
       samples_mean_rms(audiosamples, audio_mean, audio_rms);
-      audio_level = 0.95 * audio_level + 0.05 * audio_rms;
+      audio_level = 0.9 * audio_level + 0.1 * audio_rms;
 
-      // Set nominal audio volume (-6dB).
-      adjust_gain_and_peak_limit(audiosamples, 0.5);
+      // Set nominal audio volume (-6dB) when IF squelch is open,
+      // set to zero volume if the squelch is closed.
+      adjust_gain_and_peak_limit(audiosamples,
+                                 if_rms >= squelch_level ? 0.5 : 0.0);
     }
 
     double ppm_value_average;
