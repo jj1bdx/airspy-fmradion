@@ -657,6 +657,7 @@ int main(int argc, char **argv) {
 
   // Show decoding modulation type.
   fprintf(stderr, "Decoding modulation type: %s\n", modtype_str.c_str());
+  fprintf(stderr, "IF Squelch level: %.9g [dB]\n", 20 * log10(squelch_level));
 
   double demodulator_rate = ifrate / if_decimation_ratio;
   double total_decimation_ratio = ifrate / pcmrate;
