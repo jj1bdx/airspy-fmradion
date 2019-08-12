@@ -47,9 +47,6 @@ public:
   void process(const IQSampleVector &samples_in, IQSampleVector &samples_out);
 
 private:
-  // Compute RMS over a small prefix of the specified sample vector.
-  double rms_level_approx(const IQSampleVector &samples);
-
   // Data members.
   IQSampleVector m_buf_iffirstout;
   const unsigned int m_first_downsample;

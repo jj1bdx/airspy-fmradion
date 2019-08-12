@@ -42,4 +42,19 @@ inline bool parse_dbl(const char *s, double &v) {
   return (*endp == '\0');
 }
 
+// Compute RMS over a small prefix of the specified sample vector.
+inline double rms_level_approx(const IQSampleVector &samples) {
+  unsigned int n = samples.size();
+  n = (n + 63) / 64;
+
+  IQSample::value_type level = 0;
+  for (unsigned int i = 0; i < n; i++) {
+    double amplitude = std::norm(samples[i]);
+    level += amplitude;
+    // fprintf(stderr, "amplitude = %.15f\n", amplitude);
+  }
+  // Return RMS level
+  return sqrt(level / n);
+}
+
 #endif /* INCLUDE_UTIL_H_ */

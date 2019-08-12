@@ -66,21 +66,6 @@ inline void adjust_gain_and_peak_limit(SampleVector &samples, double gain) {
   }
 }
 
-// Compute RMS over a small prefix of the specified sample vector.
-inline double rms_level_approx(const IQSampleVector &samples) {
-  unsigned int n = samples.size();
-  n = (n + 63) / 64;
-
-  IQSample::value_type level = 0;
-  for (unsigned int i = 0; i < n; i++) {
-    double amplitude = std::norm(samples[i]);
-    level += amplitude;
-    // fprintf(stderr, "amplitude = %.15f\n", amplitude);
-  }
-  // Return RMS level
-  return sqrt(level / n);
-}
-
 /**
  * Get data from output buffer and write to output stream.
  *
