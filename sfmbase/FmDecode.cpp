@@ -267,8 +267,8 @@ FmDecoder::FmDecoder(double sample_rate_demod, bool stereo, double deemphasis,
 
       // Construct AudioResampler for mono and stereo channels
       ,
-      m_audioresampler_mono(m_sample_rate_mpx, sample_rate_pcm),
-      m_audioresampler_stereo(m_sample_rate_mpx, sample_rate_pcm)
+      m_audioresampler_mono(m_sample_rate_fmdemod, sample_rate_pcm),
+      m_audioresampler_stereo(m_sample_rate_fmdemod, sample_rate_pcm)
 
       // Construct 19kHz pilot signal cut filter
       ,
@@ -290,8 +290,8 @@ FmDecoder::FmDecoder(double sample_rate_demod, bool stereo, double deemphasis,
 
       // Construct PilotPhaseLock
       ,
-      m_pilotpll(pilot_freq / m_sample_rate_mpx, // freq
-                 50 / m_sample_rate_mpx,         // bandwidth
+      m_pilotpll(pilot_freq / m_sample_rate_fmdemod, // freq
+                 50 / m_sample_rate_fmdemod,         // bandwidth
                  0.01)                           // minsignal (was 0.04)
 
       // Construct HighPassFilterIir
@@ -320,10 +320,7 @@ void FmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
 
   // Compensate 0th-hold aperture effect
   // by applying the equalizer to the discriminator output.
-  m_disceq.process(m_buf_baseband_raw, m_buf_baseband_mpx);
-
-  // Downsample decoded MPX signal to 192kHz (48kHz * 4).
-  m_audioresampler_mpx.process(m_buf_baseband_mpx, m_buf_baseband);
+  m_disceq.process(m_buf_baseband_raw, m_buf_baseband);
 
   // If no downsampled baseband signal comes out,
   // terminate and wait for next block,

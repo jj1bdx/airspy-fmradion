@@ -45,7 +45,7 @@
 #include "SoftFM.h"
 #include "util.h"
 
-#define AIRSPY_FMRADION_VERSION "v0.7.0"
+#define AIRSPY_FMRADION_VERSION "v0.7.1-pre0"
 
 /** Flag is set on SIGINT / SIGTERM. */
 static std::atomic_bool stop_flag(false);
@@ -594,7 +594,7 @@ int main(int argc, char **argv) {
   bool enable_downsampling = true;
   double if_decimation_ratio = 1.0;
   double fm_target_rate;
-  double am_target_rate = 24000.0;
+  double am_target_rate = AmDecoder::internal_rate_pcm;
   double nbfm_target_rate;
 
   switch (filtertype) {
@@ -641,6 +641,10 @@ int main(int argc, char **argv) {
   // Configure if_decimation_ratio.
   switch (modtype) {
   case ModType::FM:
+    // the target_rate should not exceed the target rate
+    if (fm_target_rate > ifrate) {
+      fm_target_rate = ifrate;
+    }
     if_decimation_ratio = ifrate / fm_target_rate;
     break;
   case ModType::AM:
@@ -697,6 +701,7 @@ int main(int argc, char **argv) {
   IfResampler if_resampler(ifrate,          // input_rate
                            demodulator_rate // output_rate
   );
+  enable_downsampling = (ifrate != demodulator_rate);
 
   // Prepare FM decoder.
   FmDecoder fm(demodulator_rate, // sample_rate_demod
