@@ -72,7 +72,7 @@ public:
     }
     if (!m_queue.empty()) {
       m_qlen -= m_queue.front().size();
-      swap(ret, m_queue.front());
+      std::swap(ret, m_queue.front());
       m_queue.pop();
     }
     return ret;
