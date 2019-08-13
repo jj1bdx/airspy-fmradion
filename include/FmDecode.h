@@ -88,6 +88,9 @@ public:
   /** Return PPS events from the most recently processed block. */
   std::vector<PpsEvent> get_pps_events() const { return m_pps_events; }
 
+  // Erase the first PPS event.
+  void erase_first_pps_event() { m_pps_events.erase(m_pps_events.begin()); }
+
 private:
   Sample m_minfreq, m_maxfreq;
   Sample m_phasor_b0, m_phasor_a1, m_phasor_a2;
@@ -159,6 +162,9 @@ public:
   std::vector<PilotPhaseLock::PpsEvent> get_pps_events() const {
     return m_pilotpll.get_pps_events();
   }
+
+  // Erase the first PPS event.
+  void erase_first_pps_event() { m_pilotpll.erase_first_pps_event(); }
 
 private:
   /** Demodulate stereo L-R signal. */

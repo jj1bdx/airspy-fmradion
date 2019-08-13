@@ -122,6 +122,10 @@ void PilotPhaseLock::process(const SampleVector &samples_in,
 
   if (n > 0) {
     m_pilot_level = 1000.0;
+  } else {
+    // n == 0
+    // Do nothing when the input size is 0
+    return;
   }
 
   for (unsigned int i = 0; i < n; i++) {

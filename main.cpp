@@ -957,6 +957,8 @@ int main(int argc, char **argv) {
                   std::to_string(ev.pps_index).c_str(),
                   std::to_string(ev.sample_index).c_str(), ts);
           fflush(ppsfile);
+          // Erase the marked event.
+          fm.erase_first_pps_event();
         }
         break;
       case ModType::AM:
