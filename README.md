@@ -1,6 +1,6 @@
 # airspy-fmradion
 
-* Version v0.7.0, 13-AUG-2019
+* Version v0.7.1-pre0, 13-AUG-2019
 * For MacOS and Linux
 
 ### Known issues
@@ -157,7 +157,6 @@ Compile and install
 
 ### Audio and IF downsampling is now performed by libsoxr
 
-* Output of FM demodulator is downsampled by libsoxr to 192kHz
 * Output of the stereo decoder is downsampled by libsoxr to 48kHz
 * Quality: `SOXR_VHQ`
 * 19kHz cut LPF implemented for post-processing libsoxr output
