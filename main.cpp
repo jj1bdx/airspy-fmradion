@@ -519,6 +519,10 @@ int main(int argc, char **argv) {
     // Calculate nr of samples for configured buffer length.
     outputbuf_samples = (unsigned int)(bufsecs * pcmrate);
   }
+  if (outputbuf_samples < 1024) {
+    // Set minimum limit for the output buffer length.
+    outputbuf_samples = 1024;
+  }
   fprintf(stderr, "output buffer length: %g [s]\n",
           outputbuf_samples / double(pcmrate));
 
