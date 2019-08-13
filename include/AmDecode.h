@@ -107,12 +107,13 @@ private:
   double m_if_agc_reference;
   double m_if_agc_max_gain;
 
-  IQSampleVector m_buf_downsampled;
-  IQSampleVector m_buf_downsampled2;
-  IQSampleVector m_buf_downsampled2a;
-  IQSampleVector m_buf_downsampled2b;
-  IQSampleVector m_buf_downsampled2c;
-  IQSampleVector m_buf_downsampled3;
+  IQSampleVector m_buf_filtered;
+  IQSampleVector m_buf_filtered2;
+  IQSampleVector m_buf_filtered2a;
+  IQSampleVector m_buf_filtered2b;
+  IQSampleVector m_buf_filtered2c;
+  IQSampleVector m_buf_filtered3;
+  IQSampleVector m_buf_filtered4;
   SampleVector m_buf_baseband_demod;
   SampleVector m_buf_baseband;
   SampleVector m_buf_mono;

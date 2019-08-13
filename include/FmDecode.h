@@ -187,7 +187,6 @@ private:
 
   // Data members.
   const double m_sample_rate_fmdemod;
-  const double m_sample_rate_mpx;
   const bool m_pilot_shift;
   const bool m_stereo_enabled;
   bool m_stereo_detected;
@@ -204,7 +203,6 @@ private:
   SampleVector m_buf_stereo_firstout;
   SampleVector m_buf_stereo;
 
-  AudioResampler m_audioresampler_mpx;
   AudioResampler m_audioresampler_mono;
   AudioResampler m_audioresampler_stereo;
   LowPassFilterFirAudio m_pilotcut_mono;

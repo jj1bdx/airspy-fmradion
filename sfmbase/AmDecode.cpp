@@ -132,48 +132,47 @@ AmDecoder::AmDecoder(double sample_rate_demod, IQSampleCoeff &amfilter_coeff,
 void AmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
 
   // Apply narrower filters
-  m_amfilter.process(samples_in, m_buf_downsampled);
+  m_amfilter.process(samples_in, m_buf_filtered);
 
   // Shift Fs/4 and filter Fs/4~Fs/2 frequency bandwidth only
   switch (m_mode) {
   case ModType::USB:
-    m_upshifter.process(m_buf_downsampled, m_buf_downsampled2a);
-    m_ssbshiftfilter.process(m_buf_downsampled2a, m_buf_downsampled2b);
-    m_downshifter.process(m_buf_downsampled2b, m_buf_downsampled);
+    m_upshifter.process(m_buf_filtered, m_buf_filtered2a);
+    m_ssbshiftfilter.process(m_buf_filtered2a, m_buf_filtered2b);
+    m_downshifter.process(m_buf_filtered2b, m_buf_filtered3);
     break;
   case ModType::LSB:
-    m_downshifter.process(m_buf_downsampled, m_buf_downsampled2a);
-    m_ssbshiftfilter.process(m_buf_downsampled2a, m_buf_downsampled2b);
-    m_upshifter.process(m_buf_downsampled2b, m_buf_downsampled);
+    m_downshifter.process(m_buf_filtered, m_buf_filtered2a);
+    m_ssbshiftfilter.process(m_buf_filtered2a, m_buf_filtered2b);
+    m_upshifter.process(m_buf_filtered2b, m_buf_filtered3);
     break;
   case ModType::CW:
-    m_cw_downsampler.process(m_buf_downsampled, m_buf_downsampled2a);
+    m_cw_downsampler.process(m_buf_filtered, m_buf_filtered2a);
     // If no downsampled signal comes out, terminate and wait for next block.
-    if (m_buf_downsampled2a.size() == 0) {
+    if (m_buf_filtered2a.size() == 0) {
       audio.resize(0);
       return;
     }
-    m_cwshiftfilter.process(m_buf_downsampled2a, m_buf_downsampled2b);
+    m_cwshiftfilter.process(m_buf_filtered2a, m_buf_filtered2b);
     // CW pitch: 500Hz
-    m_upshifter_cw.process(m_buf_downsampled2b, m_buf_downsampled2c);
-    m_cw_upsampler.process(m_buf_downsampled2c, m_buf_downsampled);
+    m_upshifter_cw.process(m_buf_filtered2b, m_buf_filtered2c);
+    m_cw_upsampler.process(m_buf_filtered2c, m_buf_filtered3);
+    // If no upsampled signal comes out, terminate and wait for next block.
+    if (m_buf_filtered3.size() == 0) {
+      audio.resize(0);
+      return;
+    }
     break;
   default:
-    // Do nothing here
+    m_buf_filtered3 = std::move(m_buf_filtered);
     break;
-  }
-
-  // If no processed signal comes out, terminate and wait for next block.
-  if (m_buf_downsampled.size() == 0) {
-    audio.resize(0);
-    return;
   }
 
   // Measure IF RMS level.
-  m_if_rms = rms_level_approx(m_buf_downsampled);
+  m_if_rms = rms_level_approx(m_buf_filtered3);
 
   // If AGC
-  if_agc(m_buf_downsampled, m_buf_downsampled3);
+  if_agc(m_buf_filtered3, m_buf_filtered4);
 
   // Demodulate AM/DSB signal.
   switch (m_mode) {
@@ -186,13 +185,13 @@ void AmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
     assert(m_mode != ModType::NBFM);
     break;
   case ModType::AM:
-    demodulate_am(m_buf_downsampled3, m_buf_baseband_demod);
+    demodulate_am(m_buf_filtered4, m_buf_baseband_demod);
     break;
   case ModType::DSB:
   case ModType::USB:
   case ModType::LSB:
   case ModType::CW:
-    demodulate_dsb(m_buf_downsampled3, m_buf_baseband_demod);
+    demodulate_dsb(m_buf_filtered4, m_buf_baseband_demod);
     break;
   }
 
