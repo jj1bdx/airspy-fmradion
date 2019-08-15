@@ -21,8 +21,8 @@
 #define SOFTFM_MULTIPATHFILTER_H
 
 #include "SoftFM.h"
-#include <vector>
 #include <boost/circular_buffer.hpp>
+#include <vector>
 
 typedef std::complex<float> MfCoeff;
 typedef std::vector<MfCoeff> MfCoeffVector;
