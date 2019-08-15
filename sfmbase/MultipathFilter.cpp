@@ -22,6 +22,12 @@
 
 #include "MultipathFilter.h"
 
+// Multipath adaptive filter construction method reference in Japanese:
+// Takashi Mochizuki, and Mitsutoshi Hatori, "Automatic Cancelling of FM
+// Multipath Distortion Using and Adaptive Digital Filter", The Journal of the
+// Institute of Television Engineers of Japan, Vol. 39, No. 3, pp. 228-234
+// (1985). https://doi.org/10.3169/itej1978.39.228
+
 // Class MultipathFilter
 // Complex adaptive filter for reducing FM multipath.
 
