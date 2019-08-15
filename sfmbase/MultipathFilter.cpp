@@ -57,10 +57,9 @@ inline IQSample MultipathFilter::single_process(const IQSample filter_input) {
 }
 
 // Update coefficients by complex LMS/CMA method.
-inline void MultipathFilter::update_coeff(const IQSample result,
-                                          double reference_level) {
+inline void MultipathFilter::update_coeff(const IQSample result) {
   double env = std::norm(result);
-  double error = env - reference_level;
+  double error = env - m_reference_level;
   // This value should be kept the same
   const double alpha = 0.00002;
 
@@ -84,7 +83,7 @@ void MultipathFilter::process(const IQSampleVector &samples_in,
     IQSample output = single_process(samples_in[i]);
     samples_out[i] = output;
     // Update filter coefficients here
-    update_coeff(output, m_reference_level);
+    update_coeff(output);
   }
   assert(i == samples_out.size());
 }

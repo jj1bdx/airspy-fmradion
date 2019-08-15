@@ -43,7 +43,7 @@ private:
   inline IQSample single_process(const IQSample filter_input);
 
   // Update coefficient.
-  inline void update_coeff(const IQSample result, double reference_level);
+  inline void update_coeff(const IQSample result);
 
   // Data members.
   unsigned int m_stages;

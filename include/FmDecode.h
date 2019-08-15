@@ -137,7 +137,7 @@ public:
    *                   :: (for multipath distortion detection)
    */
   FmDecoder(double sample_rate_demod, bool stereo, double deemphasis,
-                bool pilot_shift, bool multipath_filter);
+            bool pilot_shift, bool multipath_filter);
   /**
    * Process IQ samples and return audio samples.
    *
