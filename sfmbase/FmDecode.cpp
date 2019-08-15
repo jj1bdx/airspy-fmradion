@@ -254,11 +254,12 @@ const double FmDecoder::default_deemphasis_na = 75; // USA/Canada
 const double FmDecoder::if_target_level = 1.0;
 
 FmDecoder::FmDecoder(double sample_rate_demod, bool stereo, double deemphasis,
-                     bool pilot_shift)
+                     bool pilot_shift, bool multipath_filter)
     // Initialize member fields
     : m_sample_rate_fmdemod(sample_rate_demod), m_pilot_shift(pilot_shift),
-      m_stereo_enabled(stereo), m_stereo_detected(false), m_baseband_mean(0),
-      m_baseband_level(0), m_if_rms(0.0)
+      m_multipath_filter(multipath_filter), m_stereo_enabled(stereo),
+      m_stereo_detected(false), m_baseband_mean(0), m_baseband_level(0),
+      m_if_rms(0.0)
 
       // Construct AudioResampler for mono and stereo channels
       ,
@@ -322,8 +323,12 @@ void FmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
   // Perform IF AGC.
   m_ifagc.process(samples_in, m_samples_in_after_agc);
 
-  // Apply multipath filter.
-  m_multipathfilter.process(m_samples_in_after_agc, m_samples_in_filtered);
+  if (m_multipath_filter) {
+    // Apply multipath filter.
+    m_multipathfilter.process(m_samples_in_after_agc, m_samples_in_filtered);
+  } else {
+    m_samples_in_filtered = std::move(m_samples_in_after_agc);
+  }
 
   // Measure IF RMS level after IF AGC and the filter.
   m_if_rms_after_agc = rms_level_approx(m_samples_in_filtered);

@@ -1,6 +1,6 @@
 # airspy-fmradion
 
-* Version v0.7.1-pre1, 15-AUG-2019
+* Version v0.7.2, 15-AUG-2019
 * For MacOS and Linux
 
 ### Known issues
@@ -146,6 +146,8 @@ Compile and install
  - `-f` Set Filter type
    - for FM: default: +-176kHz, middle: +-145kHz, narrow: +-112kHz
    - for AM: default: +-6kHz, middle: +-4kHz, narrow: +-3kHz
+ - `-l dB` Set IF squelch level to minus given value of dB
+ - `-E` Enable multipath filter for FM (For stable reception only: turn off if reception becomes unstable)
 
 ## Major changes
 
@@ -170,9 +172,13 @@ Compile and install
 * libm `atan2()` allows only approx. 0.5 ULP as the max error for macOS 10.14.5, measured by using the code from ["Error analysis of system mathematical functions
 " by Gaston H. Gonnet](http://www-oldurls.inf.ethz.ch/personal/gonnet/FPAccuracy/Analysis.html) (1 ULP for macOS 64bit `double` = 2^(-53) = approx. 10^(15.95))
 
+### FM multipath filter
+
+* An LMS-based multipath filter can be enabled after IF AGC
+* 40 IF sample stages before and ahead
+
 ## No-goals
 
-* Adaptive IF filtering (unable to obtain better results)
 * CIC filters for the IF 1st stage (unable to explore parallelism, too complex to compensate)
 
 ## Filter design documentation

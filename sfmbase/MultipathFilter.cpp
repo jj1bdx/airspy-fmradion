@@ -29,7 +29,6 @@ MultipathFilter::MultipathFilter(unsigned int stages, double reference_level)
     : m_stages(stages), m_filter_order((m_stages * 2) + 1),
       m_coeff(m_filter_order), m_state(m_filter_order),
       m_reference_level(reference_level) {
-  fprintf(stderr, "m_filter_order = %d\n", m_filter_order);
   assert(stages > 0);
   for (unsigned int i = 0; i < m_filter_order; i++) {
     m_coeff[i] = MfCoeff(0, 0);
