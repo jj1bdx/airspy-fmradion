@@ -250,6 +250,8 @@ const double FmDecoder::pilot_freq = 19000;
 const double FmDecoder::default_deemphasis = 50;
 const double FmDecoder::default_deemphasis_eu = 50; // Europe and Japan
 const double FmDecoder::default_deemphasis_na = 75; // USA/Canada
+// IF AGC target level
+const double FmDecoder::if_target_level = 1.0;
 
 FmDecoder::FmDecoder(double sample_rate_demod, bool stereo, double deemphasis,
                      bool pilot_shift)
@@ -299,7 +301,9 @@ FmDecoder::FmDecoder(double sample_rate_demod, bool stereo, double deemphasis,
       m_deemph_stereo(
           (deemphasis == 0) ? 1.0 : (deemphasis * sample_rate_pcm * 1.0e-6))
 
-{
+      // Construct IF AGC
+      ,
+      m_ifagc(1.0, 10000.0, if_target_level * 2, 0.001) {
   // Do nothing
 }
 
@@ -308,8 +312,14 @@ void FmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
   // Measure IF RMS level.
   m_if_rms = rms_level_approx(samples_in);
 
+  // Perform IF AGC.
+  m_ifagc.process(samples_in, m_samples_in_after_agc);
+
+  // Measure IF RMS level after IF AGC.
+  m_if_rms_after_agc = rms_level_approx(m_samples_in_after_agc);
+
   // Demodulate FM to MPX signal.
-  m_phasedisc.process(samples_in, m_buf_baseband_raw);
+  m_phasedisc.process(m_samples_in_after_agc, m_buf_baseband_raw);
 
   // Compensate 0th-hold aperture effect
   // by applying the equalizer to the discriminator output.

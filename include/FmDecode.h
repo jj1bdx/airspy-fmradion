@@ -27,6 +27,7 @@
 #include "EqParameters.h"
 #include "Filter.h"
 #include "FilterParameters.h"
+#include "IfAgc.h"
 #include "PhaseDiscriminator.h"
 #include "SoftFM.h"
 #include "util.h"
@@ -119,6 +120,7 @@ public:
   static const double default_deemphasis;
   static const double default_deemphasis_eu;
   static const double default_deemphasis_na;
+  static const double if_target_level;
 
   /**
    * Construct FM decoder.
@@ -158,6 +160,9 @@ public:
   // Return RMS IF level.
   double get_if_rms() const { return m_if_rms; }
 
+  // Return RMS IF level after IF AGC.
+  double get_if_rms_after_agc() const { return m_if_rms_after_agc; }
+
   /** Return PPS events from the most recently processed block. */
   std::vector<PilotPhaseLock::PpsEvent> get_pps_events() const {
     return m_pilotpll.get_pps_events();
@@ -193,9 +198,10 @@ private:
   double m_baseband_mean;
   double m_baseband_level;
   double m_if_rms;
+  double m_if_rms_after_agc;
 
+  IQSampleVector m_samples_in_after_agc;
   SampleVector m_buf_baseband;
-  SampleVector m_buf_baseband_mpx;
   SampleVector m_buf_baseband_raw;
   SampleVector m_buf_mono_firstout;
   SampleVector m_buf_mono;
@@ -215,6 +221,7 @@ private:
   HighPassFilterIir m_dcblock_stereo;
   LowPassFilterRC m_deemph_mono;
   LowPassFilterRC m_deemph_stereo;
+  IfAgc m_ifagc;
 };
 
 #endif
