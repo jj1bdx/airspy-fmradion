@@ -22,6 +22,7 @@
 
 #include "SoftFM.h"
 #include <vector>
+#include <boost/circular_buffer.hpp>
 
 typedef std::complex<float> MfCoeff;
 typedef std::vector<MfCoeff> MfCoeffVector;
@@ -49,7 +50,7 @@ private:
   unsigned int m_stages;
   unsigned int m_filter_order;
   MfCoeffVector m_coeff;
-  IQSampleVector m_state;
+  boost::circular_buffer<IQSample> m_state;
   double m_reference_level;
 };
 

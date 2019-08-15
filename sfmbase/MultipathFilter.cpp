@@ -45,10 +45,7 @@ MultipathFilter::MultipathFilter(unsigned int stages, double reference_level)
 
 // Apply a simple FIR filter for each input.
 inline IQSample MultipathFilter::single_process(const IQSample filter_input) {
-  // Add new input to the last element of m_state
-  // and remove the top element
-  m_state.emplace_back(filter_input);
-  m_state.erase(m_state.begin());
+  m_state.push_back(filter_input);
   IQSample output = IQSample(0, 0);
   for (unsigned int i = 0; i < m_filter_order; i++) {
     output += m_state[i] * m_coeff[i];
@@ -58,13 +55,16 @@ inline IQSample MultipathFilter::single_process(const IQSample filter_input) {
 
 // Update coefficients by complex LMS/CMA method.
 inline void MultipathFilter::update_coeff(const IQSample result) {
-  double env = std::norm(result);
-  double error = env - m_reference_level;
   // This value should be kept the same
   const double alpha = 0.00002;
+  // Input instant envelope
+  const double env = std::norm(result);
+  // error = [desired signal] - [filter output]
+  const double error = m_reference_level - env;
+  const MfCoeff factor = MfCoeff(alpha * error, 0);
 
   for (unsigned int i = 0; i < m_filter_order; i++) {
-    m_coeff[i] -= MfCoeff(alpha * error, 0) * result * std::conj(m_state[i]);
+    m_coeff[i] += factor * result * std::conj(m_state[i]);
   }
   m_coeff[m_stages] = MfCoeff(m_coeff[m_stages].real(), 0);
 }
