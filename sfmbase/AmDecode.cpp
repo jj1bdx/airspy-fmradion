@@ -17,34 +17,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// For the af_agc and if_agc functions:
-/*
-This software is part of libcsdr, a set of simple DSP routines for
-Software Defined Radio.
-Copyright (c) 2014, Andras Retzler <randras@sdr.hu>
-All rights reserved.
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
-    * Redistributions of source code must retain the above copyright
-      notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above copyright
-      notice, this list of conditions and the following disclaimer in the
-      documentation and/or other materials provided with the distribution.
-    * Neither the name of the copyright holder nor the
-      names of its contributors may be used to endorse or promote products
-      derived from this software without specific prior written permission.
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL ANDRAS RETZLER BE LIABLE FOR ANY
-DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*/
-
 #include <cassert>
 #include <cmath>
 
@@ -66,10 +38,7 @@ AmDecoder::AmDecoder(double sample_rate_demod, IQSampleCoeff &amfilter_coeff,
                      const ModType mode)
     // Initialize member fields
     : m_sample_rate_demod(sample_rate_demod), m_amfilter_coeff(amfilter_coeff),
-      m_mode(mode), m_baseband_mean(0), m_baseband_level(0), m_if_rms(0.0),
-      m_af_agc_current_gain(1.0), m_af_agc_rate(0.01), m_af_agc_reference(1.0),
-      m_af_agc_max_gain(5.0), m_if_agc_current_gain(1.0), m_if_agc_rate(0.002),
-      m_if_agc_reference(0.7), m_if_agc_max_gain(100000.0)
+      m_mode(mode), m_baseband_mean(0), m_baseband_level(0), m_if_rms(0.0)
 
       // Construct AudioResampler
       ,
@@ -113,20 +82,31 @@ AmDecoder::AmDecoder(double sample_rate_demod, IQSampleCoeff &amfilter_coeff,
       ,
       m_deemph(default_deemphasis * sample_rate_pcm * 1.0e-6)
 
-{
-  switch (m_mode) {
-  // Reduce output level for SSB to prevent clipping
-  case ModType::USB:
-  case ModType::LSB:
-    m_af_agc_reference = 0.5;
-    m_if_agc_reference = 0.25;
-    break;
-  case ModType::CW:
-    m_af_agc_reference = 0.25;
-    m_if_agc_reference = 0.2;
-  default:
-    break;
-  }
+      // Construct AF AGC
+      ,
+      m_afagc(1.0, // initial_gain
+              5.0, // max_gain
+              // reference
+              ((m_mode == ModType::USB) || (m_mode == ModType::LSB))
+                  ? 0.5
+                  : (m_mode == ModType::CW) ? 0.25
+                                            // default value
+                                            : 1.0,
+              0.01 // rate
+              )
+      // Construct IF AGC
+
+      ,
+      m_ifagc(1.0,      // initial_gain
+              100000.0, // max_gain
+              ((m_mode == ModType::USB) || (m_mode == ModType::LSB))
+                  ? 0.25
+                  : (m_mode == ModType::CW) ? 0.2
+                                            // default value
+                                            : 0.7,
+              0.002 // rate
+      ) {
+  // Do nothing
 }
 
 void AmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
@@ -172,7 +152,7 @@ void AmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
   m_if_rms = rms_level_approx(m_buf_filtered3);
 
   // If AGC
-  if_agc(m_buf_filtered3, m_buf_filtered4);
+  m_ifagc.process(m_buf_filtered3, m_buf_filtered4);
 
   // Demodulate AM/DSB signal.
   switch (m_mode) {
@@ -199,7 +179,7 @@ void AmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
   m_dcblock.process_inplace(m_buf_baseband_demod);
 
   // Audio AGC
-  af_agc(m_buf_baseband_demod, m_buf_baseband);
+  m_afagc.process(m_buf_baseband_demod, m_buf_baseband);
 
   // Measure baseband level after DC blocking.
   double baseband_mean, baseband_rms;
@@ -243,60 +223,6 @@ inline void AmDecoder::demodulate_dsb(const IQSampleVector &samples_in,
   for (unsigned int i = 0; i < n; i++) {
     samples_out[i] = samples_in[i].real();
   }
-}
-
-// IF AGC.
-// Algorithm: function simple_agc_ff() in
-// https://github.com/simonyiszk/csdr/blob/master/libcsdr.c
-inline void AmDecoder::if_agc(const IQSampleVector &samples_in,
-                              IQSampleVector &samples_out) {
-  double rate = m_if_agc_rate;
-  double rate_1minus = 1 - rate;
-  unsigned int n = samples_in.size();
-  samples_out.resize(n);
-
-  for (unsigned int i = 0; i < n; i++) {
-    double amplitude = std::abs(samples_in[i]);
-    double ideal_gain = m_if_agc_reference / amplitude;
-    if (ideal_gain > m_if_agc_max_gain) {
-      ideal_gain = m_if_agc_max_gain;
-    }
-    if (ideal_gain <= 0) {
-      ideal_gain = 0;
-    }
-    m_if_agc_current_gain = ((ideal_gain - m_if_agc_current_gain) * rate) +
-                            (m_if_agc_current_gain * rate_1minus);
-    samples_out[i] = IQSample(samples_in[i].real() * m_if_agc_current_gain,
-                              samples_in[i].imag() * m_if_agc_current_gain);
-  }
-  // fprintf(stderr, "m_if_agc_current_gain = %f\n", m_if_agc_current_gain);
-}
-
-// AF AGC.
-// Algorithm: function simple_agc_ff() in
-// https://github.com/simonyiszk/csdr/blob/master/libcsdr.c
-inline void AmDecoder::af_agc(const SampleVector &samples_in,
-                              SampleVector &samples_out) {
-  double rate = m_af_agc_rate;
-  double rate_1minus = 1 - rate;
-  unsigned int n = samples_in.size();
-  samples_out.resize(n);
-
-  for (unsigned int i = 0; i < n; i++) {
-    double amplitude = fabs(samples_in[i]);
-    double ideal_gain = m_af_agc_reference / amplitude;
-    if (ideal_gain > m_af_agc_max_gain) {
-      ideal_gain = m_af_agc_max_gain;
-    }
-    if (ideal_gain <= 0) {
-      ideal_gain = 0;
-    }
-    m_af_agc_current_gain = ((ideal_gain - m_af_agc_current_gain) * rate) +
-                            (m_af_agc_current_gain * rate_1minus);
-    double output_amplitude = samples_in[i] * m_af_agc_current_gain;
-    samples_out[i] = output_amplitude;
-  }
-  // fprintf(stderr, "m_af_agc_current_gain = %f\n", m_af_agc_current_gain);
 }
 
 // end

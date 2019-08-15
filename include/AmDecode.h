@@ -23,11 +23,13 @@
 #include <cstdint>
 #include <vector>
 
+#include "AfAgc.h"
 #include "AudioResampler.h"
 #include "EqParameters.h"
 #include "Filter.h"
 #include "FilterParameters.h"
 #include "FourthConverterIQ.h"
+#include "IfAgc.h"
 #include "IfResampler.h"
 #include "SoftFM.h"
 #include "util.h"
@@ -57,11 +59,11 @@ public:
   // Return RMS baseband signal level (where nominal level is 0.707).
   double get_baseband_level() const { return m_baseband_level; }
 
-  // Return Audio AGC last gain.
-  double get_agc_last_gain() const { return m_af_agc_current_gain; }
+  // Return AF AGC current gain.
+  double get_af_agc_current_gain() const { return m_afagc.get_current_gain(); }
 
   // Return IF AGC current gain.
-  double get_if_agc_current_gain() const { return m_if_agc_current_gain; }
+  double get_if_agc_current_gain() const { return m_ifagc.get_current_gain(); }
 
   // Return RMS IF level.
   double get_if_rms() const { return m_if_rms; }
@@ -90,23 +92,6 @@ private:
   double m_baseband_level;
   double m_if_rms;
 
-  SampleVector m_agc_buf1;
-  SampleVector m_agc_buf2;
-  double m_agc_last_gain;
-  double m_agc_peak1;
-  double m_agc_peak2;
-  double m_agc_reference;
-
-  double m_af_agc_current_gain;
-  double m_af_agc_rate;
-  double m_af_agc_reference;
-  double m_af_agc_max_gain;
-
-  double m_if_agc_current_gain;
-  double m_if_agc_rate;
-  double m_if_agc_reference;
-  double m_if_agc_max_gain;
-
   IQSampleVector m_buf_filtered;
   IQSampleVector m_buf_filtered2;
   IQSampleVector m_buf_filtered2a;
@@ -130,6 +115,8 @@ private:
   LowPassFilterFirIQ m_cwshiftfilter;
   HighPassFilterIir m_dcblock;
   LowPassFilterRC m_deemph;
+  AfAgc m_afagc;
+  IfAgc m_ifagc;
 };
 
 #endif
