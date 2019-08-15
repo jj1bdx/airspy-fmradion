@@ -133,11 +133,11 @@ public:
    * pilot_shift       :: True to shift pilot signal phase
    *                   :: (use cos(2*x) instead of sin (2*x))
    *                   :: (for multipath distortion detection)
-   * multipath_filter  :: True to enable multipath filter
-   *                   :: (for multipath distortion detection)
+   * multipath_stages  :: Set >0 to enable multipath filter
+   *                   :: (LMS adaptive filter stage number)
    */
   FmDecoder(double sample_rate_demod, bool stereo, double deemphasis,
-            bool pilot_shift, bool multipath_filter);
+            bool pilot_shift, unsigned int multipath_stages);
   /**
    * Process IQ samples and return audio samples.
    *
@@ -196,7 +196,8 @@ private:
   // Data members.
   const double m_sample_rate_fmdemod;
   const bool m_pilot_shift;
-  const bool m_multipath_filter;
+  const bool m_enable_multipath_filter;
+  const unsigned int m_multipath_stages;
   const bool m_stereo_enabled;
   bool m_stereo_detected;
   double m_baseband_mean;

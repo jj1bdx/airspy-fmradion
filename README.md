@@ -1,6 +1,6 @@
 # airspy-fmradion
 
-* Version v0.7.2, 15-AUG-2019
+* Version v0.7.2-pre0, 15-AUG-2019
 * For MacOS and Linux
 
 ### Known issues
@@ -147,7 +147,7 @@ Compile and install
    - for FM: default: +-176kHz, middle: +-145kHz, narrow: +-112kHz
    - for AM: default: +-6kHz, middle: +-4kHz, narrow: +-3kHz
  - `-l dB` Set IF squelch level to minus given value of dB
- - `-E` Enable multipath filter for FM (For stable reception only: turn off if reception becomes unstable)
+ - `-E stages` Enable multipath filter for FM (For stable reception only: turn off if reception becomes unstable)
 
 ## Major changes
 

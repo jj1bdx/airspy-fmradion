@@ -254,10 +254,11 @@ const double FmDecoder::default_deemphasis_na = 75; // USA/Canada
 const double FmDecoder::if_target_level = 1.0;
 
 FmDecoder::FmDecoder(double sample_rate_demod, bool stereo, double deemphasis,
-                     bool pilot_shift, bool multipath_filter)
+                     bool pilot_shift, unsigned int multipath_stages)
     // Initialize member fields
     : m_sample_rate_fmdemod(sample_rate_demod), m_pilot_shift(pilot_shift),
-      m_multipath_filter(multipath_filter), m_stereo_enabled(stereo),
+      m_enable_multipath_filter((multipath_stages > 0)),
+      m_multipath_stages(multipath_stages), m_stereo_enabled(stereo),
       m_stereo_detected(false), m_baseband_mean(0), m_baseband_level(0),
       m_if_rms(0.0)
 
@@ -307,9 +308,10 @@ FmDecoder::FmDecoder(double sample_rate_demod, bool stereo, double deemphasis,
       m_ifagc(1.0, 10000.0, if_target_level * 2, 0.001)
 
       // Construct multipath filter
-      // for 384kHz IF: 104.17 microseconds (40/384000 * 1000000)
+      // for 384kHz IF: 288 -> 750 microseconds (288/384000 * 1000000)
       ,
-      m_multipathfilter(40, if_target_level)
+      m_multipathfilter(m_enable_multipath_filter ? m_multipath_stages : 1,
+                        if_target_level)
 
 {
   // Do nothing
@@ -323,7 +325,7 @@ void FmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
   // Perform IF AGC.
   m_ifagc.process(samples_in, m_samples_in_after_agc);
 
-  if (m_multipath_filter) {
+  if (m_enable_multipath_filter) {
     // Apply multipath filter.
     m_multipathfilter.process(m_samples_in_after_agc, m_samples_in_filtered);
   } else {

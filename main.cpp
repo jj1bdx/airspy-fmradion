@@ -45,7 +45,7 @@
 #include "SoftFM.h"
 #include "util.h"
 
-#define AIRSPY_FMRADION_VERSION "v0.7.1"
+#define AIRSPY_FMRADION_VERSION "v0.7.2-pre0"
 
 /** Flag is set on SIGINT / SIGTERM. */
 static std::atomic_bool stop_flag(false);
@@ -154,7 +154,7 @@ void usage() {
       "                   - medium:  +-4kHz\n"
       "                   - narrow:  +-3kHz\n"
       "  -l dB          Set IF squelch level to minus given value of dB\n"
-      "  -E             Enable multipath filter for FM\n"
+      "  -E stages      Enable multipath filter for FM\n"
       "                 (For stable reception only:\n"
       "                  turn off if reception becomes unstable)\n"
       "\n"
@@ -299,7 +299,7 @@ int main(int argc, char **argv) {
   double squelch_level_db = 150.0;
   bool pilot_shift = false;
   bool deemphasis_na = false;
-  bool enable_multipathfilter = false;
+  int multipathfilter_stages = 0;
   std::string config_str;
   std::string devtype_str;
   DevType devtype;
@@ -334,7 +334,7 @@ int main(int argc, char **argv) {
                                     {NULL, 0, NULL, 0}};
 
   int c, longindex;
-  while ((c = getopt_long(argc, argv, "m:t:c:d:MR:F:W:f:l:P::T:b:qXUE",
+  while ((c = getopt_long(argc, argv, "m:t:c:d:MR:F:W:f:l:P::T:b:qXUE:",
                           longopts, &longindex)) >= 0) {
     switch (c) {
     case 'm':
@@ -398,7 +398,10 @@ int main(int argc, char **argv) {
       deemphasis_na = true;
       break;
     case 'E':
-      enable_multipathfilter = true;
+      if (!parse_int(optarg, multipathfilter_stages) ||
+          multipathfilter_stages < 1) {
+        badarg("-E");
+      }
       break;
     default:
       usage();
@@ -716,11 +719,12 @@ int main(int argc, char **argv) {
   enable_downsampling = (ifrate != demodulator_rate);
 
   // Prepare FM decoder.
-  FmDecoder fm(demodulator_rate,      // sample_rate_demod
-               stereo,                // stereo
-               deemphasis,            // deemphasis,
-               pilot_shift,           // pilot_shift
-               enable_multipathfilter // multipath_filter
+  FmDecoder fm(demodulator_rate, // sample_rate_demod
+               stereo,           // stereo
+               deemphasis,       // deemphasis,
+               pilot_shift,      // pilot_shift
+               static_cast<unsigned int>(multipathfilter_stages)
+               // multipath_stages
   );
 
   IQSampleCoeff amfilter_coeff;
@@ -768,8 +772,9 @@ int main(int argc, char **argv) {
   }
   if (modtype == ModType::FM) {
     fprintf(stderr, "FM demodulator deemphasis: %.9g [µs]\n", deemphasis);
-    if (enable_multipathfilter) {
-      fprintf(stderr, "FM IF multipath filter enabled\n");
+    if (multipathfilter_stages > 0) {
+      fprintf(stderr, "FM IF multipath filter enabled, stages: %d\n",
+              multipathfilter_stages);
     }
   }
   fprintf(stderr, "Filter type: %s\n", filtertype_str.c_str());
@@ -947,8 +952,8 @@ int main(int argc, char **argv) {
                   block, ppm_value_average, if_level_db, audio_level_db,
                   buflen_sec);
           if (modtype == ModType::FM) {
-            fprintf(stderr, ":IF_AGC=%+6.2fdB",
-                    20 * log10(fm.get_if_rms_after_agc()));
+            fprintf(stderr, ":IFdiff=%+7.3f",
+                    fm.get_if_rms_after_agc() - FmDecoder::if_target_level);
           }
           fflush(stderr);
         }
