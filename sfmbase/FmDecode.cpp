@@ -254,8 +254,7 @@ const double FmDecoder::default_deemphasis_na = 75; // USA/Canada
 FmDecoder::FmDecoder(double sample_rate_demod, bool stereo, double deemphasis,
                      bool pilot_shift)
     // Initialize member fields
-    : m_sample_rate_fmdemod(sample_rate_demod),
-      m_pilot_shift(pilot_shift),
+    : m_sample_rate_fmdemod(sample_rate_demod), m_pilot_shift(pilot_shift),
       m_stereo_enabled(stereo), m_stereo_detected(false), m_baseband_mean(0),
       m_baseband_level(0), m_if_rms(0.0)
 
@@ -286,7 +285,7 @@ FmDecoder::FmDecoder(double sample_rate_demod, bool stereo, double deemphasis,
       ,
       m_pilotpll(pilot_freq / m_sample_rate_fmdemod, // freq
                  50 / m_sample_rate_fmdemod,         // bandwidth
-                 0.01)                           // minsignal (was 0.04)
+                 0.01)                               // minsignal (was 0.04)
 
       // Construct HighPassFilterIir
       // cutoff: 4.8Hz for 48kHz sampling rate
