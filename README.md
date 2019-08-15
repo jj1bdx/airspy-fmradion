@@ -1,6 +1,6 @@
 # airspy-fmradion
 
-* Version v0.7.1-pre0, 13-AUG-2019
+* Version v0.7.1-pre1, 15-AUG-2019
 * For MacOS and Linux
 
 ### Known issues
@@ -215,7 +215,11 @@ Compile and install
 * IF AGC: gain up to 100dB (100000)
 * Audio AGC: gain up to 7dB (5.0)
 * csdr's `fastagc_ff` is not applicable due to variable-length downsampled block output
-* TODO: an audio compression algorithm?
+* TODO: an audio level compression/limiting algorithm?
+
+## FM AGC
+
+* IF AGC: gain up to 80dB (10000)
 
 ## Airspy R2 / Mini modification from ngsoftfm-jj1bdx
 
