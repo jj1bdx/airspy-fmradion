@@ -23,20 +23,23 @@
 #include "MultipathFilter.h"
 
 // Class MultipathFilter
+// Complex adaptive filter for reducing FM multipath.
 
 MultipathFilter::MultipathFilter(unsigned int stages, double reference_level)
-    : m_filter_order((stages * 2) + 1), m_coeff(m_filter_order),
-      m_state(m_filter_order) {
+    : m_stages(stages), m_filter_order((m_stages * 2) + 1),
+      m_coeff(m_filter_order), m_state(m_filter_order),
+      m_reference_level(reference_level) {
   fprintf(stderr, "m_filter_order = %d\n", m_filter_order);
   assert(stages > 0);
   for (unsigned int i = 0; i < m_filter_order; i++) {
     m_coeff[i] = MfCoeff(0, 0);
     m_state[i] = IQSample(0, 0);
   }
-  m_coeff[stages] = MfCoeff(1, 0);
+  m_coeff[m_stages] = MfCoeff(1, 0);
 }
 
-IQSample MultipathFilter::single_process(const IQSample filter_input) {
+// Apply a simple FIR filter for each input.
+inline IQSample MultipathFilter::single_process(const IQSample filter_input) {
   // Add new input to the last element of m_state
   // and remove the top element
   m_state.emplace_back(filter_input);
@@ -48,8 +51,21 @@ IQSample MultipathFilter::single_process(const IQSample filter_input) {
   return output;
 }
 
-// Process samples.
-// Note: the coefficients are NOT NECESSARILY symmetric
+// Update coefficients by complex LMS/CMA method.
+inline void MultipathFilter::update_coeff(const IQSample result,
+                                          double reference_level) {
+  double env = std::norm(result);
+  double error = env - reference_level;
+  // This value should be kept the same
+  const double alpha = 0.00002;
+
+  for (unsigned int i = 0; i < m_filter_order; i++) {
+    m_coeff[i] -= MfCoeff(alpha * error, 0) * result * std::conj(m_state[i]);
+  }
+  m_coeff[m_stages] = MfCoeff(m_coeff[m_stages].real(), 0);
+}
+
+// Process block samples.
 void MultipathFilter::process(const IQSampleVector &samples_in,
                               IQSampleVector &samples_out) {
   unsigned int n = samples_in.size();
@@ -60,10 +76,11 @@ void MultipathFilter::process(const IQSampleVector &samples_in,
 
   unsigned int i = 0;
   for (; i < n; i++) {
-    samples_out[i] = single_process(samples_in[i]);
-    // TODO: update filter coefficients here
+    IQSample output = single_process(samples_in[i]);
+    samples_out[i] = output;
+    // Update filter coefficients here
+    update_coeff(output, m_reference_level);
   }
-
   assert(i == samples_out.size());
 }
 

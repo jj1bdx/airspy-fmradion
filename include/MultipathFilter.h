@@ -40,13 +40,17 @@ public:
 
 private:
   // Process single value.
-  IQSample single_process(const IQSample filter_input);
+  inline IQSample single_process(const IQSample filter_input);
+
+  // Update coefficient.
+  inline void update_coeff(const IQSample result, double reference_level);
 
   // Data members.
-  // complex coefficients
+  unsigned int m_stages;
   unsigned int m_filter_order;
   MfCoeffVector m_coeff;
   IQSampleVector m_state;
+  double m_reference_level;
 };
 
 #endif

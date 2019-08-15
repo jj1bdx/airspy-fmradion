@@ -306,8 +306,9 @@ FmDecoder::FmDecoder(double sample_rate_demod, bool stereo, double deemphasis,
       m_ifagc(1.0, 10000.0, if_target_level * 2, 0.001)
 
       // Construct multipath filter
+      // for 384kHz IF: 104.17 microseconds (40/384000 * 1000000)
       ,
-      m_multipathfilter(20, if_target_level)
+      m_multipathfilter(40, if_target_level)
 
 {
   // Do nothing
