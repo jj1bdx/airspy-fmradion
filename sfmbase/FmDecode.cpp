@@ -303,7 +303,13 @@ FmDecoder::FmDecoder(double sample_rate_demod, bool stereo, double deemphasis,
 
       // Construct IF AGC
       ,
-      m_ifagc(1.0, 10000.0, if_target_level * 2, 0.001) {
+      m_ifagc(1.0, 10000.0, if_target_level * 2, 0.001)
+
+      // Construct multipath filter
+      ,
+      m_multipathfilter(20, if_target_level)
+
+{
   // Do nothing
 }
 
@@ -315,11 +321,14 @@ void FmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
   // Perform IF AGC.
   m_ifagc.process(samples_in, m_samples_in_after_agc);
 
-  // Measure IF RMS level after IF AGC.
-  m_if_rms_after_agc = rms_level_approx(m_samples_in_after_agc);
+  // Apply multipath filter.
+  m_multipathfilter.process(m_samples_in_after_agc, m_samples_in_filtered);
+
+  // Measure IF RMS level after IF AGC and the filter.
+  m_if_rms_after_agc = rms_level_approx(m_samples_in_filtered);
 
   // Demodulate FM to MPX signal.
-  m_phasedisc.process(m_samples_in_after_agc, m_buf_baseband_raw);
+  m_phasedisc.process(m_samples_in_filtered, m_buf_baseband_raw);
 
   // Compensate 0th-hold aperture effect
   // by applying the equalizer to the discriminator output.

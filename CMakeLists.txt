@@ -140,6 +140,7 @@ set(sfmbase_SOURCES
     sfmbase/IfAgc.cpp
     sfmbase/IfDownsampler.cpp
     sfmbase/IfResampler.cpp
+    sfmbase/MultipathFilter.cpp
     sfmbase/NbfmDecode.cpp
     sfmbase/PhaseDiscriminator.cpp
 )
@@ -159,6 +160,7 @@ set(sfmbase_HEADERS
     include/IfDownsampler.h
     include/IfResampler.h
     include/MovingAverage.h
+    include/MultipathFilter.h
     include/NbfmDecode.h
     include/PhaseDiscriminator.h
     include/Source.h

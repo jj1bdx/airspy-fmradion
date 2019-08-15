@@ -28,6 +28,7 @@
 #include "Filter.h"
 #include "FilterParameters.h"
 #include "IfAgc.h"
+#include "MultipathFilter.h"
 #include "PhaseDiscriminator.h"
 #include "SoftFM.h"
 #include "util.h"
@@ -201,6 +202,7 @@ private:
   double m_if_rms_after_agc;
 
   IQSampleVector m_samples_in_after_agc;
+  IQSampleVector m_samples_in_filtered;
   SampleVector m_buf_baseband;
   SampleVector m_buf_baseband_raw;
   SampleVector m_buf_mono_firstout;
@@ -222,6 +224,7 @@ private:
   LowPassFilterRC m_deemph_mono;
   LowPassFilterRC m_deemph_stereo;
   IfAgc m_ifagc;
+  MultipathFilter m_multipathfilter;
 };
 
 #endif
