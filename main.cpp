@@ -951,10 +951,6 @@ int main(int argc, char **argv) {
                   "\rblk=%8d:ppm=%+6.2f:IF=%+6.1fdB:AF=%+6.1fdB:buf=%.2fs",
                   block, ppm_value_average, if_level_db, audio_level_db,
                   buflen_sec);
-          if (modtype == ModType::FM) {
-            fprintf(stderr, ":IFdiff=%+7.3f",
-                    fm.get_if_rms_after_agc() - FmDecoder::if_target_level);
-          }
           fflush(stderr);
         }
         break;

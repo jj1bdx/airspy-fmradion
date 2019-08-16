@@ -163,9 +163,6 @@ public:
   // Return RMS IF level.
   double get_if_rms() const { return m_if_rms; }
 
-  // Return RMS IF level after IF AGC.
-  double get_if_rms_after_agc() const { return m_if_rms_after_agc; }
-
   /** Return PPS events from the most recently processed block. */
   std::vector<PilotPhaseLock::PpsEvent> get_pps_events() const {
     return m_pilotpll.get_pps_events();
@@ -203,7 +200,6 @@ private:
   double m_baseband_mean;
   double m_baseband_level;
   double m_if_rms;
-  double m_if_rms_after_agc;
 
   IQSampleVector m_samples_in_after_agc;
   IQSampleVector m_samples_in_filtered;

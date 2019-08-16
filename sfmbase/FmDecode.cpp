@@ -332,9 +332,6 @@ void FmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
     m_samples_in_filtered = std::move(m_samples_in_after_agc);
   }
 
-  // Measure IF RMS level after IF AGC and the filter.
-  m_if_rms_after_agc = rms_level_approx(m_samples_in_filtered);
-
   // Demodulate FM to MPX signal.
   m_phasedisc.process(m_samples_in_filtered, m_buf_baseband_raw);
 
