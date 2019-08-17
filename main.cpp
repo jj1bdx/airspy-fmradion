@@ -45,12 +45,12 @@
 #include "SoftFM.h"
 #include "util.h"
 
-#define AIRSPY_FMRADION_VERSION "v0.7.2-pre0"
+#define AIRSPY_FMRADION_VERSION "v0.7.2"
 
 /** Flag is set on SIGINT / SIGTERM. */
 static std::atomic_bool stop_flag(false);
 
-#define PEAK_LIMIT_LEVEL (0.9)
+#define PEAK_LIMIT_LEVEL (0.95)
 
 // Simple linear gain adjustment and peak limiting.
 inline void adjust_gain_and_peak_limit(SampleVector &samples, double gain) {
@@ -890,7 +890,7 @@ int main(int argc, char **argv) {
         break;
       }
       // Measure the average IF level.
-      if_level = 0.9 * if_level + 0.1 * if_rms;
+      if_level = 0.95 * if_level + 0.05 * if_rms;
     }
 
     bool audio_exists = audiosamples.size() > 0;
@@ -899,7 +899,7 @@ int main(int argc, char **argv) {
     if (audio_exists) {
       double audio_mean, audio_rms;
       samples_mean_rms(audiosamples, audio_mean, audio_rms);
-      audio_level = 0.9 * audio_level + 0.1 * audio_rms;
+      audio_level = 0.95 * audio_level + 0.05 * audio_rms;
 
       // Set nominal audio volume (-6dB) when IF squelch is open,
       // set to zero volume if the squelch is closed.
