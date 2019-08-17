@@ -28,15 +28,13 @@
 // Institute of Television Engineers of Japan, Vol. 39, No. 3, pp. 228-234
 // (1985). https://doi.org/10.3169/itej1978.39.228
 
-const unsigned int MultipathFilter::update_interval = 8;
-
 // Class MultipathFilter
 // Complex adaptive filter for reducing FM multipath.
 
 MultipathFilter::MultipathFilter(unsigned int stages, double reference_level)
     : m_stages(stages), m_filter_order((m_stages * 2) + 1),
       m_coeff(m_filter_order), m_state(m_filter_order),
-      m_reference_level(reference_level), m_update_count(update_interval) {
+      m_reference_level(reference_level) {
   assert(stages > 0);
   for (unsigned int i = 0; i < m_filter_order; i++) {
     m_coeff[i] = MfCoeff(0, 0);
@@ -69,8 +67,6 @@ inline void MultipathFilter::update_coeff(const IQSample result) {
     m_coeff[i] += factor * result * std::conj(m_state[i]);
   }
   m_coeff[m_stages] = MfCoeff(m_coeff[m_stages].real(), 0);
-
-  // fprintf(stderr, "error = %.9g\n", error);
 }
 
 // Process block samples.
@@ -86,12 +82,8 @@ void MultipathFilter::process(const IQSampleVector &samples_in,
   for (; i < n; i++) {
     IQSample output = single_process(samples_in[i]);
     samples_out[i] = output;
-    m_update_count--;
-    if (m_update_count == 0) {
-      // Update filter coefficients here
-      update_coeff(output);
-      m_update_count = update_interval;
-    }
+    // Update filter coefficients here
+    update_coeff(output);
   }
   assert(i == samples_out.size());
 }

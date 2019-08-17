@@ -31,8 +31,6 @@ typedef std::vector<MfCoeff> MfCoeffVector;
 
 class MultipathFilter {
 public:
-  static const unsigned int update_interval;
-
   // Construct multipath filter.
   // stages             :: number of filter stages
   // reference_level    :: reference envelope amplitude level
@@ -54,7 +52,6 @@ private:
   MfCoeffVector m_coeff;
   boost::circular_buffer<IQSample> m_state;
   double m_reference_level;
-  unsigned int m_update_count;
 };
 
 #endif
