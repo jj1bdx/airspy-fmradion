@@ -1,6 +1,6 @@
 # airspy-fmradion
 
-* Version v0.7.2-pre0, 15-AUG-2019
+* Version v0.7.2, 17-AUG-2019
 * For MacOS and Linux
 
 ### Known issues
@@ -175,7 +175,11 @@ Compile and install
 ### FM multipath filter
 
 * An LMS-based multipath filter can be enabled after IF AGC
-* 40 IF sample stages before and ahead
+* IF sample stages can be defined by `-E` options
+* The stage number is both for before and ahead the reference point
+* The multipath filter order: (2 * stages) + 1
+* For Mac mini 2018 with 3.2 GHz Intel Core i7, 288 stages consume 99% of one CPU core
+* This filter is not effective when the IF bandwidth is narrow (192kHz)
 
 ## No-goals
 
