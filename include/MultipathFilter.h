@@ -52,6 +52,7 @@ private:
   MfCoeffVector m_coeff;
   boost::circular_buffer<IQSample> m_state;
   double m_reference_level;
+  double m_error;
 };
 
 #endif

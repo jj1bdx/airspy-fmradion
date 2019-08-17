@@ -17,13 +17,13 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 // Multipath adaptive filter construction method reference in English:
-// J. Treichler and B. Agee, "A new approach to multipath correction of
+// [1] J. Treichler and B. Agee, "A new approach to multipath correction of
 // constant modulus signals," in IEEE Transactions on Acoustics, Speech, and
 // Signal Processing, vol. 31, no. 2, pp. 459-472, April 1983.
 // doi: 10.1109/TASSP.1983.1164062
 
 // Multipath adaptive filter construction method reference in Japanese:
-// Takashi Mochizuki, and Mitsutoshi Hatori, "Automatic Cancelling of FM
+// [2] Takashi Mochizuki, and Mitsutoshi Hatori, "Automatic Cancelling of FM
 // Multipath Distortion Using and Adaptive Digital Filter", The Journal of the
 // Institute of Television Engineers of Japan, Vol. 39, No. 3, pp. 228-234
 // (1985). https://doi.org/10.3169/itej1978.39.228
@@ -69,7 +69,17 @@ inline void MultipathFilter::update_coeff(const IQSample result) {
   // This value should be kept the same
   // TODO: reevaluate this value (might be able to set larger)
   //       according to NLMS algorithm
-  const double alpha = 0.00002;
+
+  // Assume estimated norm of n-dimension coefficient vector: 2 * n
+  // (where n = m_filter_order)
+  // (the absolute values of the real/imaginary part of each coefficient
+  //  would not exceed 1.0)
+  // then the update factor alpha should be proportional to 1/(2 * n),
+  // and alpha must not exceed 1/(2 * n), which is actually too large.
+  // In paper [2], the old constant alpha = 0.00002 was safe
+  // when n = 401 (200 stages) when the IF S/N was 40dB.
+
+  const double alpha = 0.008 / m_filter_order;
   // Input instant envelope
   const double env = std::norm(result);
   // error = [desired signal] - [filter output]
@@ -81,6 +91,7 @@ inline void MultipathFilter::update_coeff(const IQSample result) {
   }
   // Set the imaginary part of the middle (position 0) coefficient to zero
   m_coeff[m_stages] = MfCoeff(m_coeff[m_stages].real(), 0);
+  m_error = error;
 }
 
 // Process block samples.
