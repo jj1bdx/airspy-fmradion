@@ -45,7 +45,7 @@
 #include "SoftFM.h"
 #include "util.h"
 
-#define AIRSPY_FMRADION_VERSION "v0.7.2"
+#define AIRSPY_FMRADION_VERSION "v0.7.3-pre0"
 
 /** Flag is set on SIGINT / SIGTERM. */
 static std::atomic_bool stop_flag(false);
@@ -797,6 +797,7 @@ int main(int argc, char **argv) {
   bool inbuf_length_warning = false;
   double audio_level = 0;
   bool got_stereo = false;
+  bool multipath_filter_skipped = false;
 
   double block_time = get_time();
 
@@ -938,6 +939,15 @@ int main(int argc, char **argv) {
                     fm.get_pilot_level());
           } else {
             fprintf(stderr, "\nlost stereo signal\n");
+          }
+        }
+        // Show if multipath filter is skipped
+        if (!multipath_filter_skipped) {
+          multipath_filter_skipped = fm.multipath_filter_skipped();
+          if (multipath_filter_skipped) {
+            // print only once
+            fprintf(stderr, "Skip further multipath filter processing: "
+                            "filter output abnormality\n");
           }
         }
       }

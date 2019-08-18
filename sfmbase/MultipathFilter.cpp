@@ -43,13 +43,22 @@ MultipathFilter::MultipathFilter(unsigned int stages, double reference_level)
       m_reference_level(reference_level) {
   assert(stages > 0);
   for (unsigned int i = 0; i < m_filter_order; i++) {
-    m_coeff[i] = MfCoeff(0, 0);
     m_state[i] = IQSample(0, 0);
+  }
+  initialize_coefficients();
+}
+
+inline void MultipathFilter::initialize_coefficients() {
+  for (unsigned int i = 0; i < m_stages; i++) {
+    m_coeff[i] = MfCoeff(0, 0);
   }
   // Set the initial coefficient
   // of the unity gain at the middle of the coefficient sequence
   // where [0 ... m_filter_order] stands for [-stages ... 0 ... +stages]
   m_coeff[m_stages] = MfCoeff(1, 0);
+  for (unsigned int i = m_stages + 1; i < m_filter_order; i++) {
+    m_coeff[i] = MfCoeff(0, 0);
+  }
 }
 
 // Apply a simple FIR filter for each input.

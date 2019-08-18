@@ -163,6 +163,9 @@ public:
   // Return RMS IF level.
   double get_if_rms() const { return m_if_rms; }
 
+  // Return if multipath filter is skipped.
+  bool multipath_filter_skipped() const { return m_skip_multipath_filter; }
+
   /** Return PPS events from the most recently processed block. */
   std::vector<PilotPhaseLock::PpsEvent> get_pps_events() const {
     return m_pilotpll.get_pps_events();
@@ -194,6 +197,7 @@ private:
   const double m_sample_rate_fmdemod;
   const bool m_pilot_shift;
   const bool m_enable_multipath_filter;
+  bool m_skip_multipath_filter;
   const unsigned int m_multipath_stages;
   const bool m_stereo_enabled;
   bool m_stereo_detected;

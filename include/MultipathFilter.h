@@ -39,7 +39,13 @@ public:
   // Process IQ samples and return filtered IQ samples.
   void process(const IQSampleVector &samples_in, IQSampleVector &samples_out);
 
+  // Obtain the latest error value.
+  double get_error() { return m_error; }
+
 private:
+  // Initialize filter coefficients.
+  inline void initialize_coefficients();
+
   // Process single value.
   inline IQSample single_process(const IQSample filter_input);
 
