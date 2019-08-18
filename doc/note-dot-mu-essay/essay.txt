@@ -12,7 +12,7 @@
 
 ## SDRの名前と公開場所
 
-作業しているSDRの名前は[airspy-fmradion](https://github.com/jj1bdx/airspy-fmradion)という。[Airspy](https://airspy.com/)で動くFMラジオ、というつもりで名前を付けた。radionと、最後にnがついているのは、スウェーデン語の定形(bestämd form、英語の定冠詞をつけた形と同義)のつもりである。
+開発しているSDRの名前は[airspy-fmradion](https://github.com/jj1bdx/airspy-fmradion)という。[Airspy](https://airspy.com/)で動くFMラジオ、というつもりで名前を付けた。radionと、最後にnがついているのは、スウェーデン語の定形(bestämd form、英語の定冠詞をつけた形と同義)のつもりである。
 
 ## 受信機改良の道程(1): IF用FIRフィルタ
 
@@ -40,8 +40,23 @@ AF（音声、オーディオ）フィルタにも鋭い特性のものが必要
 
 またこのフィルタの通過域の特性を上のように拡大して見てみると、±0.000001dBという特性が出ている。20dBで10倍なので、倍率に換算すると1.00000011513倍（そしてその逆数）となり、1を引いてdB換算すると-138.78dBとなる。ビット数に換算すると約23ビットの精度であり、FM放送用としては十分すぎる性能である。
 
+## 受信機改良の道程(3): マルチパスモニタ
 
+電波伝搬（電波の伝わり方）を考える上で重要な要素の1つが、マルチパス(multipath)である。
 
+通常2点間の電波は最短距離でまっすぐ届くものと仮定して考えるが、現実には送受信ともにアンテナは無指向性であることも多く、この場合電波のエネルギーは複数の経路に分散して届くことになる。これをマルチパスという。
+
+![](Multipath_propagation_diagram_en.svg.png)
+
+上の図はレーダーにおけるマルチパスが引き起こす問題を示したものである。（出典: Original image: Lithium57, English translation: MichaelBillington, [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Multipath_propagation_diagram_en.svg), public domain）
+
+この図は本来存在すべき対象(Actual Target)からの電波が、マルチパス上空で屈折して届く電波や地面での電波の反射によって、本来存在しない場所から来たように見えてしまう様子を示している。
+
+放送局と受信機との間でも同様の問題が起こり得る。具体的には複数の経路を通ってきた同じ信号が干渉し合うため、振幅と位相（周波数）両方で歪が発生する。
+
+![](Multipath_impulse_response.png)
+
+上の図では、ごく短い一瞬の信号（インパルス）を送った場合、横軸に時間を取ると、最初の信号（τ0で示されているもの）が到達した後、反射等によって、振幅や位相が変わった様々な信号がマルチパスによって届くことを示している。これらが相互に干渉したものがマルチパス歪になる。（出典: I, Cantalamessa, [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Multipath_impulse_response.png), licensed CC BY 2.5）
 
 
 
