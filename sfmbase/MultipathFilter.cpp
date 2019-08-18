@@ -100,6 +100,7 @@ inline void MultipathFilter::update_coeff(const IQSample result) {
   }
   // Set the imaginary part of the middle (position 0) coefficient to zero
   m_coeff[m_stages] = MfCoeff(m_coeff[m_stages].real(), 0);
+  // Set the latest error value for monitoring
   m_error = error;
 }
 

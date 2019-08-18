@@ -40,7 +40,10 @@ public:
   void process(const IQSampleVector &samples_in, IQSampleVector &samples_out);
 
   // Obtain the latest error value.
-  double get_error() { return m_error; }
+  double get_error() const { return m_error; }
+
+  // Obtain the internal filter coefficient.
+  const MfCoeffVector &get_coefficients() { return m_coeff; }
 
 private:
   // Initialize filter coefficients.

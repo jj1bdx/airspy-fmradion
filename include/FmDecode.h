@@ -174,6 +174,14 @@ public:
   // Erase the first PPS event.
   void erase_first_pps_event() { m_pilotpll.erase_first_pps_event(); }
 
+  // Get error value of the multipath filter.
+  double get_multipath_error() { return m_multipathfilter.get_error(); }
+
+  // Get multipath filter coefficients.
+  const MfCoeffVector &get_multipath_coefficients() {
+    return m_multipathfilter.get_coefficients();
+  }
+
 private:
   /** Demodulate stereo L-R signal. */
   void demod_stereo(const SampleVector &samples_baseband,
