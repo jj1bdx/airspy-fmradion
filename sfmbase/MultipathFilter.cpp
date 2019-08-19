@@ -88,7 +88,10 @@ inline void MultipathFilter::update_coeff(const IQSample result) {
   // In paper [2], the old constant alpha = 0.00002 was safe
   // when n = 401 (200 stages) when the IF S/N was 40dB.
 
-  const double alpha = 0.008 / m_filter_order;
+  // test.merror: const double alpha = 0.008 / m_filter_order;
+  // test2.merror: const double alpha = 0.004 / m_filter_order;
+  // test3.merror: const double alpha = 0.002 / m_filter_order;
+  const double alpha = 0.001 / m_filter_order;
   // Input instant envelope
   const double env = std::norm(result);
   // error = [desired signal] - [filter output]
@@ -113,14 +116,18 @@ void MultipathFilter::process(const IQSampleVector &samples_in,
   }
   samples_out.resize(n);
 
+  fprintf(stderr, "MultipathFilter process block\n");
   unsigned int i = 0;
   for (; i < n; i++) {
     IQSample output = single_process(samples_in[i]);
     samples_out[i] = output;
     // Update filter coefficients here
     update_coeff(output);
+    fprintf(stderr, "In-block i = %d, m_error = %.9f\n", i, m_error);
   }
   assert(i == samples_out.size());
+
+
 }
 
 // end
