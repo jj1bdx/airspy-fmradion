@@ -79,16 +79,25 @@ inline void MultipathFilter::update_coeff(const IQSample result) {
   // TODO: reevaluate this value (might be able to set larger)
   //       according to NLMS algorithm
 
-  // Assume estimated norm of n-dimension coefficient vector: 2 * n
-  // (where n = m_filter_order)
-  // (the absolute values of the real/imaginary part of each coefficient
-  //  would not exceed 1.0)
-  // then the update factor alpha should be proportional to 1/(2 * n),
-  // and alpha must not exceed 1/(2 * n), which is actually too large.
+  // Assume estimated norm of n-dimension coefficient vector: 2 * n,
+  // where n = m_filter_order.
+  // The absolute values of the real/imaginary part of each coefficient
+  // would not exceed 1.0 under the normal operating condition.
+  // Then the update factor alpha should be proportional to 1/(2 * n).
+  // So let alpha be mu/(2 * n), where 0 < mu < 2.
+
   // In paper [2], the old constant alpha = 0.00002 was safe
   // when n = 401 (200 stages) when the IF S/N was 40dB.
 
-  const double alpha = 0.008 / m_filter_order;
+  // We tested mu values of 0.008, 0.004, 0.002, and 0.001
+  // with the transmission result of FM COCOLO 76.5MHz in Osaka.
+  // We concluded that for n = 72 (where m_filter_order is 145):
+  // mu = 0.008: overfitting, which caused long-term increase of the error.
+  // mu = 0.004: steadily fit.
+  // mu = 0.002: steadily fit, resulted in even smaller error than mu = 0.004.
+  // mu = 0.001: underfitting.
+
+  const double alpha = 0.002 / m_filter_order;
   // Input instant envelope
   const double env = std::norm(result);
   // error = [desired signal] - [filter output]
