@@ -45,7 +45,7 @@
 #include "SoftFM.h"
 #include "util.h"
 
-#define AIRSPY_FMRADION_VERSION "v0.7.3-pre0"
+#define AIRSPY_FMRADION_VERSION "v0.7.3-pre1"
 
 /** Flag is set on SIGINT / SIGTERM. */
 static std::atomic_bool stop_flag(false);
@@ -982,19 +982,17 @@ int main(int argc, char **argv) {
       }
 
       if ((modtype == ModType::FM) && (multipathfilter_stages > 0)) {
-	double mf_error = fm.get_multipath_error();
-	const MfCoeffVector &mf_coeff = fm.get_multipath_coefficients();
+        double mf_error = fm.get_multipath_error();
+        const MfCoeffVector &mf_coeff = fm.get_multipath_coefficients();
         fprintf(stderr, "\n");
         fprintf(stderr, "mf_error = %.9f\n", mf_error);
-	for (unsigned int i = 0; i < mf_coeff.size(); i++) {
+        for (unsigned int i = 0; i < mf_coeff.size(); i++) {
           MfCoeff val = mf_coeff[i];
-          fprintf(stderr, "mf_coeff[ %d ] = %.9f + j %.9f\n",
-	                   i, val.real(), val.imag());
-	}
+          fprintf(stderr, "mf_coeff[ %d ] = %.9f + j %.9f\n", i, val.real(),
+                  val.imag());
+        }
         fflush(stderr);
       }
-
-
     }
 
     // Write PPS markers.
