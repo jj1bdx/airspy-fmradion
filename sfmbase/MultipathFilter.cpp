@@ -127,14 +127,22 @@ void MultipathFilter::process(const IQSampleVector &samples_in,
   }
   samples_out.resize(n);
 
-  fprintf(stderr, "MultipathFilter process block\n");
   unsigned int i = 0;
   for (; i < n; i++) {
     IQSample output = single_process(samples_in[i]);
     samples_out[i] = output;
     // Update filter coefficients here
     update_coeff(output);
-    fprintf(stderr, "In-block i = %d, m_error = %.9f\n", i, m_error);
+#if 0 
+    //
+    fprintf(stderr, "sample,%u,m_error,%.9f,m_coeff,", i, m_error);
+    for (unsigned int i = 0; i < m_coeff.size(); i++) {
+      MfCoeff val = m_coeff[i];
+      fprintf(stderr, "%d,%.9f,%.9f,", i, val.real(),
+                  val.imag());
+      }
+    fprintf(stderr, "\n");
+#endif
   }
   assert(i == samples_out.size());
 }

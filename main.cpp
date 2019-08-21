@@ -958,7 +958,7 @@ int main(int argc, char **argv) {
         if (stereo_change ||
             (((block % stat_rate) == 0) && (block > discarding_blocks))) {
           fprintf(stderr,
-                  "\rblk=%8d:ppm=%+6.2f:IF=%+6.1fdB:AF=%+6.1fdB:buf=%.2fs",
+                  "blk=%8d:ppm=%+6.2f:IF=%+6.1fdB:AF=%+6.1fdB:buf=%.2fs\n",
                   block, ppm_value_average, if_level_db, audio_level_db,
                   buflen_sec);
           fflush(stderr);
@@ -984,13 +984,12 @@ int main(int argc, char **argv) {
       if ((modtype == ModType::FM) && (multipathfilter_stages > 0)) {
         double mf_error = fm.get_multipath_error();
         const MfCoeffVector &mf_coeff = fm.get_multipath_coefficients();
-        fprintf(stderr, "\n");
-        fprintf(stderr, "mf_error = %.9f\n", mf_error);
+        fprintf(stderr, "block,%u,mf_error,%.9f,mf_coeff,", block, mf_error);
         for (unsigned int i = 0; i < mf_coeff.size(); i++) {
           MfCoeff val = mf_coeff[i];
-          fprintf(stderr, "mf_coeff[ %d ] = %.9f + j %.9f\n", i, val.real(),
-                  val.imag());
+          fprintf(stderr, "%d,%.9f,%.9f,", i, val.real(), val.imag());
         }
+        fprintf(stderr, "\n");
         fflush(stderr);
       }
     }
