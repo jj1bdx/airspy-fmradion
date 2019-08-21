@@ -3,7 +3,7 @@ for the final version.
 
 無線とラジオの人生(9): FM放送とエアチェック(4): マルチパスキャンセラ
 
-8歳のころから46年以上無線とラジオと共に歩んできた。今回もFM放送とエアチェックの話をする。今回はマルチパス歪を退治するための機能であるマルチパスキャンセラを実装して一定の成果を得たという話である。
+力武（筆者）は8歳のころから46年以上無線とラジオと共に歩んできた。今回もFM放送とエアチェックの話をする。今回はマルチパス歪を退治するための機能であるマルチパスキャンセラを実装して一定の成果を得たという話である。
 
 ## 前回までの記事
 
@@ -23,13 +23,53 @@ for the final version.
 
 ## マルチパスキャンセラ(1): どうやってマルチパス歪をなくすか
 
-マルチパスについては[前回の記事](https://note.mu/jj1bdx/n/n2ff944b1da20)で説明した。これがFM放送の場合どのような歪をもたらすかについては多くの研究成果がある。私が知る限り最初に発表されたものは[1945年のCorringtonによるFrequency-Modulation Distortion Caused by Multipath Transmissionと題した論文であろう](https://ieeexplore.ieee.org/document/1696759)。複数遅延波の干渉による振幅の変動と、周波数特性が一定でなくなることによる周波数選択性フェージングの基礎的な導出が行われている。この論文の執筆にあたっては、1942年のFM実験局W2XWGの受信の際に歪が出たことが研究のきっかけだったらしい。
+マルチパスについては[前回の記事](https://note.mu/jj1bdx/n/n2ff944b1da20)で説明した。これがFM放送の場合どのような歪をもたらすかについては多くの研究成果がある。力武が知る限り最初に発表されたものは[1945年のCorringtonによるFrequency-Modulation Distortion Caused by Multipath Transmissionと題した論文であろう](https://ieeexplore.ieee.org/document/1696759)。複数遅延波の干渉による振幅の変動と、周波数特性が一定でなくなることによる周波数選択性フェージングの基礎的な導出が行われている。この論文の執筆にあたっては、1942年のFM実験局W2XWGの受信の際に歪が出たことが研究のきっかけだったらしい。
 
 日本語で読めるFM放送のマルチパスに関する研究論文としては、[1978年にテレビジョン学会誌で出版されたNHK総合技術研究所の大原光雄による「FM放送のマルチパスひずみの解析」](https://www.jstage.jst.go.jp/article/itej1978/32/3/32_3_224/_article/-char/ja/)がよくまとめられている。単音の歪率、そしてDU比（希望波/妨害波比）が、受信音質に大きく影響することが示されている。
 
-マルチパスの問題はFM放送だけではなく、移動体のデジタル通信などにも深刻な影響を及ぼす。そこでテレビの地上デジタル放送では、放送信号を利用して受信側でマルチパスの様子である遅延プロファイルを定量測定できる仕組みが用意されている。しかし、アナログのFM放送ではそのような仕組みを組み込むことはできないので、別のやり方でマルチパスの状況を定量評価する必要が生じる。
+マルチパスの問題はFM放送だけではなく、移動体のデジタル通信などにも深刻な影響を及ぼす。そこでテレビの地上デジタル放送では、放送信号を利用して受信側でマルチパスの様子である遅延プロファイルを定量測定できる仕組みが用意されている。一例として、[受信サービス株式会社ではマルチパスによる地上デジタル放送の受信障害と観測、そしてその対策方法](http://www.jushin-s.co.jp/jushin/chideji-mg.html)について紹介している。
 
-FM放送の信号では、周波数の変動のみを使って情報を伝える。そのため送信信号の振幅を変える必要はない。言い換えれば、振幅が変わっていたとしたら、何か電波伝搬に問題があることになる。この電波伝搬によって変化した信号を元に戻してやることができれば、信号の品質を上げることができる。
+しかし、アナログのFM放送ではそのような仕組みを組み込むことはできないので、別のやり方でマルチパスの状況を定量評価する必要が生じる。[TreichlerとAgeeによる1983年の論文"A new approach to multipath correction of constant modulus signals"](https://www.researchgate.net/publication/3177305_A_new_approach_to_multipath_correction_of_constant_modulus_signals)では、FMそのものの持つ特性に着目した。FMの信号では、周波数の変動のみを使って情報を伝える。そのため送信信号の振幅を変える必要はない。言い換えれば、振幅が変わっていたとしたら、何か電波伝搬に問題があることになる。この電波伝搬によって変化した信号を元に戻してやることができれば、信号の品質を上げることができる。
+
+TreichlerとAgeeの論文では、IQ信号化した受信信号に対して[適応フィルタ](https://ja.wikipedia.org/wiki/%E9%81%A9%E5%BF%9C%E3%83%95%E3%82%A3%E3%83%AB%E3%82%BF)を使い、マルチパスによって振幅が変動している信号を、マルチパスによる干渉を取り除くことで振幅一定に近づけるアルゴリズム(Constant Modulus Algorithm, CMA)を提案している。適応フィルタはFIRフィルタで構成することで、一定間隔の遅延時間ごとの成分を評価して合成し、遅延成分のみを減らすことができる。
+
+具体的にCMAを実装した手法の論文としては、[1985年のテレビジョン学会誌に掲載された望月孝志と羽鳥光俊による「適応ディジタルフィルタによるFMマルチパスひずみ自動除去の一方式」](https://www.jstage.jst.go.jp/article/itej1978/39/3/39_3_228/_article/-char/ja/)がある。この論文ではIQ信号に対してCMAを適用することで、DU比を上げてマルチパスの影響を減らせることがシミュレーションによって示されている。
+
+## マルチパスキャンセラ(2): CMAによるマルチパスキャンセラの実装
+
+CMAによるマルチパスキャンセラのFPGA実装は、[第2回目の記事](https://note.mu/jj1bdx/n/nb5771be759cb)でも紹介した[FPGAでFMチューナを実装した林輝彦](http://fpga.world.coocan.jp/FM/)が[CQ出版の2017年8月19日のSDRファンまつりでの講演（YouTube）](https://youtu.be/JWg0sYyfKQc)にて講演発表している。
+
+https://youtu.be/JWg0sYyfKQc
+
+この講演で紹介された手法は、前述の「適応ディジタルフィルタによるFMマルチパスひずみ自動除去の一方式」に準拠している。力武もこの方法を実装しようと何度か試みたが、うまくいかせるためには以下に述べる試行錯誤をする必要があった。
+
+(1) CMAでは振幅の基準値Aを定め、AとIQ信号の瞬時振幅値（これはIQ信号を複素数とみなした時の絶対値で求まる）の差をサンプリング周期で逐次計算する必要がある。この方法でうまく動作させるには、瞬時振幅値のうち適応フィルタで補正すべき変動成分を残しつつ、より長い時間で見た場合に平均がAであるような制御をする必要があった。いわゆる[自動利得制御](https://ja.wikipedia.org/wiki/%E8%87%AA%E5%8B%95%E5%88%A9%E5%BE%97%E5%88%B6%E5%BE%A1)(Automatic Gain Control, AGC)である。このAGCの手法として、András Retzlerが中心になって開発したライブラリ[csdr](https://github.com/simonyiszk/csdr)の中にある[simple_agc_cc](https://github.com/simonyiszk/csdr#simple_agc_cc)というアルゴリズムを使用したところ、大きめの時定数でも安定した制御結果を得ることができた。
+
+(2) AGCのかかったIQ信号に対してCMAを適用するには、[Least Mean Squares (LMS)フィルタ](https://en.wikipedia.org/wiki/Least_mean_squares_filter)というシステム同定（簡単に言えば適応フィルタの係数を決めること）のアルゴリズムを必要とする。IQ信号は複素数なので、LMSも複素数として定義する必要がある。この複素数のLMSアルゴリズムは[Widrow, McCool, Ballによる"The Complex LMS Algorithm"]という1975年の論文で定義されている。LMSアルゴリズムの詳細は省くが、要約すれば、基準値と実際値の値の差と、入力ベクトルの共役複素数を掛けたものを、フィルタ係数の更新ベクトルとしてフィルタ係数のベクトルに足してやればよい。これは前述の論文「適応ディジタルフィルタによるFMマルチパスひずみ自動除去の一方式\」で、複素数を使わない形で説明されている。
+
+(3) 適応フィルタの実装にあたっては、ブロック単位のFIRフィルタ処理を行う手法もあったが、係数の処理がわかりにくくなるため、フィルタの内部状態を逐次更新する単純な方法を取った。具体的にはC++のライブラリ[Boostのcircular_buffer](https://www.boost.org/doc/libs/1_71_0/doc/html/circular_buffer.html)というデータ構造を使うことにした。やっていることは以下のC++ソース（airspy-fmradionの該当[C++ソース](https://github.com/jj1bdx/airspy-fmradion/blob/master/sfmbase/MultipathFilter.cpp)と[ヘッダファイル](https://github.com/jj1bdx/airspy-fmradion/blob/master/include/MultipathFilter.h)より引用）の通り極めて単純である。m_stateに対してpush_backするだけで係数の更新が済むのがよい。
+
+// Size of m_state = m_filter_order
+boost::circular_buffer<IQSample> m_state;
+
+// Apply a simple FIR filter for each input.
+inline IQSample MultipathFilter::single_process(const IQSample filter_input) {
+  // Remove the element number zero (oldest one)
+  // and add the input as the newest element at the end of the buffer
+  m_state.push_back(filter_input);
+  IQSample output = IQSample(0, 0);
+  for (unsigned int i = 0; i < m_filter_order; i++) {
+    output += m_state[i] * m_coeff[i];
+  }
+  return output;
+}
+
+このような作業を行い、入力信号のサンプリング周期（最大で384kHz）ごとに係数を更新していくことで、適応フィルタを使ってCMAを実現することができた。
+
+## マルチパスキャンセラ(3): マルチパスキャンセラの成果
+
+
+
 
 [以下次回に続く]
 
