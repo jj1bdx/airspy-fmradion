@@ -981,7 +981,8 @@ int main(int argc, char **argv) {
         break;
       }
 
-      if ((modtype == ModType::FM) && (multipathfilter_stages > 0)) {
+      if ((modtype == ModType::FM) && (multipathfilter_stages > 0) &&
+	      ((block % (stat_rate * 10)) == 0) && (block > discarding_blocks)) {
         double mf_error = fm.get_multipath_error();
         const MfCoeffVector &mf_coeff = fm.get_multipath_coefficients();
         fprintf(stderr, "block,%u,mf_error,%.9f,mf_coeff,", block, mf_error);
