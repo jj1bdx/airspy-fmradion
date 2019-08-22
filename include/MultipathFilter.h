@@ -57,6 +57,7 @@ private:
 
   // Data members.
   unsigned int m_stages;
+  unsigned int m_index_reference_point;
   unsigned int m_filter_order;
   MfCoeffVector m_coeff;
   boost::circular_buffer<IQSample> m_state;
