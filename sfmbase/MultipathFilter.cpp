@@ -54,7 +54,8 @@ inline void MultipathFilter::initialize_coefficients() {
   }
   // Set the initial coefficient
   // of the unity gain at the middle of the coefficient sequence
-  // where [0 ... m_filter_order] stands for [-stages ... 0 ... +stages]
+  // where [0 ... m_filter_order] stands for
+  // [-(stages * 3) ... 0 ... +stages]
   m_coeff[m_index_reference_point] = MfCoeff(1, 0);
   for (unsigned int i = m_index_reference_point + 1; i < m_filter_order; i++) {
     m_coeff[i] = MfCoeff(0, 0);
