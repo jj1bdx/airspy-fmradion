@@ -1,0 +1,26 @@
+Antenna system memorandum 21-AUG-2019
+
+* Using or not using FM RF signal splitter did not affect the listening
+  quality (aka noise level of the audio output)
+
+* Current measurement results for NHK-FM Osaka 88.1MHz for 384kHz IF
+  with -E100 option (100 stages of multipath filter)
+  at 1100JST 21-AUG-2019 (with Efu's WaveSpectra):
+  - Noise level RMS: -73 to -74 dB (-73.6dB)
+  - 880Hz time tone THD: 0.028%, THD+N: 0.242%
+  - 880Hz tone RMS: -21.3dB
+  - -E100 option CPU usage on Mac mini 2018 3.2 GHz Intel Core i7: ~38%
+
+* Current measurement results for NHK-FM Osaka 88.1MHz for 384kHz IF
+  without multipath filter option
+  at 1400JST 21-AUG-2019 (with Efu's WaveSpectra):
+  - Noise level RMS: -73 to -74 dB (-73.4dB)
+  - 880Hz time tone THD: 0.433%, THD+N: 0.918%
+  - 880Hz tone RMS: -21.2dB
+
+* Teruhiko Hayashi's measurement results from Dropbox for NHK-FM Tokyo 82.5MHz
+  with his FPGA receiver at 1100JST 21-AUG-2019 (with Efu's WaveSpectra):
+  - Noise level RMS: -82.5dB
+  - 880Hz time tone THD: 0.013%, THD+N: 0.081%
+  - 880Hz tone RMS: -20.2dB
+

@@ -1,9 +1,0 @@
-Using NHK-FM Osaka 880Hz time tone on 15-AUG-2019:
-(Airspy HF+, 384kHz sampling, 384kHz IF)
-
-40 stages: THD 0.032%, THD+N: 0.373%
-128 stages: THD 0.025%, THD+N: 0.243%
-288 stages: THD 0.020%, THD+N: 0.230%
-
-A typical result on 27-JUL-2019:
-No filter: THD 0.281%, THD+N: 0.630%
