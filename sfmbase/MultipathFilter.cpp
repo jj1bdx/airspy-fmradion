@@ -38,9 +38,9 @@
 // Complex adaptive filter for reducing FM multipath.
 
 MultipathFilter::MultipathFilter(unsigned int stages, double reference_level)
-    : m_stages(stages), m_filter_order((m_stages * 2) + 1),
-      m_coeff(m_filter_order), m_state(m_filter_order),
-      m_reference_level(reference_level) {
+    : m_stages(stages), m_index_reference_point((m_stages * 3) + 1),
+      m_filter_order((m_stages * 4) + 1), m_coeff(m_filter_order),
+      m_state(m_filter_order), m_reference_level(reference_level) {
   assert(stages > 0);
   for (unsigned int i = 0; i < m_filter_order; i++) {
     m_state[i] = IQSample(0, 0);
@@ -49,14 +49,15 @@ MultipathFilter::MultipathFilter(unsigned int stages, double reference_level)
 }
 
 inline void MultipathFilter::initialize_coefficients() {
-  for (unsigned int i = 0; i < m_stages; i++) {
+  for (unsigned int i = 0; i < m_index_reference_point; i++) {
     m_coeff[i] = MfCoeff(0, 0);
   }
   // Set the initial coefficient
   // of the unity gain at the middle of the coefficient sequence
-  // where [0 ... m_filter_order] stands for [-stages ... 0 ... +stages]
-  m_coeff[m_stages] = MfCoeff(1, 0);
-  for (unsigned int i = m_stages + 1; i < m_filter_order; i++) {
+  // where [0 ... m_filter_order] stands for
+  // [-(stages * 3) ... 0 ... +stages]
+  m_coeff[m_index_reference_point] = MfCoeff(1, 0);
+  for (unsigned int i = m_index_reference_point + 1; i < m_filter_order; i++) {
     m_coeff[i] = MfCoeff(0, 0);
   }
 }
@@ -97,6 +98,11 @@ inline void MultipathFilter::update_coeff(const IQSample result) {
   // mu = 0.002: steadily fit, resulted in even smaller error than mu = 0.004.
   // mu = 0.001: underfitting.
 
+  // test.merror: const double alpha = 0.008 / m_filter_order;
+  // test2.merror: const double alpha = 0.004 / m_filter_order;
+  // test3.merror: const double alpha = 0.002 / m_filter_order;
+  // test4.merror: const double alpha = 0.001 / m_filter_order;
+
   const double alpha = 0.002 / m_filter_order;
   // Input instant envelope
   const double env = std::norm(result);
@@ -108,7 +114,8 @@ inline void MultipathFilter::update_coeff(const IQSample result) {
     m_coeff[i] += factor * result * std::conj(m_state[i]);
   }
   // Set the imaginary part of the middle (position 0) coefficient to zero
-  m_coeff[m_stages] = MfCoeff(m_coeff[m_stages].real(), 0);
+  m_coeff[m_index_reference_point] =
+      MfCoeff(m_coeff[m_index_reference_point].real(), 0);
   // Set the latest error value for monitoring
   m_error = error;
 }
@@ -128,6 +135,16 @@ void MultipathFilter::process(const IQSampleVector &samples_in,
     samples_out[i] = output;
     // Update filter coefficients here
     update_coeff(output);
+#if 0 
+    //
+    fprintf(stderr, "sample,%u,m_error,%.9f,m_coeff,", i, m_error);
+    for (unsigned int i = 0; i < m_coeff.size(); i++) {
+      MfCoeff val = m_coeff[i];
+      fprintf(stderr, "%d,%.9f,%.9f,", i, val.real(),
+                  val.imag());
+      }
+    fprintf(stderr, "\n");
+#endif
   }
   assert(i == samples_out.size());
 }
