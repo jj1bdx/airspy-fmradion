@@ -9,8 +9,8 @@ import matplotlib.mlab as mlab
 import matplotlib.gridspec as gridspec
 
 filename = sys.argv[1]
-stages = 72
-elements = (stages * 2) + 1 
+stages = 36
+elements = (stages * 4) + 1 
 
 fig = plt.figure(constrained_layout=True)
 
@@ -38,7 +38,7 @@ with open(filename, newline='') as f:
 
     figfilename = "./png/" + filename + ".block.polar." + str(block) + ".png"
 
-    axis_x = range(-stages, stages)
+    axis_x = range(-(stages * 3), stages)
     title_re = str("block " + str(block))
 
     fig.clear()
@@ -51,6 +51,7 @@ with open(filename, newline='') as f:
     ax1.bar(axis_x, coeff_am)
     ax1.set_xlabel('position')
     ax1.set_ylabel('amplitude')
+    ax1.set_xticks([-(stages*3), -(stages*2), -stages, 0, stages])
     plt.title(title_re)
     plt.grid(True)
 
@@ -61,6 +62,7 @@ with open(filename, newline='') as f:
     ax2.set_xlabel('position')
     ax2.set_ylabel('phase [rad]')
     ax2.set_yticks([-pi, -pi/2, 0, pi/2, pi])
+    ax2.set_xticks([-(stages*3), -(stages*2), -stages, 0, stages])
     plt.grid(True)
         
     plt.savefig(figfilename)
