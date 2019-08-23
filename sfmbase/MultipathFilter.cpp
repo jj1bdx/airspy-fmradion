@@ -88,7 +88,7 @@ inline void MultipathFilter::update_coeff(const IQSample result) {
   // So let alpha be mu/(2 * n), where 0 < mu < 2.
 
   // In paper [2], the old constant alpha = 0.00002 was safe
-  // when n = 401 (200 stages) when the IF S/N was 40dB.
+  // when n = 401 (200+200 stages) when the IF S/N was 40dB.
 
   // We tested mu values of 0.008, 0.004, 0.002, and 0.001
   // with the transmission result of FM COCOLO 76.5MHz in Osaka.
@@ -97,11 +97,6 @@ inline void MultipathFilter::update_coeff(const IQSample result) {
   // mu = 0.004: steadily fit.
   // mu = 0.002: steadily fit, resulted in even smaller error than mu = 0.004.
   // mu = 0.001: underfitting.
-
-  // test.merror: const double alpha = 0.008 / m_filter_order;
-  // test2.merror: const double alpha = 0.004 / m_filter_order;
-  // test3.merror: const double alpha = 0.002 / m_filter_order;
-  // test4.merror: const double alpha = 0.001 / m_filter_order;
 
   const double alpha = 0.002 / m_filter_order;
   // Input instant envelope
@@ -135,7 +130,7 @@ void MultipathFilter::process(const IQSampleVector &samples_in,
     samples_out[i] = output;
     // Update filter coefficients here
     update_coeff(output);
-#if 0 
+#if 0 // enable this for per-sample coefficient monitor
     //
     fprintf(stderr, "sample,%u,m_error,%.9f,m_coeff,", i, m_error);
     for (unsigned int i = 0; i < m_coeff.size(); i++) {

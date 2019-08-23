@@ -45,7 +45,10 @@
 #include "SoftFM.h"
 #include "util.h"
 
-#define AIRSPY_FMRADION_VERSION "v0.7.3-pre1-shifted"
+// define this for enabling coefficient monitor functions
+// #undef COEFF_MONITOR
+
+#define AIRSPY_FMRADION_VERSION "v0.7.3"
 
 /** Flag is set on SIGINT / SIGTERM. */
 static std::atomic_bool stop_flag(false);
@@ -958,7 +961,11 @@ int main(int argc, char **argv) {
         if (stereo_change ||
             (((block % stat_rate) == 0) && (block > discarding_blocks))) {
           fprintf(stderr,
+#ifdef COEFF_MONITOR
                   "blk=%8d:ppm=%+6.2f:IF=%+6.1fdB:AF=%+6.1fdB:buf=%.2fs\n",
+#else
+                  "\rblk=%8d:ppm=%+6.2f:IF=%+6.1fdB:AF=%+6.1fdB:buf=%.2fs",
+#endif
                   block, ppm_value_average, if_level_db, audio_level_db,
                   buflen_sec);
           fflush(stderr);
@@ -981,6 +988,7 @@ int main(int argc, char **argv) {
         break;
       }
 
+#ifdef COEFF_MONITOR
       if ((modtype == ModType::FM) && (multipathfilter_stages > 0) &&
           ((block % (stat_rate * 10)) == 0) && (block > discarding_blocks)) {
         double mf_error = fm.get_multipath_error();
@@ -993,6 +1001,7 @@ int main(int argc, char **argv) {
         fprintf(stderr, "\n");
         fflush(stderr);
       }
+#endif
     }
 
     // Write PPS markers.
