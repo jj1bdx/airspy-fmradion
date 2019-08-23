@@ -1,11 +1,17 @@
 # airspy-fmradion
 
-* Version v0.7.3-pre1, 19-AUG-2019
+* Version v0.7.3, 23-AUG-2019
 * For MacOS and Linux
 
-### Known issues
+### Known issues and changes
 
-*Use the latest libairspy --HEAD version* (v1.6.7) for:
+*The FM multipath filter stagins parameter definition is changed.*
+
+* v0.7.3-pre1 and before: -E72 for 72 previous and 72 after stages (ratio 1:1)
+* v0.7.3: -E36 for 108 previous and 36 after stages (ratio 3:1)
+* Summary: set the -E parameter to 1/2 of the previous value
+
+*Use the latest libairspy --HEAD version* for:
 
 * Working `airspy_open_devices()`, required by `airspy_open_sn()`. See [this commit](https://github.com/airspy/airspyone_host/commit/61fec20fbd710fc54d57dfec732d314d693b5a2f) for the details.
 * Proper transfer block size. `if_blocksize` for Airspy HF+ is reduced from 16384 to 2048, following [this commit](https://github.com/airspy/airspyhf/commit/a1f6f4a0537f53bede6e80c51826fc9d45061c28).
