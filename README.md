@@ -1,9 +1,11 @@
 # airspy-fmradion
 
-* Version v0.7.3, 23-AUG-2019
+* Version v0.7.4-pre1, 24-AUG-2019
 * For MacOS and Linux
 
 ### Known issues and changes
+
+* The multipath filter starts after discarding the first 100 blocks. This change is to avoid the initial instability of Airspy R2.
 
 *The FM multipath filter stagins parameter definition is changed.*
 
