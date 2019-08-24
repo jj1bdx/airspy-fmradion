@@ -258,7 +258,9 @@ FmDecoder::FmDecoder(double sample_rate_demod, bool stereo, double deemphasis,
     // Initialize member fields
     : m_sample_rate_fmdemod(sample_rate_demod), m_pilot_shift(pilot_shift),
       m_enable_multipath_filter((multipath_stages > 0)),
-      m_skip_multipath_filter(false), m_multipath_stages(multipath_stages),
+      m_skip_multipath_filter(false),
+      // Wait first 100 blocks to enable the multipath filter
+      m_wait_multipath_blocks(100), m_multipath_stages(multipath_stages),
       m_stereo_enabled(stereo), m_stereo_detected(false), m_baseband_mean(0),
       m_baseband_level(0), m_if_rms(0.0)
 
@@ -319,29 +321,42 @@ FmDecoder::FmDecoder(double sample_rate_demod, bool stereo, double deemphasis,
 
 void FmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
 
+  // If no sampled baseband signal comes out,
+  // terminate and wait for next block,
+  if (samples_in.size() == 0) {
+    audio.resize(0);
+    return;
+  }
+
   // Measure IF RMS level.
   m_if_rms = rms_level_approx(samples_in);
 
   // Perform IF AGC.
   m_ifagc.process(samples_in, m_samples_in_after_agc);
 
-  if (m_enable_multipath_filter && !m_skip_multipath_filter) {
-    // Apply multipath filter.
-    m_multipathfilter.process(m_samples_in_after_agc, m_samples_in_filtered);
-  } else {
+  if (m_wait_multipath_blocks > 0) {
+    m_wait_multipath_blocks--;
+    // No multipath filter applied.
     m_samples_in_filtered = std::move(m_samples_in_after_agc);
-  }
-
-  double filter_error = m_multipathfilter.get_error();
-  bool abnormal_error = isinf(filter_error) || isnan(filter_error);
-  // Skip further multipath filter processing
-  // if the error evaluation becomes invalid.
-  if (!m_skip_multipath_filter && abnormal_error) {
-    m_skip_multipath_filter = true;
-    // Discard the output of this block,
-    // and terminate and wait for next block,
-    audio.resize(0);
-    return;
+  } else {
+    if (m_enable_multipath_filter && !m_skip_multipath_filter) {
+      // Apply multipath filter.
+      m_multipathfilter.process(m_samples_in_after_agc, m_samples_in_filtered);
+      double filter_error = m_multipathfilter.get_error();
+      bool abnormal_error = isinf(filter_error) || isnan(filter_error);
+      // Skip further multipath filter processing
+      // if the error evaluation becomes invalid.
+      if (!m_skip_multipath_filter && abnormal_error) {
+        m_skip_multipath_filter = true;
+        // Discard the output of this block,
+        // and terminate and wait for next block,
+        audio.resize(0);
+        return;
+      }
+    } else {
+      // No multipath filter applied.
+      m_samples_in_filtered = std::move(m_samples_in_after_agc);
+    }
   }
 
   // Demodulate FM to MPX signal.

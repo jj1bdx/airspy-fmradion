@@ -206,6 +206,7 @@ private:
   const bool m_pilot_shift;
   const bool m_enable_multipath_filter;
   bool m_skip_multipath_filter;
+  unsigned int m_wait_multipath_blocks;
   const unsigned int m_multipath_stages;
   const bool m_stereo_enabled;
   bool m_stereo_detected;
