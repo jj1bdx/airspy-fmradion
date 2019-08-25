@@ -7,7 +7,7 @@
 
 * The multipath filter starts after discarding the first 100 blocks. This change is to avoid the initial instability of Airspy R2.
 
-*The FM multipath filter stagins parameter definition is changed.*
+*The FM multipath filter staging parameter definition is changed.*
 
 * v0.7.3-pre1 and before: -E72 for 72 previous and 72 after stages (ratio 1:1)
 * v0.7.3: -E36 for 108 previous and 36 after stages (ratio 3:1)
@@ -323,6 +323,7 @@ Compile and install
 * [Iowa Hills Software](http://iowahills.com), for their FIR and IIR filter design tools
 * [Brian Beezley, K6STI](http://ham-radio.com/k6sti/), for his comprehensive Web site of FM broadcasting reception expertise and the idea of [Quadrature Multipath Monitor](http://ham-radio.com/k6sti/qmm.htm)
 * [Ryuji Suzuki](https://github.com/rsuzuki0), for reviewing the FM multipath filter coefficients and suggesting putting more weight on picking up more previous samples from the reference point than the samples after
+* [Teruhiko Hayashi, JA2SVZ](http://fpga.world.coocan.jp/FM/), the creator of FM FPGA Tuner popular in Japan, for reviewing the measurement results of FM broadcast reception of airspy-fmradion, and various constructive suggestions
 
 ## License
 
