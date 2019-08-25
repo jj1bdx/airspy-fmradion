@@ -1,0 +1,46 @@
+More experiments and analysis on the multipath filter 25-AUG-2019
+
+## Experiments 25-AUG-2019
+
+* Changing the height of the antenna (raised 1m from the previous height
+  at the balcony) DID change the remaining noise level a little
+  of no-sound output for NHK-FM Osaka 88.1MHz (-73.4 -> -73.8dB).
+
+* The multipath filter did not work much on reducing QMM levels
+  for the CATV rebroadcast/frequency-translated signals
+  from J:COM Toyonaka-Ikeda (79.6MHz for NHK-FM Osaka).
+  Possible reason: the output is amplitude-controlled before the translation.
+
+* Adding a booster (DX Antenna UF35M, NF ~5dB, gain: 15 - 35dB, set to 20dB)
+  did not change/increase the C/N and S/N levels, but decreased a bit
+  (-73.4 -> -73.3dB)
+
+## Thoughts
+
+Hayashi-san personally suggested me to measure three possibility of noises as:
+
+* 1) Noise inside the receiver: this shows up/down (invert-)proportionally
+     to the input level, e.g., attenuating the input signal for 3dB
+     results in the decrease of output S/N level for 3dB.
+
+* 2) Artificial noise coming into the antenna: changing the antenna settings,
+     e.g., antenna direction/height may change the S/N level.
+
+* 3) Phase noise of the receiver: this shows up as the upper limit of the
+     measured S/N by the receiver, due to the limitation caused by
+     the jitter/phase noise of the local oscillators.
+
+In our case:
+
+* 1) Boosting/un-boosting the signal did not change the receiving signal
+     quality much. Adding a booster, or an attenuator (-20dB) didn't change
+     the listening signal quality measured by QMM, or the remaining noise
+     of no-sound output.
+
+* 2) Raising the antenna changed the S/N level up to 0.4dB this time.
+     In a past experiment on February 2019, 3dB decrease of no-sound
+     noise level was measured.
+
+* 3) Using a GPSDO for 100MHz single-carrier, the measured noise was -96.6dB.
+     This value can explain the practical limitation of the output noise level
+     due to the internal phase noise of Airspy HF+ and airspy-fmradion.
