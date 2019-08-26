@@ -1,4 +1,4 @@
-Phase noise measurement 25-AUG-2019
+Phase noise measurement 25-AUG-2019 - 26-AUG-2019
 
 Source:
 Leo Bodnar mini GPS reference clock
@@ -11,6 +11,10 @@ airspy-fmradion v0.7.4-pre1 options:
 airspy-fmradion -t airspyhf -c freq=100000000,srate=384000 -F output.bin
 airspy-fmradion -t airspy -c freq=100000000,srate=10000000,lgain=0,mgain=1,vgain=7 -F output.bin
 
-Summary of the observed phase noise:
+Summary of the observed phase noise in monoaural:
 Airspy HF+ (Dual Port): -96.59dB RMS
 Airspy R2: -81.56dB RMS, -87.83dB peak detected at 8621.3Hz
+
+Summary of the observed phase noise in forced stereo:
+Airspy HF+ (Dual Port): -75.45dB RMS
+

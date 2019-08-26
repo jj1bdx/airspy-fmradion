@@ -44,3 +44,10 @@ In our case:
 * 3) Using a GPSDO for 100MHz single-carrier, the measured noise was -96.6dB.
      This value can explain the practical limitation of the output noise level
      due to the internal phase noise of Airspy HF+ and airspy-fmradion.
+
+In our case (addendum):
+
+* 4) Using a GPSDO for 100MHz single-carrier with force-enabled stereo decoder,
+     the measured noise was -75.45dB.  
+     This value and the noise pattern corresponds very well with the
+     no-sound noise with the stereo output.
