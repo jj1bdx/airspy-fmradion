@@ -100,6 +100,7 @@ private:
   IQSampleVector m_buf_filtered3;
   IQSampleVector m_buf_filtered4;
   SampleVector m_buf_baseband_demod;
+  SampleVector m_buf_baseband_preagc;
   SampleVector m_buf_baseband;
   SampleVector m_buf_mono;
 

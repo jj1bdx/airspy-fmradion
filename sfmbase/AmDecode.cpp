@@ -92,7 +92,7 @@ AmDecoder::AmDecoder(double sample_rate_demod, IQSampleCoeff &amfilter_coeff,
                   : (m_mode == ModType::CW) ? 0.25
                                             // default value
                                             : 1.0,
-              0.01 // rate
+              0.002 // rate
               )
       // Construct IF AGC
 
@@ -104,7 +104,7 @@ AmDecoder::AmDecoder(double sample_rate_demod, IQSampleCoeff &amfilter_coeff,
                   : (m_mode == ModType::CW) ? 0.2
                                             // default value
                                             : 0.7,
-              0.002 // rate
+              0.001 // rate
       ) {
   // Do nothing
 }
@@ -178,8 +178,17 @@ void AmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
   // DC blocking.
   m_dcblock.process_inplace(m_buf_baseband_demod);
 
+  // Upsample baseband signal.
+  m_audioresampler.process(m_buf_baseband_demod, m_buf_baseband_preagc);
+
+  // If no baseband audio signal comes out, terminate and wait for next block,
+  if (m_buf_baseband_preagc.size() == 0) {
+    audio.resize(0);
+    return;
+  }
+
   // Audio AGC
-  m_afagc.process(m_buf_baseband_demod, m_buf_baseband);
+  m_afagc.process(m_buf_baseband_preagc, m_buf_baseband);
 
   // Measure baseband level after DC blocking.
   double baseband_mean, baseband_rms;
@@ -187,20 +196,11 @@ void AmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
   m_baseband_mean = 0.95 * m_baseband_mean + 0.05 * baseband_mean;
   m_baseband_level = 0.95 * m_baseband_level + 0.05 * baseband_rms;
 
-  // Upsample baseband signal.
-  m_audioresampler.process(m_buf_baseband, m_buf_mono);
-
-  // If no mono audio signal comes out, terminate and wait for next block,
-  if (m_buf_mono.size() == 0) {
-    audio.resize(0);
-    return;
-  }
-
   // Deemphasis
-  m_deemph.process_inplace(m_buf_mono);
+  m_deemph.process_inplace(m_buf_baseband);
 
   // Return mono channel.
-  audio = std::move(m_buf_mono);
+  audio = std::move(m_buf_baseband);
 }
 
 // Demodulate AM signal.
