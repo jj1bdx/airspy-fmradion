@@ -385,8 +385,12 @@ void FmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
     // Lock on stereo pilot,
     // and remove locked 19kHz tone from the composite signal.
     m_pilotpll.process(m_buf_baseband, m_buf_rawstereo, m_pilot_shift);
-    // m_stereo_detected = m_pilotpll.locked();
-    m_stereo_detected = true;
+
+    // Force-set this flag to true to measure stereo PLL phase noise
+    // m_stereo_detected = true;
+    // Use locked flag for the normal use
+    m_stereo_detected = m_pilotpll.locked();
+
     // Demodulate stereo signal.
     demod_stereo(m_buf_baseband, m_buf_rawstereo);
     // Extract audio and downsample.
