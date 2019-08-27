@@ -299,6 +299,7 @@ int main(int argc, char **argv) {
   std::string ppsfilename;
   FILE *ppsfile = NULL;
   double bufsecs = -1;
+  bool enable_squelch = false;
   double squelch_level_db = 150.0;
   bool pilot_shift = false;
   bool deemphasis_na = false;
@@ -376,6 +377,7 @@ int main(int argc, char **argv) {
       if (!parse_dbl(optarg, squelch_level_db) || squelch_level_db < 0) {
         badarg("-l");
       }
+      enable_squelch = true;
       break;
     case 'P':
       outmode = OutputMode::ALSA;
@@ -419,7 +421,12 @@ int main(int argc, char **argv) {
     exit(1);
   }
 
-  double squelch_level = pow(10.0, -(squelch_level_db / 20.0));
+  double squelch_level;
+  if (enable_squelch) {
+    squelch_level = pow(10.0, -(squelch_level_db / 20.0));
+  } else {
+    squelch_level = 0;
+  }
 
   if (strcasecmp(devtype_str.c_str(), "rtlsdr") == 0) {
     devtype = DevType::RTLSDR;
@@ -679,7 +686,9 @@ int main(int argc, char **argv) {
 
   // Show decoding modulation type.
   fprintf(stderr, "Decoding modulation type: %s\n", modtype_str.c_str());
-  fprintf(stderr, "IF Squelch level: %.9g [dB]\n", 20 * log10(squelch_level));
+  if (enable_squelch) {
+    fprintf(stderr, "IF Squelch level: %.9g [dB]\n", 20 * log10(squelch_level));
+  }
 
   double demodulator_rate = ifrate / if_decimation_ratio;
   double total_decimation_ratio = ifrate / pcmrate;
