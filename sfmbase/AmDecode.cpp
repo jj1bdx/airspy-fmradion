@@ -94,6 +94,18 @@ AmDecoder::AmDecoder(double sample_rate_demod, IQSampleCoeff &amfilter_coeff,
                                             : 1.0,
               0.002 // rate
               )
+
+      // Construct AF Fast AGC
+      ,
+      m_affastagc(1.0, // initial_gain
+                  4.0, // max_gain
+                  // reference
+                  ((m_mode == ModType::USB) || (m_mode == ModType::LSB))
+                      ? 0.5
+                      : (m_mode == ModType::CW) ? 0.25
+                                                // default value
+                                                : 0.9)
+
       // Construct IF AGC
 
       ,
