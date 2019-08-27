@@ -1,6 +1,6 @@
 # airspy-fmradion
 
-* Version v0.7.4-pre1, 24-AUG-2019
+* Version v0.7.4, 27-AUG-2019
 * For MacOS and Linux
 
 ### Known issues and changes
@@ -319,7 +319,7 @@ Compile and install
 
 ## Acknowledgments
 
-* Twitter [@lambdaprog](https://twitter.com/lambdaprog/), for the intriguing exchange of Airspy product design details and the technical support
+* Youssef Touil, Airspy Founder, aka Twitter [@lambdaprog](https://twitter.com/lambdaprog/), for the intriguing exchange of Airspy product design details and the technical support
 * [Iowa Hills Software](http://iowahills.com), for their FIR and IIR filter design tools
 * [Brian Beezley, K6STI](http://ham-radio.com/k6sti/), for his comprehensive Web site of FM broadcasting reception expertise and the idea of [Quadrature Multipath Monitor](http://ham-radio.com/k6sti/qmm.htm)
 * [Ryuji Suzuki](https://github.com/rsuzuki0), for reviewing the FM multipath filter coefficients and suggesting putting more weight on picking up more previous samples from the reference point than the samples after
