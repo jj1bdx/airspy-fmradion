@@ -1,4 +1,4 @@
-Phase noise measurement 25-AUG-2019 - 26-AUG-2019
+Phase noise measurement 25-AUG-2019 - 27-AUG-2019
 
 Source:
 Leo Bodnar mini GPS reference clock
@@ -17,4 +17,7 @@ Airspy R2: -81.56dB RMS, -87.83dB peak detected at 8621.3Hz
 
 Summary of the observed phase noise in forced stereo:
 Airspy HF+ (Dual Port): -75.45dB RMS
-
+Airspy R2: -71.43dB RMS, -86.42dB acute peak detected at 8621.3Hz
+           and two more less steep peaks at ~8999.3Hz of -93.8dB
+                                         and ~14441.5Hz of -94.8dB
+ 
