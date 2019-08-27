@@ -1,5 +1,8 @@
 Antenna system memorandum 21-AUG-2019
 
+* With Airspy HF+ Dual Port, a dipole antenna (Nippon Antenna AF-1-SP),
+  connected with 10m of S-4C-FB coax and 1-to-2 splitter
+
 * Using or not using FM RF signal splitter did not affect the listening
   quality (aka noise level of the audio output)
 
