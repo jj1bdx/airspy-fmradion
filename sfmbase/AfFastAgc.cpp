@@ -53,8 +53,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 AfFastAgc::AfFastAgc(const double initial_gain, const double max_gain,
                      const double reference)
     // Initialize member fields
-    : m_last_gain(initial_gain), m_max_gain(max_gain),
-      m_peak1(0), m_peak2(0),
+    : m_last_gain(initial_gain), m_max_gain(max_gain), m_peak1(0), m_peak2(0),
       m_reference(reference) {
   // Do nothing
 }
@@ -63,7 +62,7 @@ AfFastAgc::AfFastAgc(const double initial_gain, const double max_gain,
 // Algorithm: function fastagc_ff() in
 // https://github.com/simonyiszk/csdr/blob/master/libcsdr.c
 void AfFastAgc::process(const SampleVector &samples_in,
-		SampleVector &samples_out) {
+                        SampleVector &samples_out) {
   unsigned int n = samples_in.size();
   samples_out.resize(n);
   m_buf1.resize(n);
