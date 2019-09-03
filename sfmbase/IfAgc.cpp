@@ -33,7 +33,9 @@ IfAgc::IfAgc(const double initial_gain, const double max_gain,
 
 // IF AGC.
 // Algorithm shown in:
-// https://mycourses.aalto.fi/pluginfile.php/119882/mod_page/content/13/AGC.pdf
+// https://www.mathworks.com/help/comm/ref/comm.agc-system-object.html
+// https://www.mathworks.com/help/comm/ref/linear_loop_block_diagram.png
+
 void IfAgc::process(const IQSampleVector &samples_in,
                     IQSampleVector &samples_out) {
   unsigned int n = samples_in.size();
@@ -42,11 +44,17 @@ void IfAgc::process(const IQSampleVector &samples_in,
   for (unsigned int i = 0; i < n; i++) {
     // Compute output based on the current gain.
     double current_gain = std::exp(m_log_current_gain);
-    IQSample output = IQSample(samples_in[i].real() * current_gain,
-                               samples_in[i].imag() * current_gain);
+    IQSample input = samples_in[i];
+    IQSample output =
+        IQSample(input.real() * current_gain, input.imag() * current_gain);
     samples_out[i] = output;
     // Update the current gain.
-    double log_amplitude = std::log(std::abs(output));
+    // Note: the original algorithm multiplied the abs(input)
+    //       with the current gain (exp(log_current_gain))
+    //       then took the logarithm value, but the sequence can be
+    //       realigned as taking the log value of the abs(input)
+    //       then add the log_current_gain.
+    double log_amplitude = std::log(std::abs(input)) + m_log_current_gain;
     double error = (m_log_reference - log_amplitude) * m_rate;
     double new_log_current_gain = m_log_current_gain + error;
     if (new_log_current_gain > m_log_max_gain) {
