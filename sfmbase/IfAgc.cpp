@@ -81,8 +81,6 @@ void IfAgc::process(const IQSampleVector &samples_in,
       new_log_current_gain = m_log_max_gain;
     }
     m_log_current_gain = new_log_current_gain;
-    // fprintf(stderr, "amplitude = %.9g, error = %.9g, new = %.9g\n",
-    //         log_amplitude, error, new_log_current_gain);
   }
 }
 
