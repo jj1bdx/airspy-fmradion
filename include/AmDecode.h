@@ -24,7 +24,6 @@
 #include <vector>
 
 #include "AfAgc.h"
-#include "AfFastAgc.h"
 #include "AudioResampler.h"
 #include "EqParameters.h"
 #include "Filter.h"
@@ -118,7 +117,6 @@ private:
   HighPassFilterIir m_dcblock;
   LowPassFilterRC m_deemph;
   AfAgc m_afagc;
-  AfFastAgc m_affastagc;
   IfAgc m_ifagc;
 };
 

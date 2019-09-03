@@ -53,32 +53,34 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 AfAgc::AfAgc(const double initial_gain, const double max_gain,
              const double reference, const double rate)
     // Initialize member fields
-    : m_current_gain(initial_gain), m_max_gain(max_gain),
-      m_reference(reference), m_rate(rate) {
+    : m_log_current_gain(std::log(initial_gain)),
+      m_log_max_gain(std::log(max_gain)), m_log_reference(std::log(reference)),
+      m_rate(rate) {
   // Do nothing
 }
 
 // AF AGC.
-// Algorithm: function simple_agc_ff() in
-// https://github.com/simonyiszk/csdr/blob/master/libcsdr.c
+// Algorithm shown in:
+// https://mycourses.aalto.fi/pluginfile.php/119882/mod_page/content/13/AGC.pdf
 void AfAgc::process(const SampleVector &samples_in, SampleVector &samples_out) {
-  double rate = m_rate;
-  double rate_1minus = 1 - rate;
   unsigned int n = samples_in.size();
   samples_out.resize(n);
 
   for (unsigned int i = 0; i < n; i++) {
-    double amplitude = fabs(samples_in[i]);
-    double ideal_gain = m_reference / amplitude;
-    if (ideal_gain > m_max_gain) {
-      ideal_gain = m_max_gain;
+    // Compute output based on the current gain.
+    double current_gain = std::exp(m_log_current_gain);
+    Sample output = samples_in[i] * current_gain;
+    samples_out[i] = output;
+    // Update the current gain.
+    double log_amplitude = std::log(std::fabs(output));
+    double error = (m_log_reference - log_amplitude) * m_rate;
+    double new_log_current_gain = m_log_current_gain + error;
+    if (new_log_current_gain > m_log_max_gain) {
+      new_log_current_gain = m_log_max_gain;
     }
-    if (ideal_gain <= 0) {
-      ideal_gain = 0;
-    }
-    m_current_gain =
-        ((ideal_gain - m_current_gain) * rate) + (m_current_gain * rate_1minus);
-    samples_out[i] = samples_in[i] * m_current_gain;
+    m_log_current_gain = new_log_current_gain;
+    // fprintf(stderr, "amplitude = %.9g, error = %.9g, new = %.9g\n",
+    //         log_amplitude, error, new_log_current_gain);
   }
 }
 

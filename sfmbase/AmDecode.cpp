@@ -88,35 +88,23 @@ AmDecoder::AmDecoder(double sample_rate_demod, IQSampleCoeff &amfilter_coeff,
               5.0, // max_gain
               // reference
               ((m_mode == ModType::USB) || (m_mode == ModType::LSB))
-                  ? 0.5
-                  : (m_mode == ModType::CW) ? 0.25
+                  ? 0.125
+                  : (m_mode == ModType::CW) ? 0.0625
                                             // default value
-                                            : 1.0,
-              0.002 // rate
+                                            : 0.25,
+              0.005 // rate
               )
 
-      // Construct AF Fast AGC
-      ,
-      m_affastagc(1.0, // initial_gain
-                  4.0, // max_gain
-                  // reference
-                  ((m_mode == ModType::USB) || (m_mode == ModType::LSB))
-                      ? 0.5
-                      : (m_mode == ModType::CW) ? 0.25
-                                                // default value
-                                                : 0.9)
-
       // Construct IF AGC
-
       ,
       m_ifagc(1.0,      // initial_gain
               100000.0, // max_gain
               ((m_mode == ModType::USB) || (m_mode == ModType::LSB))
-                  ? 0.25
-                  : (m_mode == ModType::CW) ? 0.2
+                  ? 0.125
+                  : (m_mode == ModType::CW) ? 0.1
                                             // default value
-                                            : 0.7,
-              0.001 // rate
+                                            : 0.35,
+              0.002 // rate
       ) {
   // Do nothing
 }
