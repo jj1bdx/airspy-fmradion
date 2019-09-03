@@ -92,7 +92,7 @@ AmDecoder::AmDecoder(double sample_rate_demod, IQSampleCoeff &amfilter_coeff,
                   : (m_mode == ModType::CW) ? 0.0625
                                             // default value
                                             : 0.25,
-              0.005 // rate
+              0.001 // rate
               )
 
       // Construct IF AGC
