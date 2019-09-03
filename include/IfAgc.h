@@ -68,12 +68,12 @@ public:
   void process(const IQSampleVector &samples_in, IQSampleVector &samples_out);
 
   // Return IF AGC current gain.
-  double get_current_gain() const { return m_current_gain; }
+  double get_current_gain() const { return std::exp(m_log_current_gain); }
 
 private:
-  double m_current_gain;
-  double m_max_gain;
-  double m_reference;
+  double m_log_current_gain;
+  double m_log_max_gain;
+  double m_log_reference;
   double m_rate;
 };
 
