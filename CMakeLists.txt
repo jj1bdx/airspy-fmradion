@@ -130,7 +130,6 @@ set(CMAKE_CXX_FLAGS "-Wall -std=c++11 ${OPTIMIZATION_FLAGS} ${ALSA_OPTION} ${AIR
 
 set(sfmbase_SOURCES
     sfmbase/AfAgc.cpp
-    sfmbase/AfFastAgc.cpp
     sfmbase/AmDecode.cpp
     sfmbase/AudioResampler.cpp
     sfmbase/AudioOutput.cpp
@@ -148,7 +147,6 @@ set(sfmbase_SOURCES
 
 set(sfmbase_HEADERS
     include/AfAgc.h
-    include/AfFastAgc.h
     include/AmDecode.h
     include/AudioResampler.h
     include/AudioOutput.h
