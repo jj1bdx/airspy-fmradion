@@ -315,10 +315,10 @@ Compile and install
 * Joris van Rantwijk
 * Edouard Griffiths, F4EXB (no longer involving in maintaining NGSoftFM)
 * Kenji Rikitake, JJ1BDX (maintainer)
-* András Retzler, HA7ILM (for AM AGC code in [csdr](https://github.com/simonyiszk/csdr))
 
 ## Acknowledgments
 
+* András Retzler, HA7ILM (for the former AF/IF AGC code in [csdr](https://github.com/simonyiszk/csdr))
 * Youssef Touil, Airspy Founder, aka Twitter [@lambdaprog](https://twitter.com/lambdaprog/), for the intriguing exchange of Airspy product design details and the technical support
 * [Iowa Hills Software](http://iowahills.com), for their FIR and IIR filter design tools
 * [Brian Beezley, K6STI](http://ham-radio.com/k6sti/), for his comprehensive Web site of FM broadcasting reception expertise and the idea of [Quadrature Multipath Monitor](http://ham-radio.com/k6sti/qmm.htm)
