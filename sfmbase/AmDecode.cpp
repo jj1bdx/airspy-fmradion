@@ -74,36 +74,38 @@ AmDecoder::AmDecoder(double sample_rate_demod, IQSampleCoeff &amfilter_coeff,
       m_cwshiftfilter(FilterParameters::jj1bdx_cw_250hz, 1)
 
       // Construct HighPassFilterIir
-      // cutoff: 60Hz for 12kHz sampling rate
+      // cutoff: 30Hz for 12kHz sampling rate
       ,
-      m_dcblock(0.005)
+      m_dcblock(30 / internal_rate_pcm)
 
       // Construct LowPassFilterRC
       ,
       m_deemph(default_deemphasis * sample_rate_pcm * 1.0e-6)
 
       // Construct AF AGC
+      // Use mostly as peak limiter
       ,
       m_afagc(1.0, // initial_gain
-              4.0, // max_gain
+              2.0, // max_gain
               // reference
               ((m_mode == ModType::USB) || (m_mode == ModType::LSB))
-                  ? 0.125
+                  ? 0.1
                   : (m_mode == ModType::CW) ? 0.1
                                             // default value
-                                            : 0.25,
+                                            : 0.2,
               0.002 // rate
               )
 
       // Construct IF AGC
+      // Use as AM level compressor, raise the level to one
       ,
       m_ifagc(1.0,      // initial_gain
               100000.0, // max_gain
               ((m_mode == ModType::USB) || (m_mode == ModType::LSB))
-                  ? 0.125
-                  : (m_mode == ModType::CW) ? 0.1
+                  ? 0.25
+                  : (m_mode == ModType::CW) ? 0.25
                                             // default value
-                                            : 0.35,
+                                            : 0.7,
               0.005 // rate
       ) {
   // Do nothing
