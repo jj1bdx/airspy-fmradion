@@ -334,6 +334,12 @@ void FmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
   // Perform IF AGC.
   m_ifagc.process(samples_in, m_samples_in_after_agc);
 
+#if 0
+  // Measure IF RMS level for checking how IF AGC works.
+  double if_agc_rms = rms_level_approx(m_samples_in_after_agc);
+  fprintf(stderr, "if_agc_rms = %.9g\n", if_agc_rms);
+#endif
+
   if (m_wait_multipath_blocks > 0) {
     m_wait_multipath_blocks--;
     // No multipath filter applied.
