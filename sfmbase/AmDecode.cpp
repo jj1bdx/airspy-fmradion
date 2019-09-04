@@ -74,9 +74,9 @@ AmDecoder::AmDecoder(double sample_rate_demod, IQSampleCoeff &amfilter_coeff,
       m_cwshiftfilter(FilterParameters::jj1bdx_cw_250hz, 1)
 
       // Construct HighPassFilterIir
-      // cutoff: 30Hz for 12kHz sampling rate
+      // cutoff: 60Hz for 12kHz sampling rate
       ,
-      m_dcblock(30 / internal_rate_pcm)
+      m_dcblock(60 / internal_rate_pcm)
 
       // Construct LowPassFilterRC
       ,
