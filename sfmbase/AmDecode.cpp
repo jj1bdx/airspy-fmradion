@@ -86,7 +86,7 @@ AmDecoder::AmDecoder(double sample_rate_demod, IQSampleCoeff &amfilter_coeff,
       // Use mostly as peak limiter
       ,
       m_afagc(1.0, // initial_gain
-              2.0, // max_gain
+              1.5, // max_gain
               // reference
               ((m_mode == ModType::USB) || (m_mode == ModType::LSB))
                   ? 0.1
@@ -102,11 +102,11 @@ AmDecoder::AmDecoder(double sample_rate_demod, IQSampleCoeff &amfilter_coeff,
       m_ifagc(1.0,      // initial_gain
               100000.0, // max_gain
               ((m_mode == ModType::USB) || (m_mode == ModType::LSB))
-                  ? 0.25
-                  : (m_mode == ModType::CW) ? 0.25
+                  ? 0.35
+                  : (m_mode == ModType::CW) ? 0.35
                                             // default value
-                                            : 0.7,
-              0.005 // rate
+                                            : 1.0,
+              0.001 // rate
       ) {
   // Do nothing
 }
