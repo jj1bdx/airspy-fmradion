@@ -102,10 +102,10 @@ AmDecoder::AmDecoder(double sample_rate_demod, IQSampleCoeff &amfilter_coeff,
       m_ifagc(1.0,      // initial_gain
               100000.0, // max_gain
               ((m_mode == ModType::USB) || (m_mode == ModType::LSB))
-                  ? 0.35
-                  : (m_mode == ModType::CW) ? 0.35
+                  ? 0.25
+                  : (m_mode == ModType::CW) ? 0.25
                                             // default value
-                                            : 1.0,
+                                            : 0.7,
               0.001 // rate
       ) {
   // Do nothing
