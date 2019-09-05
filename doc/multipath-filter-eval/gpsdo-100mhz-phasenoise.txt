@@ -1,4 +1,4 @@
-Phase noise measurement 25-AUG-2019 - 27-AUG-2019
+Phase noise measurement 25-AUG-2019 - 27-AUG-2019, 5-SEP-2019
 
 Source:
 Leo Bodnar mini GPS reference clock
@@ -13,13 +13,17 @@ airspy-fmradion -t airspy -c freq=100000000,srate=10000000,lgain=0,mgain=1,vgain
 airspy-fmradion -t rtlsdr -c freq=100000000,srate=1200000,gain=0.0 -F output.bin
 
 Summary of the observed phase noise in monoaural:
-Airspy HF+ (Dual Port): -96.59dB RMS
+Airspy HF+ Dual Port: -96.59dB RMS
+Airspy HF+ Discovery: -96.69dB RMS
 Airspy R2: -81.56dB RMS, -87.83dB peak detected at 8621.3Hz
 RTL-SDR V3: -85.54dB RMS, -95.36dB peak detected at 162.2Hz,
             and harmonics of 162.2Hz detected at 324.8Hz, 487.1Hz, etc.
 
 Summary of the observed phase noise in forced stereo:
-Airspy HF+ (Dual Port): -75.45dB RMS
+Airspy HF+ Dual Port: -75.45dB RMS
+Airspy HF+ Discovery: -70.05dB RMS
+                      (peaks detected on 2kHz and the harmonics)
+                      (spurious peaks fluctuating within 10dB range)
 Airspy R2: -71.43dB RMS, -86.42dB acute peak detected at 8621.3Hz
            and two more less steep peaks at ~8999.3Hz of -93.8dB
                                          and ~14441.5Hz of -94.8dB
