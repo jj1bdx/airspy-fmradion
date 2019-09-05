@@ -23,7 +23,6 @@
 #include <vector>
 
 #include "AudioResampler.h"
-#include "EqParameters.h"
 #include "Filter.h"
 #include "FilterParameters.h"
 #include "PhaseDiscriminator.h"

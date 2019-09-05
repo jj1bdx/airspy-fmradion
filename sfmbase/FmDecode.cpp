@@ -22,33 +22,6 @@
 
 #include "FmDecode.h"
 
-// class DiscriminatorEqualizer
-
-// Construct equalizer for phase discriminator.
-DiscriminatorEqualizer::DiscriminatorEqualizer(double ifeq_static_gain,
-                                               double ifeq_fit_factor)
-    : m_static_gain(ifeq_static_gain), m_fit_factor(ifeq_fit_factor),
-      m_last1_sample(0.0) {}
-
-// Process samples.
-inline void DiscriminatorEqualizer::process(const SampleVector &samples_in,
-                                            SampleVector &samples_out) {
-  unsigned int n = samples_in.size();
-  samples_out.resize(n);
-
-  // Enhance high frequency.
-  // Max gain: m_static_gain,
-  // deduced by m_fit_factor for the lower frequencies.
-  samples_out[0] = (m_static_gain * samples_in[0]) -
-                   (m_fit_factor * ((samples_in[0] + m_last1_sample) / 2.0));
-  for (unsigned int i = 1; i < n; i++) {
-    samples_out[i] =
-        (m_static_gain * samples_in[i]) -
-        (m_fit_factor * ((samples_in[i] + samples_in[i - 1]) / 2.0));
-  }
-  m_last1_sample = samples_in[n - 1];
-}
-
 /* ****************  class PilotPhaseLock  **************** */
 
 // Construct phase-locked loop.
@@ -274,15 +247,6 @@ FmDecoder::FmDecoder(double sample_rate_demod, bool stereo, double deemphasis,
       m_pilotcut_mono(FilterParameters::jj1bdx_48khz_fmaudio),
       m_pilotcut_stereo(FilterParameters::jj1bdx_48khz_fmaudio)
 
-      // Construct EqParams
-      ,
-      m_eqparams()
-
-      // Construct DiscriminatorEqualizer
-      ,
-      m_disceq(m_eqparams.compute_staticgain(m_sample_rate_fmdemod),
-               m_eqparams.compute_fitlevel(m_sample_rate_fmdemod))
-
       // Construct PhaseDiscriminator
       ,
       m_phasedisc(freq_dev / m_sample_rate_fmdemod)
@@ -366,11 +330,7 @@ void FmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
   }
 
   // Demodulate FM to MPX signal.
-  m_phasedisc.process(m_samples_in_filtered, m_buf_baseband_raw);
-
-  // Compensate 0th-hold aperture effect
-  // by applying the equalizer to the discriminator output.
-  m_disceq.process(m_buf_baseband_raw, m_buf_baseband);
+  m_phasedisc.process(m_samples_in_filtered, m_buf_baseband);
 
   // If no downsampled baseband signal comes out,
   // terminate and wait for next block,

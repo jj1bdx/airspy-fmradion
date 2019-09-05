@@ -25,7 +25,6 @@
 
 #include "AfAgc.h"
 #include "AudioResampler.h"
-#include "EqParameters.h"
 #include "Filter.h"
 #include "FilterParameters.h"
 #include "FourthConverterIQ.h"
