@@ -1,9 +1,11 @@
 # airspy-fmradion
 
-* Version v0.7.6-pre2, 4-SEP-2019
+* Version v0.7.6-pre3, 5-SEP-2019
 * For MacOS and Linux
 
 ### Known issues and changes
+
+* DiscriminatorEqualizer removed since v0.7.6-pre3
 
 * The multipath filter starts after discarding the first 100 blocks. This change is to avoid the initial instability of Airspy R2.
 
@@ -203,7 +205,6 @@ Compile and install
 ### For FM
 
 * FM Filter coefficients are listed under `doc/filter-design`
-* DiscriminatorEqualizer IF range: 180kHz - 1MHz (nyquist: 180kHz - 500kHz)
 
 ### For AM
 
