@@ -134,29 +134,8 @@ void PilotPhaseLock::process(const SampleVector &samples_in,
     m_phasor_q1 = phasor_q;
 
     // Convert I/Q ratio to estimate of phase error.
-    // Maximum phase error during the locked state is
-    // +- 0.02 radian, so the atan2() function can be
-    // substituted without problem by a division.
-    Sample phase_err;
-    if (phasor_i > abs(phasor_q)) {
-      // We are within +/- 45 degrees from lock.
-      // We use a fast estimation equation presented in
-      // S. Rajan, Sichun Wang, R. Inkol and A. Joyal,
-      // "Efficient approximations for the arctangent function,"
-      // in IEEE Signal Processing Magazine,
-      // vol. 23, no. 3, pp. 108-111, May 2006.
-      // doi: 10.1109/MSP.2006.1628884
-      // https://ieeexplore.ieee.org/document/1628884
-      Sample phasor_ratio = phasor_q / phasor_i;
-      phase_err =
-          phasor_ratio / (1.0f + 0.28086f * phasor_ratio * phasor_ratio);
-    } else if (phasor_q > 0) {
-      // We are lagging more than 45 degrees behind the input.
-      phase_err = 1;
-    } else {
-      // We are more than 45 degrees ahead of the input.
-      phase_err = -1;
-    }
+    // Note: maximum phase error during the locked state is +- 0.02 radian.
+    Sample phase_err = atan2(phasor_q, phasor_i);
 
     // Detect pilot level (conservative).
     m_pilot_level = std::min(m_pilot_level, phasor_i);
@@ -254,7 +233,7 @@ FmDecoder::FmDecoder(double sample_rate_demod, bool stereo, double deemphasis,
       // Construct PilotPhaseLock
       ,
       m_pilotpll(pilot_freq / m_sample_rate_fmdemod, // freq
-                 50 / m_sample_rate_fmdemod,         // bandwidth
+                 20 / m_sample_rate_fmdemod,         // bandwidth
                  0.01)                               // minsignal (was 0.04)
 
       // Construct HighPassFilterIir
@@ -414,8 +393,8 @@ void FmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
 }
 
 // Demodulate stereo L-R signal.
-void FmDecoder::demod_stereo(const SampleVector &samples_baseband,
-                             SampleVector &samples_rawstereo) {
+inline void FmDecoder::demod_stereo(const SampleVector &samples_baseband,
+                                    SampleVector &samples_rawstereo) {
   // Multiply the baseband signal with the double-frequency pilot,
   // and multiply by 2.00 to get the full amplitude.
 
@@ -428,8 +407,8 @@ void FmDecoder::demod_stereo(const SampleVector &samples_baseband,
 }
 
 // Duplicate mono signal in left/right channels.
-void FmDecoder::mono_to_left_right(const SampleVector &samples_mono,
-                                   SampleVector &audio) {
+inline void FmDecoder::mono_to_left_right(const SampleVector &samples_mono,
+                                          SampleVector &audio) {
   unsigned int n = samples_mono.size();
 
   audio.resize(2 * n);
@@ -441,9 +420,9 @@ void FmDecoder::mono_to_left_right(const SampleVector &samples_mono,
 }
 
 // Extract left/right channels from (L+R) / (L-R) signals.
-void FmDecoder::stereo_to_left_right(const SampleVector &samples_mono,
-                                     const SampleVector &samples_stereo,
-                                     SampleVector &audio) {
+inline void FmDecoder::stereo_to_left_right(const SampleVector &samples_mono,
+                                            const SampleVector &samples_stereo,
+                                            SampleVector &audio) {
   unsigned int n = samples_mono.size();
   assert(n == samples_stereo.size());
 
@@ -458,8 +437,8 @@ void FmDecoder::stereo_to_left_right(const SampleVector &samples_mono,
 
 // Fill zero signal in left/right channels.
 // (samples_mono used for the size determination only)
-void FmDecoder::zero_to_left_right(const SampleVector &samples_mono,
-                                   SampleVector &audio) {
+inline void FmDecoder::zero_to_left_right(const SampleVector &samples_mono,
+                                          SampleVector &audio) {
   unsigned int n = samples_mono.size();
 
   audio.resize(2 * n);

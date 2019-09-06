@@ -168,22 +168,22 @@ public:
 
 private:
   /** Demodulate stereo L-R signal. */
-  void demod_stereo(const SampleVector &samples_baseband,
-                    SampleVector &samples_stereo);
+  inline void demod_stereo(const SampleVector &samples_baseband,
+                           SampleVector &samples_stereo);
 
   /** Duplicate mono signal in left/right channels. */
-  void mono_to_left_right(const SampleVector &samples_mono,
-                          SampleVector &audio);
+  inline void mono_to_left_right(const SampleVector &samples_mono,
+                                 SampleVector &audio);
 
   /** Extract left/right channels from mono/stereo signals. */
-  void stereo_to_left_right(const SampleVector &samples_mono,
-                            const SampleVector &samples_stereo,
-                            SampleVector &audio);
+  inline void stereo_to_left_right(const SampleVector &samples_mono,
+                                   const SampleVector &samples_stereo,
+                                   SampleVector &audio);
 
   // Fill zero signal in left/right channels.
   // (samples_mono used for the size determination only)
-  void zero_to_left_right(const SampleVector &samples_mono,
-                          SampleVector &audio);
+  inline void zero_to_left_right(const SampleVector &samples_mono,
+                                 SampleVector &audio);
 
   // Data members.
   const double m_sample_rate_fmdemod;
