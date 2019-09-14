@@ -429,7 +429,9 @@ inline void FmDecoder::stereo_to_left_right(const SampleVector &samples_mono,
   audio.resize(2 * n);
   for (unsigned int i = 0; i < n; i++) {
     Sample m = samples_mono[i];
-    Sample s = samples_stereo[i];
+    // L-R singal is boosted by 1.017
+    // for better separation (suggested by Teruhiko Hayashi)
+    Sample s = 1.017 * samples_stereo[i];
     audio[2 * i] = m + s;
     audio[2 * i + 1] = m - s;
   }
