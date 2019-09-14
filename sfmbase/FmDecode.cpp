@@ -241,12 +241,15 @@ FmDecoder::FmDecoder(double sample_rate_demod, bool stereo, double deemphasis,
       ,
       m_dcblock_mono(0.0001), m_dcblock_stereo(0.0001)
 
-      // Construct LowPassFilterRC
+      // Construct LowPassFilterRC for deemphasis
+      // Note: sampling rate is of the FM demodulator
       ,
-      m_deemph_mono(
-          (deemphasis == 0) ? 1.0 : (deemphasis * sample_rate_pcm * 1.0e-6)),
-      m_deemph_stereo(
-          (deemphasis == 0) ? 1.0 : (deemphasis * sample_rate_pcm * 1.0e-6))
+      m_deemph_mono((deemphasis == 0)
+                        ? 1.0
+                        : (deemphasis * m_sample_rate_fmdemod * 1.0e-6)),
+      m_deemph_stereo((deemphasis == 0)
+                          ? 1.0
+                          : (deemphasis * m_sample_rate_fmdemod * 1.0e-6))
 
       // Construct IF AGC
       ,
@@ -339,12 +342,21 @@ void FmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
 
     // Demodulate stereo signal.
     demod_stereo(m_buf_baseband, m_buf_rawstereo);
-    // Extract audio and downsample.
+
+    // Deemphasize the stereo (L-R) signal if not for QMM.
+    if (!m_pilot_shift) {
+      m_deemph_stereo.process_inplace(m_buf_rawstereo);
+    }
+
+    // Downsample.
     // NOTE: This MUST be done even if no stereo signal is detected yet,
     // because the downsamplers for mono and stereo signal must be
     // kept in sync.
     m_audioresampler_stereo.process(m_buf_rawstereo, m_buf_stereo_firstout);
   }
+
+  // Deemphasize the mono audio signal.
+  m_deemph_mono.process_inplace(m_buf_baseband);
 
   // Extract mono audio signal.
   m_audioresampler_mono.process(m_buf_baseband, m_buf_mono_firstout);
@@ -367,27 +379,21 @@ void FmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
     if (m_stereo_detected) {
       if (m_pilot_shift) {
         // Duplicate L-R shifted output in left/right channels.
-        // No deemphasis
         mono_to_left_right(m_buf_stereo, audio);
       } else {
         // Extract left/right channels from (L+R) / (L-R) signals.
         stereo_to_left_right(m_buf_mono, m_buf_stereo, audio);
-        // L and R de-emphasis.
-        m_deemph_stereo.process_interleaved_inplace(audio);
       }
     } else {
       if (m_pilot_shift) {
         // Fill zero output in left/right channels.
         zero_to_left_right(m_buf_stereo, audio);
       } else {
-        // De-emphasis.
-        m_deemph_mono.process_inplace(m_buf_mono);
         // Duplicate mono signal in left/right channels.
         mono_to_left_right(m_buf_mono, audio);
       }
     }
   } else {
-    m_deemph_mono.process_inplace(m_buf_mono); //  De-emphasis.
     // Just return mono channel.
     audio = std::move(m_buf_mono);
   }
