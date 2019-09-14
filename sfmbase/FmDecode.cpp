@@ -292,7 +292,8 @@ void FmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
       // Apply multipath filter.
       m_multipathfilter.process(m_samples_in_after_agc, m_samples_in_filtered);
       double filter_error = m_multipathfilter.get_error();
-      bool abnormal_error = isinf(filter_error) || isnan(filter_error);
+      bool abnormal_error =
+          std::isinf(filter_error) || std::isnan(filter_error);
       // Skip further multipath filter processing
       // if the error evaluation becomes invalid.
       if (!m_skip_multipath_filter && abnormal_error) {
