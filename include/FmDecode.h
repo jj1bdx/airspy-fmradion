@@ -24,7 +24,6 @@
 #include <vector>
 
 #include "AudioResampler.h"
-#include "EqParameters.h"
 #include "Filter.h"
 #include "FilterParameters.h"
 #include "IfAgc.h"
@@ -32,21 +31,6 @@
 #include "PhaseDiscriminator.h"
 #include "SoftFM.h"
 #include "util.h"
-
-class DiscriminatorEqualizer {
-public:
-  // Construct equalizer for phase discriminator.
-  DiscriminatorEqualizer(double ifeq_static_gain, double ifeq_fit_factor);
-
-  // process samples.
-  // Output is a sequence of equalized output.
-  void process(const SampleVector &samples_in, SampleVector &samples_out);
-
-private:
-  double m_static_gain;
-  double m_fit_factor;
-  double m_last1_sample;
-};
 
 /** Phase-locked loop for stereo pilot. */
 class PilotPhaseLock {
@@ -228,8 +212,6 @@ private:
   AudioResampler m_audioresampler_stereo;
   LowPassFilterFirAudio m_pilotcut_mono;
   LowPassFilterFirAudio m_pilotcut_stereo;
-  EqParameters m_eqparams;
-  DiscriminatorEqualizer m_disceq;
   PhaseDiscriminator m_phasedisc;
   PilotPhaseLock m_pilotpll;
   HighPassFilterIir m_dcblock_mono;

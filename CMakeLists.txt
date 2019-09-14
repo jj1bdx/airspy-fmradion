@@ -133,7 +133,6 @@ set(sfmbase_SOURCES
     sfmbase/AmDecode.cpp
     sfmbase/AudioResampler.cpp
     sfmbase/AudioOutput.cpp
-    sfmbase/EqParameters.cpp
     sfmbase/Filter.cpp
     sfmbase/FilterParameters.cpp
     sfmbase/FmDecode.cpp
@@ -151,7 +150,6 @@ set(sfmbase_HEADERS
     include/AudioResampler.h
     include/AudioOutput.h
     include/DataBuffer.h
-    include/EqParameters.h
     include/Filter.h
     include/FilterParameters.h
     include/FmDecode.h
