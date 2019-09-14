@@ -29,8 +29,9 @@ IfResampler::IfResampler(const double input_rate, const double output_rate)
   soxr_error_t error;
   // Use float, see typedef of IQSample
   soxr_io_spec_t io_spec = soxr_io_spec(SOXR_FLOAT32_I, SOXR_FLOAT32_I);
+  // Steep: passband_end = 0.982265664
   soxr_quality_spec_t quality_spec =
-      soxr_quality_spec(SOXR_VHQ, SOXR_LINEAR_PHASE);
+      soxr_quality_spec((SOXR_VHQ | SOXR_LINEAR_PHASE | SOXR_STEEP_FILTER), 0);
   soxr_runtime_spec_t runtime_spec = soxr_runtime_spec(1);
 
   // Create a resampler objects of two interleave channels.
