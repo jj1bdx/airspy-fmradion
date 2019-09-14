@@ -191,6 +191,10 @@ Compile and install
 * For Mac mini 2018 with 3.2 GHz Intel Core i7, 288 stages consume 99% of one CPU core
 * This filter is not effective when the IF bandwidth is narrow (192kHz)
 
+### L-R signal boosted for the stereo separation improvement
+
+* Teruhiko Hayashi suggested boosting L-R signal by 1.017 for a better stereo separation
+
 ## No-goals
 
 * CIC filters for the IF 1st stage (unable to explore parallelism, too complex to compensate)
