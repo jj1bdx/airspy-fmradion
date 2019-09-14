@@ -30,11 +30,13 @@ AudioResampler::AudioResampler(const double input_rate,
   soxr_error_t error;
   // Use double
   soxr_io_spec_t io_spec = soxr_io_spec(SOXR_FLOAT64_I, SOXR_FLOAT64_I);
+  // Not steep: passband_end = 0.91132832
   soxr_quality_spec_t quality_spec =
-      soxr_quality_spec(SOXR_VHQ, SOXR_LINEAR_PHASE);
+      soxr_quality_spec((SOXR_VHQ | SOXR_LINEAR_PHASE), 0);
+  soxr_runtime_spec_t runtime_spec = soxr_runtime_spec(1);
 
-  m_soxr =
-      soxr_create(m_irate, m_orate, 1, &error, &io_spec, &quality_spec, NULL);
+  m_soxr = soxr_create(m_irate, m_orate, 1, &error, &io_spec, &quality_spec,
+                       &runtime_spec);
   if (error) {
     soxr_delete(m_soxr);
     fprintf(stderr, "AudioResampler: unable to create soxr: %s\n", error);
