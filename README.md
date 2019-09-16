@@ -1,6 +1,6 @@
 # airspy-fmradion
 
-* Version v0.7.6, 14-SEP-2019
+* Version v0.7.7-pre0, 16-SEP-2019
 * For MacOS and Linux
 
 ### Known issues and changes
@@ -154,9 +154,9 @@ Compile and install
  - `-X` Shift pilot phase (for Quadrature Multipath Monitor) (-X is ignored under mono mode (-M))
  - `-U` Set deemphasis to 75 microseconds (default: 50)
  - `-f` Set Filter type
-   - for FM: default: +-176kHz, middle: +-145kHz, narrow: +-112kHz
-   - for AM: default: +-6kHz, middle: +-4kHz, narrow: +-3kHz
- - `-l dB` Set IF squelch level to minus given value of dB
+   - for FM: default: +-189kHz, medium: +-156kHz, narrow: +-121kHz
+   - for AM: default: +-6kHz, medium: +-4kHz, narrow: +-3kHz
+ - `-l dB` Enable IF squelch, set the level to minus given value of dB
  - `-E stages` Enable multipath filter for FM (For stable reception only: turn off if reception becomes unstable)
 
 ## Major changes

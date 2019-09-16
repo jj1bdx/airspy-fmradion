@@ -48,7 +48,7 @@
 // define this for enabling coefficient monitor functions
 // #undef COEFF_MONITOR
 
-#define AIRSPY_FMRADION_VERSION "v0.7.6"
+#define AIRSPY_FMRADION_VERSION "v0.7.7-pre0"
 
 /** Flag is set on SIGINT / SIGTERM. */
 static std::atomic_bool stop_flag(false);
@@ -624,15 +624,15 @@ int main(int argc, char **argv) {
 
   switch (filtertype) {
   case FilterType::Default:
-    // 384 * 0.913 ~= 351kHz
+    // 384 * 0.982 ~= 377kHz
     fm_target_rate = 384000;
     break;
   case FilterType::Medium:
-    // 318 * 0.913 ~= 289kHz
+    // 318 * 0.982 ~= 312kHz
     fm_target_rate = 318000;
     break;
   case FilterType::Narrow:
-    // 246 * 0.913 ~= 224kHz
+    // 246 * 0.982 ~= 242kHz
     fm_target_rate = 246000;
     break;
   }
