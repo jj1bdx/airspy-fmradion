@@ -32,7 +32,7 @@ std::vector<std::string> split_delimiter(const std::string str) {
     // Delimiters: '&' or ','
     if ((c == '&') || (c == ',')) {
       if (!token.empty()) {
-    elements.push_back(token);
+        elements.push_back(token);
       }
       token.clear();
     } else {
@@ -85,7 +85,7 @@ void parse_config_string(std::string text, map_type &output) {
   for (std::string str : tokens) {
     pair_type element = split_equal_sign(str);
     if (element.first.size() > 0) {
-        output.insert(element);
+      output.insert(element);
     }
   }
 }
