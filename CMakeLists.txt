@@ -177,10 +177,12 @@ set(sfmbase_SOURCES
 # RTL-SDR sources
 
 set(sfmrtlsdr_SOURCES
+    sfmbase/ConfigParser.cpp
     sfmbase/RtlSdrSource.cpp
 )
 
 set(sfmrtlsdr_HEADERS
+    include/ConfigParser.h
     include/RtlSdrSource.h
 )
 
@@ -193,10 +195,12 @@ set(sfmrtlsdr_SOURCES
 
 set(sfmairspy_SOURCES
     sfmbase/AirspySource.cpp
+    sfmbase/ConfigParser.cpp
 )
 
 set(sfmairspy_HEADERS
     include/AirspySource.h
+    include/ConfigParser.h
 )
 
 set(sfmairspy_SOURCES
@@ -208,10 +212,12 @@ set(sfmairspy_SOURCES
 
 set(sfmairspyhf_SOURCES
     sfmbase/AirspyHFSource.cpp
+    sfmbase/ConfigParser.cpp
 )
 
 set(sfmairspyhf_HEADERS
     include/AirspyHFSource.h
+    include/ConfigParser.h
 )
 
 set(sfmairspyhf_SOURCES
