@@ -22,9 +22,10 @@
 #include <rtl-sdr.h>
 #include <sstream>
 #include <thread>
+#include <unistd.h>
 
+#include "ConfigParser.h"
 #include "RtlSdrSource.h"
-#include "parsekv.h"
 #include "util.h"
 
 RtlSdrSource *RtlSdrSource::m_this = 0;
@@ -71,9 +72,7 @@ RtlSdrSource::~RtlSdrSource() {
 }
 
 bool RtlSdrSource::configure(std::string configurationStr) {
-  namespace qi = boost::spirit::qi;
-  std::string::iterator begin = configurationStr.begin();
-  std::string::iterator end = configurationStr.end();
+  namespace cp = ConfigParser;
 
   uint32_t sample_rate = 1200000;
   uint32_t frequency = 100000000;
@@ -82,95 +81,88 @@ bool RtlSdrSource::configure(std::string configurationStr) {
   bool agcmode = false;
   bool antbias = false;
 
-  parsekv::key_value_sequence<std::string::iterator> p;
-  parsekv::pairs_type m;
+  cp::map_type m;
 
-  if (!qi::parse(begin, end, p, m)) {
-    m_error = "Configuration parsing failed\n";
-    return false;
-  } else {
-    if (m.find("srate") != m.end()) {
-      std::cerr << "RtlSdrSource::configure: srate: " << m["srate"]
-                << std::endl;
-      sample_rate = atoi(m["srate"].c_str());
+  cp::parse_config_string(configurationStr, m);
+  if (m.find("srate") != m.end()) {
+    std::cerr << "RtlSdrSource::configure: srate: " << m["srate"] << std::endl;
+    sample_rate = atoi(m["srate"].c_str());
 
-      if ((sample_rate < 225001) ||
-          ((sample_rate > 300000) && (sample_rate < 900001)) ||
-          (sample_rate > 3200000)) {
-        m_error = "Invalid sample rate";
-        return false;
-      }
+    if ((sample_rate < 225001) ||
+        ((sample_rate > 300000) && (sample_rate < 900001)) ||
+        (sample_rate > 3200000)) {
+      m_error = "Invalid sample rate";
+      return false;
     }
+  }
 
-    if (m.find("freq") != m.end()) {
-      std::cerr << "RtlSdrSource::configure: freq: " << m["freq"] << std::endl;
-      frequency = atoi(m["freq"].c_str());
+  if (m.find("freq") != m.end()) {
+    std::cerr << "RtlSdrSource::configure: freq: " << m["freq"] << std::endl;
+    frequency = atoi(m["freq"].c_str());
 
-      if ((frequency < 10000000) || (frequency > 2200000000)) {
-        m_error = "Invalid frequency";
-        return false;
-      }
+    if ((frequency < 10000000) || (frequency > 2200000000)) {
+      m_error = "Invalid frequency";
+      return false;
     }
+  }
 
-    if (m.find("gain") != m.end()) {
-      std::string gain_str = m["gain"];
-      std::cerr << "RtlSdrSource::configure: gain: " << gain_str << std::endl;
+  if (m.find("gain") != m.end()) {
+    std::string gain_str = m["gain"];
+    std::cerr << "RtlSdrSource::configure: gain: " << gain_str << std::endl;
 
-      if (strcasecmp(gain_str.c_str(), "auto") == 0) {
-        tuner_gain = INT_MIN;
-      } else if (strcasecmp(gain_str.c_str(), "list") == 0) {
-        m_error = "Available gains (dB): " + m_gainsStr;
+    if (strcasecmp(gain_str.c_str(), "auto") == 0) {
+      tuner_gain = INT_MIN;
+    } else if (strcasecmp(gain_str.c_str(), "list") == 0) {
+      m_error = "Available gains (dB): " + m_gainsStr;
+      return false;
+    } else {
+      double tmpgain;
+
+      if (!parse_dbl(gain_str.c_str(), tmpgain)) {
+        m_error = "Invalid gain";
         return false;
       } else {
-        double tmpgain;
+        long int tmpgain2 = lrint(tmpgain * 10);
 
-        if (!parse_dbl(gain_str.c_str(), tmpgain)) {
+        if (tmpgain2 <= INT_MIN || tmpgain2 >= INT_MAX) {
           m_error = "Invalid gain";
           return false;
         } else {
-          long int tmpgain2 = lrint(tmpgain * 10);
+          tuner_gain = tmpgain2;
 
-          if (tmpgain2 <= INT_MIN || tmpgain2 >= INT_MAX) {
-            m_error = "Invalid gain";
+          if (find(m_gains.begin(), m_gains.end(), tuner_gain) ==
+              m_gains.end()) {
+            m_error = "Gain not supported. Available gains (dB): " + m_gainsStr;
             return false;
-          } else {
-            tuner_gain = tmpgain2;
-
-            if (find(m_gains.begin(), m_gains.end(), tuner_gain) ==
-                m_gains.end()) {
-              m_error =
-                  "Gain not supported. Available gains (dB): " + m_gainsStr;
-              return false;
-            }
           }
         }
       }
-    } // gain
-
-    if (m.find("blklen") != m.end()) {
-      std::cerr << "RtlSdrSource::configure: blklen: " << m["blklen"]
-                << std::endl;
-      block_length = atoi(m["blklen"].c_str());
     }
+  } // gain
 
-    if (m.find("agc") != m.end()) {
-      std::cerr << "RtlSdrSource::configure: agc" << std::endl;
-      agcmode = true;
-    }
-
-    if (m.find("antbias") != m.end()) {
-      std::cerr << "RtlSdrSource::configure: agc" << std::endl;
-      antbias = true;
-    }
-
-    // Intentionally tune at a higher frequency to avoid DC offset.
-    m_confFreq = frequency;
-    m_confAgc = agcmode;
-    double tuner_freq = frequency - sample_rate / 4.0;
-
-    return configure(sample_rate, tuner_freq, tuner_gain, block_length, agcmode,
-                     antbias);
+  if (m.find("blklen") != m.end()) {
+    std::cerr << "RtlSdrSource::configure: blklen: " << m["blklen"]
+              << std::endl;
+    block_length = atoi(m["blklen"].c_str());
   }
+
+  if (m.find("agc") != m.end()) {
+    std::cerr << "RtlSdrSource::configure: agc" << std::endl;
+    agcmode = true;
+  }
+
+  if (m.find("antbias") != m.end()) {
+    std::cerr << "RtlSdrSource::configure: agc" << std::endl;
+    antbias = true;
+  }
+
+  // Intentionally tune at a higher frequency to avoid DC offset.
+  m_confFreq = frequency;
+  m_confAgc = agcmode;
+  double tuner_freq = frequency - sample_rate / 4.0;
+
+  return configure(sample_rate, tuner_freq, tuner_gain, block_length, agcmode,
+                   antbias);
 }
 
 // Configure RTL-SDR tuner and prepare for streaming.
