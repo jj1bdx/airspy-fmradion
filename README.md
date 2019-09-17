@@ -202,6 +202,7 @@ Compile and install
 ## No-goals
 
 * CIC filters for the IF 1st stage (unable to explore parallelism, too complex to compensate)
+* Using lock-free threads (`boost::lockfree::spsc_queue` didn't make things faster, and consumed x2 CPU power)
 
 ## Filter design documentation
 
