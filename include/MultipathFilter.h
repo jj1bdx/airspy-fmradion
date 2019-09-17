@@ -21,7 +21,7 @@
 #define SOFTFM_MULTIPATHFILTER_H
 
 #include "SoftFM.h"
-#include <boost/circular_buffer.hpp>
+#include <deque>
 #include <vector>
 
 typedef std::complex<float> MfCoeff;
@@ -60,7 +60,7 @@ private:
   unsigned int m_index_reference_point;
   unsigned int m_filter_order;
   MfCoeffVector m_coeff;
-  boost::circular_buffer<IQSample> m_state;
+  std::deque<IQSample> m_state;
   double m_reference_level;
   double m_error;
 };
