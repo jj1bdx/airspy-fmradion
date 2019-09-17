@@ -84,9 +84,8 @@ pair_type split_equal_sign(const std::string str) {
 
 // Parse "foo=x,bar,baz=10" style configuration parameter
 // into a map (map_type).
-// Return the size of the map.
 
-size_t parse_config_string(std::string text, map_type &output) {
+void parse_config_string(std::string text, map_type &output) {
   std::vector<std::string> tokens = split_delimiter(text);
   for (std::string str : tokens) {
     pair_type element = split_equal_sign(str);
@@ -94,7 +93,6 @@ size_t parse_config_string(std::string text, map_type &output) {
         output.insert(element);
     }
   }
-  return output.size();
 }
 
 } // namespace ConfigParser
@@ -112,12 +110,9 @@ int main() {
     namespace cp = ConfigParser;
     cp::map_type parsed_map;
 
-    if (cp::parse_config_string(text, parsed_map) > 0) {
-      for (cp::pair_type pair: parsed_map) {
+    cp::parse_config_string(text, parsed_map);
+    for (cp::pair_type pair: parsed_map) {
         std::cout << pair.first << " => " << pair.second << "\n";
-      }
-    } else {
-      std::cout << "map has no content\n";
     }
 }
 
