@@ -29,71 +29,19 @@ typedef std::pair<std::string, std::string> pair_type;
 
 // Split input string into a vector of multiple strings.
 
-std::vector<std::string> split_delimiter(const std::string str) {
-  std::vector<std::string> elements(0);
-  std::string token;
-  token.clear();
-  for (char c : str) {
-    // Delimiters: '&' or ','
-    if ((c == '&') || (c == ',')) {
-      if (!token.empty()) {
-    elements.push_back(token);
-      }
-      token.clear();
-    } else {
-      token += c;
-    }
-  }
-  if (!token.empty()) {
-    elements.push_back(token);
-  }
-  return elements;
-}
+std::vector<std::string> split_delimiter(const std::string str);
 
 // Parse input string as a pair of "key=value".
 // Delimiter is "=".
 // Only the leftmost "=" is parsed.
 // If no "=" is contained, null value is set for the key.
 
-pair_type split_equal_sign(const std::string str) {
-  std::string token;
-  std::string key;
-  std::string value;
-  token.clear();
-  key.clear();
-  value.clear();
-  bool found_equal = false;
-  for (char c : str) {
-    if ((c == '=') && (!found_equal)) {
-      key = token;
-      found_equal = true;
-      token.clear();
-    } else {
-      token += c;
-    }
-  }
-  if (!token.empty()) {
-    if (!found_equal) {
-      key = token;
-    } else {
-      value = token;
-    }
-  }
-  return std::make_pair(key, value);
-}
+pair_type split_equal_sign(const std::string str);
 
 // Parse "foo=x,bar,baz=10" style configuration parameter
 // into a map (map_type).
 
-void parse_config_string(std::string text, map_type &output) {
-  std::vector<std::string> tokens = split_delimiter(text);
-  for (std::string str : tokens) {
-    pair_type element = split_equal_sign(str);
-    if (element.first.size() > 0) {
-        output.insert(element);
-    }
-  }
-}
+void parse_config_string(std::string text, map_type &output);
 
 } // namespace ConfigParser
 
