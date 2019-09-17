@@ -1,6 +1,6 @@
 # airspy-fmradion
 
-* Version v0.7.7-pre0, 16-SEP-2019
+* Version v0.7.7-pre1, 18-SEP-2019
 * For MacOS and Linux
 
 ### Known issues and changes
@@ -82,11 +82,13 @@ For the latest version, see https://github.com/jj1bdx/airspy-fmradion
 If you install from source in your own installation path, you have to specify the include path and library path.
 For example if you installed it in `/opt/install/libairspy` you have to add `-DAIRSPY_INCLUDE_DIR=/opt/install/libairspy/include -DAIRSPYHF_INCLUDE_DIR=/opt/install/libairspyhf/include` to the cmake options.
 
+Note: Boost is no longer required since v0.7.7-pre1.
+
 ### Debian/Ubuntu Linux
 
 Base requirements:
 
-  - `sudo apt-get install cmake pkg-config libusb-1.0-0-dev libasound2-dev libboost-all-dev`
+  - `sudo apt-get install cmake pkg-config libusb-1.0-0-dev libasound2-dev`
 
 To install the library from a Debian/Ubuntu installation just do:
 
