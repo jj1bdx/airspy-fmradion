@@ -10,7 +10,6 @@ endif(COMMAND cmake_policy)
 
 find_package(Threads)
 find_package(PkgConfig)
-find_package(Boost 1.47)
 
 # Require ALSA only for Linux
 if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
@@ -133,6 +132,7 @@ set(sfmbase_SOURCES
     sfmbase/AmDecode.cpp
     sfmbase/AudioResampler.cpp
     sfmbase/AudioOutput.cpp
+    sfmbase/ConfigParser.cpp
     sfmbase/Filter.cpp
     sfmbase/FilterParameters.cpp
     sfmbase/FmDecode.cpp
@@ -149,6 +149,7 @@ set(sfmbase_HEADERS
     include/AmDecode.h
     include/AudioResampler.h
     include/AudioOutput.h
+    include/ConfigParser.h
     include/DataBuffer.h
     include/Filter.h
     include/FilterParameters.h
@@ -163,7 +164,6 @@ set(sfmbase_HEADERS
     include/PhaseDiscriminator.h
     include/Source.h
     include/SoftFM.h
-    include/parsekv.h
     include/util.h
 )
 
