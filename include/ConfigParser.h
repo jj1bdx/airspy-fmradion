@@ -46,6 +46,7 @@ private:
 // Test code example
 
 #include <iostream>
+#include "ConfigParser.h"
 
 int main() {
     std::string text{"alpha=100,beta,gamma=xyz"};
