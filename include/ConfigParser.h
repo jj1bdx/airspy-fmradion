@@ -48,7 +48,7 @@ private:
 #include <iostream>
 
 int main() {
-    std::string text{"homu=100,mami,mado=abc"};
+    std::string text{"alpha=100,beta,gamma=xyz"};
     // std::string text{"="};
 
     ConfigParser cp;
