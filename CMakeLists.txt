@@ -129,6 +129,8 @@ set(CMAKE_CXX_FLAGS "-Wall -std=c++11 ${OPTIMIZATION_FLAGS} ${ALSA_OPTION} ${AIR
 
 set(sfmbase_SOURCES
     sfmbase/AfAgc.cpp
+    sfmbase/AirspyHFSource.cpp
+    sfmbase/AirspySource.cpp
     sfmbase/AmDecode.cpp
     sfmbase/AudioResampler.cpp
     sfmbase/AudioOutput.cpp
@@ -142,10 +144,13 @@ set(sfmbase_SOURCES
     sfmbase/MultipathFilter.cpp
     sfmbase/NbfmDecode.cpp
     sfmbase/PhaseDiscriminator.cpp
+    sfmbase/RtlSdrSource.cpp
 )
 
 set(sfmbase_HEADERS
     include/AfAgc.h
+    include/AirspyHFSource.h
+    include/AirspySource.h
     include/AmDecode.h
     include/AudioResampler.h
     include/AudioOutput.h
@@ -162,6 +167,7 @@ set(sfmbase_HEADERS
     include/MultipathFilter.h
     include/NbfmDecode.h
     include/PhaseDiscriminator.h
+    include/RtlSdrSource.h
     include/Source.h
     include/SoftFM.h
     include/util.h
@@ -174,73 +180,10 @@ set(sfmbase_SOURCES
     ${sfmbase_HEADERS}
 )
 
-# RTL-SDR sources
-
-set(sfmrtlsdr_SOURCES
-    sfmbase/ConfigParser.cpp
-    sfmbase/RtlSdrSource.cpp
-)
-
-set(sfmrtlsdr_HEADERS
-    include/ConfigParser.h
-    include/RtlSdrSource.h
-)
-
-set(sfmrtlsdr_SOURCES
-    ${sfmrtlsdr_SOURCES}
-    ${sfmrtlsdr_HEADERS}
-)
-
-# Airspy sources
-
-set(sfmairspy_SOURCES
-    sfmbase/AirspySource.cpp
-    sfmbase/ConfigParser.cpp
-)
-
-set(sfmairspy_HEADERS
-    include/AirspySource.h
-    include/ConfigParser.h
-)
-
-set(sfmairspy_SOURCES
-    ${sfmairspy_SOURCES}
-    ${sfmairspy_HEADERS}
-)
-
-# Airspy HF sources
-
-set(sfmairspyhf_SOURCES
-    sfmbase/AirspyHFSource.cpp
-    sfmbase/ConfigParser.cpp
-)
-
-set(sfmairspyhf_HEADERS
-    include/AirspyHFSource.h
-    include/ConfigParser.h
-)
-
-set(sfmairspyhf_SOURCES
-    ${sfmairspyhf_SOURCES}
-    ${sfmairspyhf_HEADERS}
-)
-
 # Libraries
 
 add_library(sfmbase STATIC
     ${sfmbase_SOURCES}
-)
-
-add_library(sfmrtlsdr STATIC
-    ${sfmrtlsdr_SOURCES}
-)
-
-add_library(sfmairspy STATIC
-    ${sfmairspy_SOURCES}
-)
-
-add_library(sfmairspyhf STATIC
-    ${sfmairspyhf_SOURCES}
 )
 
 # Executable
@@ -257,35 +200,21 @@ include_directories(
 
 target_link_libraries(airspy-fmradion
     sfmbase
-    sfmrtlsdr
-    sfmairspy
-    sfmairspyhf
     ${CMAKE_THREAD_LIBS_INIT}
     ${ALSA_LIBRARIES}
     ${EXTRA_LIBS}
 )
 
-# Linked libraries
-
 target_link_libraries(sfmbase
     ${LIBSOXR_LIBRARY}
-)
-
-target_link_libraries(sfmrtlsdr
-    ${RTLSDR_LIBRARIES}
-)
-
-target_link_libraries(sfmairspy
     ${AIRSPY_LIBRARIES}
-)
-
-target_link_libraries(sfmairspyhf
     ${AIRSPYHF_LIBRARIES}
+    ${RTLSDR_LIBRARIES}
 )
 
 # Installation
 
 install(TARGETS airspy-fmradion DESTINATION bin)
-install(TARGETS sfmbase sfmrtlsdr sfmairspy sfmairspyhf DESTINATION lib)
+install(TARGETS sfmbase DESTINATION lib)
 
 # End of CMakeLists.txt
