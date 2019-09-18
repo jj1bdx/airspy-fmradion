@@ -48,7 +48,7 @@
 // define this for enabling coefficient monitor functions
 // #undef COEFF_MONITOR
 
-#define AIRSPY_FMRADION_VERSION "v0.7.7-pre2"
+#define AIRSPY_FMRADION_VERSION "v0.7.7-pre3"
 
 /** Flag is set on SIGINT / SIGTERM. */
 static std::atomic_bool stop_flag(false);
@@ -198,7 +198,7 @@ void usage() {
       "  srate=<int>    IF sample rate in Hz.\n"
       "                 Depends on Airspy HF firmware and libairspyhf support\n"
       "                 Airspy HF firmware and library must support dynamic\n"
-      "                 sample rate query. (default 768000)\n"
+      "                 sample rate query. (default 384000)\n"
       "  hf_att=<int>   HF attenuation level and AGC control\n"
       "                 0: enable AGC, no attenuation\n"
       "                 1 ~ 8: disable AGC, apply attenuation of value * 6dB\n"
