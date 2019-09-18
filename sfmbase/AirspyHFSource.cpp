@@ -36,7 +36,7 @@ AirspyHFSource *AirspyHFSource::m_this = 0;
 
 // Open Airspy HF device.
 AirspyHFSource::AirspyHFSource(int dev_index)
-    : m_dev(0), m_sampleRate(768000), m_frequency(100000000), m_running(false),
+    : m_dev(0), m_sampleRate(0), m_frequency(0), m_running(false),
       m_thread(0) {
   // Get library version number first.
   airspyhf_lib_version(&m_libv);
@@ -273,13 +273,30 @@ bool AirspyHFSource::configure(int sampleRateIndex, uint8_t hfAttLevel,
   return true;
 }
 
-bool AirspyHFSource::configure(std::string configurationStr) {
+int32_t AirspyHFSource::check_sampleRateIndex(uint32_t sampleRate) {
+  uint32_t i;
+  for (i = 0; i < m_srates.size(); i++) {
+    if (m_srates[i] == static_cast<int>(sampleRate)) {
+      return static_cast<int32_t>(i);
+    }
+  }
+  // Unable to find
+  return -1;
+}
 
-  int sampleRateIndex = 0;
+bool AirspyHFSource::configure(std::string configurationStr) {
+  int sampleRateIndex;
   uint32_t frequency = 100000000;
   uint8_t hfAttLevel = 0;
 
-  m_sampleRate = 768000;
+  // Use 384ksps as the default value for the efficient FM broadcast
+  // reception.
+  sampleRateIndex = check_sampleRateIndex(384000);
+  if (sampleRateIndex == -1) {
+    m_error = "Invalid sample rate in AirspyHFSource::configure initialization";
+    m_sampleRate = 0;
+    return false;
+  }
 
   ConfigParser cp;
   ConfigParser::map_type m;
@@ -296,16 +313,9 @@ bool AirspyHFSource::configure(std::string configurationStr) {
     }
 
     m_sampleRate = atoi(m["srate"].c_str());
-    uint32_t i;
 
-    for (i = 0; i < m_srates.size(); i++) {
-      if (m_srates[i] == static_cast<int>(m_sampleRate)) {
-        sampleRateIndex = i;
-        break;
-      }
-    }
-
-    if (i == m_srates.size()) {
+    sampleRateIndex = check_sampleRateIndex(m_sampleRate);
+    if (sampleRateIndex == -1) {
       m_error = "Invalid sample rate";
       m_sampleRate = 0;
       return false;

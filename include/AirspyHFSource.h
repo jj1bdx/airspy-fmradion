@@ -61,6 +61,7 @@ public:
   static void get_device_names(std::vector<std::string> &devices);
 
 private:
+  int32_t check_sampleRateIndex(uint32_t sampleRate);
   /**
    * Configure Airspy HF tuner and prepare for streaming.
    *
