@@ -20,11 +20,9 @@
 
 #include "ConfigParser.h"
 
-namespace ConfigParser {
-
 // Split input string into a vector of multiple strings.
 
-std::vector<std::string> split_delimiter(const std::string str) {
+std::vector<std::string> ConfigParser::split_delimiter(const std::string str) {
   std::vector<std::string> elements(0);
   std::string token;
   token.clear();
@@ -50,7 +48,7 @@ std::vector<std::string> split_delimiter(const std::string str) {
 // Only the leftmost "=" is parsed.
 // If no "=" is contained, null value is set for the key.
 
-pair_type split_equal_sign(const std::string str) {
+ConfigParser::pair_type ConfigParser::split_equal_sign(const std::string str) {
   std::string token;
   std::string key;
   std::string value;
@@ -80,7 +78,8 @@ pair_type split_equal_sign(const std::string str) {
 // Parse "foo=x,bar,baz=10" style configuration parameter
 // into a map (map_type).
 
-void parse_config_string(std::string text, map_type &output) {
+void ConfigParser::parse_config_string(std::string text,
+                                       ConfigParser::map_type &output) {
   std::vector<std::string> tokens = split_delimiter(text);
   for (std::string str : tokens) {
     pair_type element = split_equal_sign(str);
@@ -89,5 +88,3 @@ void parse_config_string(std::string text, map_type &output) {
     }
   }
 }
-
-} // namespace ConfigParser
