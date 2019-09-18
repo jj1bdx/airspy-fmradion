@@ -36,8 +36,7 @@ AirspyHFSource *AirspyHFSource::m_this = 0;
 
 // Open Airspy HF device.
 AirspyHFSource::AirspyHFSource(int dev_index)
-    : m_dev(0), m_sampleRate(0), m_frequency(0), m_running(false),
-      m_thread(0) {
+    : m_dev(0), m_sampleRate(0), m_frequency(0), m_running(false), m_thread(0) {
   // Get library version number first.
   airspyhf_lib_version(&m_libv);
 #ifdef DEBUG_AIRSPYHFSOURCE
