@@ -274,7 +274,6 @@ bool AirspyHFSource::configure(int sampleRateIndex, uint8_t hfAttLevel,
 }
 
 bool AirspyHFSource::configure(std::string configurationStr) {
-  namespace cp = ConfigParser;
 
   int sampleRateIndex = 0;
   uint32_t frequency = 100000000;
@@ -282,9 +281,10 @@ bool AirspyHFSource::configure(std::string configurationStr) {
 
   m_sampleRate = 768000;
 
-  cp::map_type m;
+  ConfigParser cp;
+  ConfigParser::map_type m;
 
-  cp::parse_config_string(configurationStr, m);
+  cp.parse_config_string(configurationStr, m);
   if (m.find("srate") != m.end()) {
 #ifdef DEBUG_AIRSPYHFSOURCE
     std::cerr << "AirspyHFSource::configure: srate: " << m["srate"]

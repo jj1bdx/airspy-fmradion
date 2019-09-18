@@ -73,7 +73,6 @@ RtlSdrSource::~RtlSdrSource() {
 }
 
 bool RtlSdrSource::configure(std::string configurationStr) {
-  namespace cp = ConfigParser;
 
   uint32_t sample_rate = 1200000;
   uint32_t frequency = 100000000;
@@ -82,9 +81,10 @@ bool RtlSdrSource::configure(std::string configurationStr) {
   bool agcmode = false;
   bool antbias = false;
 
-  cp::map_type m;
+  ConfigParser cp;
+  ConfigParser::map_type m;
 
-  cp::parse_config_string(configurationStr, m);
+  cp.parse_config_string(configurationStr, m);
   if (m.find("srate") != m.end()) {
     std::cerr << "RtlSdrSource::configure: srate: " << m["srate"] << std::endl;
     sample_rate = atoi(m["srate"].c_str());

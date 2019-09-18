@@ -330,8 +330,6 @@ bool AirspySource::configure(int sampleRateIndex, uint32_t frequency,
 }
 
 bool AirspySource::configure(std::string configurationStr) {
-  namespace cp = ConfigParser;
-
   int sampleRateIndex = 0;
   uint32_t frequency = 100000000;
   int lnaGain = 8;
@@ -340,10 +338,10 @@ bool AirspySource::configure(std::string configurationStr) {
   bool antBias = false;
   bool lnaAGC = false;
   bool mixAGC = false;
+  ConfigParser cp;
+  ConfigParser::map_type m;
 
-  cp::map_type m;
-
-  cp::parse_config_string(configurationStr, m);
+  cp.parse_config_string(configurationStr, m);
   if (m.find("srate") != m.end()) {
 #ifdef DEBUG_AIRSPYSOURCE
     std::cerr << "AirspySource::configure: srate: " << m["srate"] << std::endl;
