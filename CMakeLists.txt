@@ -156,6 +156,7 @@ set(sfmbase_HEADERS
     include/AudioOutput.h
     include/ConfigParser.h
     include/DataBuffer.h
+    include/fast_atan2f.h
     include/Filter.h
     include/FilterParameters.h
     include/FmDecode.h

@@ -21,6 +21,7 @@
 #include <cmath>
 
 #include "FmDecode.h"
+#include "fast_atan2f.h"
 
 /* ****************  class PilotPhaseLock  **************** */
 
@@ -135,7 +136,8 @@ void PilotPhaseLock::process(const SampleVector &samples_in,
 
     // Convert I/Q ratio to estimate of phase error.
     // Note: maximum phase error during the locked state is +- 0.02 radian.
-    Sample phase_err = atan2(phasor_q, phasor_i);
+    // Sample phase_err = atan2(phasor_q, phasor_i);
+    Sample phase_err = fast_atan2f(phasor_q, phasor_i);
 
     // Detect pilot level (conservative).
     m_pilot_level = std::min(m_pilot_level, phasor_i);
