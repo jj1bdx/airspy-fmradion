@@ -197,19 +197,21 @@ float Utility::fast_atan2f(float y, float x) {
   y_abs = fabsf(y);
   x_abs = fabsf(x);
   /* don't divide by zero! */
-  if (!((y_abs > 0.0f) || (x_abs > 0.0f)))
+  if (!((y_abs > 0.0f) || (x_abs > 0.0f))) {
     return 0.0;
+  }
 
-  if (y_abs < x_abs)
+  if (y_abs < x_abs) {
     z = y_abs / x_abs;
-  else
+  } else {
     z = x_abs / y_abs;
+  }
 
   /* when ratio approaches the table resolution, the angle is */
   /* best approximated with the argument itself... */
-  if (z < TAN_MAP_RES)
+  if (z < TAN_MAP_RES) {
     base_angle = z;
-  else {
+  } else {
     /* find index and interpolation value */
     alpha = z * (float)TAN_MAP_SIZE;
     index = ((int)alpha) & 0xff;
@@ -224,39 +226,36 @@ float Utility::fast_atan2f(float y, float x) {
 
   if (x_abs > y_abs) { /* -45 -> 45 or 135 -> 225 */
     if (x >= 0.0) {    /* -45 -> 45 */
-      if (y >= 0.0)
+      if (y >= 0.0) {
         angle = base_angle; /* 0 -> 45, angle OK */
-      else
+      } else {
         angle = -base_angle; /* -45 -> 0, angle = -angle */
-    } else {                 /* 135 -> 180 or 180 -> -135 */
+      }
+    } else { /* 135 -> 180 or 180 -> -135 */
       angle = 3.14159265358979323846;
-      if (y >= 0.0)
+      if (y >= 0.0) {
         angle -= base_angle; /* 135 -> 180, angle = 180 - angle */
-      else
+      } else {
         angle = base_angle - angle; /* 180 -> -135, angle = angle - 180 */
+      }
     }
   } else {          /* 45 -> 135 or -135 -> -45 */
     if (y >= 0.0) { /* 45 -> 135 */
       angle = 1.57079632679489661923;
-      if (x >= 0.0)
+      if (x >= 0.0) {
         angle -= base_angle; /* 45 -> 90, angle = 90 - angle */
-      else
+      } else {
         angle += base_angle; /* 90 -> 135, angle = 90 + angle */
-    } else {                 /* -135 -> -45 */
+      }
+    } else { /* -135 -> -45 */
       angle = -1.57079632679489661923;
-      if (x >= 0.0)
+      if (x >= 0.0) {
         angle += base_angle; /* -90 -> -45, angle = -90 + angle */
-      else
+      } else {
         angle -= base_angle; /* -135 -> -90, angle = -90 - angle */
+      }
     }
   }
 
-#ifdef ZERO_TO_TWOPI
-  if (angle < 0)
-    return (angle + TWOPI);
-  else
-    return (angle);
-#else
   return (angle);
-#endif
 }
