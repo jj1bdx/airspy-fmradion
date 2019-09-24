@@ -1,6 +1,6 @@
 # airspy-fmradion
 
-* Version v0.7.7, 18-SEP-2019
+* Version v0.7.8-pre0, 24-SEP-2019
 * For MacOS and Linux
 
 ### Known issues and changes
@@ -175,11 +175,11 @@ Compile and install
 * Quality: `SOXR_VHQ`
 * 19kHz cut LPF implemented for post-processing libsoxr output
 
-### Phase discriminator now uses atan2() as is
+### Phase discriminator uses GNU Radio fast_atan2f() 
 
-* `atan2()` is now used as is for PhaseDiscriminator
-* The past `fastatan2()` used in v0.6.10 and before is removed
-* Changing from the past `fastatan2()` to `atan2()` reduced the THD+N from approx. 0.9% to approx. 0.6% (measured from JOBK-FM NHK Osaka FM 88.1MHz hourly time tone 880Hz, using airwaves including the multipath distortion)
+* From v0.7.8-pre0, GNU Radio `fast_atan2f()` which has ~20-bit accuracy, is used for PhaseDiscriminator class and the 19kHz pilot PLL.
+* The past `fastatan2()` used in v0.6.10 and before was removed due to low accuracy (of ~10 bits)
+* Changing from the past `atan2()` to `fast_atan2f()` showed no noticeable difference of the THD+N (0.218%) and THD (0.018%). (Measured from JOBK-FM NHK Osaka FM 88.1MHz hourly time tone 880Hz, using airwaves after the multipath canceler filter of -E36)
 * [The past `fastatan2()` allowed +-0.005 radian max error](https://www.dsprelated.com/showarticle/1052.php)
 * libm `atan2()` allows only approx. 0.5 ULP as the max error for macOS 10.14.5, measured by using the code from ["Error analysis of system mathematical functions
 " by Gaston H. Gonnet](http://www-oldurls.inf.ethz.ch/personal/gonnet/FPAccuracy/Analysis.html) (1 ULP for macOS 64bit `double` = 2^(-53) = approx. 10^(15.95))
