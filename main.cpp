@@ -43,7 +43,7 @@
 #include "NbfmDecode.h"
 #include "RtlSdrSource.h"
 #include "SoftFM.h"
-#include "util.h"
+#include "Utility.h"
 
 // define this for enabling coefficient monitor functions
 // #undef COEFF_MONITOR
@@ -374,7 +374,8 @@ int main(int argc, char **argv) {
       filtertype_str.assign(optarg);
       break;
     case 'l':
-      if (!parse_dbl(optarg, squelch_level_db) || squelch_level_db < 0) {
+      if (!Utility::parse_dbl(optarg, squelch_level_db) ||
+          squelch_level_db < 0) {
         badarg("-l");
       }
       enable_squelch = true;
@@ -389,7 +390,7 @@ int main(int argc, char **argv) {
       ppsfilename = optarg;
       break;
     case 'b':
-      if (!parse_dbl(optarg, bufsecs) || bufsecs < 0) {
+      if (!Utility::parse_dbl(optarg, bufsecs) || bufsecs < 0) {
         badarg("-b");
       }
       break;
@@ -911,7 +912,7 @@ int main(int argc, char **argv) {
     // Measure audio level when audio exists
     if (audio_exists) {
       double audio_mean, audio_rms;
-      samples_mean_rms(audiosamples, audio_mean, audio_rms);
+      Utility::samples_mean_rms(audiosamples, audio_mean, audio_rms);
       audio_level = 0.95 * audio_level + 0.05 * audio_rms;
 
       // Set nominal audio volume (-6dB) when IF squelch is open,

@@ -30,7 +30,6 @@
 #include "MultipathFilter.h"
 #include "PhaseDiscriminator.h"
 #include "SoftFM.h"
-#include "util.h"
 
 /** Phase-locked loop for stereo pilot. */
 class PilotPhaseLock {

@@ -1,6 +1,7 @@
 // airspy-fmradion
 // Software decoder for FM broadcast radio with Airspy
 //
+// Copyright (C) 2015 Edouard Griffiths, F4EXB
 // Copyright (C) 2019 Kenji Rikitake, JJ1BDX
 //
 // This program is free software: you can redistribute it and/or modify
@@ -16,15 +17,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// The following code is from GNU Radio at
-// <https://raw.githubusercontent.com/gnuradio/gnuradio/f7bbf2c1d8d780294f3e016aff239ca35eb6516e/gnuradio-runtime/lib/math/fast_atan2f.cc>
-
-// Kenji Rikitake modified this code such as:
-// * for using as a standalone header,
-// * removed namespace specifier,
-// * make fast_atan2f inline to avoid duplicate definitions, and
-// * applied clang-format in the same configuration as the other parts of code.
-
+// For the function fast_atan2f() from GNU Radio
+// the following copyright statement applies:
 /*
  * Copyright 2005,2013 Free Software Foundation, Inc.
  *
@@ -46,10 +40,73 @@
  * Boston, MA 02110-1301, USA.
  */
 
-#ifndef SOFTFM_FAST_ATAN2F_H
-#define SOFTFM_FAST_ATAN2F_H
-
 #include <cmath>
+#include <cstdlib>
+
+#include "SoftFM.h"
+#include "Utility.h"
+
+// Utility class.
+// All functions and data MUST be static.
+// Note: class declaration do not allow static modifiers in class definitions.
+
+bool Utility::parse_dbl(const char *s, double &v) {
+  char *endp;
+
+  v = strtod(s, &endp);
+
+  if (endp == s) {
+    return false;
+  }
+
+  if (*endp == 'k') {
+    v *= 1.0e3;
+    endp++;
+  } else if (*endp == 'M') {
+    v *= 1.0e6;
+    endp++;
+  } else if (*endp == 'G') {
+    v *= 1.0e9;
+    endp++;
+  }
+
+  return (*endp == '\0');
+}
+
+// Compute RMS over a small prefix of the specified IQSample vector.
+double Utility::rms_level_approx(const IQSampleVector &samples) {
+  unsigned int n = samples.size();
+  n = (n + 63) / 64;
+
+  IQSample::value_type level = 0;
+  for (unsigned int i = 0; i < n; i++) {
+    double amplitude = std::norm(samples[i]);
+    level += amplitude;
+    // fprintf(stderr, "amplitude = %.15f\n", amplitude);
+  }
+  // Return RMS level
+  return sqrt(level / n);
+}
+
+// Compute mean value and RMS over a small prefix of the specified Sample
+// vector.
+void Utility::samples_mean_rms(const SampleVector &samples, double &mean,
+                               double &rms) {
+  Sample vsum = 0;
+  Sample vsumsq = 0;
+
+  unsigned int n = samples.size();
+  for (unsigned int i = 0; i < n; i++) {
+    Sample v = samples[i];
+    vsum += v;
+    vsumsq += v * v;
+  }
+
+  mean = vsum / n;
+  rms = sqrt(vsumsq / n);
+}
+
+// fast_atan2f()
 
 /***************************************************************************/
 /* Constant definitions */
@@ -60,7 +117,7 @@
 #define TAN_MAP_SIZE 255
 
 /* arctangents from 0 to pi/4 radians */
-static float fast_atan_table[257] = {
+float Utility::fast_atan_table[257] = {
     0.000000e+00, 3.921549e-03, 7.842976e-03, 1.176416e-02, 1.568499e-02,
     1.960533e-02, 2.352507e-02, 2.744409e-02, 3.136226e-02, 3.527947e-02,
     3.919560e-02, 4.311053e-02, 4.702413e-02, 5.093629e-02, 5.484690e-02,
@@ -131,7 +188,7 @@ static float fast_atan_table[257] = {
  with an average error of +/- 3.56e-5 degrees (6.21e-7 radians).
 *****************************************************************************/
 
-inline float fast_atan2f(float y, float x) {
+float Utility::fast_atan2f(float y, float x) {
   float x_abs, y_abs, z;
   float alpha, angle, base_angle;
   int index;
@@ -159,8 +216,10 @@ inline float fast_atan2f(float y, float x) {
     alpha -= (float)index;
     /* determine base angle based on quadrant and */
     /* add or subtract table value from base angle based on quadrant */
-    base_angle = fast_atan_table[index];
-    base_angle += (fast_atan_table[index + 1] - fast_atan_table[index]) * alpha;
+    base_angle = Utility::fast_atan_table[index];
+    base_angle += (Utility::fast_atan_table[index + 1] -
+                   Utility::fast_atan_table[index]) *
+                  alpha;
   }
 
   if (x_abs > y_abs) { /* -45 -> 45 or 135 -> 225 */
@@ -201,5 +260,3 @@ inline float fast_atan2f(float y, float x) {
   return (angle);
 #endif
 }
-
-#endif // SOFTFM_FAST_ATAN2F_H

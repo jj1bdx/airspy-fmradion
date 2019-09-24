@@ -20,6 +20,7 @@
 #include <cmath>
 
 #include "NbfmDecode.h"
+#include "Utility.h"
 
 // class NbfmDecoder
 
@@ -54,7 +55,7 @@ void NbfmDecoder::process(const IQSampleVector &samples_in,
                           SampleVector &audio) {
 
   // Measure IF RMS level.
-  m_if_rms = rms_level_approx(samples_in);
+  m_if_rms = Utility::rms_level_approx(samples_in);
 
   // Demodulate FM to audio signal.
   m_phasedisc.process(samples_in, m_buf_baseband_raw);
@@ -71,7 +72,7 @@ void NbfmDecoder::process(const IQSampleVector &samples_in,
 
   // Measure baseband level.
   double baseband_mean, baseband_rms;
-  samples_mean_rms(m_buf_baseband, baseband_mean, baseband_rms);
+  Utility::samples_mean_rms(m_buf_baseband, baseband_mean, baseband_rms);
   m_baseband_mean = 0.95 * m_baseband_mean + 0.05 * baseband_mean;
   m_baseband_level = 0.95 * m_baseband_level + 0.05 * baseband_rms;
 

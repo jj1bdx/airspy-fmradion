@@ -27,7 +27,6 @@
 #include "FilterParameters.h"
 #include "PhaseDiscriminator.h"
 #include "SoftFM.h"
-#include "util.h"
 
 // Complete decoder for Narrow Band FM broadcast signal.
 

@@ -21,7 +21,7 @@
 #include <cmath>
 
 #include "PhaseDiscriminator.h"
-#include "fast_atan2f.h"
+#include "Utility.h"
 
 /* ****************  class PhaseDiscriminator  **************** */
 
@@ -42,7 +42,7 @@ void PhaseDiscriminator::process(const IQSampleVector &samples_in,
     IQSample s1(samples_in[i]);
     IQSample d(conj(s0) * s1);
     // Sample w = atan2(d.imag(), d.real());
-    Sample w = fast_atan2f(d.imag(), d.real());
+    Sample w = Utility::fast_atan2f(d.imag(), d.real());
     samples_out[i] = w * m_freq_scale_factor;
     s0 = s1;
   }

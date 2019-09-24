@@ -36,21 +36,4 @@ enum class DevType { Airspy, AirspyHF, RTLSDR };
 enum class ModType { FM, AM, DSB, USB, LSB, CW, NBFM };
 enum class OutputMode { RAW_INT16, RAW_FLOAT32, WAV, ALSA };
 
-/** Compute mean and RMS over a sample vector. */
-inline void samples_mean_rms(const SampleVector &samples, double &mean,
-                             double &rms) {
-  Sample vsum = 0;
-  Sample vsumsq = 0;
-
-  unsigned int n = samples.size();
-  for (unsigned int i = 0; i < n; i++) {
-    Sample v = samples[i];
-    vsum += v;
-    vsumsq += v * v;
-  }
-
-  mean = vsum / n;
-  rms = sqrt(vsumsq / n);
-}
-
 #endif

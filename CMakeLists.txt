@@ -145,6 +145,7 @@ set(sfmbase_SOURCES
     sfmbase/NbfmDecode.cpp
     sfmbase/PhaseDiscriminator.cpp
     sfmbase/RtlSdrSource.cpp
+    sfmbase/Utility.cpp
 )
 
 set(sfmbase_HEADERS
@@ -156,7 +157,6 @@ set(sfmbase_HEADERS
     include/AudioOutput.h
     include/ConfigParser.h
     include/DataBuffer.h
-    include/fast_atan2f.h
     include/Filter.h
     include/FilterParameters.h
     include/FmDecode.h
@@ -171,7 +171,7 @@ set(sfmbase_HEADERS
     include/RtlSdrSource.h
     include/Source.h
     include/SoftFM.h
-    include/util.h
+    include/Utility.h
 )
 
 # Base sources

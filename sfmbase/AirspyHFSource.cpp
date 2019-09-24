@@ -28,7 +28,6 @@
 
 #include "AirspyHFSource.h"
 #include "ConfigParser.h"
-#include "util.h"
 
 // #define DEBUG_AIRSPYHFSOURCE 1
 

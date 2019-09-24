@@ -31,7 +31,6 @@
 #include "IfAgc.h"
 #include "IfResampler.h"
 #include "SoftFM.h"
-#include "util.h"
 
 /** Complete decoder for FM broadcast signal. */
 class AmDecoder {

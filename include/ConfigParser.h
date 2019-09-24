@@ -31,6 +31,11 @@ public:
   // into a map (map_type).
   void parse_config_string(std::string text, map_type &output);
 
+  // Default constructors
+  ConfigParser() = default;
+  ConfigParser(const ConfigParser &) = delete;
+  ConfigParser operator=(const ConfigParser &) = delete;
+
 private:
   // Split input string into a vector of multiple strings.
   std::vector<std::string> split_delimiter(const std::string str);
@@ -45,8 +50,8 @@ private:
 
 // Test code example
 
-#include <iostream>
 #include "ConfigParser.h"
+#include <iostream>
 
 int main() {
     std::string text{"alpha=100,beta,gamma=xyz"};

@@ -21,6 +21,7 @@
 #include <cmath>
 
 #include "AmDecode.h"
+#include "Utility.h"
 
 // class AmDecoder
 
@@ -151,7 +152,7 @@ void AmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
   }
 
   // Measure IF RMS level.
-  m_if_rms = rms_level_approx(m_buf_filtered3);
+  m_if_rms = Utility::rms_level_approx(m_buf_filtered3);
 
   // If AGC
   m_ifagc.process(m_buf_filtered3, m_buf_filtered4);
@@ -194,7 +195,7 @@ void AmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
 
   // Measure baseband level after DC blocking.
   double baseband_mean, baseband_rms;
-  samples_mean_rms(m_buf_baseband, baseband_mean, baseband_rms);
+  Utility::samples_mean_rms(m_buf_baseband, baseband_mean, baseband_rms);
   m_baseband_mean = 0.95 * m_baseband_mean + 0.05 * baseband_mean;
   m_baseband_level = 0.95 * m_baseband_level + 0.05 * baseband_rms;
 

@@ -27,7 +27,7 @@
 
 #include "ConfigParser.h"
 #include "RtlSdrSource.h"
-#include "util.h"
+#include "Utility.h"
 
 RtlSdrSource *RtlSdrSource::m_this = 0;
 
@@ -119,7 +119,7 @@ bool RtlSdrSource::configure(std::string configurationStr) {
     } else {
       double tmpgain;
 
-      if (!parse_dbl(gain_str.c_str(), tmpgain)) {
+      if (!Utility::parse_dbl(gain_str.c_str(), tmpgain)) {
         m_error = "Invalid gain";
         return false;
       } else {

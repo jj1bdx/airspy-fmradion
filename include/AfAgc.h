@@ -24,7 +24,6 @@
 #include <vector>
 
 #include "SoftFM.h"
-#include "util.h"
 
 // Class AfAgc
 

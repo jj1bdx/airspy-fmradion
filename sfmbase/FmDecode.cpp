@@ -21,7 +21,7 @@
 #include <cmath>
 
 #include "FmDecode.h"
-#include "fast_atan2f.h"
+#include "Utility.h"
 
 /* ****************  class PilotPhaseLock  **************** */
 
@@ -137,7 +137,7 @@ void PilotPhaseLock::process(const SampleVector &samples_in,
     // Convert I/Q ratio to estimate of phase error.
     // Note: maximum phase error during the locked state is +- 0.02 radian.
     // Sample phase_err = atan2(phasor_q, phasor_i);
-    Sample phase_err = fast_atan2f(phasor_q, phasor_i);
+    Sample phase_err = Utility::fast_atan2f(phasor_q, phasor_i);
 
     // Detect pilot level (conservative).
     m_pilot_level = std::min(m_pilot_level, phasor_i);
@@ -277,14 +277,14 @@ void FmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
   }
 
   // Measure IF RMS level.
-  m_if_rms = rms_level_approx(samples_in);
+  m_if_rms = Utility::rms_level_approx(samples_in);
 
   // Perform IF AGC.
   m_ifagc.process(samples_in, m_samples_in_after_agc);
 
 #if 0
   // Measure IF RMS level for checking how IF AGC works.
-  double if_agc_rms = rms_level_approx(m_samples_in_after_agc);
+  double if_agc_rms = Utility::rms_level_approx(m_samples_in_after_agc);
   fprintf(stderr, "if_agc_rms = %.9g\n", if_agc_rms);
 #endif
 
@@ -326,7 +326,7 @@ void FmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
 
   // Measure baseband level.
   double baseband_mean, baseband_rms;
-  samples_mean_rms(m_buf_baseband, baseband_mean, baseband_rms);
+  Utility::samples_mean_rms(m_buf_baseband, baseband_mean, baseband_rms);
   m_baseband_mean = 0.95 * m_baseband_mean + 0.05 * baseband_mean;
   m_baseband_level = 0.95 * m_baseband_level + 0.05 * baseband_rms;
 
