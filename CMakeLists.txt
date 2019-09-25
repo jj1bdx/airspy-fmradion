@@ -145,7 +145,6 @@ set(sfmbase_SOURCES
     sfmbase/NbfmDecode.cpp
     sfmbase/PhaseDiscriminator.cpp
     sfmbase/RtlSdrSource.cpp
-    sfmbase/Utility.cpp
 )
 
 set(sfmbase_HEADERS
