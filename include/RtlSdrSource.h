@@ -27,7 +27,7 @@
 
 class RtlSdrSource : public Source {
 public:
-  static const int default_block_length = 65536;
+  static constexpr int default_block_length = 65536;
 
   /** Open RTL-SDR device. */
   RtlSdrSource(int dev_index);

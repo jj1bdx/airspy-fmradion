@@ -32,8 +32,10 @@
 
 class NbfmDecoder {
 public:
-  static const double sample_rate_pcm;
-  static const double freq_dev;
+  // Static constants.
+  static constexpr double sample_rate_pcm = 48000;
+  // Full scale carrier frequency deviation (5kHz nominal)
+  static constexpr double freq_dev = 8000;
 
   /**
    * Construct Narrow Band FM decoder.

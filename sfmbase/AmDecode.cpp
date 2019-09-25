@@ -25,16 +25,6 @@
 
 // class AmDecoder
 
-// Static constants.
-
-const double AmDecoder::sample_rate_pcm = 48000;
-const double AmDecoder::internal_rate_pcm = 12000;
-const double AmDecoder::cw_rate_pcm = 2000;
-// Half bandwidth of audio signal in Hz (4.5kHz for AM)
-const double AmDecoder::bandwidth_pcm = 4500;
-// Deemphasis constant in microseconds.
-const double AmDecoder::default_deemphasis = 100;
-
 AmDecoder::AmDecoder(double sample_rate_demod, IQSampleCoeff &amfilter_coeff,
                      const ModType mode)
     // Initialize member fields

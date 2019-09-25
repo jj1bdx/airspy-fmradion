@@ -24,12 +24,6 @@
 
 // class NbfmDecoder
 
-// Static constants.
-
-const double NbfmDecoder::sample_rate_pcm = 48000;
-// Full scale carrier frequency deviation (5kHz nominal)
-const double NbfmDecoder::freq_dev = 8000;
-
 NbfmDecoder::NbfmDecoder(double sample_rate_demod)
     // Initialize member fields
     : m_sample_rate_fmdemod(sample_rate_demod), m_baseband_mean(0),

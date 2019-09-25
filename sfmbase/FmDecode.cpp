@@ -192,21 +192,6 @@ void PilotPhaseLock::process(const SampleVector &samples_in,
 
 // class FmDecoder
 
-// Static constants.
-
-// Output sampling rate.
-const double FmDecoder::sample_rate_pcm = 48000;
-// Full scale carrier frequency deviation (75 kHz for broadcast FM)
-const double FmDecoder::freq_dev = 75000;
-// Half bandwidth of audio signal in Hz (15 kHz for broadcast FM)
-const double FmDecoder::bandwidth_pcm = 15000;
-const double FmDecoder::pilot_freq = 19000;
-const double FmDecoder::default_deemphasis = 50;
-const double FmDecoder::default_deemphasis_eu = 50; // Europe and Japan
-const double FmDecoder::default_deemphasis_na = 75; // USA/Canada
-// IF AGC target level
-const double FmDecoder::if_target_level = 1.0;
-
 FmDecoder::FmDecoder(double sample_rate_demod, bool stereo, double deemphasis,
                      bool pilot_shift, unsigned int multipath_stages)
     // Initialize member fields
