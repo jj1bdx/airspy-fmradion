@@ -10,6 +10,8 @@ endif(COMMAND cmake_policy)
 
 find_package(Threads)
 find_package(PkgConfig)
+# libvolk installation recommendation by Takehiro Sekine
+find_package(Volk)
 
 # Require ALSA only for Linux
 if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
@@ -202,6 +204,7 @@ target_link_libraries(airspy-fmradion
     sfmbase
     ${CMAKE_THREAD_LIBS_INIT}
     ${ALSA_LIBRARIES}
+    ${VOLK_LIBRARIES}
     ${EXTRA_LIBS}
 )
 

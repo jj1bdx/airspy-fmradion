@@ -32,6 +32,8 @@
 #include <cmath>
 #include <complex>
 
+#include <volk/volk.h>
+
 #include "MultipathFilter.h"
 
 // Class MultipathFilter
@@ -40,7 +42,7 @@
 MultipathFilter::MultipathFilter(unsigned int stages, double reference_level)
     : m_stages(stages), m_index_reference_point((m_stages * 3) + 1),
       m_filter_order((m_stages * 4) + 1), m_coeff(m_filter_order),
-      m_state(m_filter_order + 1), m_reference_level(reference_level) {
+      m_state(m_filter_order), m_reference_level(reference_level) {
   assert(stages > 0);
   for (unsigned int i = 0; i < m_filter_order; i++) {
     m_state[i] = IQSample(0, 0);
@@ -66,12 +68,16 @@ inline void MultipathFilter::initialize_coefficients() {
 inline IQSample MultipathFilter::single_process(const IQSample filter_input) {
   // Remove the element number zero (oldest one)
   // and add the input as the newest element at the end of the buffer
-  m_state.push_back(filter_input);
-  m_state.pop_front();
+  m_state.emplace_back(filter_input);
+  m_state.erase(m_state.begin());
   IQSample output = IQSample(0, 0);
+#if 0
   for (unsigned int i = 0; i < m_filter_order; i++) {
     output += m_state[i] * m_coeff[i];
   }
+#else
+  volk_32fc_x2_dot_prod_32fc(&output, m_state.data(), m_coeff.data(), m_filter_order);
+#endif
   return output;
 }
 

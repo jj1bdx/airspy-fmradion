@@ -60,7 +60,7 @@ private:
   unsigned int m_index_reference_point;
   unsigned int m_filter_order;
   MfCoeffVector m_coeff;
-  std::deque<IQSample> m_state;
+  IQSampleVector m_state;
   double m_reference_level;
   double m_error;
 };
