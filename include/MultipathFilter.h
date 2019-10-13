@@ -45,10 +45,10 @@ public:
   // Obtain the internal filter coefficient.
   const MfCoeffVector &get_coefficients() { return m_coeff; }
 
-private:
   // Initialize filter coefficients.
-  inline void initialize_coefficients();
+  void initialize_coefficients();
 
+private:
   // Process single value.
   inline IQSample single_process(const IQSample filter_input);
 

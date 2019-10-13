@@ -50,7 +50,7 @@ MultipathFilter::MultipathFilter(unsigned int stages, double reference_level)
   initialize_coefficients();
 }
 
-inline void MultipathFilter::initialize_coefficients() {
+void MultipathFilter::initialize_coefficients() {
   for (unsigned int i = 0; i < m_index_reference_point; i++) {
     m_coeff[i] = MfCoeff(0, 0);
   }

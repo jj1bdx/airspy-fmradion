@@ -283,11 +283,10 @@ void FmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
       m_multipathfilter.process(m_samples_in_after_agc, m_samples_in_filtered);
       double filter_error = m_multipathfilter.get_error();
       bool abnormal_error = !std::isfinite(filter_error);
-      bool offset_error = (std::fabs(filter_error) > 0.9);
-      // Skip further multipath filter processing
+      // Reset the filter coefficients
       // if the error evaluation becomes invalid.
-      if (!m_skip_multipath_filter && (abnormal_error || offset_error)) {
-        m_skip_multipath_filter = true;
+      if (!m_skip_multipath_filter && abnormal_error) {
+        m_multipathfilter.initialize_coefficients();
         // Discard the output of this block,
         // and terminate and wait for next block,
         audio.resize(0);
