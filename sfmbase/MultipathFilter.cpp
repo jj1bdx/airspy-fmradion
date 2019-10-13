@@ -110,10 +110,13 @@ inline void MultipathFilter::update_coeff(const IQSample result) {
   const double env = std::norm(result);
   // error = [desired signal] - [filter output]
   const double error = m_reference_level - env;
-  const MfCoeff factor = MfCoeff(alpha * error, 0);
+  const double factor = alpha * error;
+  const MfCoeff factor_times_result = MfCoeff(factor * result.real(),
+		 factor * result.imag());
+
   // Recalculate all coefficients
   for (unsigned int i = 0; i < m_filter_order; i++) {
-    m_coeff[i] += factor * result * std::conj(m_state[i]);
+    m_coeff[i] += factor_times_result * std::conj(m_state[i]);
   }
   // Set the imaginary part of the middle (position 0) coefficient to zero
   m_coeff[m_index_reference_point] =
