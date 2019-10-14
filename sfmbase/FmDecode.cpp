@@ -220,7 +220,7 @@ FmDecoder::FmDecoder(double sample_rate_demod, bool stereo, double deemphasis,
       // Construct PilotPhaseLock
       ,
       m_pilotpll(pilot_freq / m_sample_rate_fmdemod, // freq
-                 20 / m_sample_rate_fmdemod,         // bandwidth
+                 50 / m_sample_rate_fmdemod,         // bandwidth
                  0.01)                               // minsignal (was 0.04)
 
       // Construct HighPassFilterIir
