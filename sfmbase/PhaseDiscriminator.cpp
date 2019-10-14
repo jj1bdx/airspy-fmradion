@@ -64,7 +64,6 @@ void PhaseDiscriminator::process(const IQSampleVector &samples_in,
 
   m_last1_sample = s0;
 #endif
-
 }
 
 /* end */
