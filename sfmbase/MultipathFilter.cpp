@@ -85,8 +85,7 @@ inline IQSample MultipathFilter::single_process(const IQSample filter_input) {
 // Update coefficients by complex LMS/CMA method.
 inline void MultipathFilter::update_coeff(const IQSample result) {
   // Experimental NLMS algorithm
-  // const double alpha = 0.01;
-  const double alpha = 0.01;
+  const double alpha = 0.1;
   const double delta = 0.0001;
   // Input instant envelope
   const double env = std::norm(result);
