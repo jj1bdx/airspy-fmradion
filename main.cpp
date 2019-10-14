@@ -48,7 +48,7 @@
 // define this for enabling coefficient monitor functions
 // #undef COEFF_MONITOR
 
-#define AIRSPY_FMRADION_VERSION "v0.8.0-dev-libvolk-nlms"
+#define AIRSPY_FMRADION_VERSION "v0.8.0-dev-libvolk-nlms-2"
 
 /** Flag is set on SIGINT / SIGTERM. */
 static std::atomic_bool stop_flag(false);
