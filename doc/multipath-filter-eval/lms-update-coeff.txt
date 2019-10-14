@@ -1,0 +1,23 @@
+Assume estimated norm of n-dimension coefficient vector: 2 * n,
+where n = m_filter_order.
+The absolute values of the real/imaginary part of each coefficient
+would not exceed 1.0 under the normal operating condition.
+Then the update factor alpha should be proportional to 1/(2 * n).
+So let alpha be mu/(2 * n), where 0 < mu < 2.
+
+In paper [2], the old constant alpha = 0.00002 was safe
+when n = 401 (200+200 stages) when the IF S/N was 40dB.
+
+We tested mu values of 0.008, 0.004, 0.002, and 0.001
+with the transmission result of FM COCOLO 76.5MHz in Osaka.
+We concluded that for n = 72 (where m_filter_order is 145):
+mu = 0.008: overfitting, which caused long-term increase of the error.
+mu = 0.004: steadily fit.
+mu = 0.002: steadily fit, resulted in even smaller error than mu = 0.004.
+mu = 0.001: underfitting.
+
+[2] Takashi Mochizuki, and Mitsutoshi Hatori, "Automatic Cancelling of FM
+Multipath Distortion Using and Adaptive Digital Filter", The Journal of the
+Institute of Television Engineers of Japan, Vol. 39, No. 3, pp. 228-234
+(1985). https://doi.org/10.3169/itej1978.39.228
+
