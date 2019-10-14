@@ -336,6 +336,7 @@ Compile and install
 * [Brian Beezley, K6STI](http://ham-radio.com/k6sti/), for his comprehensive Web site of FM broadcasting reception expertise and the idea of [Quadrature Multipath Monitor](http://ham-radio.com/k6sti/qmm.htm)
 * [Ryuji Suzuki](https://github.com/rsuzuki0), for reviewing the FM multipath filter coefficients and suggesting putting more weight on picking up more previous samples from the reference point than the samples after
 * [Teruhiko Hayashi, JA2SVZ](http://fpga.world.coocan.jp/FM/), the creator of FM FPGA Tuner popular in Japan, for reviewing the measurement results of FM broadcast reception of airspy-fmradion, and various constructive suggestions
+* Takehiro Sekine, for suggesting using GNU Radio's [VOLK](http://libvolk.org/) for faster calculation
 
 ## License
 
