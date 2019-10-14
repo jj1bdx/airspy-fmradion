@@ -76,26 +76,31 @@ inline IQSample MultipathFilter::single_process(const IQSample filter_input) {
     output += m_state[i] * m_coeff[i];
   }
 #else
-  volk_32fc_x2_dot_prod_32fc(&output, m_state.data(), m_coeff.data(), m_filter_order);
+  volk_32fc_x2_dot_prod_32fc(&output, m_state.data(), m_coeff.data(),
+                             m_filter_order);
 #endif
   return output;
 }
 
 // Update coefficients by complex LMS/CMA method.
 inline void MultipathFilter::update_coeff(const IQSample result) {
-  // TODO: reevaluate alpha value (might be able to set larger)
-  //       according to NLMS algorithm
-  // Alpha originally set to 0.002, increased to compensate
-  // sparse recalculation (experimental)
-  const double alpha = 0.004 / m_filter_order;
+  // Experimental NLMS algorithm
+  // const double alpha = 0.01;
+  const double alpha = 0.01;
+  const double delta = 0.0001;
   // Input instant envelope
   const double env = std::norm(result);
   // error = [desired signal] - [filter output]
   const double error = m_reference_level - env;
-  const double factor = alpha * error;
-  const MfCoeff factor_times_result = MfCoeff(factor * result.real(),
-		 factor * result.imag());
-
+  // Calculate vector norm of input data
+  double normsum = 0;
+  for (unsigned int i = 0; i < m_filter_order; i++) {
+    normsum += std::norm(m_state[i]);
+  }
+  // Calculate correlation vector
+  const double factor = error * alpha / (delta + normsum);
+  const MfCoeff factor_times_result =
+      MfCoeff(factor * result.real(), factor * result.imag());
   // Recalculate all coefficients
   for (unsigned int i = 0; i < m_filter_order; i++) {
     m_coeff[i] += factor_times_result * std::conj(m_state[i]);
