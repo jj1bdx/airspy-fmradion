@@ -85,19 +85,31 @@ inline IQSample MultipathFilter::single_process(const IQSample filter_input) {
 // Update coefficients by complex LMS/CMA method.
 inline void MultipathFilter::update_coeff(const IQSample result) {
   // Experimental NLMS algorithm
-  const double alpha = 0.1;
-  const double delta = 0.0001;
+  constexpr double alpha = 0.1;
+  constexpr double delta = 0.0001;
   // Input instant envelope
   const double env = std::norm(result);
   // error = [desired signal] - [filter output]
   const double error = m_reference_level - env;
+  // When the reference level = 1.0,
+  // estimated norm of the input state vector ~= m_filter_order
+  // * norm(input_signal) ~= 1.0 since abs(input_signal) ~= 1.0
+  // * measurement suggests that the error of mu_estimate to
+  //   the mu_accurate is nominally +-10% or less
+  const double mu_estimate =
+      alpha / (m_filter_order * m_reference_level * m_reference_level);
+#if 0
   // Calculate vector norm of input data
   double normsum = 0;
   for (unsigned int i = 0; i < m_filter_order; i++) {
     normsum += std::norm(m_state[i]);
   }
+  double mu_accurate = alpha / (delta + normsum);
+  fprintf(stderr, "(mu_estimate - mu_accurate) / mu_accurate = %.9g\n",
+              ((mu_estimate - mu_accurate) / mu_accurate));
+#endif
   // Calculate correlation vector
-  const double factor = error * alpha / (delta + normsum);
+  const double factor = error * mu_estimate;
   const MfCoeff factor_times_result =
       MfCoeff(factor * result.real(), factor * result.imag());
   // Recalculate all coefficients
