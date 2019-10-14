@@ -83,29 +83,11 @@ inline IQSample MultipathFilter::single_process(const IQSample filter_input) {
 
 // Update coefficients by complex LMS/CMA method.
 inline void MultipathFilter::update_coeff(const IQSample result) {
-  // This value should be kept the same
-  // TODO: reevaluate this value (might be able to set larger)
+  // TODO: reevaluate alpha value (might be able to set larger)
   //       according to NLMS algorithm
-
-  // Assume estimated norm of n-dimension coefficient vector: 2 * n,
-  // where n = m_filter_order.
-  // The absolute values of the real/imaginary part of each coefficient
-  // would not exceed 1.0 under the normal operating condition.
-  // Then the update factor alpha should be proportional to 1/(2 * n).
-  // So let alpha be mu/(2 * n), where 0 < mu < 2.
-
-  // In paper [2], the old constant alpha = 0.00002 was safe
-  // when n = 401 (200+200 stages) when the IF S/N was 40dB.
-
-  // We tested mu values of 0.008, 0.004, 0.002, and 0.001
-  // with the transmission result of FM COCOLO 76.5MHz in Osaka.
-  // We concluded that for n = 72 (where m_filter_order is 145):
-  // mu = 0.008: overfitting, which caused long-term increase of the error.
-  // mu = 0.004: steadily fit.
-  // mu = 0.002: steadily fit, resulted in even smaller error than mu = 0.004.
-  // mu = 0.001: underfitting.
-
-  const double alpha = 0.002 / m_filter_order;
+  // Alpha originally set to 0.002, increased to compensate
+  // sparse recalculation (experimental)
+  const double alpha = 0.004 / m_filter_order;
   // Input instant envelope
   const double env = std::norm(result);
   // error = [desired signal] - [filter output]
@@ -134,12 +116,18 @@ void MultipathFilter::process(const IQSampleVector &samples_in,
   }
   samples_out.resize(n);
 
+  // Note: this is bitmask
+  // Run the update every four (4) samples to reduce CPU load
+  // This still maintain 384000/4 = 96000 times/sec update rate
+  const unsigned int filter_interval = 0x03;
   unsigned int i = 0;
   for (; i < n; i++) {
     IQSample output = single_process(samples_in[i]);
     samples_out[i] = output;
-    // Update filter coefficients here
-    update_coeff(output);
+    if ((i & filter_interval) == 0) {
+      // Update filter coefficients here
+      update_coeff(output);
+    }
 #if 0 // enable this for per-sample coefficient monitor
     //
     fprintf(stderr, "sample,%u,m_error,%.9f,m_coeff,", i, m_error);
