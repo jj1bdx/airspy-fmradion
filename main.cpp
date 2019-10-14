@@ -96,6 +96,8 @@ void write_output_data(AudioOutput *output, DataBuffer<Sample> *buf,
     output->write(samples);
     if (!(*output)) {
       fprintf(stderr, "ERROR: AudioOutput: %s\n", output->error().c_str());
+      // Setting stop_flag to true, suggested by GitHub @montgomeryb
+      stop_flag.store(true);
     }
   }
 }
