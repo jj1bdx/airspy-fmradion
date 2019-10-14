@@ -36,17 +36,22 @@ public:
   // reference_level    :: reference envelope amplitude level
   MultipathFilter(unsigned int stages, double reference_level);
 
+  // Initialize filter coefficients.
+  void initialize_coefficients();
+
   // Process IQ samples and return filtered IQ samples.
   void process(const IQSampleVector &samples_in, IQSampleVector &samples_out);
 
   // Obtain the latest error value.
-  double get_error() const { return m_error; }
+  const double get_error() const { return m_error; }
 
   // Obtain the internal filter coefficient.
   const MfCoeffVector &get_coefficients() { return m_coeff; }
 
-  // Initialize filter coefficients.
-  void initialize_coefficients();
+  // Obtain the referenct point level value.
+  const float get_reference_level() {
+    return m_coeff[m_index_reference_point].real();
+  }
 
 private:
   // Process single value.
