@@ -1,0 +1,9 @@
+15-OCT-2019
+
+LMS convergence condition: 0 < alpha < (2 / (N * (A^2)))
+where N: filter order, A: maximum amplitude aka complex abs for the signal
+      alpha: step size
+
+Therefore: A < sqrt(2 / alpha) when alpha is given
+
+For example, if alpha = 0.1, A < sqrt(20), so A < 4.47
