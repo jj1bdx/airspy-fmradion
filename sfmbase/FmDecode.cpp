@@ -291,10 +291,9 @@ void FmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
           (abnormal_error || reference_level_error)) {
         m_multipathfilter.initialize_coefficients();
         // fprintf(stderr, "Reset Multipath Filter coefficients\n");
-        // Discard the output of this block,
-        // and terminate and wait for next block,
-        audio.resize(0);
-        return;
+        // Discard the invalid filter output, and
+        // use the no-filter input after resetting the filter.
+        m_samples_in_filtered = std::move(m_samples_in_after_agc);
       }
     } else {
       // No multipath filter applied.
