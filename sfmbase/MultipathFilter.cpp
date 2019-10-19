@@ -135,8 +135,7 @@ void MultipathFilter::process(const IQSampleVector &samples_in,
   // Run the update every four (4) samples to reduce CPU load
   // This still maintain 384000/4 = 96000 times/sec update rate
   const unsigned int filter_interval = 0x03;
-  unsigned int i = 0;
-  for (; i < n; i++) {
+  for (unsigned int i = 0; i < n; i++) {
     IQSample output = single_process(samples_in[i]);
     samples_out[i] = output;
     if ((i & filter_interval) == 0) {
@@ -144,7 +143,7 @@ void MultipathFilter::process(const IQSampleVector &samples_in,
       update_coeff(output);
     }
   }
-  assert(i == samples_out.size());
+  assert(n == samples_out.size());
 }
 
 // end
