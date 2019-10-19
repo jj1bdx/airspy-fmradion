@@ -23,6 +23,9 @@
 #include "FmDecode.h"
 #include "Utility.h"
 
+// Define this to print IF AGC level to stderr
+// #define DEBUG_IF_AGC
+
 /* ****************  class PilotPhaseLock  **************** */
 
 // Construct phase-locked loop.
@@ -267,7 +270,7 @@ void FmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
   // Perform IF AGC.
   m_ifagc.process(samples_in, m_samples_in_after_agc);
 
-#if 0
+#ifdef DEBUG_IF_AGC
   // Measure IF RMS level for checking how IF AGC works.
   double if_agc_rms = Utility::rms_level_approx(m_samples_in_after_agc);
   fprintf(stderr, "if_agc_rms = %.9g\n", if_agc_rms);

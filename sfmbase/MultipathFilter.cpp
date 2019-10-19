@@ -71,14 +71,12 @@ inline IQSample MultipathFilter::single_process(const IQSample filter_input) {
   m_state.emplace_back(filter_input);
   m_state.erase(m_state.begin());
   IQSample output = IQSample(0, 0);
-#if 0
-  for (unsigned int i = 0; i < m_filter_order; i++) {
-    output += m_state[i] * m_coeff[i];
-  }
-#else
+  // VOLK calculation, equivalent to:
+  // for (unsigned int i = 0; i < m_filter_order; i++) {
+  //   output += m_state[i] * m_coeff[i];
+  // }
   volk_32fc_x2_dot_prod_32fc(&output, m_state.data(), m_coeff.data(),
                              m_filter_order);
-#endif
   return output;
 }
 
@@ -133,16 +131,6 @@ void MultipathFilter::process(const IQSampleVector &samples_in,
       // Update filter coefficients here
       update_coeff(output);
     }
-#if 0 // enable this for per-sample coefficient monitor
-    //
-    fprintf(stderr, "sample,%u,m_error,%.9f,m_coeff,", i, m_error);
-    for (unsigned int i = 0; i < m_coeff.size(); i++) {
-      MfCoeff val = m_coeff[i];
-      fprintf(stderr, "%d,%.9f,%.9f,", i, val.real(),
-                  val.imag());
-      }
-    fprintf(stderr, "\n");
-#endif
   }
   assert(i == samples_out.size());
 }
