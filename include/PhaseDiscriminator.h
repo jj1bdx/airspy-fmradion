@@ -48,11 +48,6 @@ public:
 private:
   const Sample m_freq_scale_factor;
   IQSample m_last1_sample;
-  const Sample m_normalize_factor;
-  const float m_boundary;
-  float m_save_value;
-  std::vector<float> m_phase;
-  std::vector<float> m_detector;
 };
 
 #endif
