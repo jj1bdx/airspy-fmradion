@@ -17,8 +17,13 @@
 * S2 = S - Q
 * Is S2 a better (lower distortion) L-R signal? It might be. See [1].
 * The noise component (Q) behaves differently from the signal (S) component. This suggests a Hilbert transformer is required for Q. [1]
-* An adaptive filter to estimate S2 from S and Q will be practical [2].
+* An audio-level adaptive filter to estimate S2 from S and Q will be practical [2].
 
+## More aggressive filtering: controlling IF filter by QMM output
+
+* Strategy: minimize Q^2 (closest to 0)
+* Filter: at IF
+* Issue: delay between the IF filter output to the calculated Q value
 
 ## QMM monitoring test
 
