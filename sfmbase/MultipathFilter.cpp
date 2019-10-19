@@ -39,10 +39,10 @@
 // Class MultipathFilter
 // Complex adaptive filter for reducing FM multipath.
 
-MultipathFilter::MultipathFilter(unsigned int stages, double reference_level)
+MultipathFilter::MultipathFilter(unsigned int stages)
     : m_stages(stages), m_index_reference_point((m_stages * 3) + 1),
       m_filter_order((m_stages * 4) + 1), m_coeff(m_filter_order),
-      m_state(m_filter_order), m_reference_level(reference_level) {
+      m_state(m_filter_order) {
   assert(stages > 0);
   for (unsigned int i = 0; i < m_filter_order; i++) {
     m_state[i] = IQSample(0, 0);
@@ -87,14 +87,14 @@ inline void MultipathFilter::update_coeff(const IQSample result) {
   // Input instant envelope
   const double env = std::norm(result);
   // error = [desired signal] - [filter output]
-  const double error = m_reference_level - env;
+  const double error = if_target_level - env;
   // When the reference level = 1.0,
   // estimated norm of the input state vector ~= m_filter_order
   // * norm(input_signal) ~= 1.0 since abs(input_signal) ~= 1.0
   // * measurement suggests that the error of mu_estimate to
   //   the mu_accurate is nominally +-10% or less
-  const double mu_estimate =
-      alpha / (m_filter_order * m_reference_level * m_reference_level);
+  // Note: reference level is 1.0, therefore excluded from this expression.
+  const double mu_estimate = alpha / m_filter_order;
   // Calculate correlation vector
   const double factor = error * mu_estimate;
   const MfCoeff factor_times_result =

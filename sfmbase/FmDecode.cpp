@@ -243,13 +243,12 @@ FmDecoder::FmDecoder(double sample_rate_demod, bool stereo, double deemphasis,
 
       // Construct IF AGC
       ,
-      m_ifagc(1.0, 10000.0, if_target_level, 0.001)
+      m_ifagc(1.0, 10000.0, MultipathFilter::if_target_level, 0.001)
 
       // Construct multipath filter
       // for 384kHz IF: 288 -> 750 microseconds (288/384000 * 1000000)
       ,
-      m_multipathfilter(m_enable_multipath_filter ? m_multipath_stages : 1,
-                        if_target_level)
+      m_multipathfilter(m_enable_multipath_filter ? m_multipath_stages : 1)
 
 {
   // Do nothing

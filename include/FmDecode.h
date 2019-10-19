@@ -107,8 +107,6 @@ public:
   static constexpr double default_deemphasis = 50;
   static constexpr double default_deemphasis_eu = 50; // Europe and Japan
   static constexpr double default_deemphasis_na = 75; // USA/Canada
-  // IF AGC target level
-  static constexpr double if_target_level = 1.0;
 
   /**
    * Construct FM decoder.

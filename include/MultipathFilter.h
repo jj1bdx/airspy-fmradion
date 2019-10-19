@@ -31,10 +31,15 @@ typedef std::vector<MfCoeff> MfCoeffVector;
 
 class MultipathFilter {
 public:
+  // IF AGC target level is 1.0
+  // Note: this constant is for memorandum use only,
+  // and the actual code ASSUMES the reference level is 1.0.
+  static constexpr double if_target_level = 1.0;
+
   // Construct multipath filter.
-  // stages             :: number of filter stages
-  // reference_level    :: reference envelope amplitude level
-  MultipathFilter(unsigned int stages, double reference_level);
+  // Note: the reference level is fixed to 1.0.
+  // stages :: number of filter stages
+  MultipathFilter(unsigned int stages);
 
   // Initialize filter coefficients.
   void initialize_coefficients();
@@ -49,6 +54,7 @@ public:
   const MfCoeffVector &get_coefficients() { return m_coeff; }
 
   // Obtain the referenct point level value.
+  // Initial value is 1.0.
   const float get_reference_level() {
     return m_coeff[m_index_reference_point].real();
   }
@@ -66,7 +72,6 @@ private:
   unsigned int m_filter_order;
   MfCoeffVector m_coeff;
   IQSampleVector m_state;
-  double m_reference_level;
   double m_error;
 };
 
