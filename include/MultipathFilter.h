@@ -36,6 +36,12 @@ public:
   // and the actual code ASSUMES the reference level is 1.0.
   static constexpr double if_target_level = 1.0;
 
+  // LMS algorithm stepsize.
+  // Increasing this value makes the filter unstable.
+  // maximum amplitude must be less than sqrt(2 / alpha)
+  // to maintain the filter convergence.
+  static constexpr double alpha = 0.1;
+
   // Construct multipath filter.
   // Note: the reference level is fixed to 1.0.
   // stages :: number of filter stages
@@ -67,9 +73,10 @@ private:
   inline void update_coeff(const IQSample result);
 
   // Data members.
-  unsigned int m_stages;
-  unsigned int m_index_reference_point;
-  unsigned int m_filter_order;
+  const unsigned int m_stages;
+  const unsigned int m_index_reference_point;
+  const unsigned int m_filter_order;
+  const double m_mu;
   MfCoeffVector m_coeff;
   IQSampleVector m_state;
   double m_error;
