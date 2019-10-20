@@ -12,18 +12,20 @@
 * Q must be zero for an ideal transmission
 * Reality: Q is not zero, and represents multipath and other non-linear distortion of S (L-R signal)
 
-## Filtering possibility
+## Audio and MPX filtering possibilities
 
 * S2 = S - Q
+* Strategy: minimize Q^2 (closest to 0)
 * Is S2 a better (lower distortion) L-R signal? It might be. See [1].
 * The noise component (Q) behaves differently from the signal (S) component. This suggests a Hilbert transformer is required for Q. [1]
 * An audio-level adaptive filter to estimate S2 from S and Q will be practical [2].
+* Applying the adaptive filter to the composite MPX output might even be possible, so that the monaural part of the MPX signal could also be multipath-filtered. The effectiveness is limited and unknown, though.
 
 ## More aggressive filtering: controlling IF filter by QMM output
 
 * Strategy: minimize Q^2 (closest to 0)
 * Filter: at IF
-* Issue: delay between the IF filter output to the calculated Q value
+* Issue: delay between the IF filter output to the calculated Q value. Filtered-X LMS model could be applied.
 
 ## QMM monitoring test
 
