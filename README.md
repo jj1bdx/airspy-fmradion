@@ -1,16 +1,15 @@
 # airspy-fmradion
 
-* Version v0.8.0 (still preliminary), 23-OCT-2019
+* Version v0.8.0 (still preliminary, not tagged yet), 23-OCT-2019
 * For MacOS and Linux
 
 ### Known issues and changes
 
-* libvolk is required since v0.8.0.
+* libvolk is required since v0.8.0. If you don't want to install libvolk, use v0.7.8 instead.
 
 ### What is airspy-fmradion?
 
 * **airspy-fmradion** is a software-defined radio receiver for FM and AM broadcast radio, and also DSB/USB/LSB/CW utility communications, specifically designed for Airspy R2, Airspy Mini, Airspy HF+, and RTL-SDR.
-* This repository is forked from [ngsoftfm-jj1bdx](https://github.com/jj1bdx/ngsoftfm-jj1bdx) 0.1.14 and merged with [airspfhf-fmradion](https://github.com/jj1bdx/airspyhf-fmradion)
 
 ### What does airspy-fmradion provide?
 
@@ -355,3 +354,7 @@ Compile and install
 * As a whole package: GPLv3 (and later). See [LICENSE](LICENSE).
 * [csdr](https://github.com/simonyiszk/csdr) AGC code: BSD license.
 * Some source code files are stating GPL "v2 and later" license.
+
+## Repository history
+
+* This repository is forked from [ngsoftfm-jj1bdx](https://github.com/jj1bdx/ngsoftfm-jj1bdx) 0.1.14 and merged with [airspfhf-fmradion](https://github.com/jj1bdx/airspyhf-fmradion).
