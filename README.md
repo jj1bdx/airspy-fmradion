@@ -1,24 +1,11 @@
 # airspy-fmradion
 
-* Version v0.7.8, 5-OCT-2019
+* Version v0.8.0 (still preliminary), 23-OCT-2019
 * For MacOS and Linux
 
 ### Known issues and changes
 
-* DiscriminatorEqualizer removed since v0.7.6-pre3 (needs more precise compensation, presumably with an FIR filter.
-
-* The multipath filter starts after discarding the first 100 blocks. This change is to avoid the initial instability of Airspy R2.
-
-*The FM multipath filter staging parameter definition is changed.*
-
-* v0.7.3-pre1 and before: -E72 for 72 previous and 72 after stages (ratio 1:1)
-* v0.7.3: -E36 for 108 previous and 36 after stages (ratio 3:1)
-* Summary: set the -E parameter to 1/2 of the previous value
-
-*Use the latest libairspy --HEAD version* for:
-
-* Working `airspy_open_devices()`, required by `airspy_open_sn()`. See [this commit](https://github.com/airspy/airspyone_host/commit/61fec20fbd710fc54d57dfec732d314d693b5a2f) for the details.
-* Proper transfer block size. `if_blocksize` for Airspy HF+ is reduced from 16384 to 2048, following [this commit](https://github.com/airspy/airspyhf/commit/a1f6f4a0537f53bede6e80c51826fc9d45061c28).
+* libvolk is required since v0.8.0.
 
 ### What is airspy-fmradion?
 
@@ -79,20 +66,14 @@ For the latest version, see https://github.com/jj1bdx/airspy-fmradion
 
 ### Required libraries
 
+Note: libvolk is now required from v0.8.0, as suggested by Takehiro Sekine.
+
 If you install from source in your own installation path, you have to specify the include path and library path.
 For example if you installed it in `/opt/install/libairspy` you have to add `-DAIRSPY_INCLUDE_DIR=/opt/install/libairspy/include -DAIRSPYHF_INCLUDE_DIR=/opt/install/libairspyhf/include` to the cmake options.
 
-Note: Boost is no longer required since v0.7.7-pre1.
-
 ### Debian/Ubuntu Linux
 
-Base requirements:
-
-  - `sudo apt-get install cmake pkg-config libusb-1.0-0-dev libasound2-dev`
-
-To install the library from a Debian/Ubuntu installation just do:
-
-  - `sudo apt-get install libairspy-dev libairspyhf-dev librtlsdr-dev libsoxr-dev`
+  - `sudo apt-get install cmake pkg-config libusb-1.0-0-dev libasound2-dev libairspy-dev libairspyhf-dev librtlsdr-dev libsoxr-dev libvolk1-dev`
 
 ### macOS
 
@@ -109,6 +90,29 @@ brew install rtl-sdr
 brew install airspy --HEAD
 brew install airspyhf --HEAD
 ```
+
+And then install libvolk as described in [macOS-libvolk-install.md](macOS-libvolk-install.md).
+
+### Dependency installation details
+
+#### libvolk
+
+See [GitHub gnuradio/volk repository](https://github.com/gnuradio/volk) for the details.
+
+#### libairspyhf
+
+Use the latest HEAD version.
+
+#### libairspy
+
+*Use the latest libairspy --HEAD version* for:
+
+* Working `airspy_open_devices()`, required by `airspy_open_sn()`. See [this commit](https://github.com/airspy/airspyone_host/commit/61fec20fbd710fc54d57dfec732d314d693b5a2f) for the details.
+* Proper transfer block size. `if_blocksize` for Airspy HF+ is reduced from 16384 to 2048, following [this commit](https://github.com/airspy/airspyhf/commit/a1f6f4a0537f53bede6e80c51826fc9d45061c28).
+
+#### Boost is no longer required
+
+Boost is no longer required since v0.7.7-pre1.
 
 ## Installing
 
@@ -188,14 +192,22 @@ Compile and install
 
 * An LMS-based multipath filter can be enabled after IF AGC
 * IF sample stages can be defined by `-E` options
-* The stage number is both for before and ahead the reference point
-* The multipath filter order: (2 * stages) + 1
+* Reference amplitude level: 1.0
 * For Mac mini 2018 with 3.2 GHz Intel Core i7, 288 stages consume 99% of one CPU core
 * This filter is not effective when the IF bandwidth is narrow (192kHz)
+* The multipath filter starts after discarding the first 100 blocks. This change is to avoid the initial instability of Airspy R2.
+* Note: this filter recalculates the coefficients for every four (4) samples, to reduce the processing load.
+
+### Multipath filter configuration
+
+* v0.7.3 and later: -E36 for 108 previous and 36 after stages (ratio 3:1). The multipath filter order: (4 * stages) + 1
+* For reference only: v0.7.3-pre1 and before: -E72 for 72 previous and 72 after stages (ratio 1:1), summary: set the -E parameter to 1/2 of the previous value
+* Rule of thumb: -E36 is sufficient for a stable strong singal (albeit with considerable multipath distortion).
 
 ### FM L-R signal boosted for the stereo separation improvement
 
 * Teruhiko Hayashi suggested boosting L-R signal by 1.017 for a better stereo separation. Implemented since v0.7.6-pre3.
+* DiscriminatorEqualizer removed since v1.7.6-pre3 (needs more precise compensation, presumably with an FIR filter.
 
 ### FM deemphasis error prevention
 
