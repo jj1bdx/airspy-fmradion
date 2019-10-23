@@ -6,6 +6,7 @@
 ### Known issues and changes
 
 * libvolk is required since v0.8.0. If you don't want to install libvolk, use v0.7.8 instead.
+* Building on MacOS 10.15 Catalina is still not tested yet. The development is going on with the last Mojave 10.14.6.
 
 ### What is airspy-fmradion?
 
