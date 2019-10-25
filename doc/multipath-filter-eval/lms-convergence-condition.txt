@@ -18,7 +18,7 @@ More conservative condition of LMS convergence: 0 < mu < (1 / (3 * tr[R]))
 where tr[R] represents the total average input signal power,
 also tr[R] = N * (A^2) [1]
 
-Therefore: 0 < mu < (1 / (3 * N * (A^2)))
+Therefore: 0 < mu < (1 / (3 * (N * (A^2))))
 which is equivalent to: 0 < alpha < (1 / (3 * (A^2)))
 so the more conservative estimation is: : A < sqrt((1/3) * (1/alpha))
 
