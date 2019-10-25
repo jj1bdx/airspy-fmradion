@@ -121,19 +121,13 @@ bool FileSource::start(DataBuffer<IQSample> *buf, std::atomic_bool *stop_flag) {
   // try to open sndfile
   m_sfp = sf_open(m_devname.c_str(), SFM_READ, &m_sfinfo);
   if (m_sfp == NULL) {
-    // retry to open with user defined option, maybe raw
-    m_sfinfo.samplerate = m_samplerate;
-    m_sfinfo.channels = 2;
-    m_sfinfo.format = SF_FORMAT_RAW | SF_FORMAT_PCM_24;
-    m_sfp = sf_open(m_devname.c_str(), SFM_READ, &m_sfinfo);
-    if (m_sfp == NULL) {
-      m_error = "Failed to open ";
-      m_error += m_devname + ": " + sf_strerror(m_sfp);
-    }
-  } else {
-    // overwrite sample rate
-    m_samplerate = m_sfinfo.samplerate;
+    m_error = "Failed to open ";
+    m_error += m_devname + ": " + sf_strerror(m_sfp);
+    return false;
   }
+
+  // overwrite sample rate
+  m_samplerate = m_sfinfo.samplerate;
 
   // samplerate per microsecond
   m_samplerate_per_us = m_samplerate / 1e6;
@@ -153,7 +147,6 @@ bool FileSource::stop() {
     delete m_thread;
     m_thread = 0;
   }
-
   return true;
 }
 
