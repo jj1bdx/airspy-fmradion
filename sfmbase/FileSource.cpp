@@ -204,13 +204,16 @@ void FileSource::run() {
     }
   }
 
+  // push end
+  m_this->m_buf->push_end();
+
   // close
   sf_close(m_this->m_sfp);
 }
 
 // Fetch a bunch of samples from the device.
 bool FileSource::get_samples(IQSampleVector *samples) {
-  size_t n_read;
+  sf_count_t n_read;
 
   if (!m_this->m_sfp) {
     return false;
@@ -221,23 +224,26 @@ bool FileSource::get_samples(IQSampleVector *samples) {
   }
 
   // setup iqsample
-  samples->resize(m_this->m_block_length);
+//  samples->resize(m_this->m_block_length);
 
   // int24 to float32
   {
     // setup vector for reading
-    size_t sz = m_this->m_block_length * 2; // * 3 * 2/*ch*/;
+    sf_count_t sz = m_this->m_block_length * 2; // * 3 * 2/*ch*/;
     std::vector<int> buf(sz);
 
     // read samples
     n_read = sf_read_int(m_this->m_sfp, buf.data(), sz);
-    if (n_read < sz) {
-      m_this->m_error = "short read, samples lost";
+    if (n_read <= 0) {
+      // finish reading.
       return false;
     }
 
+    // setup iqsample
+    samples->resize(n_read / 2);
+
     // convert float32
-    for (int i = 0; i < m_this->m_block_length; i++) {
+    for (int i = 0; i < n_read / 2; i++) {
       int32_t re = buf[2 * i];
       int32_t im = buf[2 * i + 1];
       (*samples)[i] = IQSample(re / IQSample::value_type(8388608),
