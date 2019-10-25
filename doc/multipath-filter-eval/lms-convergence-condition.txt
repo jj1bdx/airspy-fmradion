@@ -11,3 +11,21 @@ where
 Therefore: A < sqrt(2 / alpha) when alpha is given
 
 For example, if alpha = 0.1, A < sqrt(20), so A < 4.47
+
+25-OCT-2019
+
+More conservative condition of LMS convergence: 0 < mu < (1 / (3 * tr[R]))
+where tr[R] represents the total average input signal power,
+also tr[R] = N * (A^2) [1]
+
+Therefore: 0 < mu < (1 / (3 * N * (A^2)))
+which is equivalent to: 0 < alpha < (1 / (3 * (A^2)))
+so the more conservative estimation is: : A < sqrt((1/3) * (1/alpha))
+
+For example, if alpha = 0.1, A < sqrt(10/3), so A < 1.82
+
+Reference:
+[1]: A. Feuer and E. Weinstein, "Convergence analysis of LMS filters with uncorrelated Gaussian data," in IEEE Transactions on Acoustics, Speech, and Signal Processing, vol. 33, no. 1, pp. 222-230, February 1985.
+doi: 10.1109/TASSP.1985.1164493
+http://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=1164493&isnumber=26189
+See expression (35)
