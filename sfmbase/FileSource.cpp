@@ -167,7 +167,7 @@ void FileSource::run() {
   // integer part of expected microseconds per block reading
   auto expected = std::chrono::microseconds(long(int_part));
 
-  std::cerr << expected.count() << std::endl;
+//  std::cerr << expected.count() << std::endl;
   
   // 1 microsecond
   auto one_us = std::chrono::microseconds(1);
@@ -238,8 +238,8 @@ bool FileSource::get_samples(IQSampleVector *samples) {
 
     // convert float32
     for (int i = 0; i < m_this->m_block_length; i++) {
-      int32_t re = buf[2 * i + 1];
-      int32_t im = buf[2 * i];
+      int32_t re = buf[2 * i];
+      int32_t im = buf[2 * i + 1];
       (*samples)[i] = IQSample(re / IQSample::value_type(8388608),
                                im / IQSample::value_type(8388608));
     }
