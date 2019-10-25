@@ -36,6 +36,7 @@
 #include "AmDecode.h"
 #include "AudioOutput.h"
 #include "DataBuffer.h"
+#include "FileSource.h"
 #include "FilterParameters.h"
 #include "FmDecode.h"
 #include "FourthConverterIQ.h"
@@ -131,6 +132,7 @@ void usage() {
       "                   - rtlsdr: RTL-SDR devices\n"
       "                   - airspy: Airspy R2\n"
       "                   - airspyhf: Airspy HF+\n"
+      "                   - filesource: File Source\n"
       "  -q             Quiet mode\n"
       "  -c config      Comma separated key=value configuration pairs or just "
       "key for switches\n"
@@ -250,6 +252,9 @@ static bool get_device(std::vector<std::string> &devnames, DevType devtype,
   case DevType::AirspyHF:
     AirspyHFSource::get_device_names(devnames);
     break;
+  case DevType::FileSource:
+    FileSource::get_device_names(devnames);
+    break;
   }
 
   if (devidx < 0 || (unsigned int)devidx >= devnames.size()) {
@@ -278,6 +283,9 @@ static bool get_device(std::vector<std::string> &devnames, DevType devtype,
     break;
   case DevType::AirspyHF:
     *srcsdr = new AirspyHFSource(devidx);
+    break;
+  case DevType::FileSource:
+    *srcsdr = new FileSource(devidx);
     break;
   }
 
@@ -437,11 +445,13 @@ int main(int argc, char **argv) {
     devtype = DevType::Airspy;
   } else if (strcasecmp(devtype_str.c_str(), "airspyhf") == 0) {
     devtype = DevType::AirspyHF;
+  } else if (strcasecmp(devtype_str.c_str(), "filesource") == 0) {
+    devtype = DevType::FileSource;
   } else {
     fprintf(
         stderr,
         "ERROR: wrong device type (-t option) must be one of the following:\n");
-    fprintf(stderr, "        rtlsdr, airspy, airspyhf\n");
+    fprintf(stderr, "        rtlsdr, airspy, airspyhf, filesource\n");
     exit(1);
   }
 
@@ -663,6 +673,9 @@ int main(int argc, char **argv) {
     break;
   case DevType::RTLSDR:
     if_blocksize = 65536;
+    break;
+  case DevType::FileSource:
+    if_blocksize = 2048;
     break;
   }
 

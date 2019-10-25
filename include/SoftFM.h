@@ -32,7 +32,7 @@ typedef std::vector<IQSample::value_type> IQSampleCoeff;
 typedef std::vector<SampleVector::value_type> SampleCoeff;
 
 enum class FilterType { Default, Medium, Narrow };
-enum class DevType { Airspy, AirspyHF, RTLSDR };
+enum class DevType { Airspy, AirspyHF, RTLSDR, FileSource };
 enum class ModType { FM, AM, DSB, USB, LSB, CW, NBFM };
 enum class OutputMode { RAW_INT16, RAW_FLOAT32, WAV, ALSA };
 
