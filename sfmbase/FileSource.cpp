@@ -19,6 +19,7 @@
 
 #include <iostream>
 #include <chrono>
+#include <sstream>
 #include <thread>
 #include <cmath>
 
@@ -34,7 +35,7 @@ FileSource *FileSource::m_this = 0;
 FileSource::FileSource(int dev_index)
     : m_sample_rate(default_sample_rate), m_frequency(default_frequency),
       m_zero_offset(false), m_block_length(default_block_length), m_sfp(NULL),
-      m_thread(0) {
+      m_sub_type(0), m_thread(0) {
   m_this = this;
 }
 
@@ -103,7 +104,6 @@ bool FileSource::configure(std::string fname, std::uint32_t sample_rate,
   m_zero_offset = zero_offset;
   m_block_length = block_length;
 
-#if 1
   // Open sndfile.
   m_sfp = sf_open(m_devname.c_str(), SFM_READ, &m_sfinfo);
   if (m_sfp == NULL) {
@@ -113,19 +113,47 @@ bool FileSource::configure(std::string fname, std::uint32_t sample_rate,
     return false;
   }
 
+  // Get format.
+  int major_format = m_sfinfo.format & SF_FORMAT_TYPEMASK;
+  if ((major_format != SF_FORMAT_WAV) && (major_format != SF_FORMAT_W64) &&
+      (major_format != SF_FORMAT_WAVEX)) {
+    m_error = "Unsupported major format ";
+    m_error += m_devname + " : ";
+    std::stringstream ss;
+    ss << std::showbase;
+    ss << std::hex << major_format;
+    m_error += ss.str();
+    return false;
+  }
+
+  m_sub_type = m_sfinfo.format & SF_FORMAT_SUBMASK;
+  if ((m_sub_type != SF_FORMAT_PCM_16) && (m_sub_type != SF_FORMAT_PCM_24) &&
+      (m_sub_type != SF_FORMAT_FLOAT)) {
+    m_error = "Unsupported subtype of format ";
+    m_error += m_devname + " : ";
+    std::stringstream ss;
+    ss << std::showbase;
+    ss << std::hex << m_sub_type;
+    m_error += ss.str();
+    return false;
+  }
+
   // Overwrite sample rate.
   m_sample_rate = m_sfinfo.samplerate;
   std::cerr << "FileSource::sf_open overwrite srate: " << m_sample_rate << std::endl;
 
   // Calculate samplerate per microsecond.
   m_sample_rate_per_us = ((double)m_sample_rate) / 1e6;
+
+#if 0
+  double d_expected = ((double)m_this->m_block_length) / m_this->m_sample_rate_per_us;
+  std::cerr << d_expected << std::endl;
 #endif
 
   m_confFreq = frequency;
 
   return true;
 }
-
 
 std::uint32_t FileSource::get_sample_rate() {
   return m_sample_rate;
@@ -152,23 +180,6 @@ void FileSource::get_device_names(std::vector<std::string> &devices) {
 bool FileSource::start(DataBuffer<IQSample> *buf, std::atomic_bool *stop_flag) {
   m_buf = buf;
   m_stop_flag = stop_flag;
-
-#if 0
-  // 0pen sndfile.
-  m_sfp = sf_open(m_devname.c_str(), SFM_READ, &m_sfinfo);
-  if (m_sfp == NULL) {
-    // Set m_error and return false if sf_open is failed.
-    m_error = "Failed to open ";
-    m_error += m_devname + " : " + sf_strerror(m_sfp);
-    return false;
-  }
-
-  // Overwrite sample rate.
-  m_sample_rate = m_sfinfo.samplerate;
-
-  // Calculate samplerate per microsecond.
-  m_sample_rate_per_us = ((double)m_sample_rate) / 1e6;
-#endif
 
   // Start thread.
   if (m_thread == 0) {
@@ -258,30 +269,107 @@ bool FileSource::get_samples(IQSampleVector *samples) {
     return false;
   }
 
-  // read int and convert to float32
-  {
-    // setup vector for reading
-    sf_count_t n_read;
-    sf_count_t sz = m_this->m_block_length * 2;
-    std::vector<int> buf(sz);
+  bool ret;
+  switch (m_this->m_sub_type) {
+  case SF_FORMAT_PCM_16:
+    ret = m_this->get_s16(samples);
+    break;
+  case SF_FORMAT_PCM_24:
+    ret = m_this->get_s24(samples);
+    break;
+  case SF_FORMAT_FLOAT:
+    ret = m_this->get_float(samples);
+    break;
+  default:
+    // Unsupported format sub_type.
+    ret = false;
+    break;
+  }
 
-    // read int samples
-    n_read = sf_read_int(m_this->m_sfp, buf.data(), sz);
-    if (n_read <= 0) {
-      // finish reading.
-      return false;
-    }
+  return ret;
+}
 
-    // setup iqsample
-    samples->resize(n_read / 2);
+bool FileSource::get_s16(IQSampleVector *samples) {
+  // read sint16 and convert to float32
 
-    // convert int24 to float32
-    for (int i = 0; i < n_read / 2; i++) {
-      int32_t re = buf[2 * i];
-      int32_t im = buf[2 * i + 1];
-      (*samples)[i] = IQSample(re / IQSample::value_type(8388608),
-                               im / IQSample::value_type(8388608));
-    }
+  // setup vector for reading
+  sf_count_t n_read;
+  sf_count_t sz = m_this->m_block_length * 2;
+  std::vector<int> buf(sz);
+
+  // read int samples
+  n_read = sf_read_int(m_this->m_sfp, buf.data(), sz);
+  if (n_read <= 0) {
+    // finish reading.
+    return false;
+  }
+
+  // setup iqsample
+  samples->resize(n_read / 2);
+
+  // convert sint16 to float32
+  for (int i = 0; i < n_read / 2; i++) {
+    int32_t re = buf[2 * i];
+    int32_t im = buf[2 * i + 1];
+    (*samples)[i] = IQSample(re / IQSample::value_type(32768),
+                             im / IQSample::value_type(32768));
+  }
+
+  return true;
+}
+
+bool FileSource::get_s24(IQSampleVector *samples) {
+  // read sint24 and convert to float32
+
+  // setup vector for reading
+  sf_count_t n_read;
+  sf_count_t sz = m_this->m_block_length * 2;
+  std::vector<int> buf(sz);
+
+  // read int samples
+  n_read = sf_read_int(m_this->m_sfp, buf.data(), sz);
+  if (n_read <= 0) {
+    // finish reading.
+    return false;
+  }
+
+  // setup iqsample
+  samples->resize(n_read / 2);
+
+  // convert int24 to float32
+  for (int i = 0; i < n_read / 2; i++) {
+    int32_t re = buf[2 * i];
+    int32_t im = buf[2 * i + 1];
+    (*samples)[i] = IQSample(re / IQSample::value_type(8388608),
+                             im / IQSample::value_type(8388608));
+  }
+
+  return true;
+}
+
+bool FileSource::get_float(IQSampleVector *samples) {
+  // read sample and copy to float32
+
+  // setup vector for reading
+  sf_count_t n_read;
+  sf_count_t sz = m_this->m_block_length * 2;
+  std::vector<float> buf(sz);
+
+  // read int samples
+  n_read = sf_read_float(m_this->m_sfp, buf.data(), sz);
+  if (n_read <= 0) {
+    // finish reading.
+    return false;
+  }
+
+  // setup iqsample
+  samples->resize(n_read / 2);
+
+  // copy to sample
+  for (int i = 0; i < n_read / 2; i++) {
+    float re = buf[2 * i];
+    float im = buf[2 * i + 1];
+    (*samples)[i] = IQSample(re, im);
   }
 
   return true;

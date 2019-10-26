@@ -90,6 +90,10 @@ private:
    */
   static bool get_samples(IQSampleVector *samples);
 
+  static bool get_s16(IQSampleVector *samples);
+  static bool get_s24(IQSampleVector *samples);
+  static bool get_float(IQSampleVector *samples);
+
   static void run();
 
   std::uint32_t m_sample_rate;
@@ -99,6 +103,8 @@ private:
 
   SNDFILE *m_sfp;
   SF_INFO m_sfinfo;
+
+  int m_sub_type;
 
   double m_sample_rate_per_us;
 
