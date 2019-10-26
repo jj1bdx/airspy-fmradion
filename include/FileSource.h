@@ -30,6 +30,8 @@
 class FileSource : public Source {
 public:
   static constexpr int default_block_length = 2048;
+  static constexpr std::uint32_t default_sample_rate = 384000;
+  static constexpr std::int32_t default_frequency = 825000000;
 
   /** Open file. */
   FileSource(int dev_index);
@@ -69,12 +71,15 @@ private:
    * fname        :: file to read.
    * sample_rate  :: desired sample rate in Hz.
    * frequency    :: desired center frequency in Hz.
+   * zero_offset  :: true if sample contain zero offset.
    * block_length :: preferred number of samples per block.
    *
    * Return true.
    */
-  bool configure(std::string fname, std::uint32_t sample_rate,
-                 std::uint32_t frequency,
+  bool configure(std::string fname,
+                 std::uint32_t sample_rate = default_sample_rate,
+                 std::uint32_t frequency = default_frequency,
+                 bool zero_offset = false,
                  int block_length = default_block_length);
 
   /**
@@ -87,14 +92,15 @@ private:
 
   static void run();
 
+  std::uint32_t m_sample_rate;
+  std::uint32_t m_frequency;
+  bool m_zero_offset;
+  int m_block_length;
+
   SNDFILE *m_sfp;
   SF_INFO m_sfinfo;
 
-  uint32_t m_frequency;
-  int m_block_length;
-
-  double m_samplerate_per_us;
-  double m_samplerate;
+  double m_sample_rate_per_us;
 
   std::thread *m_thread;
   static FileSource *m_this;

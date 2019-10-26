@@ -31,7 +31,9 @@
 FileSource *FileSource::m_this = 0;
 
 FileSource::FileSource(int dev_index)
-    : m_block_length(default_block_length), m_thread(0) {
+    : m_sample_rate(default_sample_rate), m_frequency(default_frequency),
+      m_zero_offset(false), m_block_length(default_block_length),
+      m_thread(0) {
   m_this = this;
 }
 
@@ -45,8 +47,9 @@ FileSource::~FileSource() {
 }
 
 bool FileSource::configure(std::string configurationStr) {
-  uint32_t sample_rate = 384000;
-  uint32_t frequency = 82500000;
+  uint32_t sample_rate = default_sample_rate;
+  uint32_t frequency = default_frequency;
+  bool zero_offset = false;
   std::string filename;
 
   int block_length = default_block_length;
@@ -75,27 +78,34 @@ bool FileSource::configure(std::string configurationStr) {
     block_length = atoi(m["blklen"].c_str());
   }
 
+  if (m.find("zero_offset") != m.end()) {
+    std::cerr << "FileSource::configure: zero_offset" << std::endl;
+    zero_offset = true;
+  }
+
   m_confFreq = frequency;
 
-  return configure(filename, sample_rate, frequency, block_length);
+  return configure(filename, sample_rate, frequency, zero_offset, block_length);
 }
 
-bool FileSource::configure(std::string fname, uint32_t sample_rate,
-                           uint32_t frequency, int block_length) {
+bool FileSource::configure(std::string fname, std::uint32_t sample_rate,
+                           std::uint32_t frequency, bool zero_offset,
+                           int block_length) {
   m_devname = fname;
-  m_samplerate = sample_rate;
+  m_sample_rate = sample_rate;
   m_frequency = frequency;
   m_confFreq = frequency;
+  m_zero_offset = zero_offset;
   m_block_length = block_length;
 
-//  m_samplerate_per_us = ((double)m_samplerate) / 1e6;
+//  m_sample_rate_per_us = ((double)m_sample_rate) / 1e6;
 
   return true;
 }
 
 
 std::uint32_t FileSource::get_sample_rate() {
-  return m_samplerate;
+  return m_sample_rate;
 }
 
 std::uint32_t FileSource::get_frequency() {
@@ -103,7 +113,7 @@ std::uint32_t FileSource::get_frequency() {
 }
 
 bool FileSource::is_low_if() {
-  return true;
+  return !m_zero_offset;
 }
 
 void FileSource::print_specific_parms() {
@@ -127,10 +137,10 @@ bool FileSource::start(DataBuffer<IQSample> *buf, std::atomic_bool *stop_flag) {
   }
 
   // overwrite sample rate
-  m_samplerate = m_sfinfo.samplerate;
+  m_sample_rate = m_sfinfo.samplerate;
 
   // samplerate per microsecond
-  m_samplerate_per_us = m_samplerate / 1e6;
+  m_sample_rate_per_us = ((double)m_sample_rate) / 1e6;
 
   if (m_thread == 0) {
     m_thread = new std::thread(run);
@@ -147,13 +157,14 @@ bool FileSource::stop() {
     delete m_thread;
     m_thread = 0;
   }
+
   return true;
 }
 
 void FileSource::run() {
   IQSampleVector iqsamples;
 
-  double d_expected = ((double)m_this->m_block_length) / m_this->m_samplerate_per_us;
+  double d_expected = ((double)m_this->m_block_length) / m_this->m_sample_rate_per_us;
   double int_part, frac_part;
   frac_part = std::modf(d_expected, &int_part);
 
@@ -206,26 +217,22 @@ void FileSource::run() {
 
 // Fetch a bunch of samples from the device.
 bool FileSource::get_samples(IQSampleVector *samples) {
-  sf_count_t n_read;
 
   if (!m_this->m_sfp) {
     return false;
   }
-
   if (!samples) {
     return false;
   }
 
-  // setup iqsample
-//  samples->resize(m_this->m_block_length);
-
-  // int24 to float32
+  // read int and convert to float32
   {
     // setup vector for reading
-    sf_count_t sz = m_this->m_block_length * 2; // * 3 * 2/*ch*/;
+    sf_count_t n_read;
+    sf_count_t sz = m_this->m_block_length * 2;
     std::vector<int> buf(sz);
 
-    // read samples
+    // read int samples
     n_read = sf_read_int(m_this->m_sfp, buf.data(), sz);
     if (n_read <= 0) {
       // finish reading.
@@ -235,7 +242,7 @@ bool FileSource::get_samples(IQSampleVector *samples) {
     // setup iqsample
     samples->resize(n_read / 2);
 
-    // convert float32
+    // convert int24 to float32
     for (int i = 0; i < n_read / 2; i++) {
       int32_t re = buf[2 * i];
       int32_t im = buf[2 * i + 1];
