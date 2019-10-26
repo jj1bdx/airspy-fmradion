@@ -716,6 +716,7 @@ int main(int argc, char **argv) {
   // Start reading from device in separate thread.
   up_srcsdr->start(&source_buffer, &stop_flag);
 
+  // Reported by GitHub @bstalk: (!up_srcadr) doesn't work for gcc of Debian.
   if (!(*up_srcsdr)) {
     fprintf(stderr, "ERROR: source: %s\n", up_srcsdr->error().c_str());
     exit(1);
