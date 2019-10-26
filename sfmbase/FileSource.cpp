@@ -103,6 +103,24 @@ bool FileSource::configure(std::string fname, std::uint32_t sample_rate,
   m_zero_offset = zero_offset;
   m_block_length = block_length;
 
+#if 1
+  // Open sndfile.
+  m_sfp = sf_open(m_devname.c_str(), SFM_READ, &m_sfinfo);
+  if (m_sfp == NULL) {
+    // Set m_error and return false if sf_open is failed.
+    m_error = "Failed to open ";
+    m_error += m_devname + " : " + sf_strerror(m_sfp);
+    return false;
+  }
+
+  // Overwrite sample rate.
+  m_sample_rate = m_sfinfo.samplerate;
+  std::cerr << "FileSource::sf_open overwrite srate: " << m_sample_rate << std::endl;
+
+  // Calculate samplerate per microsecond.
+  m_sample_rate_per_us = ((double)m_sample_rate) / 1e6;
+#endif
+
   m_confFreq = frequency;
 
   return true;
@@ -135,6 +153,7 @@ bool FileSource::start(DataBuffer<IQSample> *buf, std::atomic_bool *stop_flag) {
   m_buf = buf;
   m_stop_flag = stop_flag;
 
+#if 0
   // 0pen sndfile.
   m_sfp = sf_open(m_devname.c_str(), SFM_READ, &m_sfinfo);
   if (m_sfp == NULL) {
@@ -149,6 +168,7 @@ bool FileSource::start(DataBuffer<IQSample> *buf, std::atomic_bool *stop_flag) {
 
   // Calculate samplerate per microsecond.
   m_sample_rate_per_us = ((double)m_sample_rate) / 1e6;
+#endif
 
   // Start thread.
   if (m_thread == 0) {
