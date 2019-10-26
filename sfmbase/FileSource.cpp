@@ -30,14 +30,17 @@
 
 FileSource *FileSource::m_this = 0;
 
+// Constructor
 FileSource::FileSource(int dev_index)
     : m_sample_rate(default_sample_rate), m_frequency(default_frequency),
-      m_zero_offset(false), m_block_length(default_block_length),
+      m_zero_offset(false), m_block_length(default_block_length), m_sfp(NULL),
       m_thread(0) {
   m_this = this;
 }
 
+// Destructor
 FileSource::~FileSource() {
+  // Close sndfile.
   if (m_sfp) {
     sf_close(m_sfp);
     m_sfp = NULL;
@@ -47,44 +50,47 @@ FileSource::~FileSource() {
 }
 
 bool FileSource::configure(std::string configurationStr) {
+  std::string filename;
   uint32_t sample_rate = default_sample_rate;
   uint32_t frequency = default_frequency;
   bool zero_offset = false;
-  std::string filename;
-
   int block_length = default_block_length;
 
   ConfigParser cp;
   ConfigParser::map_type m;
 
+  // srate
   cp.parse_config_string(configurationStr, m);
   if (m.find("srate") != m.end()) {
     std::cerr << "FileSource::configure: srate: " << m["srate"] << std::endl;
     sample_rate = atoi(m["srate"].c_str());
   }
 
+  // freq
   if (m.find("freq") != m.end()) {
     std::cerr << "FileSource::configure: freq: " << m["freq"] << std::endl;
     frequency = atoi(m["freq"].c_str());
   }
 
+  // filename
   if (m.find("filename") != m.end()) {
     std::cerr << "FileSource::configure: filename: " << m["filename"] << std::endl;
     filename = m["filename"];
   }
 
+  // blklen
   if (m.find("blklen") != m.end()) {
     std::cerr << "FileSource::configure: blklen: " << m["blklen"] << std::endl;
     block_length = atoi(m["blklen"].c_str());
   }
 
+  // zero_offset
   if (m.find("zero_offset") != m.end()) {
     std::cerr << "FileSource::configure: zero_offset" << std::endl;
     zero_offset = true;
   }
 
-  m_confFreq = frequency;
-
+  // configure
   return configure(filename, sample_rate, frequency, zero_offset, block_length);
 }
 
@@ -94,11 +100,10 @@ bool FileSource::configure(std::string fname, std::uint32_t sample_rate,
   m_devname = fname;
   m_sample_rate = sample_rate;
   m_frequency = frequency;
-  m_confFreq = frequency;
   m_zero_offset = zero_offset;
   m_block_length = block_length;
 
-//  m_sample_rate_per_us = ((double)m_sample_rate) / 1e6;
+  m_confFreq = frequency;
 
   return true;
 }
@@ -117,31 +122,35 @@ bool FileSource::is_low_if() {
 }
 
 void FileSource::print_specific_parms() {
+  // nop
 }
 
+// Return a list of supported device.
 void FileSource::get_device_names(std::vector<std::string> &devices) {
+  // Currently, set "FileSource".
   devices.push_back("FileSource");
 }
-
 
 bool FileSource::start(DataBuffer<IQSample> *buf, std::atomic_bool *stop_flag) {
   m_buf = buf;
   m_stop_flag = stop_flag;
 
-  // try to open sndfile
+  // 0pen sndfile.
   m_sfp = sf_open(m_devname.c_str(), SFM_READ, &m_sfinfo);
   if (m_sfp == NULL) {
+    // Set m_error and return false if sf_open is failed.
     m_error = "Failed to open ";
-    m_error += m_devname + ": " + sf_strerror(m_sfp);
+    m_error += m_devname + " : " + sf_strerror(m_sfp);
     return false;
   }
 
-  // overwrite sample rate
+  // Overwrite sample rate.
   m_sample_rate = m_sfinfo.samplerate;
 
-  // samplerate per microsecond
+  // Calculate samplerate per microsecond.
   m_sample_rate_per_us = ((double)m_sample_rate) / 1e6;
 
+  // Start thread.
   if (m_thread == 0) {
     m_thread = new std::thread(run);
     return true;
@@ -152,6 +161,7 @@ bool FileSource::start(DataBuffer<IQSample> *buf, std::atomic_bool *stop_flag) {
 }
 
 bool FileSource::stop() {
+  // Terminate thread.
   if (m_thread) {
     m_thread->join();
     delete m_thread;
@@ -161,16 +171,19 @@ bool FileSource::stop() {
   return true;
 }
 
+// Thread to read IQSample from file.
 void FileSource::run() {
   IQSampleVector iqsamples;
 
+  // expected microseconds per block reading
   double d_expected = ((double)m_this->m_block_length) / m_this->m_sample_rate_per_us;
+
+  // Divide into its fractional and integer part.
   double int_part, frac_part;
   frac_part = std::modf(d_expected, &int_part);
 
   // integer part of expected microseconds per block reading
   auto expected = std::chrono::microseconds(long(int_part));
-
 //  std::cerr << expected.count() << std::endl;
   
   // 1 microsecond
@@ -179,28 +192,28 @@ void FileSource::run() {
   // delta for fraction part
   double delta = 0.0;
 
-  // get clock and start reading
+  // Get clock and start reading.
   auto begin = std::chrono::system_clock::now();
   while (!m_this->m_stop_flag->load()) {
-    // read and convert samples
+    // Read and convert samples.
     if (!get_samples(&iqsamples)) {
       break;
     }
 
-    // push samples
+    // Push samples.
     m_this->m_buf->push(std::move(iqsamples));
 
-    // get clock and calculate elapsed
+    // Get clock and calculate elapsed.
     auto end = std::chrono::system_clock::now();
     auto elapsed = end - begin;
 
-    // throttle
+    // Throttle.
     std::this_thread::sleep_for(expected - elapsed);
 
-    // get next clock
+    // Get next clock.
     begin += expected;
 
-    // sigma delta
+    // Sigma delta.
     delta += frac_part;
     if (delta >= 1.0) {
       begin += one_us;
@@ -208,14 +221,14 @@ void FileSource::run() {
     }
   }
 
-  // push end
+  // Push end.
   m_this->m_buf->push_end();
 
-  // close
+  // Close sndfile.
   sf_close(m_this->m_sfp);
 }
 
-// Fetch a bunch of samples from the device.
+// Fetch a bunch of samples from the file.
 bool FileSource::get_samples(IQSampleVector *samples) {
 
   if (!m_this->m_sfp) {

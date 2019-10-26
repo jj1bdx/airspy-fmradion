@@ -31,15 +31,15 @@ class FileSource : public Source {
 public:
   static constexpr int default_block_length = 2048;
   static constexpr std::uint32_t default_sample_rate = 384000;
-  static constexpr std::int32_t default_frequency = 825000000;
+  static constexpr std::int32_t default_frequency = 82500000;
 
-  /** Open file. */
+  /** Constructor */
   FileSource(int dev_index);
 
-  /** Close RTL-SDR device. */
+  /** Destructor */
   virtual ~FileSource();
 
-  /** Configure device and prepare for streaming. */
+  /** Configure and prepare for streaming from file. */
   virtual bool configure(std::string configuration);
 
   /** Return current sample frequency in Hz. */
@@ -58,7 +58,7 @@ public:
                      std::atomic_bool *stop_flag);
   virtual bool stop();
 
-  /** Return true if the device is OK, return false if there is an error. */
+  /** Return true if the file is OK, return false if there is an error. */
   virtual operator bool() const { return m_error.empty(); }
 
   /** Return a list of supported devices. */
@@ -83,7 +83,7 @@ private:
                  int block_length = default_block_length);
 
   /**
-   * Fetch a bunch of samples from the device.
+   * Fetch a bunch of samples from the file.
    *
    * This function must be called regularly to maintain streaming.
    * Return true for success, false if an error occurred.
@@ -106,4 +106,4 @@ private:
   static FileSource *m_this;
 };
 
-#endif
+#endif /* SOFTFM_FILESOURCE_H */
