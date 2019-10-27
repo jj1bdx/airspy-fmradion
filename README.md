@@ -1,6 +1,6 @@
 # airspy-fmradion
 
-* Version v0.8.0-pre0 (still preliminary), 23-OCT-2019
+* Version v0.8.0-pre1 (still preliminary), 27-OCT-2019
 * For MacOS and Linux
 
 ### Known issues and changes
@@ -47,6 +47,7 @@ airspy-fmradion -m am -t airspyhf -q \
  - [Airspy library](https://github.com/airspy/airspyone_host)
  - [Airspy HF library](https://github.com/airspy/airspyhf)
  - [RTL-SDR library](http://sdr.osmocom.org/trac/wiki/rtl-sdr)
+ - [sndfile](https://github.com/erikd/libsndfile)
  - [sox](http://sox.sourceforge.net/)
  - [The SoX Resampler library aka libsoxr](https://sourceforge.net/p/soxr/wiki/Home/)
  - [VOLK](http://libvolk.org/)
@@ -74,11 +75,11 @@ For example if you installed it in `/opt/install/libairspy` you have to add `-DA
 
 ### Debian/Ubuntu Linux
 
-  - `sudo apt-get install cmake pkg-config libusb-1.0-0-dev libasound2-dev libairspy-dev libairspyhf-dev librtlsdr-dev libsoxr-dev libvolk1-dev`
+  - `sudo apt-get install cmake pkg-config libusb-1.0-0-dev libasound2-dev libairspy-dev libairspyhf-dev librtlsdr-dev libsoxr-dev libvolk1-dev libsndfile1-dev`
 
 ### macOS
 
-* Install HomeBrew `airspy`, `airspyhf`, `rtl-sdr`, and `libsoxr`
+* Install HomeBrew libraries as in the following shell script
 * See <https://github.com/pothosware/homebrew-pothos/wiki>
 * Use HEAD for `airspy` and `airspyhf`
 
@@ -87,6 +88,7 @@ brew tap pothosware/homebrew-pothos
 brew tap dholm/homebrew-sdr #other sdr apps
 brew update
 brew install libsoxr
+brew install libsndfile
 brew install rtl-sdr
 brew install airspy --HEAD
 brew install airspyhf --HEAD
@@ -349,7 +351,7 @@ Compile and install
 * [Brian Beezley, K6STI](http://ham-radio.com/k6sti/), for his comprehensive Web site of FM broadcasting reception expertise and the idea of [Quadrature Multipath Monitor](http://ham-radio.com/k6sti/qmm.htm)
 * [Ryuji Suzuki](https://github.com/rsuzuki0), for reviewing the FM multipath filter coefficients and suggesting putting more weight on picking up more previous samples from the reference point than the samples after
 * [Teruhiko Hayashi, JA2SVZ](http://fpga.world.coocan.jp/FM/), the creator of FM FPGA Tuner popular in Japan, for reviewing the measurement results of FM broadcast reception of airspy-fmradion, and various constructive suggestions
-* Takehiro Sekine, for suggesting using GNU Radio's [VOLK](http://libvolk.org/) for faster calculation
+* [Takehiro Sekine](https://github.com/bstalk), for suggesting using GNU Radio's [VOLK](http://libvolk.org/) for faster calculation, and implementing Filesource device driver
 
 ## License
 
