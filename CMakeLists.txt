@@ -86,6 +86,13 @@ else()
 endif()
 message(STATUS "libsoxr: ${LIBSOXR_INCLUDE_DIR}, ${LIBSOXR_LIBRARY}")
 
+# Find sndfile library.
+FIND_LIBRARY(SNDFILE_LIBRARY sndfile)
+
+FIND_PATH(SNDFILE_INCLUDE_DIR sndfile.h
+        HINT ${PKG_SNDFILE_INCLUDE_DIRS})
+MESSAGE(STATUS "Sndfile: ${SNDFILE_LIBRARY}, ${SNDFILE_INCLUDE_DIR}")
+
 if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
     set(ALSA_OPTION "-DUSE_ALSA")
 else ()
@@ -137,6 +144,7 @@ set(sfmbase_SOURCES
     sfmbase/AudioResampler.cpp
     sfmbase/AudioOutput.cpp
     sfmbase/ConfigParser.cpp
+    sfmbase/FileSource.cpp
     sfmbase/Filter.cpp
     sfmbase/FilterParameters.cpp
     sfmbase/FmDecode.cpp
@@ -158,6 +166,7 @@ set(sfmbase_HEADERS
     include/AudioOutput.h
     include/ConfigParser.h
     include/DataBuffer.h
+    include/FileSource.h
     include/Filter.h
     include/FilterParameters.h
     include/FmDecode.h
@@ -210,6 +219,7 @@ target_link_libraries(airspy-fmradion
 
 target_link_libraries(sfmbase
     ${LIBSOXR_LIBRARY}
+    ${SNDFILE_LIBRARY}
     ${AIRSPY_LIBRARIES}
     ${AIRSPYHF_LIBRARIES}
     ${RTLSDR_LIBRARIES}
