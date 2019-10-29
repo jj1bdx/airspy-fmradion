@@ -18,16 +18,16 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#include <iostream>
 #include <chrono>
+#include <cmath>
+#include <iostream>
 #include <sstream>
 #include <thread>
-#include <cmath>
 
 #include <sndfile.h>
 
-#include "FileSource.h"
 #include "ConfigParser.h"
+#include "FileSource.h"
 #include "Utility.h"
 
 FileSource *FileSource::m_this = 0;
@@ -76,7 +76,8 @@ bool FileSource::configure(std::string configurationStr) {
 
   // filename
   if (m.find("filename") != m.end()) {
-    std::cerr << "FileSource::configure: filename: " << m["filename"] << std::endl;
+    std::cerr << "FileSource::configure: filename: " << m["filename"]
+              << std::endl;
     filename = m["filename"];
   }
 
@@ -141,7 +142,8 @@ bool FileSource::configure(std::string fname, std::uint32_t sample_rate,
 
   // Overwrite sample rate.
   m_sample_rate = m_sfinfo.samplerate;
-  std::cerr << "FileSource::sf_open overwrite srate: " << m_sample_rate << std::endl;
+  std::cerr << "FileSource::sf_open overwrite srate: " << m_sample_rate
+            << std::endl;
 
   // Calculate samplerate per microsecond.
   m_sample_rate_per_us = ((double)m_sample_rate) / 1e6;
@@ -156,17 +158,11 @@ bool FileSource::configure(std::string fname, std::uint32_t sample_rate,
   return true;
 }
 
-std::uint32_t FileSource::get_sample_rate() {
-  return m_sample_rate;
-}
+std::uint32_t FileSource::get_sample_rate() { return m_sample_rate; }
 
-std::uint32_t FileSource::get_frequency() {
-  return m_frequency;
-}
+std::uint32_t FileSource::get_frequency() { return m_frequency; }
 
-bool FileSource::is_low_if() {
-  return !m_zero_offset;
-}
+bool FileSource::is_low_if() { return !m_zero_offset; }
 
 void FileSource::print_specific_parms() {
   // nop
@@ -208,7 +204,8 @@ void FileSource::run() {
   IQSampleVector iqsamples;
 
   // expected microseconds per block reading
-  double d_expected = ((double)m_this->m_block_length) / m_this->m_sample_rate_per_us;
+  double d_expected =
+      ((double)m_this->m_block_length) / m_this->m_sample_rate_per_us;
 
   // Divide into its fractional and integer part.
   double int_part, frac_part;
@@ -216,8 +213,8 @@ void FileSource::run() {
 
   // integer part of expected microseconds per block reading
   auto expected = std::chrono::microseconds(long(int_part));
-//  std::cerr << expected.count() << std::endl;
-  
+  //  std::cerr << expected.count() << std::endl;
+
   // 1 microsecond
   auto one_us = std::chrono::microseconds(1);
 
