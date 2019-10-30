@@ -1,6 +1,6 @@
-# A noise filter for L-R signal
+# Thoughts on a noise filter for L-R signal
 
-19-OCT-2019 Kenji Rikitake
+31-OCT-2019 Kenji Rikitake
 
 ## Definitions
 
@@ -26,6 +26,15 @@
 * Strategy: minimize Q^2 (closest to 0)
 * Filter: at IF
 * Issue: delay between the IF filter output to the calculated Q value. Filtered-X LMS model could be applied.
+
+### Thoughts on delay
+
+* Conversion of 384kHz -> 3.84kHz with /5/5/4 3-stage FIR filters, each 31 taps, will take approx. (31/384 + 31/76.8 + 31/15.36) ~= 2.503msec = 961 samples of 384kHz sampling rate.
+* Having 961 samples in an IF-stage FIR filter of 384kHz sample rate is *impractical* (practical maximum value: approx. 400 stages for Raspberry Pi 4)
+
+### Thoughts on power estimation
+
+* FFT of Q will give the power spectrum estimate much faster (Freq 1/n in a n-sample block of sampled signal)
 
 ## QMM monitoring test
 
