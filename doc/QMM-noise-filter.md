@@ -29,8 +29,9 @@
 
 ### Thoughts on delay
 
-* Conversion of 384kHz -> 3.84kHz with /5/5/4 3-stage FIR filters, each 31 taps, will take approx. (31/384 + 31/76.8 + 31/15.36) ~= 2.503msec = 961 samples of 384kHz sampling rate.
-* Having 961 samples in an IF-stage FIR filter of 384kHz sample rate is *impractical* (practical maximum value: approx. 400 stages for Raspberry Pi 4)
+* Conversion of 384kHz -> 3.84kHz with /5/5/4 3-stage FIR filters, taps of 31/31/63, will take approx. (31/384 + 31/76.8 + 63/15.36) ~= 4.586msec = 1761 samples of 384kHz sampling rate.
+* Having 1761 samples in an IF-stage FIR filter of 384kHz sample rate is *impractical* (practical maximum value: approx. 400 stages for Raspberry Pi 4)
+* Unverified: the order of the IF-stage FIR filter does not have to be as large as the delay imposed by the phase-detection/conversion processes.
 
 ### Thoughts on power estimation
 
