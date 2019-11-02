@@ -1,6 +1,6 @@
 # airspy-fmradion
 
-* Version v0.8.0-pre1 (still preliminary), 27-OCT-2019
+* Version v0.8.0-pre2 (still preliminary), 27-OCT-2019
 * For MacOS and Linux
 
 ### Known issues and changes
@@ -337,15 +337,12 @@ Compile and install
   - `agc` Activates device AGC (default off)
   - `antbias` Turn on the antenna bias for remote LNA (default off)
 
-## Authors
+## Authors and contributors
 
-* Joris van Rantwijk
-* Edouard Griffiths, F4EXB (no longer involving in maintaining NGSoftFM)
-* Kenji Rikitake, JJ1BDX (maintainer)
-
-## Acknowledgments
-
-* András Retzler, HA7ILM (for the former AF/IF AGC code in [csdr](https://github.com/simonyiszk/csdr))
+* Joris van Rantwijk, primary author of SoftFM
+* Edouard Griffiths, F4EXB, primary author of NGSoftFM (no longer involving in maintaining NGSoftFM)
+* Kenji Rikitake, JJ1BDX, maintainer
+* András Retzler, HA7ILM, for the former AF/IF AGC code in [csdr](https://github.com/simonyiszk/csdr)
 * Youssef Touil, Airspy Founder, aka Twitter [@lambdaprog](https://twitter.com/lambdaprog/), for the intriguing exchange of Airspy product design details and the technical support
 * [Iowa Hills Software](http://iowahills.com), for their FIR and IIR filter design tools
 * [Brian Beezley, K6STI](http://ham-radio.com/k6sti/), for his comprehensive Web site of FM broadcasting reception expertise and the idea of [Quadrature Multipath Monitor](http://ham-radio.com/k6sti/qmm.htm)
