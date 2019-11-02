@@ -1,0 +1,46 @@
+2-NOV-2019: don't do this.
+(Do not set type Sample as float: leave it as a double.)
+
+diff --git a/include/SoftFM.h b/include/SoftFM.h
+index f88bbc6..0d30ca4 100644
+--- a/include/SoftFM.h
++++ b/include/SoftFM.h
+@@ -25,7 +25,7 @@
+ typedef std::complex<float> IQSample;
+ typedef std::vector<IQSample> IQSampleVector;
+
+-typedef double Sample;
++typedef float Sample;
+ typedef std::vector<Sample> SampleVector;
+
+ typedef std::vector<IQSample::value_type> IQSampleCoeff;
+diff --git a/sfmbase/AudioResampler.cpp b/sfmbase/AudioResampler.cpp
+index bf49f6d..8608265 100644
+--- a/sfmbase/AudioResampler.cpp
++++ b/sfmbase/AudioResampler.cpp
+@@ -29,10 +29,10 @@ AudioResampler::AudioResampler(const double input_rate,
+       m_ratio(output_rate / input_rate) {
+   soxr_error_t error;
+   // Use double
+-  soxr_io_spec_t io_spec = soxr_io_spec(SOXR_FLOAT64_I, SOXR_FLOAT64_I);
++  soxr_io_spec_t io_spec = soxr_io_spec(SOXR_FLOAT32_I, SOXR_FLOAT32_I);
+   // Not steep: passband_end = 0.91132832
+   soxr_quality_spec_t quality_spec =
+-      soxr_quality_spec((SOXR_VHQ | SOXR_LINEAR_PHASE), 0);
++      soxr_quality_spec((SOXR_HQ | SOXR_LINEAR_PHASE), 0);
+   soxr_runtime_spec_t runtime_spec = soxr_runtime_spec(1);
+
+   m_soxr = soxr_create(m_irate, m_orate, 1, &error, &io_spec, &quality_spec,
+diff --git a/sfmbase/IfResampler.cpp b/sfmbase/IfResampler.cpp
+index 8feec14..e1e515a 100644
+--- a/sfmbase/IfResampler.cpp
++++ b/sfmbase/IfResampler.cpp
+@@ -31,7 +31,7 @@ IfResampler::IfResampler(const double input_rate, const double output_rate)
+   soxr_io_spec_t io_spec = soxr_io_spec(SOXR_FLOAT32_I, SOXR_FLOAT32_I);
+   // Steep: passband_end = 0.982265664
+   soxr_quality_spec_t quality_spec =
+-      soxr_quality_spec((SOXR_VHQ | SOXR_LINEAR_PHASE | SOXR_STEEP_FILTER), 0);
++      soxr_quality_spec((SOXR_HQ | SOXR_LINEAR_PHASE | SOXR_STEEP_FILTER), 0);
+   soxr_runtime_spec_t runtime_spec = soxr_runtime_spec(1);
+
+   // Create a resampler objects of two interleave channels.
