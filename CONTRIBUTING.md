@@ -43,7 +43,9 @@ The coding style is defined in the file `.clang-format`. To follow this style, d
 * Install clang-format if you don't have it.
 * Run the following command at the top directory of the repository:
 
-    clang-format -i main.cpp include/*.h sfmbase/*.cpp
+```
+clang-format -i main.cpp include/*.h sfmbase/*.cpp
+```
 
 ## License
 

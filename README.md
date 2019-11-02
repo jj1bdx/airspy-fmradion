@@ -3,6 +3,10 @@
 * Version v0.8.0-pre2 (still preliminary), 27-OCT-2019
 * For MacOS and Linux
 
+### Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the details.
+
 ### Known issues and changes
 
 * libvolk is required since v0.8.0. If you don't want to install libvolk, use v0.7.8 instead.
