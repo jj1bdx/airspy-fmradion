@@ -22,7 +22,6 @@
 
 #include "SoftFM.h"
 #include <vector>
-#include <volk/volk.h>
 
 /** Low-pass filter for IQ samples. */
 class LowPassFilterFirIQ {
