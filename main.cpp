@@ -206,6 +206,15 @@ void usage() {
       "  hf_att=<int>   HF attenuation level and AGC control\n"
       "                 0: enable AGC, no attenuation\n"
       "                 1 ~ 8: disable AGC, apply attenuation of value * 6dB\n"
+      "\n"
+      "Configuration options for (experimental) FileSource devices:\n"
+      "  freq=<int>        Frequency of radio station in Hz\n"
+      "  srate=<int>       IF sample rate in Hz.\n"
+      "  filename=<string> Source file name.\n"
+      "                    Supported encodings: FLOAT, S24_LE, S16_LE\n"
+      "  zero_offset       Set if the source file is in zero offset,\n"
+      "                    which requires Fs/4 IF shifting.\n"
+      "  blklen=<int>      Set block length in samples.\n"
       "\n");
 }
 
