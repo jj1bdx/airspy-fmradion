@@ -72,9 +72,25 @@ void LowPassFilterFirIQ::process(const IQSampleVector &samples_in,
   unsigned int half_order = (order - 1) / 2;
   for (; p < n; p += pstep, i++) {
     IQSample y = 0;
-    for (unsigned int k = 0; k <= half_order; k++) {
-      y += (samples_in[p - k] + samples_in[p - (order - k)]) * m_coeff[k];
-    }
+
+    // for (unsigned int k = 0; k <= half_order; k++) {
+    //   y += (samples_in[p - k] + samples_in[p - (order - k)]) * m_coeff[k];
+    // }
+
+    //  The following addition is split into two parts:
+    //  y += (samples_in[p - k] + samples_in[p - (order - k)]) * m_coeff[k];
+
+    //  // index: p - 0 -> p - half_order (decreasing)
+    //  y += samples_in[p - k] * m_coeff[k];
+
+    //  // index: (p - order) -> (p - order) + half_order (increasing)
+    //  y += samples_in[p - (order - k)] * m_coeff[k];
+
+    volk_32fc_32f_dot_prod_32fc(&y, &samples_in[p - half_order], m_coeff.data(),
+                                half_order + 1);
+    volk_32fc_32f_dot_prod_32fc(&y, &samples_in[p - order], m_coeff.data(),
+                                half_order + 1);
+
     if ((order % 2) == 0) {
       y += samples_in[p - (order / 2)] * m_coeff[(order / 2)];
     }
