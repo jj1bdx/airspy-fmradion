@@ -107,11 +107,7 @@ private:
    */
   static bool get_samples(IQSampleVector *samples);
 
-  static bool get_s8(IQSampleVector *samples);
-  static bool get_s16(IQSampleVector *samples);
-  static bool get_s24(IQSampleVector *samples);
-  static bool get_u8(IQSampleVector *samples);
-  static bool get_float(IQSampleVector *samples);
+  static bool get_sf_read_float(IQSampleVector *samples);
 
   int to_sf_format(FormatType format_type);
 

@@ -212,19 +212,11 @@ bool FileSource::configure(std::string fname, bool raw, FormatType format_type,
   // Set fmt_fn.
   switch (sub_type) {
   case SF_FORMAT_PCM_S8:
-    m_fmt_fn = &FileSource::get_s8;
-    break;
   case SF_FORMAT_PCM_16:
-    m_fmt_fn = &FileSource::get_s16;
-    break;
   case SF_FORMAT_PCM_24:
-    m_fmt_fn = &FileSource::get_s24;
-    break;
   case SF_FORMAT_PCM_U8:
-    m_fmt_fn = &FileSource::get_u8;
-    break;
   case SF_FORMAT_FLOAT:
-    m_fmt_fn = &FileSource::get_float;
+    m_fmt_fn = &FileSource::get_sf_read_float;
     break;
   default:
     return false;
@@ -471,124 +463,8 @@ bool FileSource::get_samples(IQSampleVector *samples) {
 //       and get_float()
 //       since the type conversion is doen in sf_read_float() anyway
 
-bool FileSource::get_s8(IQSampleVector *samples) {
-  // read sint8 and convert to float32
-
-  // setup vector for reading
-  sf_count_t n_read;
-  sf_count_t sz = m_this->m_block_length * 2;
-  std::vector<float> buf(sz);
-
-  // read float samples
-  // Note: implicit conversion done in sf_read_float()
-  n_read = sf_read_float(m_this->m_sfp, buf.data(), sz);
-  if (n_read <= 0) {
-    // finish reading.
-    return false;
-  }
-
-  // setup iqsample
-  samples->resize(n_read / 2);
-
-  // copy to sample
-  for (int i = 0; i < n_read / 2; i++) {
-    float re = buf[2 * i];
-    float im = buf[2 * i + 1];
-    (*samples)[i] = IQSample(re, im);
-  }
-
-  return true;
-}
-
-bool FileSource::get_u8(IQSampleVector *samples) {
-  // read uint8 and convert to float32
-
-  // setup vector for reading
-  sf_count_t n_read;
-  sf_count_t sz = m_this->m_block_length * 2;
-  std::vector<float> buf(sz);
-
-  // read float samples
-  // Note: implicit conversion done in sf_read_float()
-  n_read = sf_read_float(m_this->m_sfp, buf.data(), sz);
-  if (n_read <= 0) {
-    // finish reading.
-    return false;
-  }
-
-  // setup iqsample
-  samples->resize(n_read / 2);
-
-  // copy to sample
-  for (int i = 0; i < n_read / 2; i++) {
-    float re = buf[2 * i];
-    float im = buf[2 * i + 1];
-    (*samples)[i] = IQSample(re, im);
-  }
-
-  return true;
-}
-
-bool FileSource::get_s16(IQSampleVector *samples) {
-  // read sint16 and convert to float32
-
-  // setup vector for reading
-  sf_count_t n_read;
-  sf_count_t sz = m_this->m_block_length * 2;
-  std::vector<float> buf(sz);
-
-  // read float samples
-  // Note: implicit conversion done in sf_read_float()
-  n_read = sf_read_float(m_this->m_sfp, buf.data(), sz);
-  if (n_read <= 0) {
-    // finish reading.
-    return false;
-  }
-
-  // setup iqsample
-  samples->resize(n_read / 2);
-
-  // copy to sample
-  for (int i = 0; i < n_read / 2; i++) {
-    float re = buf[2 * i];
-    float im = buf[2 * i + 1];
-    (*samples)[i] = IQSample(re, im);
-  }
-
-  return true;
-}
-
-bool FileSource::get_s24(IQSampleVector *samples) {
-  // read sint24 and convert to float32
-
-  // setup vector for reading
-  sf_count_t n_read;
-  sf_count_t sz = m_this->m_block_length * 2;
-  std::vector<float> buf(sz);
-
-  // read float samples
-  // Note: implicit conversion done in sf_read_float()
-  n_read = sf_read_float(m_this->m_sfp, buf.data(), sz);
-  if (n_read <= 0) {
-    // finish reading.
-    return false;
-  }
-
-  // setup iqsample
-  samples->resize(n_read / 2);
-
-  // copy to sample
-  for (int i = 0; i < n_read / 2; i++) {
-    float re = buf[2 * i];
-    float im = buf[2 * i + 1];
-    (*samples)[i] = IQSample(re, im);
-  }
-
-  return true;
-}
-
-bool FileSource::get_float(IQSampleVector *samples) {
-  // read sample and copy to float32
+bool FileSource::get_sf_read_float(IQSampleVector *samples) {
+  // read a file using sf_read_float() and convert to float32
 
   // setup vector for reading
   sf_count_t n_read;
