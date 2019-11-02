@@ -18,6 +18,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+#include <cassert>
 #include <chrono>
 #include <cmath>
 #include <iostream>
@@ -36,7 +37,8 @@ FileSource *FileSource::m_this = 0;
 FileSource::FileSource(int dev_index)
     : m_sample_rate(default_sample_rate), m_frequency(default_frequency),
       m_zero_offset(false), m_block_length(default_block_length), m_sfp(NULL),
-      m_sub_type(0), m_thread(0) {
+      m_thread(0), m_fmt_fn(NULL) {
+  m_sfinfo = {0};
   m_this = this;
 }
 
@@ -53,32 +55,37 @@ FileSource::~FileSource() {
 
 bool FileSource::configure(std::string configurationStr) {
   std::string filename;
+  bool raw = false;
+  FormatType format_type = FormatType::S16_LE;
   uint32_t sample_rate = default_sample_rate;
   uint32_t frequency = default_frequency;
   bool zero_offset = false;
   int block_length = default_block_length;
 
+  bool srate_specified = false;
+
   ConfigParser cp;
   ConfigParser::map_type m;
 
-  // srate
+  // filename
   cp.parse_config_string(configurationStr, m);
+  if (m.find("filename") != m.end()) {
+    std::cerr << "FileSource::configure: filename: " << m["filename"]
+              << std::endl;
+    filename = m["filename"];
+  }
+
+  // srate
   if (m.find("srate") != m.end()) {
     std::cerr << "FileSource::configure: srate: " << m["srate"] << std::endl;
     sample_rate = atoi(m["srate"].c_str());
+    srate_specified = true;
   }
 
   // freq
   if (m.find("freq") != m.end()) {
     std::cerr << "FileSource::configure: freq: " << m["freq"] << std::endl;
     frequency = atoi(m["freq"].c_str());
-  }
-
-  // filename
-  if (m.find("filename") != m.end()) {
-    std::cerr << "FileSource::configure: filename: " << m["filename"]
-              << std::endl;
-    filename = m["filename"];
   }
 
   // blklen
@@ -93,18 +100,68 @@ bool FileSource::configure(std::string configurationStr) {
     zero_offset = true;
   }
 
+  // format_type
+  if (m.find("format") != m.end()) {
+    if (m["format"] == "S8_LE") {
+      format_type = FormatType::S8_LE;
+    } else if (m["format"] == "S16_LE") {
+      format_type = FormatType::S16_LE;
+    } else if (m["format"] == "S24_LE") {
+      format_type = FormatType::S24_LE;
+    } else if (m["format"] == "U8_LE") {
+      format_type = FormatType::U8_LE;
+    } else if (m["format"] == "FLOAT") {
+      format_type = FormatType::Float;
+    } else {
+      std::cerr << "FileSource::configure: format: " << m["format"]
+                << " is not supported." << std::endl;
+      std::cerr << "FileSource::configure: supported format is S8_LE, S16_LE, "
+                   "S24_LE, U8_LE, FLOAT."
+                << std::endl;
+      return false;
+    }
+    std::cerr << "FileSource::configure: format: " << m["format"] << std::endl;
+  }
+
+  // raw
+  if (m.find("raw") != m.end()) {
+    std::cerr << "FileSource::configure: raw" << std::endl;
+    // Check format_type. Try to apply S16_LE when no format specified.
+    if (format_type == FormatType::Unknown) {
+      std::cerr << "FileSource::configure: raw warn: no format specified. "
+                   "apply S16_LE."
+                << std::endl;
+      format_type = FormatType::S16_LE;
+    }
+    // Check samplerate. Try to apply 384000Hz when no samplerate specified.
+    if (!srate_specified) {
+      std::cerr << "FileSource::configure: raw warn: no samplerate specified. "
+                   "apply 384000."
+                << std::endl;
+    }
+    raw = true;
+  }
+
   // configure
-  return configure(filename, sample_rate, frequency, zero_offset, block_length);
+  return configure(filename, raw, format_type, sample_rate, frequency,
+                   zero_offset, block_length);
 }
 
-bool FileSource::configure(std::string fname, std::uint32_t sample_rate,
-                           std::uint32_t frequency, bool zero_offset,
-                           int block_length) {
+bool FileSource::configure(std::string fname, bool raw, FormatType format_type,
+                           std::uint32_t sample_rate, std::uint32_t frequency,
+                           bool zero_offset, int block_length) {
   m_devname = fname;
   m_sample_rate = sample_rate;
   m_frequency = frequency;
   m_zero_offset = zero_offset;
   m_block_length = block_length;
+
+  // Fill sfinfo when raw is true;
+  if (raw) {
+    m_sfinfo.samplerate = (int)m_sample_rate;
+    m_sfinfo.channels = 2;
+    m_sfinfo.format = SF_FORMAT_RAW | to_sf_format(format_type);
+  }
 
   // Open sndfile.
   m_sfp = sf_open(m_devname.c_str(), SFM_READ, &m_sfinfo);
@@ -115,10 +172,17 @@ bool FileSource::configure(std::string fname, std::uint32_t sample_rate,
     return false;
   }
 
-  // Get format.
+  // Overwrite sample rate.
+  if (((int)m_sample_rate) != m_sfinfo.samplerate) {
+    m_sample_rate = m_sfinfo.samplerate;
+    std::cerr << "FileSource::sf_open: overwrite sample rate: " << m_sample_rate
+              << std::endl;
+  }
+
+  // Check format.
   int major_format = m_sfinfo.format & SF_FORMAT_TYPEMASK;
-  if ((major_format != SF_FORMAT_WAV) && (major_format != SF_FORMAT_W64) &&
-      (major_format != SF_FORMAT_WAVEX)) {
+  std::string major_str;
+  if (!get_major_format(major_format, major_str)) {
     m_error = "Unsupported major format ";
     m_error += m_devname + " : ";
     std::stringstream ss;
@@ -128,34 +192,80 @@ bool FileSource::configure(std::string fname, std::uint32_t sample_rate,
     return false;
   }
 
-  m_sub_type = m_sfinfo.format & SF_FORMAT_SUBMASK;
-  if ((m_sub_type != SF_FORMAT_PCM_16) && (m_sub_type != SF_FORMAT_PCM_24) &&
-      (m_sub_type != SF_FORMAT_FLOAT)) {
-    m_error = "Unsupported subtype of format ";
+  // Check sub type.
+  int sub_type = m_sfinfo.format & SF_FORMAT_SUBMASK;
+  std::string sub_type_str;
+  if (!get_sub_type(sub_type, sub_type_str)) {
+    m_error = "Unsupported major format ";
     m_error += m_devname + " : ";
     std::stringstream ss;
     ss << std::showbase;
-    ss << std::hex << m_sub_type;
+    ss << std::hex << sub_type;
     m_error += ss.str();
     return false;
   }
 
-  // Overwrite sample rate.
-  m_sample_rate = m_sfinfo.samplerate;
-  std::cerr << "FileSource::sf_open overwrite srate: " << m_sample_rate
+  // Print format.
+  std::cerr << "FileSource::format: " << major_str << ", " << sub_type_str
             << std::endl;
+
+  // Set fmt_fn.
+  switch (sub_type) {
+  case SF_FORMAT_PCM_S8:
+    m_fmt_fn = &FileSource::get_s8;
+    break;
+  case SF_FORMAT_PCM_16:
+    m_fmt_fn = &FileSource::get_s16;
+    break;
+  case SF_FORMAT_PCM_24:
+    m_fmt_fn = &FileSource::get_s24;
+    break;
+  case SF_FORMAT_PCM_U8:
+    m_fmt_fn = &FileSource::get_u8;
+    break;
+  case SF_FORMAT_FLOAT:
+    m_fmt_fn = &FileSource::get_float;
+    break;
+  default:
+    return false;
+    break;
+  }
 
   // Calculate samplerate per microsecond.
   m_sample_rate_per_us = ((double)m_sample_rate) / 1e6;
 
-#if 0
-  double d_expected = ((double)m_this->m_block_length) / m_this->m_sample_rate_per_us;
-  std::cerr << d_expected << std::endl;
-#endif
+  // Limit too large block length.
+  double d_expected_us = ((double)m_block_length) / m_sample_rate_per_us;
+  if (d_expected_us > max_expected_us) {
+    std::uint32_t tmp_blklen =
+        round_power((int)(max_expected_us * m_sample_rate_per_us));
+    std::cerr << "FileSource::configure: large blklen, round blklen "
+              << m_block_length << " to " << tmp_blklen << std::endl;
+    m_block_length = tmp_blklen;
+  }
 
   m_confFreq = frequency;
 
   return true;
+}
+
+// round to power of 2
+std::uint32_t FileSource::round_power(int n) {
+  if (n <= 0) {
+    return 0;
+  }
+
+  if ((n & (n - 1)) == 0) {
+    return (std::uint32_t)n;
+  }
+
+  std::uint32_t ret = 1;
+  while (n > 1) {
+    ret <<= 1;
+    n >>= 1;
+  }
+
+  return ret;
 }
 
 std::uint32_t FileSource::get_sample_rate() { return m_sample_rate; }
@@ -172,6 +282,84 @@ void FileSource::print_specific_parms() {
 void FileSource::get_device_names(std::vector<std::string> &devices) {
   // Currently, set "FileSource".
   devices.push_back("FileSource");
+}
+
+int FileSource::to_sf_format(FormatType format_type) {
+  int ret = 0;
+
+  switch (format_type) {
+  case FormatType::S8_LE:
+    ret = SF_FORMAT_PCM_S8;
+    break;
+  case FormatType::S16_LE:
+    ret = SF_FORMAT_PCM_16;
+    break;
+  case FormatType::S24_LE:
+    ret = SF_FORMAT_PCM_24;
+    break;
+  case FormatType::U8_LE:
+    ret = SF_FORMAT_PCM_U8;
+    break;
+  case FormatType::Float:
+    ret = SF_FORMAT_FLOAT;
+    break;
+  default:
+    assert(0);
+    break;
+  }
+
+  return ret;
+}
+
+bool FileSource::get_major_format(int major_format, std::string &str) {
+  bool ret = false;
+  if (!m_sfp) {
+    return ret;
+  }
+  if ((major_format != SF_FORMAT_WAV) && (major_format != SF_FORMAT_W64) &&
+      (major_format != SF_FORMAT_WAVEX) && (major_format != SF_FORMAT_RAW)) {
+    return ret;
+  }
+  int count;
+  SF_FORMAT_INFO sfi;
+  sf_command(m_sfp, SFC_GET_FORMAT_MAJOR_COUNT, &count, sizeof(int));
+  for (int i = 0; i < count; i++) {
+    sfi.format = i;
+    sf_command(m_sfp, SFC_GET_FORMAT_MAJOR, &sfi, sizeof(sfi));
+    if (sfi.format == major_format) {
+      str = sfi.name;
+      ret = true;
+      break;
+    }
+  }
+  return ret;
+}
+
+bool FileSource::get_sub_type(int sub_type, std::string &str) {
+  bool ret = false;
+  if (!m_sfp) {
+    return ret;
+  }
+
+  if ((sub_type != SF_FORMAT_PCM_S8) && (sub_type != SF_FORMAT_PCM_16) &&
+      (sub_type != SF_FORMAT_PCM_24) && (sub_type != SF_FORMAT_PCM_U8) &&
+      (sub_type != SF_FORMAT_FLOAT)) {
+    return ret;
+  }
+
+  int count;
+  SF_FORMAT_INFO sfi;
+  sf_command(m_sfp, SFC_GET_FORMAT_SUBTYPE_COUNT, &count, sizeof(int));
+  for (int i = 0; i < count; i++) {
+    sfi.format = i;
+    sf_command(m_sfp, SFC_GET_FORMAT_SUBTYPE, &sfi, sizeof(sfi));
+    if (sfi.format == sub_type) {
+      str = sfi.name;
+      ret = true;
+      break;
+    }
+  }
+  return ret;
 }
 
 bool FileSource::start(DataBuffer<IQSample> *buf, std::atomic_bool *stop_flag) {
@@ -255,10 +443,14 @@ void FileSource::run() {
 
   // Close sndfile.
   sf_close(m_this->m_sfp);
+
+  // Clear handle.
+  m_this->m_sfp = NULL;
 }
 
 // Fetch a bunch of samples from the file.
 bool FileSource::get_samples(IQSampleVector *samples) {
+  bool ret;
 
   if (!m_this->m_sfp) {
     return false;
@@ -266,25 +458,71 @@ bool FileSource::get_samples(IQSampleVector *samples) {
   if (!samples) {
     return false;
   }
-
-  bool ret;
-  switch (m_this->m_sub_type) {
-  case SF_FORMAT_PCM_16:
-    ret = m_this->get_s16(samples);
-    break;
-  case SF_FORMAT_PCM_24:
-    ret = m_this->get_s24(samples);
-    break;
-  case SF_FORMAT_FLOAT:
-    ret = m_this->get_float(samples);
-    break;
-  default:
-    // Unsupported format sub_type.
-    ret = false;
-    break;
+  if (!m_this->m_fmt_fn) {
+    return false;
   }
 
+  ret = (*(m_this->m_fmt_fn))(samples);
+
   return ret;
+}
+
+bool FileSource::get_s8(IQSampleVector *samples) {
+  // read sint8 and convert to float32
+
+  // setup vector for reading
+  sf_count_t n_read;
+  sf_count_t sz = m_this->m_block_length * 2;
+  std::vector<int> buf(sz);
+
+  // read int samples
+  n_read = sf_read_int(m_this->m_sfp, buf.data(), sz);
+  if (n_read <= 0) {
+    // finish reading.
+    return false;
+  }
+
+  // setup iqsample
+  samples->resize(n_read / 2);
+
+  // convert sint8 to float32
+  for (int i = 0; i < n_read / 2; i++) {
+    int32_t re = buf[2 * i];
+    int32_t im = buf[2 * i + 1];
+    (*samples)[i] = IQSample(re / IQSample::value_type(128),
+                             im / IQSample::value_type(128));
+  }
+
+  return true;
+}
+
+bool FileSource::get_u8(IQSampleVector *samples) {
+  // read uint8 and convert to float32
+
+  // setup vector for reading
+  sf_count_t n_read;
+  sf_count_t sz = m_this->m_block_length * 2;
+  std::vector<int> buf(sz);
+
+  // read int samples
+  n_read = sf_read_int(m_this->m_sfp, buf.data(), sz);
+  if (n_read <= 0) {
+    // finish reading.
+    return false;
+  }
+
+  // setup iqsample
+  samples->resize(n_read / 2);
+
+  // convert uint8 to float32
+  for (int i = 0; i < n_read / 2; i++) {
+    int32_t re = buf[2 * i];
+    int32_t im = buf[2 * i + 1];
+    (*samples)[i] = IQSample((re - 128) / IQSample::value_type(128),
+                             (im - 128) / IQSample::value_type(128));
+  }
+
+  return true;
 }
 
 bool FileSource::get_s16(IQSampleVector *samples) {

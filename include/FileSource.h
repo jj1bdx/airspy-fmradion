@@ -34,6 +34,9 @@ public:
   static constexpr std::uint32_t default_sample_rate = 384000;
   static constexpr std::int32_t default_frequency = 82500000;
 
+  /** max expected micro seconds per block */
+  static constexpr int max_expected_us = 10000;
+
   /** Constructor */
   FileSource(int dev_index);
 
@@ -66,10 +69,22 @@ public:
   static void get_device_names(std::vector<std::string> &devices);
 
 private:
+  enum FormatType {
+    Unknown = 0,
+    S8_LE = 1,
+    S16_LE = 2,
+    S24_LE = 3,
+    U8_LE = 5,
+    Float = 6
+  };
+
   /**
    * Configure IQ file for streaming.
    *
    * fname        :: file to read.
+   * raw          :: true if file is raw format.
+   * format_type  :: S8_LE, S16_LE, S24_LE, U8_LE or FLOAT.
+   *                 need to specify raw is true.
    * sample_rate  :: desired sample rate in Hz.
    * frequency    :: desired center frequency in Hz.
    * zero_offset  :: true if sample contain zero offset.
@@ -77,7 +92,8 @@ private:
    *
    * Return true.
    */
-  bool configure(std::string fname,
+  bool configure(std::string fname, bool raw = false,
+                 FormatType format_type = FormatType::S16_LE,
                  std::uint32_t sample_rate = default_sample_rate,
                  std::uint32_t frequency = default_frequency,
                  bool zero_offset = false,
@@ -91,9 +107,18 @@ private:
    */
   static bool get_samples(IQSampleVector *samples);
 
+  static bool get_s8(IQSampleVector *samples);
   static bool get_s16(IQSampleVector *samples);
   static bool get_s24(IQSampleVector *samples);
+  static bool get_u8(IQSampleVector *samples);
   static bool get_float(IQSampleVector *samples);
+
+  int to_sf_format(FormatType format_type);
+
+  bool get_major_format(int major_type, std::string &str);
+  bool get_sub_type(int sub_type, std::string &str);
+
+  std::uint32_t round_power(int n);
 
   static void run();
 
@@ -105,11 +130,10 @@ private:
   SNDFILE *m_sfp;
   SF_INFO m_sfinfo;
 
-  int m_sub_type;
-
   double m_sample_rate_per_us;
 
   std::thread *m_thread;
+  bool (*m_fmt_fn)(IQSampleVector *samples);
   static FileSource *m_this;
 };
 
