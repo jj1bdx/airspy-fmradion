@@ -215,6 +215,9 @@ void usage() {
       "  zero_offset       Set if the source file is in zero offset,\n"
       "                    which requires Fs/4 IF shifting.\n"
       "  blklen=<int>      Set block length in samples.\n"
+      "  raw               Set if the file is raw binary.\n"
+      "  format=<string>   Set the file format for the raw binary file.\n"
+      "                    (formats: U8_LE, S8_LE, S16_LE, S24_LE, FLOAT)\n"
       "\n");
 }
 
