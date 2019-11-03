@@ -1,4 +1,5 @@
-2-NOV-2019: don't do this.
+2-NOV-2019: Don't do this. 
+This causes ~20dB of noise level increase at all frequency range.
 (Do not set type Sample as float: leave it as a double.)
 
 diff --git a/include/SoftFM.h b/include/SoftFM.h
