@@ -1,6 +1,6 @@
 # airspy-fmradion
 
-* Version v0.8.0-pre3 (still preliminary), 2-NOV-2019
+* Version v0.8.0-pre3 (still preliminary), 15-NOV-2019
 * For MacOS and Linux
 
 ### Contributing
@@ -224,13 +224,14 @@ Compile and install
 
 * CIC filters for the IF 1st stage (unable to explore parallelism, too complex to compensate)
 * Using lock-free threads (`boost::lockfree::spsc_queue` didn't make things faster, and consumed x2 CPU power)
+* Fixed IF for FM to 384kHz did not increase the processing speed; the current variable IF design works well
 
 ## Filter design documentation
 
 ### General characteristics
 
 * Filter is implemented as the libsoxr sampling converter
-* Filter cutoff by libsoxr: 0.913 * sampling frequency
+* Filter cutoff by libsoxr: 0.982 * sampling frequency
 
 ### For FM
 
