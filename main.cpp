@@ -876,7 +876,6 @@ int main(int argc, char **argv) {
 
     IQSampleVector if_shifted_samples;
     IQSampleVector if_samples;
-    IQSampleVector if_samples_second;
 
     if (iqsamples.empty()) {
       break;
