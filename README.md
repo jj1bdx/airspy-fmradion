@@ -1,6 +1,6 @@
 # airspy-fmradion
 
-* Version v0.8.0-pre3 (still preliminary), 15-NOV-2019
+* Version v0.8.0, 16-NOV-2019
 * For MacOS and Linux
 
 ### Contributing
@@ -153,7 +153,7 @@ Compile and install
 ## Basic command options
 
  - `-m devtype` is modulation type, one of `fm`, `am`, `dsb`, `usb`, `lsb`, `cw`, `nbfm` (default fm)
- - `-t devtype` is mandatory and must be `airspy` for Airspy R2 / Airspy Mini, `airspyhf` for Airspy HF+, and `rtlsdr` for RTL-SDR.
+ - `-t devtype` is mandatory and must be `airspy` for Airspy R2 / Airspy Mini, `airspyhf` for Airspy HF+, `rtlsdr` for RTL-SDR, and `filesource` for the File Source driver.
  - `-q` Quiet mode.
  - `-c config` Comma separated list of configuration options as key=value pairs or just key for switches. Depends on device type (see next paragraph).
  - `-d devidx` Device index, 'list' to show device list (default 0)
@@ -341,6 +341,21 @@ Compile and install
   - `blklen=<int>` Device block length in bytes (default RTL-SDR default i.e. 64k)
   - `agc` Activates device AGC (default off)
   - `antbias` Turn on the antenna bias for remote LNA (default off)
+
+## File Source driver
+
+* Reads an IQ signal format file and decode the output.
+* *This device is still experimental.*
+
+### File Source configuration options
+
+  - `freq=<int>` Frequency of radio station in Hz.
+  - `srate=<int>` IF sample rate in Hz.
+  - `filename=<string>` Source file name. Supported encodings: `FLOAT`, `S24_LE`, `S16_LE`
+  - `zero_offset` Set if the source file is in zero offset, which requires Fs/4 IF shifting.
+  - `blklen=<int>` Set block length in samples.
+  - `raw` Set if the file is raw binary.
+  - `format=<string>` Set the file format for the raw binary file. Supported formats: `U8_LE`, `S8_LE`, `S16_LE`, `S24_LE`, `FLOAT`
 
 ## Authors and contributors
 
