@@ -373,7 +373,7 @@ void AirspyHFSource::run(airspyhf_device *dev, std::atomic_bool *stop_flag) {
 #ifdef DEBUG_AIRSPYSOURCE
   std::cerr << "AirspyHFSource::run" << std::endl;
 #endif
-  airspyhf_error rc = (airspyhf_error)airspyhf_start(dev, rx_callback, NULL);
+  airspyhf_error rc = (airspyhf_error)airspyhf_start(dev, rx_callback, nullptr);
 
   if (rc == AIRSPYHF_SUCCESS) {
     while (!stop_flag->load() && (airspyhf_is_streaming(dev) == true)) {

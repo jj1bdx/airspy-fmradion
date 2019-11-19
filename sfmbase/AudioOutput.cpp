@@ -153,7 +153,7 @@ WavAudioOutput::WavAudioOutput(const std::string &filename,
                                unsigned int samplerate, bool stereo)
     : numberOfChannels(stereo ? 2 : 1), sampleRate(samplerate) {
   m_stream = fopen(filename.c_str(), "wb");
-  if (m_stream == NULL) {
+  if (m_stream == nullptr) {
     m_error = "can not open '" + filename + "' (" + strerror(errno) + ")";
     m_zombie = true;
     return;
@@ -277,7 +277,7 @@ template <typename T> void WavAudioOutput::set_value(uint8_t *ptr, T value) {
 // Construct ALSA output stream.
 AlsaAudioOutput::AlsaAudioOutput(const std::string &devname,
                                  unsigned int samplerate, bool stereo) {
-  m_pcm = NULL;
+  m_pcm = nullptr;
   m_nchannels = stereo ? 2 : 1;
 
   int r = snd_pcm_open(&m_pcm, devname.c_str(), SND_PCM_STREAM_PLAYBACK,
@@ -308,7 +308,7 @@ AlsaAudioOutput::AlsaAudioOutput(const std::string &devname,
 // Destructor.
 AlsaAudioOutput::~AlsaAudioOutput() {
   // Close device.
-  if (m_pcm != NULL) {
+  if (m_pcm != nullptr) {
     snd_pcm_close(m_pcm);
   }
 }

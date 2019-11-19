@@ -58,7 +58,7 @@ void AudioResampler::process(const SampleVector &samples_in,
   soxr_error_t error;
 
   error = soxr_process(
-      m_soxr, static_cast<soxr_in_t>(samples_in.data()), input_size, NULL,
+      m_soxr, static_cast<soxr_in_t>(samples_in.data()), input_size, nullptr,
       static_cast<soxr_out_t>(samples_out.data()), output_size, &output_length);
 
   if (error) {

@@ -37,7 +37,7 @@ RtlSdrSource::RtlSdrSource(int dev_index)
   int r;
 
   const char *devname = rtlsdr_get_device_name(dev_index);
-  if (devname != NULL) {
+  if (devname != nullptr) {
     m_devname = devname;
   }
 
@@ -268,7 +268,7 @@ int RtlSdrSource::get_tuner_gain() { return rtlsdr_get_tuner_gain(m_dev); }
 
 // Return a list of supported tuner gain settings in units of 0.1 dB.
 std::vector<int> RtlSdrSource::get_tuner_gains() {
-  int num_gains = rtlsdr_get_tuner_gains(m_dev, NULL);
+  int num_gains = rtlsdr_get_tuner_gains(m_dev, nullptr);
   if (num_gains <= 0) {
     return std::vector<int>();
   }

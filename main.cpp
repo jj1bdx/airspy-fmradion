@@ -247,7 +247,7 @@ bool parse_int(const char *s, int &v, bool allow_unit = false) {
 /** Return Unix time stamp in seconds. */
 double get_time() {
   struct timeval tv;
-  gettimeofday(&tv, NULL);
+  gettimeofday(&tv, nullptr);
   return tv.tv_sec + 1.0e-6 * tv.tv_usec;
 }
 
@@ -319,7 +319,7 @@ int main(int argc, char **argv) {
   std::string alsadev("default");
   bool quietmode = false;
   std::string ppsfilename;
-  FILE *ppsfile = NULL;
+  FILE *ppsfile = nullptr;
   double bufsecs = -1;
   bool enable_squelch = false;
   double squelch_level_db = 150.0;
@@ -340,24 +340,24 @@ int main(int argc, char **argv) {
   fprintf(stderr, "Software FM/AM radio for ");
   fprintf(stderr, "Airspy R2, Airspy HF+, and RTL-SDR\n");
 
-  const struct option longopts[] = {{"modtype", 2, NULL, 'm'},
-                                    {"devtype", 2, NULL, 't'},
-                                    {"quiet", 1, NULL, 'q'},
-                                    {"config", 2, NULL, 'c'},
-                                    {"dev", 1, NULL, 'd'},
-                                    {"mono", 0, NULL, 'M'},
-                                    {"raw", 1, NULL, 'R'},
-                                    {"float", 1, NULL, 'F'},
-                                    {"wav", 1, NULL, 'W'},
-                                    {"play", 2, NULL, 'P'},
-                                    {"pps", 1, NULL, 'T'},
-                                    {"buffer", 1, NULL, 'b'},
-                                    {"pilotshift", 0, NULL, 'X'},
-                                    {"usa", 0, NULL, 'U'},
-                                    {"filtertype", 2, NULL, 'f'},
-                                    {"squelch", 1, NULL, 'l'},
-                                    {"multipathfilter", 1, NULL, 'E'},
-                                    {NULL, 0, NULL, 0}};
+  const struct option longopts[] = {{"modtype", 2, nullptr, 'm'},
+                                    {"devtype", 2, nullptr, 't'},
+                                    {"quiet", 1, nullptr, 'q'},
+                                    {"config", 2, nullptr, 'c'},
+                                    {"dev", 1, nullptr, 'd'},
+                                    {"mono", 0, nullptr, 'M'},
+                                    {"raw", 1, nullptr, 'R'},
+                                    {"float", 1, nullptr, 'F'},
+                                    {"wav", 1, nullptr, 'W'},
+                                    {"play", 2, nullptr, 'P'},
+                                    {"pps", 1, nullptr, 'T'},
+                                    {"buffer", 1, nullptr, 'b'},
+                                    {"pilotshift", 0, nullptr, 'X'},
+                                    {"usa", 0, nullptr, 'U'},
+                                    {"filtertype", 2, nullptr, 'f'},
+                                    {"squelch", 1, nullptr, 'l'},
+                                    {"multipathfilter", 1, nullptr, 'E'},
+                                    {nullptr, 0, nullptr, 0}};
 
   int c, longindex;
   while ((c = getopt_long(argc, argv, "m:t:c:d:MR:F:W:f:l:P::T:b:qXUE:",
@@ -404,7 +404,7 @@ int main(int argc, char **argv) {
       break;
     case 'P':
       outmode = OutputMode::ALSA;
-      if (optarg != NULL) {
+      if (optarg != nullptr) {
         alsadev = optarg;
       }
       break;
@@ -509,12 +509,12 @@ int main(int argc, char **argv) {
   sigemptyset(&sigact.sa_mask);
   sigact.sa_flags = SA_RESETHAND;
 
-  if (sigaction(SIGINT, &sigact, NULL) < 0) {
+  if (sigaction(SIGINT, &sigact, nullptr) < 0) {
     fprintf(stderr, "WARNING: can not install SIGINT handler (%s)\n",
             strerror(errno));
   }
 
-  if (sigaction(SIGTERM, &sigact, NULL) < 0) {
+  if (sigaction(SIGTERM, &sigact, nullptr) < 0) {
     fprintf(stderr, "WARNING: can not install SIGTERM handler (%s)\n",
             strerror(errno));
   }
@@ -529,7 +529,7 @@ int main(int argc, char **argv) {
               ppsfilename.c_str());
       ppsfile = fopen(ppsfilename.c_str(), "w");
 
-      if (ppsfile == NULL) {
+      if (ppsfile == nullptr) {
         fprintf(stderr, "ERROR: can not open '%s' (%s)\n", ppsfilename.c_str(),
                 strerror(errno));
         exit(1);
@@ -1042,7 +1042,7 @@ int main(int argc, char **argv) {
     }
 
     // Write PPS markers.
-    if (ppsfile != NULL) {
+    if (ppsfile != nullptr) {
       switch (modtype) {
       case ModType::FM:
         for (const PilotPhaseLock::PpsEvent &ev : fm.get_pps_events()) {

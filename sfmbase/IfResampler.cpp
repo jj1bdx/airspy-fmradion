@@ -74,7 +74,7 @@ void IfResampler::process(const IQSampleVector &samples_in,
   // Process the real and imaginary parts.
   error = soxr_process(
       m_soxr, static_cast<soxr_in_t>(samples_in_interleaved.data()), input_size,
-      NULL, static_cast<soxr_out_t>(samples_out_interleaved.data()),
+      nullptr, static_cast<soxr_out_t>(samples_out_interleaved.data()),
       output_size, &output_length);
   if (error) {
     soxr_delete(m_soxr);

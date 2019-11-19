@@ -36,8 +36,8 @@ FileSource *FileSource::m_this = 0;
 // Constructor
 FileSource::FileSource(int dev_index)
     : m_sample_rate(default_sample_rate), m_frequency(default_frequency),
-      m_zero_offset(false), m_block_length(default_block_length), m_sfp(NULL),
-      m_fmt_fn(NULL), m_thread(0) {
+      m_zero_offset(false), m_block_length(default_block_length),
+      m_sfp(nullptr), m_fmt_fn(nullptr), m_thread(0) {
   m_sfinfo = {0};
   m_this = this;
 }
@@ -47,7 +47,7 @@ FileSource::~FileSource() {
   // Close sndfile.
   if (m_sfp) {
     sf_close(m_sfp);
-    m_sfp = NULL;
+    m_sfp = nullptr;
   }
 
   m_this = 0;
@@ -165,7 +165,7 @@ bool FileSource::configure(std::string fname, bool raw, FormatType format_type,
 
   // Open sndfile.
   m_sfp = sf_open(m_devname.c_str(), SFM_READ, &m_sfinfo);
-  if (m_sfp == NULL) {
+  if (m_sfp == nullptr) {
     // Set m_error and return false if sf_open is failed.
     m_error = "Failed to open ";
     m_error += m_devname + " : " + sf_strerror(m_sfp);
@@ -437,7 +437,7 @@ void FileSource::run() {
   sf_close(m_this->m_sfp);
 
   // Clear handle.
-  m_this->m_sfp = NULL;
+  m_this->m_sfp = nullptr;
 }
 
 // Fetch a bunch of samples from the file.
