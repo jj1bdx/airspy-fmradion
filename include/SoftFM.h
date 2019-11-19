@@ -22,14 +22,14 @@
 #include <complex>
 #include <vector>
 
-typedef std::complex<float> IQSample;
-typedef std::vector<IQSample> IQSampleVector;
+using IQSample = std::complex<float>;
+using IQSampleVector = std::vector<IQSample>;
 
-typedef double Sample;
-typedef std::vector<Sample> SampleVector;
+using Sample = double;
+using SampleVector = std::vector<Sample>;
 
-typedef std::vector<IQSample::value_type> IQSampleCoeff;
-typedef std::vector<SampleVector::value_type> SampleCoeff;
+using IQSampleCoeff = std::vector<IQSample::value_type>;
+using SampleCoeff = std::vector<SampleVector::value_type>;
 
 enum class FilterType { Default, Medium, Narrow };
 enum class DevType { Airspy, AirspyHF, RTLSDR, FileSource };

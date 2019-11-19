@@ -25,8 +25,8 @@
 class ConfigParser {
 public:
   // public types
-  typedef std::map<std::string, std::string> map_type;
-  typedef std::pair<std::string, std::string> pair_type;
+  using map_type = std::map<std::string, std::string>;
+  using pair_type = std::pair<std::string, std::string>;
   // Parse "foo=x,bar,baz=10" style configuration parameter
   // into a map (map_type).
   void parse_config_string(std::string text, map_type &output);

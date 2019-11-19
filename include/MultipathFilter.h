@@ -24,8 +24,8 @@
 #include <deque>
 #include <vector>
 
-typedef std::complex<float> MfCoeff;
-typedef std::vector<MfCoeff> MfCoeffVector;
+using MfCoeff = std::complex<float>;
+using MfCoeffVector = std::vector<MfCoeff>;
 
 // Multipath equalizer FIR filter.
 
