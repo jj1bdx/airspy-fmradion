@@ -21,7 +21,6 @@
 #define SOFTFM_MULTIPATHFILTER_H
 
 #include "SoftFM.h"
-#include <deque>
 #include <vector>
 
 using MfCoeff = std::complex<float>;
