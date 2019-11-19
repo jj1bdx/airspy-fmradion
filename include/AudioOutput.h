@@ -85,8 +85,8 @@ public:
    */
   RawAudioOutput(const std::string &filename);
 
-  ~RawAudioOutput();
-  bool write(const SampleVector &samples);
+  virtual ~RawAudioOutput() override;
+  virtual bool write(const SampleVector &samples) override;
 
 private:
   int m_fd;
@@ -103,8 +103,8 @@ public:
    */
   FloatAudioOutput(const std::string &filename);
 
-  ~FloatAudioOutput();
-  bool write(const SampleVector &samples);
+  virtual ~FloatAudioOutput() override;
+  virtual bool write(const SampleVector &samples) override;
 
 private:
   int m_fd;
@@ -124,8 +124,8 @@ public:
   WavAudioOutput(const std::string &filename, unsigned int samplerate,
                  bool stereo);
 
-  ~WavAudioOutput();
-  bool write(const SampleVector &samples);
+  virtual ~WavAudioOutput() override;
+  virtual bool write(const SampleVector &samples) override;
 
 private:
   /** (Re-)Write .WAV header. */
@@ -155,8 +155,8 @@ public:
   AlsaAudioOutput(const std::string &devname, unsigned int samplerate,
                   bool stereo);
 
-  ~AlsaAudioOutput();
-  bool write(const SampleVector &samples);
+  virtual ~AlsaAudioOutput() override;
+  virtual bool write(const SampleVector &samples) override;
 
 private:
   unsigned int m_nchannels;

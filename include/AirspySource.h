@@ -34,27 +34,28 @@ public:
   AirspySource(int dev_index);
 
   /** Close Airspy device. */
-  virtual ~AirspySource();
+  virtual ~AirspySource() override;
 
-  virtual bool configure(std::string configuration);
+  virtual bool configure(std::string configuration) override;
 
   /** Return current sample frequency in Hz. */
-  virtual std::uint32_t get_sample_rate();
+  virtual std::uint32_t get_sample_rate() override;
 
   /** Return device current center frequency in Hz. */
-  virtual std::uint32_t get_frequency();
+  virtual std::uint32_t get_frequency() override;
 
   /** Return if device is using Low-IF. */
-  virtual bool is_low_if();
+  virtual bool is_low_if() override;
 
   /** Print current parameters specific to device type */
-  virtual void print_specific_parms();
+  virtual void print_specific_parms() override;
 
-  virtual bool start(DataBuffer<IQSample> *buf, std::atomic_bool *stop_flag);
-  virtual bool stop();
+  virtual bool start(DataBuffer<IQSample> *buf,
+                     std::atomic_bool *stop_flag) override;
+  virtual bool stop() override;
 
   /** Return true if the device is OK, return false if there is an error. */
-  virtual operator bool() const { return m_dev && m_error.empty(); }
+  virtual operator bool() const override { return m_dev && m_error.empty(); }
 
   /** Return a list of supported devices. */
   static void get_device_names(std::vector<std::string> &devices);
