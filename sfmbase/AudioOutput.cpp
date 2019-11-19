@@ -224,7 +224,7 @@ bool WavAudioOutput::write_header(unsigned int nsamples) {
   const unsigned bytesPerSample = 2;
   const unsigned bitsPerSample = 16;
 
-  enum wFormatTagId {
+  enum class wFormatTagId {
     WAVE_FORMAT_PCM = 0x0001,
     WAVE_FORMAT_IEEE_FLOAT = 0x0003
   };
@@ -240,7 +240,8 @@ bool WavAudioOutput::write_header(unsigned int nsamples) {
   encode_chunk_id(wavHeader + 8, "WAVE");
   encode_chunk_id(wavHeader + 12, "fmt ");
   set_value<uint32_t>(wavHeader + 16, 16);
-  set_value<uint16_t>(wavHeader + 20, WAVE_FORMAT_PCM);
+  set_value<uint16_t>(wavHeader + 20, static_cast<unsigned short>(
+                                          wFormatTagId::WAVE_FORMAT_PCM));
   set_value<uint16_t>(wavHeader + 22, numberOfChannels);
   set_value<uint32_t>(wavHeader + 24, sampleRate); // sample rate
   set_value<uint32_t>(wavHeader + 28, sampleRate * numberOfChannels *

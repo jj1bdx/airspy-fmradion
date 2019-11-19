@@ -69,7 +69,7 @@ public:
   static void get_device_names(std::vector<std::string> &devices);
 
 private:
-  enum FormatType {
+  enum class FormatType {
     Unknown = 0,
     S8_LE = 1,
     S16_LE = 2,
