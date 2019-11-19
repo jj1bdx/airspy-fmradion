@@ -93,7 +93,6 @@ private:
   bool m_lnaAGC;
   bool m_mixAGC;
   bool m_running;
-  std::thread *m_thread;
   static AirspySource *m_this;
   static const std::vector<int> m_lgains;
   static const std::vector<int> m_mgains;
@@ -107,6 +106,8 @@ private:
   airspy_lib_version_t m_libv;
   int m_ndev;
   std::vector<uint64_t> m_serials;
+
+  std::thread *m_thread;
 };
 
 #endif /* INCLUDE_AIRSPYSOURCE_H_ */

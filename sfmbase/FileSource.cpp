@@ -37,7 +37,7 @@ FileSource *FileSource::m_this = 0;
 FileSource::FileSource(int dev_index)
     : m_sample_rate(default_sample_rate), m_frequency(default_frequency),
       m_zero_offset(false), m_block_length(default_block_length), m_sfp(NULL),
-      m_thread(0), m_fmt_fn(NULL) {
+      m_fmt_fn(NULL), m_thread(0) {
   m_sfinfo = {0};
   m_this = this;
 }

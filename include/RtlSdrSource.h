@@ -97,8 +97,9 @@ private:
   std::vector<int> m_gains;
   std::string m_gainsStr;
   bool m_confAgc;
-  std::thread *m_thread;
   static RtlSdrSource *m_this;
+
+  std::thread *m_thread;
 };
 
 #endif

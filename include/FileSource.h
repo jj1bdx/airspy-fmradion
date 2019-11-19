@@ -128,9 +128,10 @@ private:
 
   double m_sample_rate_per_us;
 
-  std::thread *m_thread;
   bool (*m_fmt_fn)(IQSampleVector *samples);
   static FileSource *m_this;
+
+  std::thread *m_thread;
 };
 
 #endif /* SOFTFM_FILESOURCE_H */

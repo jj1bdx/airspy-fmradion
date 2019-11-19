@@ -85,7 +85,6 @@ private:
   uint32_t m_frequency;
   bool m_low_if;
   bool m_running;
-  std::thread *m_thread;
   static AirspyHFSource *m_this;
   std::vector<int> m_srates;
   std::string m_sratesStr;
@@ -93,6 +92,8 @@ private:
   airspyhf_lib_version_t m_libv;
   int m_ndev;
   std::vector<uint64_t> m_serials;
+
+  std::thread *m_thread;
 };
 
 #endif /* INCLUDE_AIRSPYSOURCE_H_ */
