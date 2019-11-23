@@ -30,9 +30,6 @@
 
 #include <cassert>
 #include <cmath>
-#include <complex>
-
-#include <volk/volk.h>
 
 #include "MultipathFilter.h"
 

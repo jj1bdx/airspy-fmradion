@@ -21,10 +21,12 @@
 #define SOFTFM_MULTIPATHFILTER_H
 
 #include "SoftFM.h"
-#include <vector>
+#include <volk/volk_alloc.hh>
 
+// MfCoeff = IQSample
 using MfCoeff = std::complex<float>;
-using MfCoeffVector = std::vector<MfCoeff>;
+// MfCoeffVector = IQSampleVector with VOLK aligned allocator
+using MfCoeffVector = volk::vector<MfCoeff>;
 
 // Multipath equalizer FIR filter.
 
@@ -77,7 +79,7 @@ private:
   const unsigned int m_filter_order;
   const double m_mu;
   MfCoeffVector m_coeff;
-  IQSampleVector m_state;
+  MfCoeffVector m_state;
   double m_error;
 };
 
