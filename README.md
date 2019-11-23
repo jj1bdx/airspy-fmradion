@@ -1,6 +1,6 @@
 # airspy-fmradion
 
-* Version v0.8.0, 16-NOV-2019
+* Version v0.8.1-pre1, 23-NOV-2019
 * For MacOS and Linux
 
 ### Contributing
@@ -9,7 +9,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for the details.
 
 ### Known issues and changes
 
-* libvolk is required since v0.8.0. If you don't want to install libvolk, use v0.7.8 instead.
+* libvolk is required since v0.8.0. If you don't want to install libvolk, use v0.7.8 instead. Use the latest master branch of libvolk. See [INSTALL-latest-libvolk.md](INSTALL-latest-libvolk.md) for the details.
 * Building on MacOS 10.15 Catalina is still not tested yet. The development is going on with the last Mojave 10.14.6.
 
 ### What is airspy-fmradion?
