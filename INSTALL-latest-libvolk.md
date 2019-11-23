@@ -1,15 +1,24 @@
-# Installing libvolk on macOS
+# Installing the latest libvolk on macOS and Linux
+
+## Required version
+
+Use the latest libvolk from the master branch after [the commit a778c2823303f57fe027c5ed955d120b671e4d1c](https://github.com/gnuradio/volk/commit/a778c2823303f57fe027c5ed955d120b671e4d1c), which includes `volk_32fc_x2_s32fc_multiply_conjugate_add_32fc()`.
 
 ## Commands
 
 ```
-git clone https://github.com/gnuradio/volk
-mv volk libvolk
+git clone https://github.com/gnuradio/volk libvolk
 cd libvolk
+# use the master branch
+git checkout master
+# install pip if needed
 pip install mako
 mkdir build
 cd build
 cmake ..
+# if build fails, try
+# `sudo rm -rf /usr/local/include/volk`
+# then try `make` again
 make
 make test
 # superuser
@@ -23,13 +32,6 @@ exit
 ## Installed files
 
 ```
-[ 72%] Built target volk_obj
-[ 74%] Built target volk
-[ 80%] Built target volk_test_all
-[ 88%] Built target volk_profile
-[ 94%] Built target volk-config-info
-[ 96%] Built target pygen_python_volk_modtool_d5caf
-[100%] Built target pygen_python_volk_modtool_2b366
 Install the project...
 -- Install configuration: "Release"
 -- Installing: /usr/local/lib/pkgconfig/volk.pc
@@ -53,6 +55,7 @@ Install the project...
 -- Installing: /usr/local/include/volk/volk_32fc_32f_add_32fc.h
 -- Installing: /usr/local/include/volk/volk_32f_binary_slicer_8i.h
 -- Installing: /usr/local/include/volk/volk_32fc_conjugate_32fc.h
+-- Installing: /usr/local/include/volk/volk_32fc_x2_s32fc_multiply_conjugate_add_32fc.h
 -- Installing: /usr/local/include/volk/volk_32f_asin_32f.h
 -- Installing: /usr/local/include/volk/volk_32f_expfast_32f.h
 -- Installing: /usr/local/include/volk/volk_32u_byteswappuppet_32u.h
@@ -168,6 +171,7 @@ Install the project...
 -- Installing: /usr/local/include/volk/volk_32fc_x2_conjugate_dot_prod_32fc.h
 -- Installing: /usr/local/include/volk/volk_32fc_s32fc_multiply_32fc.h
 -- Installing: /usr/local/include/volk/volk_prefs.h
+-- Installing: /usr/local/include/volk/volk_alloc.hh
 -- Installing: /usr/local/include/volk/volk_complex.h
 -- Installing: /usr/local/include/volk/volk_common.h
 -- Installing: /usr/local/include/volk/saturation_arithmetic.h
@@ -187,7 +191,7 @@ Install the project...
 -- Installing: /usr/local/lib/cmake/volk/VolkTargets.cmake
 -- Installing: /usr/local/lib/cmake/volk/VolkTargets-release.cmake
 -- Installing: /usr/local/lib/libvolk.2.0.dylib
--- Installing: /usr/local/lib/libvolk.dylib
+-- Up-to-date: /usr/local/lib/libvolk.dylib
 -- Installing: /usr/local/bin/volk_profile
 -- Installing: /usr/local/bin/volk-config-info
 -- Installing: /usr/local/lib/python2.7/site-packages/volk_modtool/__init__.py
@@ -200,5 +204,4 @@ Install the project...
 -- Installing: /usr/local/lib/python2.7/site-packages/volk_modtool/cfg.pyo
 -- Installing: /usr/local/lib/python2.7/site-packages/volk_modtool/volk_modtool_generate.pyo
 -- Installing: /usr/local/bin/volk_modtool
-
 ```

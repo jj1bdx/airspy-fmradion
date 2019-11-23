@@ -98,7 +98,9 @@ brew install airspy --HEAD
 brew install airspyhf --HEAD
 ```
 
-And then install libvolk as described in [macOS-libvolk-install.md](macOS-libvolk-install.md).
+### Install the latest libvolk
+
+Install libvolk as described in [INSTALL-latest-libvolk.md](INSTALL-latest-libvolk.md).
 
 ### Dependency installation details
 
