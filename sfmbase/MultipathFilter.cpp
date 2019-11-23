@@ -64,6 +64,7 @@ MultipathFilter::MultipathFilter(unsigned int stages)
       // Initialize coefficient and state vectors with the size.
       ,
       m_coeff(m_filter_order), m_state(m_filter_order) {
+
   assert(stages > 0);
   for (unsigned int i = 0; i < m_filter_order; i++) {
     m_state[i] = IQSample(0, 0);
@@ -112,9 +113,16 @@ inline void MultipathFilter::update_coeff(const IQSample result) {
   const MfCoeff factor_times_result =
       MfCoeff(factor * result.real(), factor * result.imag());
   // Recalculate all coefficients
-  for (unsigned int i = 0; i < m_filter_order; i++) {
-    m_coeff[i] += factor_times_result * std::conj(m_state[i]);
-  }
+  // VOLK calculation, equivalent to:
+  // for (unsigned int i = 0; i < m_filter_order; i++) {
+  //  m_coeff[i] += factor_times_result * std::conj(m_state[i]);
+  // }
+  // Note: always check if the result and the source vectors can overlap!
+  // For volk_32fc_x2_s32fc_multiply_conjugate_add_32fc(),
+  // the overlapping issue seems to be OK.
+  volk_32fc_x2_s32fc_multiply_conjugate_add_32fc(
+      m_coeff.data(), m_coeff.data(), m_state.data(), factor_times_result,
+      m_filter_order);
   // Set the imaginary part of the middle (position 0) coefficient to zero
   m_coeff[m_index_reference_point] =
       MfCoeff(m_coeff[m_index_reference_point].real(), 0);
