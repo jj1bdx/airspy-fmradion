@@ -15,7 +15,11 @@ git checkout master
 pip install mako
 mkdir build
 cd build
-cmake ..
+# C++ compiler optimization flags are important for speedup
+cmake \
+  -D CMAKE_C_FLAGS="-O3 -ffast-math -ftree-vectorize -march=native" \
+  -D CMAKE_CXX_FLAGS="-O3 -ffast-math -ftree-vectorize -march=native" \
+  ..
 # if build fails, try
 # `sudo rm -rf /usr/local/include/volk`
 # then try `make` again
