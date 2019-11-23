@@ -79,7 +79,7 @@ For example if you installed it in `/opt/install/libairspy` you have to add `-DA
 
 ### Debian/Ubuntu Linux
 
-  - `sudo apt-get install cmake pkg-config libusb-1.0-0-dev libasound2-dev libairspy-dev libairspyhf-dev librtlsdr-dev libsoxr-dev libvolk1-dev libsndfile1-dev`
+  - `sudo apt-get install cmake pkg-config libusb-1.0-0-dev libasound2-dev libairspy-dev libairspyhf-dev librtlsdr-dev libsoxr-dev libsndfile1-dev`
 
 ### macOS
 
