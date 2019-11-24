@@ -62,10 +62,10 @@ exit
 
 ## After installation
 
-* Do the full benchmark by `volk_profile -b`. Use the result at `~/.volk/volk_config` for optimizing the execution.
+* Do the full benchmark by `volk_profile -b -p .`. Use the result at `~/.volk/volk_config` for optimizing the execution.
 
 ```shell
-volk_profile -b ./volk_config
+volk_profile -b -p .
 cp ./volk_config ~/.volk/
 ```
 
