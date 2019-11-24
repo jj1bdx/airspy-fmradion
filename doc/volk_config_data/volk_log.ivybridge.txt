@@ -1,6 +1,3 @@
-Script started on Sun Nov 24 13:36:00 2019
-]1337;RemoteHost=kenji@silverblade]1337;CurrentDir=/Users/kenji/src/airspy-fmradion]1337;ShellIntegrationVersion=5;shell=zsh[1m[7m%[27m[1m[0m                                                                                 ]133;D;0]1337;RemoteHost=kenji@silverblade]1337;CurrentDir=/Users/kenji/src/airspy-fmradion[0m[27m[24m[J]133;Akenji@silverblade[1001]% ]133;B[K[?2004h[7mvolk_profile -b -p .[27m[20D[27mv[27mo[27ml[27mk[27m_[27mp[27mr[27mo[27mf[27mi[27ml[27me[27m [27m-[27mb[27m [27m-[27mp[27m [27m.[?2004l
-]133;C;
 RUN_VOLK_TESTS: volk_64u_popcntpuppet_64u(131071,1987)
 generic completed in 438.345 ms
 a_sse4_2 completed in 442.515 ms
@@ -824,6 +821,4 @@ u_avx completed in 2117.6 ms
 Best aligned arch: u_avx
 Best unaligned arch: u_avx
 Writing ./volk_config...
-[1m[7m%[27m[1m[0m                                                                                 ]133;D;0]1337;RemoteHost=kenji@silverblade]1337;CurrentDir=/Users/kenji/src/airspy-fmradion[0m[27m[24m[J]133;Akenji@silverblade[1002]% ]133;B[K[?2004heexit[?2004l
-]133;C;
 Script done on Sun Nov 24 13:49:08 2019

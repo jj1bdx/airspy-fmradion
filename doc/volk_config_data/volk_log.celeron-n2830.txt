@@ -1,6 +1,3 @@
-Script started on 2019-11-24 04:09:02+0000
-[1m[7m%[27m[1m[0m                                                                                    [0m[27m[24m[Jkenji@gravitas[1001]% [K[?1h=[?2004h[7mvolk_profile -b -p .[27m[20D[27mv[27mo[27ml[27mk[27m_[27mp[27mr[27mo[27mf[27mi[27ml[27me[27m [27m-[27mb[27m [27m-[27mp[27m [27m.[?1l>[?2004l
-
 RUN_VOLK_TESTS: volk_64u_popcntpuppet_64u(131071,1987)
 generic completed in 1214.95 ms
 a_sse4_2 completed in 1224.02 ms
@@ -706,6 +703,4 @@ generic completed in 25331 ms
 Best aligned arch: generic
 Best unaligned arch: generic
 Writing ./volk_config...
-[1m[7m%[27m[1m[0m                                                                                    [0m[27m[24m[Jkenji@gravitas[1002]% [K[?1h=[?2004heexit[?1l>[?2004l
-
 Script done on 2019-11-24 04:25:30+0000
