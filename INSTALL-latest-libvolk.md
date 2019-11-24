@@ -21,6 +21,8 @@ brew install gcc
 brew install orc
 ```
 
+*Note*: gcc 9.2 does not compile libvolk code due to this Xcode related bug: <https://gcc.gnu.org/bugzilla/show_bug.cgi?id=90835> - if this bug is unsolvable, use clang for the fallback.
+
 ### Ubuntu Linux
 
 * For Linux, gcc is the default compiler.
@@ -70,6 +72,8 @@ cp ./volk_config ~/.volk/
 ```
 
 See `doc/volk_config_data` for the example `volk_config` files.
+
+*Note*: `volk_profile` on MacOS causes segfault when writing the result file. See <https://gist.github.com/jj1bdx/22af314c443fdf7e3962486bf5661e45> for a workaround.
 
 ## Installed files
 
