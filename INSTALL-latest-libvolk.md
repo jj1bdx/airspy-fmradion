@@ -4,6 +4,31 @@
 
 Use the latest libvolk from the master branch after [the commit a778c2823303f57fe027c5ed955d120b671e4d1c](https://github.com/gnuradio/volk/commit/a778c2823303f57fe027c5ed955d120b671e4d1c), which includes `volk_32fc_x2_s32fc_multiply_conjugate_add_32fc()`.
 
+## Suggested tools
+
+These tools are not the requirement but may help increasing the execution speed.
+
+### Common tools
+
+* [The Oil Runtime Compiler (orc)](https://github.com/GStreamer/orc)
+
+### macOS
+
+* While macOS AppleClang works OK for the generic running environment, full support for Intel instructions such as MMX and AVX require GNU cc `gcc`.
+
+```shell
+brew install gcc
+brew install orc
+```
+
+### Ubuntu Linux
+
+* For Linux, gcc is the default compiler.
+
+```shell
+sudo apt install liborc-0.4-dev
+```
+
 ## Commands
 
 ```
@@ -15,11 +40,13 @@ git checkout master
 pip install mako
 mkdir build
 cd build
+# Use GNU cc (gcc) if available
 # C++ compiler optimization flags are important for speedup
-cmake \
-  -D CMAKE_C_FLAGS="-O3 -ffast-math -ftree-vectorize -march=native" \
-  -D CMAKE_CXX_FLAGS="-O3 -ffast-math -ftree-vectorize -march=native" \
-  ..
+env CC=/usr/local/opt/gcc/bin/gcc-9 CXX=/usr/local/opt/gcc/bin/g++-9 \
+  cmake \
+    -D CMAKE_C_FLAGS="-O3 -ffast-math -ftree-vectorize -march=native" \
+    -D CMAKE_CXX_FLAGS="-O3 -ffast-math -ftree-vectorize -march=native" \
+    ..
 # if build fails, try
 # `sudo rm -rf /usr/local/include/volk`
 # then try `make` again
@@ -31,6 +58,15 @@ umask 022
 make install
 exit
 # got out of the root shell
+```
+
+## After installation
+
+* Do the full benchmark by `volk_profile -b`. Use the result at `~/.volk/volk_config` for optimizing the execution.
+
+```shell
+volk_profile -b ./volk_config
+cp ./volk_config ~/.volk/
 ```
 
 ## Installed files
