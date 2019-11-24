@@ -26,28 +26,26 @@
 /* ****************  class PhaseDiscriminator  **************** */
 
 // Construct phase discriminator.
+// frequency scaling factor = 1.0 / (max_freq_dev * 2.0 * M_PI)
 PhaseDiscriminator::PhaseDiscriminator(double max_freq_dev)
-    : m_freq_scale_factor(1.0 / (max_freq_dev * 2.0 * M_PI)) {}
+    : m_normalize_factor(max_freq_dev * 2.0 * M_PI),
+      // boundary = M_PI / m_normalize_factor;
+      m_boundary(1.0 / (max_freq_dev * 2.0)) {}
 
 // Process samples.
-//
 void PhaseDiscriminator::process(const IQSampleVector &samples_in,
                                  SampleVector &samples_out) {
   unsigned int n = samples_in.size();
   samples_out.resize(n);
+  m_phase.resize(n);
+  m_detector.resize(n);
 
-  IQSample s0 = m_last1_sample;
-
-  for (unsigned int i = 0; i < n; i++) {
-    IQSample s1(samples_in[i]);
-    IQSample d(conj(s0) * s1);
-    // Sample w = atan2(d.imag(), d.real());
-    Sample w = Utility::fast_atan2f(d.imag(), d.real());
-    samples_out[i] = w * m_freq_scale_factor;
-    s0 = s1;
-  }
-
-  m_last1_sample = s0;
+  // libvolk parallelism
+  volk_32fc_s32f_atan2_32f(m_phase.data(), samples_in.data(),
+                           m_normalize_factor, n);
+  volk_32f_s32f_32f_fm_detect_32f(m_detector.data(), m_phase.data(), m_boundary,
+                                  &m_save_value, n);
+  volk_32f_convert_64f(samples_out.data(), m_detector.data(), n);
 }
 
 /* end */

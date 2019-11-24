@@ -23,9 +23,9 @@
 #include <cstdint>
 #include <vector>
 
-#include <volk/volk.h>
-
 #include "SoftFM.h"
+
+#include <volk/volk_alloc.hh>
 
 /* Detect frequency by phase discrimination between successive samples. */
 class PhaseDiscriminator {
@@ -46,8 +46,11 @@ public:
   void process(const IQSampleVector &samples_in, SampleVector &samples_out);
 
 private:
-  const Sample m_freq_scale_factor;
-  IQSample m_last1_sample;
+  const Sample m_normalize_factor;
+  const float m_boundary;
+  float m_save_value;
+  volk::vector<float> m_phase;
+  volk::vector<float> m_detector;
 };
 
 #endif
