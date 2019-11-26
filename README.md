@@ -1,6 +1,6 @@
 # airspy-fmradion
 
-* Version v0.8.1-pre1, 23-NOV-2019
+* Version v0.8.1, 26-NOV-2019
 * For MacOS and Linux
 
 ### Contributing
@@ -9,7 +9,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for the details.
 
 ### Known issues and changes
 
-* libvolk is required since v0.8.0. If you don't want to install libvolk, use v0.7.8 instead. Use the latest master branch of libvolk. See [INSTALL-latest-libvolk.md](INSTALL-latest-libvolk.md) for the details.
+* libvolk is required since v0.8.0. If you don't want to install libvolk, use v0.7.8 instead. Use the latest master branch of libvolk. Configure the `volk_config` file with `volk_profile -b` for the maximum performance. See [INSTALL-latest-libvolk.md](INSTALL-latest-libvolk.md) for the details.
 * Building on MacOS 10.15 Catalina is still not tested yet. The development is going on with the last Mojave 10.14.6.
 
 ### What is airspy-fmradion?
@@ -66,13 +66,14 @@ For the latest version, see https://github.com/jj1bdx/airspy-fmradion
   - Official releases are tagged
   - _master_ is the "production" branch with the most stable release (often ahead of the latest release though)
   - _dev_ is the development branch that contains current developments that will be eventually released in the master branch
-  - Other branches are experimental (and abandoned)
+  - _libvolk_ is the libvolk-specific development branch that might contain unstable test code of current developments ahead of the dev branch
+  - Other branches are experimental (and presumably abandoned)
 
 ## Prerequisites
 
 ### Required libraries
 
-Note: libvolk is now required from v0.8.0, as suggested by Takehiro Sekine.
+Note: the master branch of libvolk is now required from v0.8.1.
 
 If you install from source in your own installation path, you have to specify the include path and library path.
 For example if you installed it in `/opt/install/libairspy` you have to add `-DAIRSPY_INCLUDE_DIR=/opt/install/libairspy/include -DAIRSPYHF_INCLUDE_DIR=/opt/install/libairspyhf/include` to the cmake options.
@@ -106,7 +107,8 @@ Install libvolk as described in [INSTALL-latest-libvolk.md](INSTALL-latest-libvo
 
 #### libvolk
 
-See [GitHub gnuradio/volk repository](https://github.com/gnuradio/volk) for the details.
+* See [GitHub gnuradio/volk repository](https://github.com/gnuradio/volk) for the details.
+* libvolk requires Boost to compile.
 
 #### libairspyhf
 
@@ -118,10 +120,6 @@ Use the latest HEAD version.
 
 * Working `airspy_open_devices()`, required by `airspy_open_sn()`. See [this commit](https://github.com/airspy/airspyone_host/commit/61fec20fbd710fc54d57dfec732d314d693b5a2f) for the details.
 * Proper transfer block size. `if_blocksize` for Airspy HF+ is reduced from 16384 to 2048, following [this commit](https://github.com/airspy/airspyhf/commit/a1f6f4a0537f53bede6e80c51826fc9d45061c28).
-
-#### Boost is no longer required
-
-Boost is no longer required since v0.7.7-pre1.
 
 ## Installing
 
