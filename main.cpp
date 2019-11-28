@@ -948,16 +948,12 @@ int main(int argc, char **argv) {
                                  if_rms >= squelch_level ? 0.5 : 0.0);
     }
 
-    double ppm_value_average;
-
     if (modtype == ModType::FM) {
       // the minus factor is to show the ppm correction
       // to make and not the one made
       ppm_average.feed((fm.get_tuning_offset() / tuner_freq) * -1.0e6);
-      ppm_value_average = ppm_average.average();
     } else if (modtype == ModType::NBFM) {
       ppm_average.feed((nbfm.get_tuning_offset() / tuner_freq) * -1.0e6);
-      ppm_value_average = ppm_average.average();
     }
 
     double if_level_db = 20 * log10(if_level);
@@ -1003,7 +999,7 @@ int main(int argc, char **argv) {
 #else
                   "\rblk=%8d:ppm=%+6.2f:IF=%+6.1fdB:AF=%+6.1fdB:buf=%.2fs",
 #endif
-                  block, ppm_value_average, if_level_db, audio_level_db,
+                  block, ppm_average.average(), if_level_db, audio_level_db,
                   buflen_sec);
           fflush(stderr);
         }
