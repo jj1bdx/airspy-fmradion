@@ -21,7 +21,11 @@ brew install gcc
 brew install orc
 ```
 
-*Note*: gcc 9.2 does not compile libvolk code due to this Xcode related bug: <https://gcc.gnu.org/bugzilla/show_bug.cgi?id=90835> - if this bug is unsolvable, use clang for the fallback.
+#### GCC 9 incompatibility with Xcode 11.2.1 CLT
+
+* *Note*: On macOS 10.14.6, Xcode 11.2.1 CLT, gcc 9.2 *downloaded from the pre-built bottle* does not compile libvolk code due to this Xcode related bug: <https://gcc.gnu.org/bugzilla/show_bug.cgi?id=90835>.
+* In that case, recompile gcc 9.2 from the source as `brew reinstall gcc --build-from-source`
+* Last resort: if this bug is unsolvable, use clang for the fallback (albeit with the slower code).
 
 ### Ubuntu Linux
 
