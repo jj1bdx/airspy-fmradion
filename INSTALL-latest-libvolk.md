@@ -47,12 +47,9 @@ pip install mako
 mkdir build
 cd build
 # Use GNU cc (gcc) if available
-# C++ compiler optimization flags are important for speedup
+# C++ compiler optimization set to default for safe programming
 env CC=/usr/local/opt/gcc/bin/gcc-9 CXX=/usr/local/opt/gcc/bin/g++-9 \
-  cmake \
-    -D CMAKE_C_FLAGS="-O3 -ffast-math -ftree-vectorize -march=native" \
-    -D CMAKE_CXX_FLAGS="-O3 -ffast-math -ftree-vectorize -march=native" \
-    ..
+  cmake ..
 # if build fails, try
 # `sudo rm -rf /usr/local/include/volk`
 # then try `make` again
