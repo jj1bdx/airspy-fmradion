@@ -61,6 +61,11 @@ cd build
 # C++ compiler optimization set to default for safe programming
 env CC=/usr/local/opt/gcc/bin/gcc-9 CXX=/usr/local/opt/gcc/bin/g++-9 \
   cmake ..
+# For ARM, use the proper sequence documented in VOLK
+# Raspberry Pi 4
+# cmake -DCMAKE_TOOLCHAIN_FILE=../cmake/Toolchains/arm_cortex_a72_hardfp_native.cmake ..
+# Raspberry Pi 3
+# cmake -DCMAKE_TOOLCHAIN_FILE=../cmake/Toolchains/arm_cortex_a53_hardfp_native.cmake ..
 # if build fails, try
 # `sudo rm -rf /usr/local/include/volk`
 # then try `make` again
