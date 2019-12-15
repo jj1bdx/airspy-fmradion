@@ -39,7 +39,7 @@ sudo apt install liborc-0.4-dev
 ### Raspbian Stretch
 
 * CMake requires OpenSSL.
-* You need to compile and install CMake from the scratch. VOLK requires CMake 3.8 and later. See [the installation gruide](http://osdevlab.blogspot.com/2015/12/how-to-install-latest-cmake-for.html). 
+* You need to compile and install CMake from the scratch. VOLK requires CMake 3.8 and later. See [the installation guide](http://osdevlab.blogspot.com/2015/12/how-to-install-latest-cmake-for.html). 
 * Stretch has an old GCC 6, so Boost is also required.
 
 ```
