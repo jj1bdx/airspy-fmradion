@@ -1,3 +1,5 @@
+[//]: # (-*- coding: utf-8 -*-)
+
 # airspy-fmradion
 
 * Version v0.8.2, 31-DEC-2019
@@ -70,6 +72,12 @@ For the latest version, see https://github.com/jj1bdx/airspy-fmradion
   - Other branches are experimental (and presumably abandoned)
 
 ## Prerequisites
+
+### Airspy HF+ firmware
+
+Use the latest version of Airspy HF+ firmware, available at [Airspy HF+ Dual Port](https://airspy.com/airspy-hf-plus/) and [Airspy HF+ Discovery](https://airspy.com/airspy-hf-discovery/) Web pages.
+
+airspy-fmradion sets the default sampling rates to 384kHz for FM broadcast, and 192kHz for the other modes. Old Airspy HF+ firmwares do not support the lower sampling rate other than 768kHz.
 
 ### Required libraries
 
