@@ -2,7 +2,9 @@
 
 ## Required version
 
-Use the latest libvolk from the master branch after [the commit a778c2823303f57fe027c5ed955d120b671e4d1c](https://github.com/gnuradio/volk/commit/a778c2823303f57fe027c5ed955d120b671e4d1c), which includes `volk_32fc_x2_s32fc_multiply_conjugate_add_32fc()`.
+libvolk v2.1 or later.
+
+Specifically, use the latest libvolk from the master branch after [the commit a778c2823303f57fe027c5ed955d120b671e4d1c](https://github.com/gnuradio/volk/commit/a778c2823303f57fe027c5ed955d120b671e4d1c), which includes `volk_32fc_x2_s32fc_multiply_conjugate_add_32fc()`.
 
 ## Suggested tools
 
@@ -53,8 +55,12 @@ git clone https://github.com/gnuradio/volk libvolk
 cd libvolk
 # use the master branch
 git checkout master
-# install pip if needed
-pip install mako
+# Latest libvolk prefers Python 3 to Python 2,
+# so you might need to run pip3 first
+# install pip3 if needed
+pip3 install mako
+# install pip if needed and you don't have Python 3 installed
+# pip install mako
 mkdir build
 cd build
 # Use GNU cc (gcc) if available
