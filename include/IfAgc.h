@@ -42,7 +42,7 @@ public:
   void process(const IQSampleVector &samples_in, IQSampleVector &samples_out);
 
   // Return IF AGC current gain.
-  float get_current_gain() const { return std::expf(m_log_current_gain); }
+  float get_current_gain() const { return std::exp(m_log_current_gain); }
 
 private:
   float m_log_current_gain;

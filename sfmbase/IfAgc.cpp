@@ -25,9 +25,9 @@
 IfAgc::IfAgc(const float initial_gain, const float max_gain,
              const float reference, const float rate)
     // Initialize member fields
-    : m_log_current_gain(std::logf(initial_gain)),
-      m_log_max_gain(std::logf(max_gain)),
-      m_log_reference(std::logf(reference)), m_rate(rate) {
+    : m_log_current_gain(std::log(initial_gain)),
+      m_log_max_gain(std::log(max_gain)), m_log_reference(std::log(reference)),
+      m_rate(rate) {
   // Do nothing
 }
 
@@ -43,7 +43,7 @@ void IfAgc::process(const IQSampleVector &samples_in,
 
   for (unsigned int i = 0; i < n; i++) {
     // Compute output based on the current gain.
-    float current_gain = std::expf(m_log_current_gain);
+    float current_gain = std::exp(m_log_current_gain);
     IQSample input = samples_in[i];
     IQSample output =
         IQSample(input.real() * current_gain, input.imag() * current_gain);
@@ -54,7 +54,7 @@ void IfAgc::process(const IQSampleVector &samples_in,
     //       then took the logarithm value, but the sequence can be
     //       realigned as taking the log value of the abs(input)
     //       then add the log_current_gain.
-    float log_amplitude = std::logf(std::abs(input)) + m_log_current_gain;
+    float log_amplitude = std::log(std::abs(input)) + m_log_current_gain;
     float error = (m_log_reference - log_amplitude) * m_rate;
     float new_log_current_gain = m_log_current_gain + error;
     if (new_log_current_gain > m_log_max_gain) {
