@@ -149,7 +149,6 @@ set(sfmbase_SOURCES
     sfmbase/FilterParameters.cpp
     sfmbase/FmDecode.cpp
     sfmbase/IfAgc.cpp
-    sfmbase/IfDownsampler.cpp
     sfmbase/IfResampler.cpp
     sfmbase/MultipathFilter.cpp
     sfmbase/NbfmDecode.cpp
@@ -172,7 +171,6 @@ set(sfmbase_HEADERS
     include/FmDecode.h
     include/FourthConverterIQ.h
     include/IfAgc.h
-    include/IfDownsampler.h
     include/IfResampler.h
     include/MovingAverage.h
     include/MultipathFilter.h
