@@ -26,6 +26,7 @@
 #include "SoftFM.h"
 
 // Class IfAgc
+// Using float for faster computation
 
 class IfAgc {
 public:
@@ -34,20 +35,20 @@ public:
   // max_gain     :: Maximum gain value.
   // reference    :: target output level.
   // rate         :: rate factor for changing the gain value.
-  IfAgc(const double initial_gain, const double max_gain,
-        const double reference, const double rate);
+  IfAgc(const float initial_gain, const float max_gain, const float reference,
+        const float rate);
 
   // Process IQ samples.
   void process(const IQSampleVector &samples_in, IQSampleVector &samples_out);
 
   // Return IF AGC current gain.
-  double get_current_gain() const { return std::exp(m_log_current_gain); }
+  float get_current_gain() const { return std::expf(m_log_current_gain); }
 
 private:
-  double m_log_current_gain;
-  double m_log_max_gain;
-  double m_log_reference;
-  double m_rate;
+  float m_log_current_gain;
+  float m_log_max_gain;
+  float m_log_reference;
+  float m_rate;
 };
 
 #endif
