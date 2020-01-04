@@ -63,7 +63,7 @@ void NbfmDecoder::process(const IQSampleVector &samples_in,
   // Convert decoded data to baseband data
   m_buf_baseband_raw.resize(decoded_size);
   volk_32f_convert_64f(m_buf_baseband_raw.data(), m_buf_decoded.data(),
-                  decoded_size);
+                       decoded_size);
 
   // Upsample decoded audio signal to 48kHz.
   m_audioresampler_raw.process(m_buf_baseband_raw, m_buf_baseband);

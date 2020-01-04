@@ -100,8 +100,7 @@ inline void samples_mean_rms(const IQSampleDecodedVector &samples, float &mean,
   unsigned int n = samples.size();
 
   volk_32f_accumulator_s32f(&vsum, samples.data(), n);
-  volk_32f_x2_dot_prod_32f(&vsumsq, samples.data(),
-		           samples.data(), n);
+  volk_32f_x2_dot_prod_32f(&vsumsq, samples.data(), samples.data(), n);
 
   mean = vsum / n;
   rms = std::sqrt(vsumsq / n);

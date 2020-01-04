@@ -942,8 +942,8 @@ int main(int argc, char **argv) {
       float audio_mean, audio_rms;
       IQSampleDecodedVector audiosamples_float;
       audiosamples_float.resize(audiosamples_size);
-      volk_64f_convert_32f(audiosamples_float.data(),
-		      audiosamples.data(), audiosamples_size);
+      volk_64f_convert_32f(audiosamples_float.data(), audiosamples.data(),
+                           audiosamples_size);
       Utility::samples_mean_rms(audiosamples_float, audio_mean, audio_rms);
       audio_level = 0.95 * audio_level + 0.05 * audio_rms;
 

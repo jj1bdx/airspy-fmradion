@@ -178,7 +178,7 @@ void AmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
   // Convert decoded data to baseband data
   m_buf_baseband_demod.resize(decoded_size);
   volk_32f_convert_64f(m_buf_baseband_demod.data(), m_buf_decoded.data(),
-                 decoded_size);
+                       decoded_size);
 
   // DC blocking.
   m_dcblock.process_inplace(m_buf_baseband_demod);

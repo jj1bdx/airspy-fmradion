@@ -308,7 +308,7 @@ void FmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
 
   // If no downsampled baseband signal comes out,
   // terminate and wait for next block,
-  size_t decoded_size = m_buf_decoded.size(); 
+  size_t decoded_size = m_buf_decoded.size();
   if (decoded_size == 0) {
     audio.resize(0);
     return;
@@ -316,9 +316,9 @@ void FmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
 
   // Convert decoded data to baseband data
   m_buf_baseband.resize(decoded_size);
-  volk_32f_convert_64f(m_buf_baseband.data(), m_buf_decoded.data(), 
-		  decoded_size);
-  
+  volk_32f_convert_64f(m_buf_baseband.data(), m_buf_decoded.data(),
+                       decoded_size);
+
   // Measure baseband level.
   float baseband_mean, baseband_rms;
   Utility::samples_mean_rms(m_buf_decoded, baseband_mean, baseband_rms);

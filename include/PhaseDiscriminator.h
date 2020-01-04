@@ -42,7 +42,7 @@ public:
    * output value +/- 1.0 represents the maximum frequency deviation.
    */
   void process(const IQSampleVector &samples_in,
-		  IQSampleDecodedVector &samples_out);
+               IQSampleDecodedVector &samples_out);
 
 private:
   const Sample m_normalize_factor;

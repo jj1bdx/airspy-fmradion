@@ -42,8 +42,8 @@ void PhaseDiscriminator::process(const IQSampleVector &samples_in,
   // libvolk parallelism
   volk_32fc_s32f_atan2_32f(m_phase.data(), samples_in.data(),
                            m_normalize_factor, n);
-  volk_32f_s32f_32f_fm_detect_32f(samples_out.data(), m_phase.data(), m_boundary,
-                                  &m_save_value, n);
+  volk_32f_s32f_32f_fm_detect_32f(samples_out.data(), m_phase.data(),
+                                  m_boundary, &m_save_value, n);
 }
 
 /* end */
