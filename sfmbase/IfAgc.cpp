@@ -19,6 +19,7 @@
 #include <cassert>
 
 #include "IfAgc.h"
+#include "Utility.h"
 
 // class IfAgc
 
@@ -54,7 +55,8 @@ void IfAgc::process(const IQSampleVector &samples_in,
     //       then took the logarithm value, but the sequence can be
     //       realigned as taking the log value of the abs(input)
     //       then add the log_current_gain.
-    float log_amplitude = std::log(std::abs(input)) + m_log_current_gain;
+    float log_amplitude =
+        std::log(Utility::estimate_magnitude(input)) + m_log_current_gain;
     float error = (m_log_reference - log_amplitude) * m_rate;
     float new_log_current_gain = m_log_current_gain + error;
     if (new_log_current_gain > m_log_max_gain) {

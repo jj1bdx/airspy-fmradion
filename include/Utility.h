@@ -261,6 +261,29 @@ inline float fast_atan2f(float y, float x) {
   return (angle);
 }
 
+// Roughly estimate magnitude of an IQSample
+// (*estimating* sqrt(re*2 + im*2))
+// See https://dspguru.com/dsp/tricks/magnitude-estimator/
+// for the details of the algorithm.
+// Error estimation values:
+// Mag ~=Alpha * max(|re|, |im|) + Beta * min(|re|, |im|)
+// Name                  Alpha           Beta       Avg Err   RMS   Peak
+//                                                  (linear)  (dB)  (dB)
+// ---------------------------------------------------------------------
+// Min RMS w/ Avg=0 0.948059448969 0.392699081699   0.000003 -32.6 -25.7
+
+inline float estimate_magnitude(IQSample sample) {
+  constexpr float alpha = 0.948059448969;
+  constexpr float beta = 0.392699081699;
+  float re_abs = std::fabs(sample.real());
+  float im_abs = std::fabs(sample.imag());
+  if (re_abs > im_abs) {
+    return ((alpha * re_abs) + (beta * im_abs));
+  } else {
+    return ((alpha * im_abs) + (beta * re_abs));
+  }
+}
+
 }; // namespace Utility
 
 #endif /* INCLUDE_UTILITY_H_ */
