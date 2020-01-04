@@ -49,7 +49,7 @@
 // define this for enabling coefficient monitor functions
 // #undef COEFF_MONITOR
 
-#define AIRSPY_FMRADION_VERSION "v0.8.3"
+#define AIRSPY_FMRADION_VERSION "v0.8.4-pre0"
 
 /** Flag is set on SIGINT / SIGTERM. */
 static std::atomic_bool stop_flag(false);
@@ -931,7 +931,7 @@ int main(int argc, char **argv) {
         break;
       }
       // Measure the average IF level.
-      if_level = 0.95 * if_level + 0.05 * if_rms;
+      if_level = 0.75 * if_level + 0.25 * if_rms;
     }
 
     size_t audiosamples_size = audiosamples.size();
