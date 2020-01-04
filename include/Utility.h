@@ -48,6 +48,8 @@
 
 #include "SoftFM.h"
 
+#include <volk/volk_alloc.hh>
+
 // namespace Utility.
 // All functions and data MUST be inline.
 
@@ -77,36 +79,37 @@ inline bool parse_dbl(const char *s, double &v) {
 }
 
 // Compute RMS over a small prefix of the specified IQSample vector.
-inline double rms_level_approx(const IQSampleVector &samples) {
+inline float rms_level_approx(const IQSampleVector &samples) {
   unsigned int n = samples.size();
   n = (n + 63) / 64;
+  volk::vector<float> magnitude_sq;
+  magnitude_sq.resize(n);
 
   IQSample::value_type level = 0;
-  for (unsigned int i = 0; i < n; i++) {
-    double amplitude = std::norm(samples[i]);
-    level += amplitude;
-    // fprintf(stderr, "amplitude = %.15f\n", amplitude);
-  }
+
+  volk_32fc_magnitude_squared_32f(magnitude_sq.data(), samples.data(), n);
+  volk_32f_accumulator_s32f(&level, magnitude_sq.data(), n);
   // Return RMS level
-  return sqrt(level / n);
+  return std::sqrt(level / n);
 }
 
 // Compute mean value and RMS over a small prefix of the specified Sample
 // vector.
-inline void samples_mean_rms(const SampleVector &samples, double &mean,
-                             double &rms) {
-  Sample vsum = 0;
-  Sample vsumsq = 0;
-
+inline void samples_mean_rms(const SampleVector &samples, float &mean,
+                             float &rms) {
+  float vsum = 0;
+  float vsumsq = 0;
   unsigned int n = samples.size();
-  for (unsigned int i = 0; i < n; i++) {
-    Sample v = samples[i];
-    vsum += v;
-    vsumsq += v * v;
-  }
+  volk::vector<float> samples_float;
+  samples_float.resize(n);
+
+  volk_64f_convert_32f(samples_float.data(), samples.data(), n);
+  volk_32f_accumulator_s32f(&vsum, samples_float.data(), n);
+  volk_32f_x2_dot_prod_32f(&vsumsq, samples_float.data(),
+		           samples_float.data(), n);
 
   mean = vsum / n;
-  rms = sqrt(vsumsq / n);
+  rms = std::sqrt(vsumsq / n);
 }
 
 // fast_atan2f()

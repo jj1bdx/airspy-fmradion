@@ -184,7 +184,7 @@ void AmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
   m_afagc.process(m_buf_baseband_preagc, m_buf_baseband);
 
   // Measure baseband level after DC blocking.
-  double baseband_mean, baseband_rms;
+  float baseband_mean, baseband_rms;
   Utility::samples_mean_rms(m_buf_baseband, baseband_mean, baseband_rms);
   m_baseband_mean = 0.95 * m_baseband_mean + 0.05 * baseband_mean;
   m_baseband_level = 0.95 * m_baseband_level + 0.05 * baseband_rms;

@@ -63,13 +63,13 @@ public:
   double get_baseband_level() const { return m_baseband_level; }
 
   // Return AF AGC current gain.
-  double get_af_agc_current_gain() const { return m_afagc.get_current_gain(); }
+  float get_af_agc_current_gain() const { return m_afagc.get_current_gain(); }
 
   // Return IF AGC current gain.
-  double get_if_agc_current_gain() const { return m_ifagc.get_current_gain(); }
+  float get_if_agc_current_gain() const { return m_ifagc.get_current_gain(); }
 
   // Return RMS IF level.
-  double get_if_rms() const { return m_if_rms; }
+  float get_if_rms() const { return m_if_rms; }
 
 private:
   // Demodulate AM signal.
@@ -83,9 +83,9 @@ private:
   const double m_sample_rate_demod;
   const IQSampleCoeff &m_amfilter_coeff;
   const ModType m_mode;
-  double m_baseband_mean;
-  double m_baseband_level;
-  double m_if_rms;
+  float m_baseband_mean;
+  float m_baseband_level;
+  float m_if_rms;
 
   IQSampleVector m_buf_filtered;
   IQSampleVector m_buf_filtered2;

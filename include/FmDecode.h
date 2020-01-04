@@ -137,16 +137,16 @@ public:
   bool stereo_detected() const { return m_stereo_detected; }
 
   /** Return actual frequency offset in Hz with respect to receiver LO. */
-  double get_tuning_offset() const { return m_baseband_mean * freq_dev; }
+  float get_tuning_offset() const { return m_baseband_mean * freq_dev; }
 
   /** Return RMS baseband signal level (where nominal level is 0.707). */
-  double get_baseband_level() const { return m_baseband_level; }
+  float get_baseband_level() const { return m_baseband_level; }
 
   /** Return amplitude of stereo pilot (nominal level is 0.1). */
   double get_pilot_level() const { return m_pilotpll.get_pilot_level(); }
 
   // Return RMS IF level.
-  double get_if_rms() const { return m_if_rms; }
+  float get_if_rms() const { return m_if_rms; }
 
   // Return if multipath filter is skipped.
   bool multipath_filter_skipped() const { return m_skip_multipath_filter; }
@@ -195,9 +195,9 @@ private:
   const unsigned int m_multipath_stages;
   const bool m_stereo_enabled;
   bool m_stereo_detected;
-  double m_baseband_mean;
-  double m_baseband_level;
-  double m_if_rms;
+  float m_baseband_mean;
+  float m_baseband_level;
+  float m_if_rms;
 
   IQSampleVector m_samples_in_after_agc;
   IQSampleVector m_samples_in_filtered;

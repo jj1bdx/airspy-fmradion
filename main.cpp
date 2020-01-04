@@ -49,7 +49,7 @@
 // define this for enabling coefficient monitor functions
 // #undef COEFF_MONITOR
 
-#define AIRSPY_FMRADION_VERSION "v0.8.3-pre2"
+#define AIRSPY_FMRADION_VERSION "v0.8.3-pre3-1"
 
 /** Flag is set on SIGINT / SIGTERM. */
 static std::atomic_bool stop_flag(false);
@@ -836,7 +836,7 @@ int main(int argc, char **argv) {
 
   SampleVector audiosamples;
   bool inbuf_length_warning = false;
-  double audio_level = 0;
+  float audio_level = 0;
   bool got_stereo = false;
   bool multipath_filter_skipped = false;
 
@@ -860,7 +860,7 @@ int main(int argc, char **argv) {
     break;
   }
 
-  double if_level = 0;
+  float if_level = 0;
 
   // Main loop.
   for (unsigned int block = 0; !stop_flag.load(); block++) {
@@ -938,7 +938,7 @@ int main(int argc, char **argv) {
 
     // Measure audio level when audio exists
     if (audio_exists) {
-      double audio_mean, audio_rms;
+      float audio_mean, audio_rms;
       Utility::samples_mean_rms(audiosamples, audio_mean, audio_rms);
       audio_level = 0.95 * audio_level + 0.05 * audio_rms;
 
@@ -956,8 +956,8 @@ int main(int argc, char **argv) {
       ppm_average.feed((nbfm.get_tuning_offset() / tuner_freq) * -1.0e6);
     }
 
-    double if_level_db = 20 * log10(if_level);
-    double audio_level_db = 20 * log10(audio_level) + 3.01;
+    float if_level_db = 20 * log10(if_level);
+    float audio_level_db = 20 * log10(audio_level) + 3.01;
     std::size_t buflen = output_buffer.queued_samples();
     double buflen_sec = buflen / nchannel / double(pcmrate);
 
