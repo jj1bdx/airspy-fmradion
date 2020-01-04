@@ -76,14 +76,6 @@ private:
   // Demodulate DSB signal.
   inline void demodulate_dsb(const IQSampleVector &samples_in,
                              SampleVector &samples_out);
-  // Audio AGC function.
-  inline void audio_agc(const SampleVector &samples_in,
-                        SampleVector &samples_out);
-  // IF AGC function.
-  inline void if_agc(const IQSampleVector &samples_in,
-                     IQSampleVector &samples_out);
-  // AF AGC function.
-  inline void af_agc(const SampleVector &samples_in, SampleVector &samples_out);
 
   // Data members.
   const double m_sample_rate_demod;
