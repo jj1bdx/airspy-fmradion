@@ -32,6 +32,8 @@
 #include "IfResampler.h"
 #include "SoftFM.h"
 
+#include <volk/volk_alloc.hh>
+
 /** Complete decoder for FM broadcast signal. */
 class AmDecoder {
 public:

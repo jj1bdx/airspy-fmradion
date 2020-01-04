@@ -201,10 +201,11 @@ inline void AmDecoder::demodulate_am(const IQSampleVector &samples_in,
                                      SampleVector &samples_out) {
   unsigned int n = samples_in.size();
   samples_out.resize(n);
+  volk::vector<float> magnitude;
+  magnitude.resize(n);
 
-  for (unsigned int i = 0; i < n; i++) {
-    samples_out[i] = std::abs(samples_in[i]);
-  }
+  volk_32fc_magnitude_32f(magnitude.data(), samples_in.data(), n);
+  volk_32f_convert_64f(samples_out.data(), magnitude.data(), n);
 }
 
 // Demodulate DSB signal.
@@ -213,9 +214,7 @@ inline void AmDecoder::demodulate_dsb(const IQSampleVector &samples_in,
   unsigned int n = samples_in.size();
   samples_out.resize(n);
 
-  for (unsigned int i = 0; i < n; i++) {
-    samples_out[i] = samples_in[i].real();
-  }
+  volk_32fc_deinterleave_real_64f(samples_out.data(), samples_in.data(), n);
 }
 
 // end
