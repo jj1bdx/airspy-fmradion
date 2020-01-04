@@ -271,7 +271,7 @@ void FmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
 
 #ifdef DEBUG_IF_AGC
   // Measure IF RMS level for checking how IF AGC works.
-  double if_agc_rms = Utility::rms_level_approx(m_samples_in_after_agc);
+  float if_agc_rms = Utility::rms_level_approx(m_samples_in_after_agc);
   fprintf(stderr, "if_agc_rms = %.9g\n", if_agc_rms);
 #endif
 
