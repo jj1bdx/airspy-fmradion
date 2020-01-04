@@ -95,18 +95,15 @@ inline float rms_level_approx(const IQSampleVector &samples) {
 
 // Compute mean value and RMS over a small prefix of the specified Sample
 // vector.
-inline void samples_mean_rms(const SampleVector &samples, float &mean,
+inline void samples_mean_rms(const IQSampleDecodedVector &samples, float &mean,
                              float &rms) {
   float vsum = 0;
   float vsumsq = 0;
   unsigned int n = samples.size();
-  volk::vector<float> samples_float;
-  samples_float.resize(n);
 
-  volk_64f_convert_32f(samples_float.data(), samples.data(), n);
-  volk_32f_accumulator_s32f(&vsum, samples_float.data(), n);
-  volk_32f_x2_dot_prod_32f(&vsumsq, samples_float.data(),
-		           samples_float.data(), n);
+  volk_32f_accumulator_s32f(&vsum, samples.data(), n);
+  volk_32f_x2_dot_prod_32f(&vsumsq, samples.data(),
+		           samples.data(), n);
 
   mean = vsum / n;
   rms = std::sqrt(vsumsq / n);

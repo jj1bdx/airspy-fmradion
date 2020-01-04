@@ -304,18 +304,24 @@ void FmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
   }
 
   // Demodulate FM to MPX signal.
-  m_phasedisc.process(m_samples_in_filtered, m_buf_baseband);
+  m_phasedisc.process(m_samples_in_filtered, m_buf_decoded);
 
   // If no downsampled baseband signal comes out,
   // terminate and wait for next block,
-  if (m_buf_baseband.size() == 0) {
+  size_t decoded_size = m_buf_decoded.size(); 
+  if (decoded_size == 0) {
     audio.resize(0);
     return;
   }
 
+  // Convert decoded data to baseband data
+  m_buf_baseband.resize(decoded_size);
+  volk_32f_convert_64f(m_buf_baseband.data(), m_buf_decoded.data(), 
+		  decoded_size);
+  
   // Measure baseband level.
   float baseband_mean, baseband_rms;
-  Utility::samples_mean_rms(m_buf_baseband, baseband_mean, baseband_rms);
+  Utility::samples_mean_rms(m_buf_decoded, baseband_mean, baseband_rms);
   m_baseband_mean = 0.95 * m_baseband_mean + 0.05 * baseband_mean;
   m_baseband_level = 0.95 * m_baseband_level + 0.05 * baseband_rms;
 

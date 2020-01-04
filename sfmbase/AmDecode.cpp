@@ -158,15 +158,27 @@ void AmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
     assert(m_mode != ModType::NBFM);
     break;
   case ModType::AM:
-    demodulate_am(m_buf_filtered4, m_buf_baseband_demod);
+    demodulate_am(m_buf_filtered4, m_buf_decoded);
     break;
   case ModType::DSB:
   case ModType::USB:
   case ModType::LSB:
   case ModType::CW:
-    demodulate_dsb(m_buf_filtered4, m_buf_baseband_demod);
+    demodulate_dsb(m_buf_filtered4, m_buf_decoded);
     break;
   }
+
+  // If no decoded signal comes out, terminate and wait for next block,
+  size_t decoded_size = m_buf_decoded.size();
+  if (decoded_size == 0) {
+    audio.resize(0);
+    return;
+  }
+
+  // Convert decoded data to baseband data
+  m_buf_baseband_demod.resize(decoded_size);
+  volk_32f_convert_64f(m_buf_baseband_demod.data(), m_buf_decoded.data(),
+                 decoded_size);
 
   // DC blocking.
   m_dcblock.process_inplace(m_buf_baseband_demod);
@@ -185,7 +197,7 @@ void AmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
 
   // Measure baseband level after DC blocking.
   float baseband_mean, baseband_rms;
-  Utility::samples_mean_rms(m_buf_baseband, baseband_mean, baseband_rms);
+  Utility::samples_mean_rms(m_buf_decoded, baseband_mean, baseband_rms);
   m_baseband_mean = 0.95 * m_baseband_mean + 0.05 * baseband_mean;
   m_baseband_level = 0.95 * m_baseband_level + 0.05 * baseband_rms;
 
@@ -198,23 +210,18 @@ void AmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
 
 // Demodulate AM signal.
 inline void AmDecoder::demodulate_am(const IQSampleVector &samples_in,
-                                     SampleVector &samples_out) {
+                                     IQSampleDecodedVector &samples_out) {
   unsigned int n = samples_in.size();
   samples_out.resize(n);
-  volk::vector<float> magnitude;
-  magnitude.resize(n);
-
-  volk_32fc_magnitude_32f(magnitude.data(), samples_in.data(), n);
-  volk_32f_convert_64f(samples_out.data(), magnitude.data(), n);
+  volk_32fc_magnitude_32f(samples_out.data(), samples_in.data(), n);
 }
 
 // Demodulate DSB signal.
 inline void AmDecoder::demodulate_dsb(const IQSampleVector &samples_in,
-                                      SampleVector &samples_out) {
+                                      IQSampleDecodedVector &samples_out) {
   unsigned int n = samples_in.size();
   samples_out.resize(n);
-
-  volk_32fc_deinterleave_real_64f(samples_out.data(), samples_in.data(), n);
+  volk_32fc_deinterleave_real_32f(samples_out.data(), samples_in.data(), n);
 }
 
 // end

@@ -52,7 +52,18 @@ void NbfmDecoder::process(const IQSampleVector &samples_in,
   m_if_rms = Utility::rms_level_approx(samples_in);
 
   // Demodulate FM to audio signal.
-  m_phasedisc.process(samples_in, m_buf_baseband_raw);
+  m_phasedisc.process(samples_in, m_buf_decoded);
+  size_t decoded_size = m_buf_decoded.size();
+  // If no downsampled decoded signal comes out,
+  // terminate and wait for next block,
+  if (decoded_size == 0) {
+    audio.resize(0);
+    return;
+  }
+  // Convert decoded data to baseband data
+  m_buf_baseband_raw.resize(decoded_size);
+  volk_32f_convert_64f(m_buf_baseband_raw.data(), m_buf_decoded.data(),
+                  decoded_size);
 
   // Upsample decoded audio signal to 48kHz.
   m_audioresampler_raw.process(m_buf_baseband_raw, m_buf_baseband);
@@ -66,7 +77,7 @@ void NbfmDecoder::process(const IQSampleVector &samples_in,
 
   // Measure baseband level.
   float baseband_mean, baseband_rms;
-  Utility::samples_mean_rms(m_buf_baseband, baseband_mean, baseband_rms);
+  Utility::samples_mean_rms(m_buf_decoded, baseband_mean, baseband_rms);
   m_baseband_mean = 0.95 * m_baseband_mean + 0.05 * baseband_mean;
   m_baseband_level = 0.95 * m_baseband_level + 0.05 * baseband_rms;
 

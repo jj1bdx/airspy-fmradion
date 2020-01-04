@@ -43,14 +43,14 @@ public:
    * Output is a sequence of frequency estimates, scaled such that
    * output value +/- 1.0 represents the maximum frequency deviation.
    */
-  void process(const IQSampleVector &samples_in, SampleVector &samples_out);
+  void process(const IQSampleVector &samples_in,
+		  IQSampleDecodedVector &samples_out);
 
 private:
   const Sample m_normalize_factor;
   const float m_boundary;
   float m_save_value;
   volk::vector<float> m_phase;
-  volk::vector<float> m_detector;
 };
 
 #endif

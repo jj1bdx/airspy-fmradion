@@ -74,10 +74,10 @@ public:
 private:
   // Demodulate AM signal.
   inline void demodulate_am(const IQSampleVector &samples_in,
-                            SampleVector &samples_out);
+                            IQSampleDecodedVector &samples_out);
   // Demodulate DSB signal.
   inline void demodulate_dsb(const IQSampleVector &samples_in,
-                             SampleVector &samples_out);
+                             IQSampleDecodedVector &samples_out);
 
   // Data members.
   const double m_sample_rate_demod;
@@ -94,6 +94,7 @@ private:
   IQSampleVector m_buf_filtered2c;
   IQSampleVector m_buf_filtered3;
   IQSampleVector m_buf_filtered4;
+  IQSampleDecodedVector m_buf_decoded;
   SampleVector m_buf_baseband_demod;
   SampleVector m_buf_baseband_preagc;
   SampleVector m_buf_baseband;

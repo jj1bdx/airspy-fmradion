@@ -34,18 +34,16 @@ PhaseDiscriminator::PhaseDiscriminator(double max_freq_dev)
 
 // Process samples.
 void PhaseDiscriminator::process(const IQSampleVector &samples_in,
-                                 SampleVector &samples_out) {
+                                 IQSampleDecodedVector &samples_out) {
   unsigned int n = samples_in.size();
   samples_out.resize(n);
   m_phase.resize(n);
-  m_detector.resize(n);
 
   // libvolk parallelism
   volk_32fc_s32f_atan2_32f(m_phase.data(), samples_in.data(),
                            m_normalize_factor, n);
-  volk_32f_s32f_32f_fm_detect_32f(m_detector.data(), m_phase.data(), m_boundary,
+  volk_32f_s32f_32f_fm_detect_32f(samples_out.data(), m_phase.data(), m_boundary,
                                   &m_save_value, n);
-  volk_32f_convert_64f(samples_out.data(), m_detector.data(), n);
 }
 
 /* end */

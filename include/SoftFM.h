@@ -22,8 +22,13 @@
 #include <complex>
 #include <vector>
 
+#include <volk/volk_alloc.hh>
+
 using IQSample = std::complex<float>;
 using IQSampleVector = std::vector<IQSample>;
+
+using IQSampleDecoded = float;
+using IQSampleDecodedVector = std::vector<float>;
 
 using Sample = double;
 using SampleVector = std::vector<Sample>;

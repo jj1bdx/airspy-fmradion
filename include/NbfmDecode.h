@@ -65,6 +65,7 @@ private:
   float m_baseband_level;
   float m_if_rms;
 
+  IQSampleDecodedVector m_buf_decoded;
   SampleVector m_buf_baseband;
   SampleVector m_buf_baseband_raw;
   SampleVector m_buf_baseband_filtered;

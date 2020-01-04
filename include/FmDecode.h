@@ -201,6 +201,7 @@ private:
 
   IQSampleVector m_samples_in_after_agc;
   IQSampleVector m_samples_in_filtered;
+  IQSampleDecodedVector m_buf_decoded;
   SampleVector m_buf_baseband;
   SampleVector m_buf_baseband_raw;
   SampleVector m_buf_mono_firstout;
