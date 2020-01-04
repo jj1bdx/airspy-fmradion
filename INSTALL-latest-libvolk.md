@@ -67,6 +67,10 @@ cd build
 # C++ compiler optimization set to default for safe programming
 env CC=/usr/local/opt/gcc/bin/gcc-9 CXX=/usr/local/opt/gcc/bin/g++-9 \
   cmake ..
+# macOS HomeBrew LLVM can also be used to build VOLK
+#env CC=/usr/local/opt/llvm/bin/clang CXX=/usr/local/opt/llvm/bin/clang++ \
+#  LDFLAGS="-L/usr/local/opt/llvm/lib -Wl,-rpath,/usr/local/opt/llvm/lib" \
+#  CPPFLAGS="-I/usr/local/opt/llvm/include" cmake ..
 # For ARM, use the proper sequence documented in VOLK
 # Raspberry Pi 4
 # cmake -DCMAKE_TOOLCHAIN_FILE=../cmake/Toolchains/arm_cortex_a72_hardfp_native.cmake ..
