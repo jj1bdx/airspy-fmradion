@@ -48,8 +48,6 @@
 
 #include "SoftFM.h"
 
-#include <volk/volk_alloc.hh>
-
 // namespace Utility.
 // All functions and data MUST be inline.
 

@@ -21,7 +21,6 @@
 #define SOFTFM_AMDECODE_H
 
 #include <cstdint>
-#include <vector>
 
 #include "AfAgc.h"
 #include "AudioResampler.h"
@@ -31,8 +30,6 @@
 #include "IfAgc.h"
 #include "IfResampler.h"
 #include "SoftFM.h"
-
-#include <volk/volk_alloc.hh>
 
 /** Complete decoder for FM broadcast signal. */
 class AmDecoder {

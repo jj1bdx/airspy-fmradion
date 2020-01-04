@@ -20,7 +20,6 @@
 #define SOFTFM_AUDIORESAMPLER_H
 
 #include <cstdint>
-#include <vector>
 
 #include "SoftFM.h"
 

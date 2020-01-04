@@ -21,7 +21,6 @@
 #define SOFTFM_MULTIPATHFILTER_H
 
 #include "SoftFM.h"
-#include <volk/volk_alloc.hh>
 
 // MfCoeff = IQSample
 using MfCoeff = std::complex<float>;

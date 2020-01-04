@@ -25,8 +25,6 @@
 
 #include "SoftFM.h"
 
-#include <volk/volk_alloc.hh>
-
 /* Detect frequency by phase discrimination between successive samples. */
 class PhaseDiscriminator {
 public:

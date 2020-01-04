@@ -21,7 +21,6 @@
 
 #include <cmath>
 #include <cstdint>
-#include <vector>
 
 #include "SoftFM.h"
 

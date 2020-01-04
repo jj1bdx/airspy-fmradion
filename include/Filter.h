@@ -21,7 +21,6 @@
 #define SOFTFM_FILTER_H
 
 #include "SoftFM.h"
-#include <vector>
 
 /** Low-pass filter for IQ samples. */
 class LowPassFilterFirIQ {

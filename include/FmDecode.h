@@ -21,7 +21,6 @@
 #define SOFTFM_FMDECODE_H
 
 #include <cstdint>
-#include <vector>
 
 #include "AudioResampler.h"
 #include "Filter.h"

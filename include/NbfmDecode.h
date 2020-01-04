@@ -20,7 +20,6 @@
 #define SOFTFM_NBFMDECODE_H
 
 #include <cstdint>
-#include <vector>
 
 #include "AudioResampler.h"
 #include "Filter.h"
