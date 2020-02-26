@@ -2,7 +2,7 @@
 
 ## Required version
 
-libvolk v2.1 or later.
+libvolk v2.1 or later. libvolk 2.2 is tested OK.
 
 Specifically, use the latest libvolk from the master branch after [the commit a778c2823303f57fe027c5ed955d120b671e4d1c](https://github.com/gnuradio/volk/commit/a778c2823303f57fe027c5ed955d120b671e4d1c), which includes `volk_32fc_x2_s32fc_multiply_conjugate_add_32fc()`.
 
