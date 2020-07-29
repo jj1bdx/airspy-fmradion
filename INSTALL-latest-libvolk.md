@@ -2,7 +2,7 @@
 
 ## Required version
 
-libvolk v2.1 or later. libvolk 2.2 is tested OK.
+libvolk v2.3 and later. The software was first tested OK with libvolk v2.1 and v2.2.
 
 Specifically, use the latest libvolk from the master branch after [the commit a778c2823303f57fe027c5ed955d120b671e4d1c](https://github.com/gnuradio/volk/commit/a778c2823303f57fe027c5ed955d120b671e4d1c), which includes `volk_32fc_x2_s32fc_multiply_conjugate_add_32fc()`.
 
@@ -23,12 +23,11 @@ brew install gcc
 brew install orc
 ```
 
-#### GCC 9 incompatibility with Xcode 11.2.1 Command Line Tools (CLT)
+#### GCC 10 fails test #18 for qa_volk_16ic_x2_dot_prod_16ic
 
-* Note: On macOS 10.14.6, Xcode 11.2.1 CLT, gcc 9.2 downloaded from the pre-built bottle does not compile libvolk code due to this Xcode related bug: <https://gcc.gnu.org/bugzilla/show_bug.cgi?id=90835>.
-* In that case, recompile gcc 9.2 from the source as `brew reinstall gcc --build-from-source`
-* Using Xcode 11.3 CLT might solve this issue (unconfirmed).
-* Last resort: if this bug is unsolvable, use clang for the fallback (albeit with the slower code).
+GCC 10 (current version of `brew install gcc`) fails at the test of `qa_volk_16ic_x2_dot_prod_16ic`. GCC 9.3.0 (as `brew install gcc@9`) didn't.
+
+Note as the last resort: if a bug of GCC is unsolvable, use the Xcode clang for the fallback (albeit with the slower code). (Note: homebrew clang is unusable.)
 
 ### Ubuntu Linux
 
@@ -67,10 +66,6 @@ cd build
 # C++ compiler optimization set to default for safe programming
 env CC=/usr/local/opt/gcc/bin/gcc-9 CXX=/usr/local/opt/gcc/bin/g++-9 \
   cmake ..
-# macOS HomeBrew LLVM can also be used to build VOLK
-#env CC=/usr/local/opt/llvm/bin/clang CXX=/usr/local/opt/llvm/bin/clang++ \
-#  LDFLAGS="-L/usr/local/opt/llvm/lib -Wl,-rpath,/usr/local/opt/llvm/lib" \
-#  CPPFLAGS="-I/usr/local/opt/llvm/include" cmake ..
 # For ARM, use the proper sequence documented in VOLK
 # Raspberry Pi 4
 # cmake -DCMAKE_TOOLCHAIN_FILE=../cmake/Toolchains/arm_cortex_a72_hardfp_native.cmake ..
@@ -99,8 +94,6 @@ cp ./volk_config ~/.volk/
 ```
 
 See `doc/volk_config_data` for the example `volk_config` files.
-
-*Note*: `volk_profile` on MacOS causes segfault when writing the result file. See <https://gist.github.com/jj1bdx/22af314c443fdf7e3962486bf5661e45> for a workaround.
 
 ## Installed files
 
