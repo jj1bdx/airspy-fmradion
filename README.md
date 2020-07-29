@@ -171,7 +171,7 @@ Compile and install
  - `-W filename` Write audio data to .WAV file
  - `-P [device]` Play audio via ALSA device (default `default`). Use `aplay -L` to get the list of devices for your system
  - `-T filename` Write pulse-per-second timestamps. Use filename '-' to write to stdout
- - `-b seconds` Set audio buffer size in seconds
+ - `-b seconds` Set audio buffer size in seconds (default: 1 second)
  - `-X` Shift pilot phase (for Quadrature Multipath Monitor) (-X is ignored under mono mode (-M))
  - `-U` Set deemphasis to 75 microseconds (default: 50)
  - `-f` Set Filter type

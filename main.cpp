@@ -147,7 +147,7 @@ void usage() {
       "  -P [device]    Play audio via ALSA device (default 'default')\n"
       "  -T filename    Write pulse-per-second timestamps\n"
       "                 use filename '-' to write to stdout\n"
-      "  -b seconds     Set audio buffer size in seconds\n"
+      "  -b seconds     Set audio buffer size in seconds (default: 1 second)\n"
       "  -X             Shift pilot phase (for Quadrature Multipath Monitor)\n"
       "                 (-X is ignored under mono mode (-M))\n"
       "  -U             Set deemphasis to 75 microseconds (default: 50)\n"
@@ -554,19 +554,16 @@ int main(int argc, char **argv) {
 
   // Calculate number of samples in audio buffer.
   unsigned int outputbuf_samples = 0;
-
-  if (bufsecs < 0 &&
-      (outmode == OutputMode::ALSA ||
-       (outmode == OutputMode::RAW_INT16 && filename == "-") ||
-       (outmode == OutputMode::RAW_FLOAT32 && filename == "-"))) {
-    // Set default buffer to 1 second for interactive output streams.
-    outputbuf_samples = pcmrate;
-  } else if (bufsecs > 0) {
+  // Set default buffer length to 1 second.
+  outputbuf_samples = pcmrate;
+  // if bufsecs is explicitly set in the command line (not negative),
+  // set the calculate number of samples for configured buffer length.
+  if (bufsecs > 0) {
     // Calculate nr of samples for configured buffer length.
     outputbuf_samples = (unsigned int)(bufsecs * pcmrate);
   }
+  // Set minimum limit for the output buffer length.
   if (outputbuf_samples < 1024) {
-    // Set minimum limit for the output buffer length.
     outputbuf_samples = 1024;
   }
   fprintf(stderr, "output buffer length: %g [s]\n",
