@@ -36,6 +36,10 @@ IfAgc::IfAgc(const float initial_gain, const float max_gain,
 // Algorithm shown in:
 // https://www.mathworks.com/help/comm/ref/comm.agc-system-object.html
 // https://www.mathworks.com/help/comm/ref/linear_loop_block_diagram.png
+// Note: in the original algorithm,
+// log_amplitude was
+//    std::log(Utility::estimate_magnitude(input)) + (m_log_current_gain * 2.0),
+// but in this implementation the 2.0 was removed (and set to 1.0).
 
 void IfAgc::process(const IQSampleVector &samples_in,
                     IQSampleVector &samples_out) {

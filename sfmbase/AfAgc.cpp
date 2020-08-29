@@ -35,6 +35,10 @@ AfAgc::AfAgc(const double initial_gain, const double max_gain,
 // Algorithm shown in:
 // https://www.mathworks.com/help/comm/ref/comm.agc-system-object.html
 // https://www.mathworks.com/help/comm/ref/linear_loop_block_diagram.png
+// Note: in the original algorithm,
+// log_amplitude was
+//    std::log(Utility::estimate_magnitude(input)) + (m_log_current_gain * 2.0),
+// but in this implementation the 2.0 was removed (and set to 1.0).
 
 void AfAgc::process(const SampleVector &samples_in, SampleVector &samples_out) {
   unsigned int n = samples_in.size();
