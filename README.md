@@ -4,6 +4,7 @@
 
 * Version v0.8.5, 29-JUL-2020
 * For MacOS and Linux
+* README.md updated 30-AUG-2020
 
 ### Contributing
 
@@ -13,6 +14,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for the details.
 
 * libvolk is required since v0.8.0. If you don't want to install libvolk, use v0.7.8 instead. Use the latest master branch of libvolk. Configure the `volk_config` file with `volk_profile -b` for the maximum performance. See [INSTALL-latest-libvolk.md](INSTALL-latest-libvolk.md) for the details.
 * Building on MacOS 10.15 Catalina is still not tested yet. The development is going on with the last Mojave 10.14.6.
+* For Raspberry Pi 3 and 4, Airspy R2 10Mbps and Airspy Mini 6Mbps sampling rates are *not supported* due to the hardware limitation. Use in 2.5Mbps for R2, 3Mbps for Mini.
 
 ### What is airspy-fmradion?
 
@@ -124,7 +126,9 @@ Use the latest HEAD version.
 
 #### libairspy
 
-*Use the latest libairspy --HEAD version* for:
+*Note: this is applicable for both macOS and Linux.*
+
+*Install and use the latest libairspy --HEAD version* for:
 
 * Working `airspy_open_devices()`, required by `airspy_open_sn()`. See [this commit](https://github.com/airspy/airspyone_host/commit/61fec20fbd710fc54d57dfec732d314d693b5a2f) for the details.
 * Proper transfer block size. `if_blocksize` for Airspy HF+ is reduced from 16384 to 2048, following [this commit](https://github.com/airspy/airspyhf/commit/a1f6f4a0537f53bede6e80c51826fc9d45061c28).
