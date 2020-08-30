@@ -76,8 +76,8 @@ AmDecoder::AmDecoder(double sample_rate_demod, IQSampleCoeff &amfilter_coeff,
       // Construct AF AGC
       // Use mostly as peak limiter
       ,
-      m_afagc(1.0, // initial_gain
-              1.5, // max_gain
+      m_afagc(0.0001, // initial_gain
+              1.5,    // max_gain
               // reference
               ((m_mode == ModType::USB) || (m_mode == ModType::LSB))
                   ? 0.1
