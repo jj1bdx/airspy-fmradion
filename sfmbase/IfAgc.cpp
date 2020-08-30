@@ -46,13 +46,13 @@ void IfAgc::process(const IQSampleVector &samples_in,
   unsigned int n = samples_in.size();
   samples_out.resize(n);
 
+  volk::vector<float> log_gain, gain;
+  log_gain.resize(n);
+  gain.resize(n);
+
   for (unsigned int i = 0; i < n; i++) {
-    // Compute output based on the current gain.
-    float current_gain = std::exp(m_log_current_gain);
-    IQSample input = samples_in[i];
-    IQSample output =
-        IQSample(input.real() * current_gain, input.imag() * current_gain);
-    samples_out[i] = output;
+    // Store current gain.
+    log_gain[i] = m_log_current_gain;
     // Update the current gain.
     // Note: the original algorithm multiplied the abs(input)
     //       with the current gain (exp(log_current_gain))
@@ -60,7 +60,7 @@ void IfAgc::process(const IQSampleVector &samples_in,
     //       realigned as taking the log value of the abs(input)
     //       then add the log_current_gain.
     float log_amplitude =
-        std::log(Utility::estimate_magnitude(input)) + m_log_current_gain;
+        std::log(Utility::estimate_magnitude(samples_in[i])) + m_log_current_gain;
     float error = (m_log_reference - log_amplitude) * m_rate;
     float new_log_current_gain = m_log_current_gain + error;
     if (new_log_current_gain > m_log_max_gain) {
@@ -68,6 +68,10 @@ void IfAgc::process(const IQSampleVector &samples_in,
     }
     m_log_current_gain = new_log_current_gain;
   }
+  // Compute output based on the current gain.
+  volk_32f_exp_32f(gain.data(), log_gain.data(), n);
+  volk_32fc_32f_multiply_32fc(samples_out.data(), samples_in.data(),
+		  gain.data(), n);
 }
 
 // end
