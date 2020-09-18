@@ -29,3 +29,16 @@ Reference:
 doi: 10.1109/TASSP.1985.1164493
 http://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=1164493&isnumber=26189
 See expression (35)
+
+18-SEP-2020
+
+(We = Kenji Rikitake)
+
+We've tried to use a variable step size algorithm [2], but the experimentation
+result didn't show improvement (i.e., lower level) of QMM output. We concluded
+that the variable step size was redundant and not necessary for FM stereo
+broadcast reception, since we don't need faster convergence speed than the
+pseudo-NLMS algorithm with the nearly-optimal parameter setting descrived above.
+
+[2] D. He, M. Wang, Y. Han and S. Hui, "Variable Step Size LMS Adaptive Algorithm Based on Exponential Function," 2019 IEEE 2nd International Conference on Information Communication and Signal Processing (ICICSP), Weihai, China, 2019, pp. 473-477, doi: 10.1109/ICICSP48821.2019.8958492.
+Note on [2]: the relationship of mu(n) and e(n) in this paper is inaccurate, though the curvature pattern of the relationship is worth considering.
