@@ -119,16 +119,16 @@ set(AIRSPYHF_LIBRARIES    ${AIRSPYHF_LIBRARY} ${LIBUSB_LIBRARY})
 # Optimization flags and options.
 ##
 # Enable speed-based optimization
-set(OPTIMIZATION_FLAGS "-O3 -ffast-math -ftree-vectorize -march=native")
+set(OPTIMIZATION_FLAGS "-O3 -ftree-vectorize -march=native")
 ##
 # Use conservative options when failed to run
 #set(OPTIMIZATION_FLAGS "-O2")
 ##
 # For vectorization analysis (in Clang only)
-#set(OPTIMIZATION_FLAGS "-O3 -ffast-math -ftree-vectorize -march=native -Rpass=loop-vectorize -Rpass-missed=loop-vectorize -Rpass-analysis=loop-vectorize")
+#set(OPTIMIZATION_FLAGS "-O3 -ftree-vectorize -march=native -Rpass=loop-vectorize -Rpass-missed=loop-vectorize -Rpass-analysis=loop-vectorize")
 ##
 # For clang profiling with optimization
-#set(OPTIMIZATION_FLAGS "-O3 -ffast-math -ftree-vectorize -march=native -g -fprofile-instr-generate -fcoverage-mapping")
+#set(OPTIMIZATION_FLAGS "-O3 -ftree-vectorize -march=native -g -fprofile-instr-generate -fcoverage-mapping")
 #SET(CMAKE_EXE_LINKER_FLAGS "-fprofile-instr-generate")
 ##
 
