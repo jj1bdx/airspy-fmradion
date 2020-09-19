@@ -2,9 +2,8 @@
 
 # airspy-fmradion
 
-* Version v0.9.0, 19-SEP-2020
+* Version v0.9.1-test0, 19-SEP-2020
 * For MacOS and Linux
-* README.md updated 30-AUG-2020
 
 ### Contributing
 
@@ -283,6 +282,10 @@ Compile and install
 ## FM AGC
 
 * IF AGC: gain up to 80dB (10000)
+
+## NBFM AGC
+
+* IF AGC: gain up to 100dB (100000)
 
 ## Airspy R2 / Mini modification from ngsoftfm-jj1bdx
 
