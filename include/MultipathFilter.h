@@ -76,7 +76,7 @@ private:
   const unsigned int m_stages;
   const unsigned int m_index_reference_point;
   const unsigned int m_filter_order;
-  const double m_mu;
+  float m_mu;
   MfCoeffVector m_coeff;
   MfCoeffVector m_state;
   double m_error;
