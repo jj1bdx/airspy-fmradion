@@ -24,6 +24,7 @@
 #include "AudioResampler.h"
 #include "Filter.h"
 #include "FilterParameters.h"
+#include "IfAgc.h"
 #include "PhaseDiscriminator.h"
 #include "SoftFM.h"
 
@@ -64,6 +65,7 @@ private:
   float m_baseband_level;
   float m_if_rms;
 
+  IQSampleVector m_samples_in_after_agc;
   IQSampleDecodedVector m_buf_decoded;
   SampleVector m_buf_baseband;
   SampleVector m_buf_baseband_raw;
@@ -72,6 +74,7 @@ private:
   AudioResampler m_audioresampler_raw;
   PhaseDiscriminator m_phasedisc;
   LowPassFilterFirAudio m_audiofilter;
+  IfAgc m_ifagc;
 };
 
 #endif

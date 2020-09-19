@@ -22,6 +22,9 @@
 #include "NbfmDecode.h"
 #include "Utility.h"
 
+// Define this to print IF AGC level to stderr
+// #define DEBUG_IF_AGC
+
 // class NbfmDecoder
 
 NbfmDecoder::NbfmDecoder(double sample_rate_demod)
@@ -40,7 +43,11 @@ NbfmDecoder::NbfmDecoder(double sample_rate_demod)
       // Construct LowPassFilterFirAudio
       ,
       m_audiofilter(FilterParameters::jj1bdx_48khz_nbfmaudio)
-
+	
+      // Construct IF AGC
+      // Reference level: 1.0
+      ,
+      m_ifagc(1.0, 100000.0, 1.0, 0.001)
 {
   // Do nothing
 }
@@ -51,8 +58,17 @@ void NbfmDecoder::process(const IQSampleVector &samples_in,
   // Measure IF RMS level.
   m_if_rms = Utility::rms_level_approx(samples_in);
 
+  // Perform IF AGC.
+  m_ifagc.process(samples_in, m_samples_in_after_agc);
+
+#ifdef DEBUG_IF_AGC
+  // Measure IF RMS level for checking how IF AGC works.
+  float if_agc_rms = Utility::rms_level_approx(m_samples_in_after_agc);
+  fprintf(stderr, "if_agc_rms = %.9g\n", if_agc_rms);
+#endif
+
   // Demodulate FM to audio signal.
-  m_phasedisc.process(samples_in, m_buf_decoded);
+  m_phasedisc.process(m_samples_in_after_agc, m_buf_decoded);
   size_t decoded_size = m_buf_decoded.size();
   // If no downsampled decoded signal comes out,
   // terminate and wait for next block,
