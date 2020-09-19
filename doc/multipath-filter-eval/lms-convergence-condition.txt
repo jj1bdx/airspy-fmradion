@@ -62,12 +62,17 @@ as:
 performed better than the NLMS algorithm — this is clear from both the sum of
 MSE and the Final MSE." ([4, Section 4.3])
 
-[4] D. Bismor, K. Czyż, Z. Ogonowski, Review and Comparison of Variable Step-Size LMS Algorithms, International Journal of Acoustics and Vibration, Vol. 21, No 1, pp. 24-39, 2016. URL: https://iiav.org/ijav/content/volumes/21_2016_590031458046128/vol_1/835_fullpaper_1207561458214850.pdf
+[4] D. Bismor, K. Czyż, Z. Ogonowski, Review and Comparison of Variable
+Step-Size LMS Algorithms, International Journal of Acoustics and Vibration,
+Vol. 21, No 1, pp. 24-39, 2016. URL:
+https://iiav.org/ijav/content/volumes/21_2016_590031458046128/vol_1/835_fullpaper_1207561458214850.pdf
+DOI: https://doi.org/10.20855/ijav.2016.21.1392
 
 Also, our estimation that the square norm value of the input signal for the
 filter order N is N itself was a good estimation if the reception signal is
 strong and the IF AGC output was stabilzed. For NHK-FM Tokyo 82.5MHz where the
 input level was ~-23dB on Airspy HF+, the measured square norm was between in
-350~450, in +- 13% error. OTOH, for a much weaker station such as NHK-FM
-Yokohama 81.9MHz, whose level was ~-55dB, the measured square norm was between
-in 100~1500, in much wider range, and caused the coefficient instability.
+350~450, when the filter order was 401, in +- 13% error. OTOH, for a much
+weaker station such as NHK-FM Yokohama 81.9MHz, whose level was ~-55dB, the
+measured square norm was between in 100~1500, in much wider range, and caused
+the coefficient instability.
