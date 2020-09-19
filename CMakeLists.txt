@@ -119,6 +119,8 @@ set(AIRSPYHF_LIBRARIES    ${AIRSPYHF_LIBRARY} ${LIBUSB_LIBRARY})
 # Optimization flags and options.
 ##
 # Enable speed-based optimization
+# Do not apply -ffast-math; it enables -menable-no-nans
+# which cancels detection functions of multipath filter abnornality!
 set(OPTIMIZATION_FLAGS "-O3 -ftree-vectorize -march=native")
 ##
 # Use conservative options when failed to run
