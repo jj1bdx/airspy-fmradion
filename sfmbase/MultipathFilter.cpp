@@ -101,12 +101,31 @@ inline IQSample MultipathFilter::single_process(const IQSample filter_input) {
 
 // Update coefficients by complex LMS/CMA method.
 inline void MultipathFilter::update_coeff(const IQSample result) {
+
+  volk::vector<float> state_mag_sq;
+  state_mag_sq.resize(m_filter_order);
+  float state_mag_sq_sum;
+
   // Input instant envelope
   const double env = std::norm(result);
   // error = [desired signal] - [filter output]
   const double error = if_target_level - env;
+
+  // Normalized LMS (NLMS) processing
+  // First calculate the square norm of input data (m_state) by
+  // * Compute the square magnitude of each element of m_state
+  // * Then add the square magnitude for all the elements
+  volk_32fc_magnitude_squared_32f(state_mag_sq.data(), m_state.data(),
+		  m_filter_order);
+  volk_32f_accumulator_s32f(&state_mag_sq_sum, state_mag_sq.data(),
+		  m_filter_order);
+  // fprintf(stderr, "state_mag_sq_sum = %.9g\n", state_mag_sq_sum);
+
+  // Obtain the step size (dymanically computed)
+  m_mu = alpha / state_mag_sq_sum;
+
   // Calculate correlation vector
-  const double factor = error * m_mu;
+  const float factor = error * m_mu;
   const MfCoeff factor_times_result =
       MfCoeff(factor * result.real(), factor * result.imag());
   // Recalculate all coefficients
