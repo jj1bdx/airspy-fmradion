@@ -283,10 +283,14 @@ void FmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
     if (m_enable_multipath_filter && !m_skip_multipath_filter) {
       // Apply multipath filter.
       m_multipathfilter.process(m_samples_in_after_agc, m_samples_in_filtered);
+      // Note well: -ffast-math DISABLES NaN processing (-menable-no-nans)
+      // so DO NOT specify -ffast-math!
       double filter_error = m_multipathfilter.get_error();
       bool abnormal_error = !std::isfinite(filter_error);
       float mf_reference_level = m_multipathfilter.get_reference_level();
-      bool reference_level_error = (std::fabs(mf_reference_level) < 0.01);
+      bool reference_level_error = !std::isfinite(mf_reference_level);
+      // fprintf(stderr, "filter_error = %.9g\n", filter_error);
+      // fprintf(stderr, "mf_reference_level = %.9g\n", mf_reference_level);
       // Reset the filter coefficients
       // if the error evaluation becomes invalid.
       if (!m_skip_multipath_filter &&
