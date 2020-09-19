@@ -2,7 +2,7 @@
 
 # airspy-fmradion
 
-* Version v0.8.5, 29-JUL-2020
+* Version v0.9.0, 19-SEP-2020
 * For MacOS and Linux
 * README.md updated 30-AUG-2020
 
@@ -15,6 +15,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for the details.
 * libvolk is required since v0.8.0. If you don't want to install libvolk, use v0.7.8 instead. Use the latest master branch of libvolk. Configure the `volk_config` file with `volk_profile -b` for the maximum performance. See [INSTALL-latest-libvolk.md](INSTALL-latest-libvolk.md) for the details.
 * Building on MacOS 10.15 Catalina is still not tested yet. The development is going on with the last Mojave 10.14.6.
 * For Raspberry Pi 3 and 4, Airspy R2 10Mbps and Airspy Mini 6Mbps sampling rates are *not supported* due to the hardware limitation. Use in 2.5Mbps for R2, 3Mbps for Mini.
+* v0.8.5 and the earlier versions set the compilation flag of `-ffast-math`, which disabled the processing of NaN. This will cause a latch-up bug when the multipath filter coefficients diverge. Removed `-ffast-math` for the more stable operation.
 
 ### What is airspy-fmradion?
 
@@ -209,7 +210,7 @@ Compile and install
 
 ### FM multipath filter
 
-* An LMS-based multipath filter can be enabled after IF AGC
+* A Normalized LMS-based multipath filter can be enabled after IF AGC
 * IF sample stages can be defined by `-E` options
 * Reference amplitude level: 1.0
 * For Mac mini 2018 with 3.2 GHz Intel Core i7, 288 stages consume 99% of one CPU core

@@ -42,3 +42,12 @@ pseudo-NLMS algorithm with the nearly-optimal parameter setting descrived above.
 
 [2] D. He, M. Wang, Y. Han and S. Hui, "Variable Step Size LMS Adaptive Algorithm Based on Exponential Function," 2019 IEEE 2nd International Conference on Information Communication and Signal Processing (ICICSP), Weihai, China, 2019, pp. 473-477, doi: 10.1109/ICICSP48821.2019.8958492.
 Note on [2]: the relationship of mu(n) and e(n) in this paper is inaccurate, though the curvature pattern of the relationship is worth considering.
+
+19-SEP-2020
+
+We evaluated the Complex Normalized LMS [3] (Complex NLMS) with measuring the
+signal square norm processed in the multipath filter, which resulted in an
+improved reception condition under weak signals (e.g., IF ~= -55dB). We
+decided to implement NLMS for v0.9.0.
+
+[3] B. Widrow, J. McCool and M. Ball, "The complex LMS algorithm," in Proceedings of the IEEE, vol. 63, no. 4, pp. 719-720, April 1975, doi: 10.1109/PROC.1975.9807.
