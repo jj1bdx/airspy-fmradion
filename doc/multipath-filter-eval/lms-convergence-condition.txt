@@ -1,3 +1,5 @@
+(We = Kenji Rikitake)
+
 15-OCT-2019
 
 LMS convergence condition: 0 < mu < (2 / (N * (A^2)))
@@ -32,8 +34,6 @@ See expression (35)
 
 18-SEP-2020
 
-(We = Kenji Rikitake)
-
 We've tried to use a variable step size algorithm [2], but the experimentation
 result didn't show improvement (i.e., lower level) of QMM output. We concluded
 that the variable step size was redundant and not necessary for FM stereo
@@ -51,3 +51,23 @@ improved reception condition under weak signals (e.g., IF ~= -55dB). We
 decided to implement NLMS for v0.9.0.
 
 [3] B. Widrow, J. McCool and M. Ball, "The complex LMS algorithm," in Proceedings of the IEEE, vol. 63, no. 4, pp. 719-720, April 1975, doi: 10.1109/PROC.1975.9807.
+
+19-SEP-2020 part 2
+
+One of the most impressive papers of surveying LMS algorithms [4] tells that
+for adaptive noise cancellation NLMS is still the best VS-LMS algorithm, shown
+as:
+
+"[...] we come to a surprising conclusion that none of the VS-LMS algorithms
+performed better than the NLMS algorithm — this is clear from both the sum of
+MSE and the Final MSE." ([4, Section 4.3])
+
+[4] D. Bismor, K. Czyż, Z. Ogonowski, Review and Comparison of Variable Step-Size LMS Algorithms, International Journal of Acoustics and Vibration, Vol. 21, No 1, pp. 24-39, 2016. URL: https://iiav.org/ijav/content/volumes/21_2016_590031458046128/vol_1/835_fullpaper_1207561458214850.pdf
+
+Also, our estimation that the square norm value of the input signal for the
+filter order N is N itself was a good estimation if the reception signal is
+strong and the IF AGC output was stabilzed. For NHK-FM Tokyo 82.5MHz where the
+input level was ~-23dB on Airspy HF+, the measured square norm was between in
+350~450, in +- 13% error. OTOH, for a much weaker station such as NHK-FM
+Yokohama 81.9MHz, whose level was ~-55dB, the measured square norm was between
+in 100~1500, in much wider range, and caused the coefficient instability.
