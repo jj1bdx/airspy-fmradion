@@ -49,7 +49,7 @@
 // define this for enabling coefficient monitor functions
 // #undef COEFF_MONITOR
 
-#define AIRSPY_FMRADION_VERSION "v0.9.1-test0"
+#define AIRSPY_FMRADION_VERSION "v0.9.1-test1"
 
 /** Flag is set on SIGINT / SIGTERM. */
 static std::atomic_bool stop_flag(false);
@@ -835,7 +835,6 @@ int main(int argc, char **argv) {
   bool inbuf_length_warning = false;
   float audio_level = 0;
   bool got_stereo = false;
-  bool multipath_filter_skipped = false;
 
   double block_time = get_time();
 
@@ -977,15 +976,6 @@ int main(int argc, char **argv) {
                     fm.get_pilot_level());
           } else {
             fprintf(stderr, "\nlost stereo signal\n");
-          }
-        }
-        // Show if multipath filter is skipped
-        if (!multipath_filter_skipped) {
-          multipath_filter_skipped = fm.multipath_filter_skipped();
-          if (multipath_filter_skipped) {
-            // print only once
-            fprintf(stderr, "Skip further multipath filter processing: "
-                            "filter output abnormality\n");
           }
         }
       }

@@ -147,11 +147,12 @@ inline void MultipathFilter::update_coeff(const IQSample result) {
 }
 
 // Process block samples.
-void MultipathFilter::process(const IQSampleVector &samples_in,
+bool MultipathFilter::process(const IQSampleVector &samples_in,
                               IQSampleVector &samples_out) {
   unsigned int n = samples_in.size();
   if (n == 0) {
-    return;
+    // Do nothing, return as successful
+    return true;
   }
   samples_out.resize(n);
 
@@ -161,13 +162,29 @@ void MultipathFilter::process(const IQSampleVector &samples_in,
   const unsigned int filter_interval = 0x03;
   for (unsigned int i = 0; i < n; i++) {
     IQSample output = single_process(samples_in[i]);
+    // Note well: -ffast-math DISABLES NaN processing (-menable-no-nans)
+    // so DO NOT specify -ffast-math!
+    // Check if output real/imag are finite
+    if (!std::isfinite(output.real()) || !std::isfinite(output.imag())) {
+      return false;
+    }
     samples_out[i] = output;
     if ((i & filter_interval) == 0) {
       // Update filter coefficients here
       update_coeff(output);
+      // Check if error value is finite
+      if (!std::isfinite(m_error)) {
+        return false;
+      }
+      // Check if real/imag of the reference point are finite
+      if (!std::isfinite(m_coeff[m_index_reference_point].real()) ||
+          !std::isfinite(m_coeff[m_index_reference_point].imag())) {
+        return false;
+      }
     }
   }
   assert(n == samples_out.size());
+  return true;
 }
 
 // end
