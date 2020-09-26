@@ -200,9 +200,10 @@ FmDecoder::FmDecoder(double sample_rate_demod, bool stereo, double deemphasis,
     // Initialize member fields
     : m_sample_rate_fmdemod(sample_rate_demod), m_pilot_shift(pilot_shift),
       m_enable_multipath_filter((multipath_stages > 0)),
-      m_multipath_stages(multipath_stages), m_stereo_enabled(stereo),
-      m_stereo_detected(false), m_baseband_mean(0), m_baseband_level(0),
-      m_if_rms(0.0)
+      // Wait first 100 blocks to enable the multipath filter
+      m_wait_multipath_blocks(100), m_multipath_stages(multipath_stages),
+      m_stereo_enabled(stereo), m_stereo_detected(false), m_baseband_mean(0),
+      m_baseband_level(0), m_if_rms(0.0)
 
       // Construct AudioResampler for mono and stereo channels
       ,
@@ -273,23 +274,28 @@ void FmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
   fprintf(stderr, "if_agc_rms = %.9g\n", if_agc_rms);
 #endif
 
-  bool done_ok = false;
-  if (m_enable_multipath_filter) {
-    // Apply multipath filter.
-    done_ok = m_multipathfilter.process(m_samples_in_after_agc,
-                                        m_samples_in_filtered);
-    // Check if the error evaluation becomes invalid/infinite.
-    if (!done_ok) {
-      // Reset the filter coefficients.
-      m_multipathfilter.initialize_coefficients();
-      // fprintf(stderr, "Reset Multipath Filter coefficients\n");
-      // Discard the invalid filter output, and
-      // use the no-filter input after resetting the filter.
-      m_samples_in_filtered = std::move(m_samples_in_after_agc);
-    }
-  } else {
+  if (m_wait_multipath_blocks > 0) {
+    m_wait_multipath_blocks--;
     // No multipath filter applied.
     m_samples_in_filtered = std::move(m_samples_in_after_agc);
+  } else {
+    if (m_enable_multipath_filter) {
+      // Apply multipath filter.
+      bool done_ok = m_multipathfilter.process(m_samples_in_after_agc,
+                                               m_samples_in_filtered);
+      // Check if the error evaluation becomes invalid/infinite.
+      if (!done_ok) {
+        // Reset the filter coefficients.
+        m_multipathfilter.initialize_coefficients();
+        // fprintf(stderr, "Reset Multipath Filter coefficients\n");
+        // Discard the invalid filter output, and
+        // use the no-filter input after resetting the filter.
+        m_samples_in_filtered = std::move(m_samples_in_after_agc);
+      }
+    } else {
+      // No multipath filter applied.
+      m_samples_in_filtered = std::move(m_samples_in_after_agc);
+    }
   }
 
   // Demodulate FM to MPX signal.

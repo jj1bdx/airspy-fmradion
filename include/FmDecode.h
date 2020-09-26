@@ -186,6 +186,7 @@ private:
   const double m_sample_rate_fmdemod;
   const bool m_pilot_shift;
   const bool m_enable_multipath_filter;
+  unsigned int m_wait_multipath_blocks;
   const unsigned int m_multipath_stages;
   const bool m_stereo_enabled;
   bool m_stereo_detected;
