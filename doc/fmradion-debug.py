@@ -2,23 +2,37 @@
 # Simple caller for softfm
 import sys
 import subprocess
-import signal
+import miniaudio
 
 argvs = sys.argv
 argc = len(argvs)
-
-def signal_handler(signal, frame):
-    print('Terminated by CTRL/C')
-    sys.exit(0)
-
-signal.signal(signal.SIGINT, signal_handler)
 
 if argc != 2:
     print('Usage: ', argvs[0], '<frequency in MHz>\n')
     quit()
 freq = int(float(argvs[1]) * 1000000)
-command = "airspy-fmradion -c freq=" + str(freq) + \
-           ",srate=10000000,lgain=3,mgain=0,vgain=10 -b 1.0 -R - | " + \
-          "play -t raw -esigned-integer -b16 -r 48000 -c 2 -q -"
-print("command =", command)
-subprocess.run(command, shell=True, check=True)
+
+channels = 2
+sample_rate = 48000
+sample_width = 4 # 32bit float
+
+def stream_pcm(source):
+    required_frames = yield b""  # generator initialization
+    while True:
+        required_bytes = required_frames * channels * sample_width
+        sample_data = source.read(required_bytes)
+        if not sample_data:
+            break
+        # print(".", end="", flush=True)
+        required_frames = yield sample_data
+
+with miniaudio.PlaybackDevice(
+        output_format = miniaudio.SampleFormat.FLOAT32,
+        nchannels=channels,
+        sample_rate=sample_rate) as device:
+    fmradion = subprocess.Popen(["airspy-fmradion", "-E100", "-b0.001", "-t", "airspyhf", "-c", "freq=" + str(freq), "-F", "-"], stdin = None, stdout = subprocess.PIPE)
+    stream = stream_pcm(fmradion.stdout)
+    next(stream)
+    device.start(stream)
+    input("Enter to stop playback\n")
+    fmradion.terminate()

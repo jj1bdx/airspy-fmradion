@@ -8,11 +8,11 @@ argvs = sys.argv
 argc = len(argvs)
 
 if argc != 2:
-    print('Usage: ', argvs[0], '<frequency in MHz>\n')
+    print('Usage: ', argvs[0], '<frequency in kHz>\n')
     quit()
-freq = int(float(argvs[1]) * 1000000)
+freq = int(float(argvs[1]) * 1000)
 
-channels = 2
+channels = 1
 sample_rate = 48000
 sample_width = 4 # 32bit float
 
@@ -30,7 +30,7 @@ with miniaudio.PlaybackDevice(
         output_format = miniaudio.SampleFormat.FLOAT32,
         nchannels=channels,
         sample_rate=sample_rate) as device:
-    fmradion = subprocess.Popen(["airspy-fmradion", "-E100", "-b0.001", "-t", "airspyhf", "-q", "-c", "freq=" + str(freq), "-F", "-"], stdin = None, stdout = subprocess.PIPE)
+    fmradion = subprocess.Popen(["airspy-fmradion", "-m", "am", "-b0.001", "-t", "airspyhf", "-c", "freq=" + str(freq) +",srate=192000", "-F", "-"], stdin = None, stdout = subprocess.PIPE)
     stream = stream_pcm(fmradion.stdout)
     next(stream)
     device.start(stream)
