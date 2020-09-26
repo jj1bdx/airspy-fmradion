@@ -14,7 +14,6 @@ if argc != 2:
     quit()
 freq = int(float(argvs[1]) * 1000000)
 
-chunk = 128 
 channels = 2
 sample_rate = 48000
 sample_width = 4 # 32bit float
