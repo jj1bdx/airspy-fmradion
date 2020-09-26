@@ -10,8 +10,7 @@ endif(COMMAND cmake_policy)
 
 find_package(Threads)
 find_package(PkgConfig)
-# libvolk installation recommendation by Takehiro Sekine
-find_package(Volk)
+find_package(VOLK)
 
 # Require ALSA only for Linux
 if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
