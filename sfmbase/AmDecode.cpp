@@ -61,7 +61,7 @@ void FineTuner::process(const IQSampleVector &samples_in,
 AmDecoder::AmDecoder(double sample_rate_demod, IQSampleCoeff &amfilter_coeff,
                      const ModType mode)
     // Initialize member fields
-    : m_sample_rate_demod(sample_rate_demod), m_amfilter_coeff(amfilter_coeff),
+    : m_amfilter_coeff(amfilter_coeff),
       m_mode(mode), m_baseband_mean(0), m_baseband_level(0), m_if_rms(0.0)
 
       // Construct AudioResampler
@@ -87,19 +87,6 @@ AmDecoder::AmDecoder(double sample_rate_demod, IQSampleCoeff &amfilter_coeff,
       // SSB shifted-audio filter from 12 to 24kHz
       ,
       m_ssbshiftfilter(FilterParameters::jj1bdx_ssb_48khz_12to24khz, 1)
-
-      // Construct IfResampler to first convert to internal PCM rate
-      ,
-      m_cw_downsampler(internal_rate_pcm, cw_rate_pcm),
-      m_cw_upsampler(cw_rate_pcm, internal_rate_pcm)
-
-      // IF upshifter for CW
-      ,
-      m_upshifter_cw(true)
-
-      // CW baseband filter for +- 250Hz
-      ,
-      m_cwshiftfilter(FilterParameters::jj1bdx_cw_250hz, 1)
 
       // Construct HighPassFilterIir
       // cutoff: 60Hz for 12kHz sampling rate

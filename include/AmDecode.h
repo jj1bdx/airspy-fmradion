@@ -99,7 +99,6 @@ private:
                              IQSampleDecodedVector &samples_out);
 
   // Data members.
-  const double m_sample_rate_demod;
   const IQSampleCoeff &m_amfilter_coeff;
   const ModType m_mode;
   float m_baseband_mean;
@@ -110,9 +109,6 @@ private:
   IQSampleVector m_buf_filtered2;
   IQSampleVector m_buf_filtered2a;
   IQSampleVector m_buf_filtered2b;
-  IQSampleVector m_buf_filtered2c;
-  IQSampleVector m_buf_filtered2d;
-  IQSampleVector m_buf_filtered2e;
   IQSampleVector m_buf_filtered3;
   IQSampleVector m_buf_filtered4;
   IQSampleDecodedVector m_buf_decoded;
@@ -128,10 +124,6 @@ private:
   FourthConverterIQ m_upshifter;
   FourthConverterIQ m_downshifter;
   LowPassFilterFirIQ m_ssbshiftfilter;
-  IfResampler m_cw_downsampler;
-  IfResampler m_cw_upsampler;
-  FourthConverterIQ m_upshifter_cw;
-  LowPassFilterFirIQ m_cwshiftfilter;
   HighPassFilterIir m_dcblock;
   LowPassFilterRC m_deemph;
   AfAgc m_afagc;
