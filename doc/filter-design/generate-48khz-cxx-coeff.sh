@@ -1,5 +1,6 @@
 #!/bin/sh
-./generate-cxx-coeff-list.py jj1bdx_ssb_48khz_12to15khz 48kHz-am-12kHz-15kHz-511taps-coeff.txt
+./generate-cxx-coeff-list.py jj1bdx_ssb_48khz_0to3khz 48kHz-ssb-0kHz-3.4kHz-511taps-coeff.txt
+./generate-cxx-coeff-list.py jj1bdx_ssb_48khz_12to24khz 48kHz-ssb-12kHz-24kHz-511taps-coeff.txt
 ./generate-cxx-coeff-list.py jj1bdx_am_48khz_narrow 48kHz-am-3kHz-255taps-coeff.txt
 ./generate-cxx-coeff-list.py jj1bdx_am_48khz_medium 48kHz-am-4.5kHz-255taps-coeff.txt
 ./generate-cxx-coeff-list.py jj1bdx_am_48khz_default 48kHz-am-6kHz-255taps-coeff.txt
