@@ -772,8 +772,7 @@ int main(int argc, char **argv) {
   }
 
   // Prepare AM decoder.
-  AmDecoder am(demodulator_rate, // sample_rate_demod
-               amfilter_coeff,   // amfilter_coeff
+  AmDecoder am(amfilter_coeff,   // amfilter_coeff
                modtype           // mode
   );
 

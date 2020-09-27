@@ -68,12 +68,10 @@ public:
   /**
    * Construct AM decoder.
    *
-   * sample_rate_demod :: Demodulator IQ sample rate.
    * amfilter_coeff    :: IQSample Filter Coefficients.
    * mode              :: ModType for decoding mode.
    */
-  AmDecoder(double sample_rate_demod, IQSampleCoeff &amfilter_coeff,
-            const ModType mode);
+  AmDecoder(IQSampleCoeff &amfilter_coeff, const ModType mode);
 
   // Process IQ samples and return audio samples.
   void process(const IQSampleVector &samples_in, SampleVector &audio);
@@ -117,7 +115,6 @@ private:
   SampleVector m_buf_baseband;
   SampleVector m_buf_mono;
 
-  AudioResampler m_audioresampler;
   LowPassFilterFirIQ m_amfilter;
   LowPassFilterFirIQ m_cwfilter;
   LowPassFilterFirIQ m_ssbfilter;
