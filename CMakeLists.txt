@@ -10,7 +10,7 @@ endif(COMMAND cmake_policy)
 
 find_package(Threads)
 find_package(PkgConfig)
-find_package(VOLK)
+find_package(Volk)
 
 # Require ALSA only for Linux
 if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
