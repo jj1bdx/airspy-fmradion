@@ -41,10 +41,9 @@ public:
   /**
    * Construct Narrow Band FM decoder.
    *
-   * sample_rate_demod :: Demodulator IQ sample rate.
    * nbfmfilter_coeff  :: IQSample Filter Coefficients.
    */
-  NbfmDecoder(double sample_rate_demod, IQSampleCoeff &nbfmfilter_coeff);
+  NbfmDecoder(IQSampleCoeff &nbfmfilter_coeff);
 
   /**
    * Process IQ samples and return audio samples.
@@ -63,7 +62,6 @@ public:
 private:
   // Data members.
   const IQSampleCoeff &m_nbfmfilter_coeff;
-  const double m_sample_rate_fmdemod;
   float m_baseband_mean;
   float m_baseband_level;
   float m_if_rms;
@@ -72,11 +70,9 @@ private:
   IQSampleVector m_samples_in_after_agc;
   IQSampleDecodedVector m_buf_decoded;
   SampleVector m_buf_baseband;
-  SampleVector m_buf_baseband_raw;
   SampleVector m_buf_baseband_filtered;
 
   LowPassFilterFirIQ m_nbfmfilter;
-  AudioResampler m_audioresampler_raw;
   PhaseDiscriminator m_phasedisc;
   LowPassFilterFirAudio m_audiofilter;
   IfAgc m_ifagc;

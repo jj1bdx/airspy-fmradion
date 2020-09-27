@@ -61,8 +61,8 @@ void FineTuner::process(const IQSampleVector &samples_in,
 AmDecoder::AmDecoder(double sample_rate_demod, IQSampleCoeff &amfilter_coeff,
                      const ModType mode)
     // Initialize member fields
-    : m_amfilter_coeff(amfilter_coeff),
-      m_mode(mode), m_baseband_mean(0), m_baseband_level(0), m_if_rms(0.0)
+    : m_amfilter_coeff(amfilter_coeff), m_mode(mode), m_baseband_mean(0),
+      m_baseband_level(0), m_if_rms(0.0)
 
       // Construct AudioResampler
       ,

@@ -778,8 +778,7 @@ int main(int argc, char **argv) {
   );
 
   // Prepare narrow band FM decoder.
-  NbfmDecoder nbfm(demodulator_rate, // sample_rate_demod
-		   nbfmfilter_coeff  // nbfmfilter_coeff
+  NbfmDecoder nbfm(nbfmfilter_coeff // nbfmfilter_coeff
   );
 
   // Initialize moving average object for FM ppm monitoring.

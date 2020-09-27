@@ -27,23 +27,18 @@
 
 // class NbfmDecoder
 
-NbfmDecoder::NbfmDecoder(double sample_rate_demod, IQSampleCoeff &nbfmfilter_coeff)
+NbfmDecoder::NbfmDecoder(IQSampleCoeff &nbfmfilter_coeff)
     // Initialize member fields
-    : m_nbfmfilter_coeff(nbfmfilter_coeff),
-      m_sample_rate_fmdemod(sample_rate_demod), m_baseband_mean(0),
+    : m_nbfmfilter_coeff(nbfmfilter_coeff), m_baseband_mean(0),
       m_baseband_level(0), m_if_rms(0.0)
 
       // Construct NBFM narrow filter
       ,
       m_nbfmfilter(m_nbfmfilter_coeff, 1)
 
-      // Construct AudioResampler
-      ,
-      m_audioresampler_raw(m_sample_rate_fmdemod, sample_rate_pcm)
-
       // Construct PhaseDiscriminator
       ,
-      m_phasedisc(freq_dev / m_sample_rate_fmdemod)
+      m_phasedisc(freq_dev / internal_rate_pcm)
 
       // Construct LowPassFilterFirAudio
       ,
@@ -84,12 +79,9 @@ void NbfmDecoder::process(const IQSampleVector &samples_in,
     return;
   }
   // Convert decoded data to baseband data
-  m_buf_baseband_raw.resize(decoded_size);
-  volk_32f_convert_64f(m_buf_baseband_raw.data(), m_buf_decoded.data(),
+  m_buf_baseband.resize(decoded_size);
+  volk_32f_convert_64f(m_buf_baseband.data(), m_buf_decoded.data(),
                        decoded_size);
-
-  // Upsample decoded audio signal to 48kHz.
-  m_audioresampler_raw.process(m_buf_baseband_raw, m_buf_baseband);
 
   // If no downsampled baseband signal comes out,
   // terminate and wait for next block,
