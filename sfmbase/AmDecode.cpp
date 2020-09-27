@@ -128,6 +128,7 @@ AmDecoder::AmDecoder(IQSampleCoeff &amfilter_coeff, const ModType mode)
 void AmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
   switch (m_mode) {
   case ModType::AM:
+  case ModType::DSB:
     // Apply narrower filters
     m_amfilter.process(samples_in, m_buf_filtered3);
     break;
