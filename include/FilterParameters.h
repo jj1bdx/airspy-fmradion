@@ -40,6 +40,15 @@ public:
   static const IQSampleCoeff jj1bdx_ssb_3to6khz;
   static const IQSampleCoeff jj1bdx_cw_250hz;
 
+  static const IQSampleCoeff jj1bdx_ssb_48khz_12to15khz;
+  static const IQSampleCoeff jj1bdx_am_48khz_narrow;
+  static const IQSampleCoeff jj1bdx_am_48khz_medium;
+  static const IQSampleCoeff jj1bdx_am_48khz_default;
+  static const IQSampleCoeff jj1bdx_cw_48khz_800hz;
+  static const IQSampleCoeff jj1bdx_nbfm_48khz_default;
+  static const IQSampleCoeff jj1bdx_nbfm_48khz_narrow;
+  static const IQSampleCoeff jj1bdx_nbfm_48khz_medium;
+
   // TODO: Hilbert filter coefficients are ASYMMETRIC,
   // so they should not be treated the same as
   // LPF/BPF with symmetric coefficients
