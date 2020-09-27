@@ -2,7 +2,7 @@
 
 # airspy-fmradion
 
-* Version v0.9.3, 27-SEP-2020
+* Version v0.9.4, 28-SEP-2020
 * For MacOS and Linux
 
 ### Contributing
@@ -253,17 +253,16 @@ Compile and install
 
 * FM Filter coefficients are listed under `doc/filter-design`
 
-### For AM
+### For AM and DSB
 
 * AM Filter coefficients are listed under `doc/filter-design`
-* Max +-5.5kHz IF filter width without aliasing set for all IF filters
-* Narrower filters by `-f` options: `middle` +-4kHz, `narrow` +-3kHz
+* `default` filter width: +-6kHz
+* Narrower filters by `-f` options: `middle` +-4.5kHz, `narrow` +-3kHz
 
 ### For SSB
 
 * Filter method applied by shifting 0 - 3kHz to 12 - 15kHz (when sampling frequency is 48kHz)
-* Applied AM narrow filter option + 12kHz shifting up/down to remove the unnecessary sideband
-* Use `-f narrow` option
+* Applied fixed AM narrow filter option + 12kHz shifting up/down to remove the unnecessary sideband
 
 ### For CW
 
@@ -274,6 +273,9 @@ Compile and install
 
 * Deviation: max +-8kHz
 * Output audio LPF: flat up to 3kHz
+* NBFM Filter coefficients are listed under `doc/filter-design`
+* `default` filter width: +-10kHz
+* Narrower filters by `-f` options: `middle` +-8kHz, `narrow` +-6.27kHz
 
 ## AM AGC
 
