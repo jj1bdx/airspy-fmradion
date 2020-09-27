@@ -23,6 +23,39 @@
 #include "AmDecode.h"
 #include "Utility.h"
 
+// class FineTuner
+
+// Construct finetuner.
+FineTuner::FineTuner(unsigned const int table_size, const int freq_shift)
+    : m_index(0), m_table(table_size) {
+  double phase_step = 2.0 * M_PI / double(table_size);
+  for (unsigned int i = 0; i < table_size; i++) {
+    double phi = (((int64_t)freq_shift * i) % table_size) * phase_step;
+    double pcos = cos(phi);
+    double psin = sin(phi);
+    m_table[i] = IQSample(pcos, psin);
+  }
+}
+
+// Process samples.
+void FineTuner::process(const IQSampleVector &samples_in,
+                        IQSampleVector &samples_out) {
+  unsigned int tblidx = m_index;
+  unsigned int tblsiz = m_table.size();
+  unsigned int n = samples_in.size();
+
+  samples_out.resize(n);
+
+  for (unsigned int i = 0; i < n; i++) {
+    samples_out[i] = samples_in[i] * m_table[tblidx];
+    tblidx++;
+    if (tblidx == tblsiz)
+      tblidx = 0;
+  }
+
+  m_index = tblidx;
+}
+
 // class AmDecoder
 
 AmDecoder::AmDecoder(double sample_rate_demod, IQSampleCoeff &amfilter_coeff,
@@ -39,7 +72,11 @@ AmDecoder::AmDecoder(double sample_rate_demod, IQSampleCoeff &amfilter_coeff,
       ,
       m_amfilter(m_amfilter_coeff, 1)
 
-      // Construct AM narrow filter
+      // Construct CW narrow filter
+      ,
+      m_cwfilter(FilterParameters::jj1bdx_cw_48khz_800hz, 1)
+
+      // Construct SSB narrow filter
       ,
       m_ssbfilter(FilterParameters::jj1bdx_am_48khz_narrow, 1)
 
@@ -47,7 +84,7 @@ AmDecoder::AmDecoder(double sample_rate_demod, IQSampleCoeff &amfilter_coeff,
       ,
       m_upshifter(true), m_downshifter(false)
 
-      // SSB shifted-audio filter from 0 to 3kHz
+      // SSB shifted-audio filter from 12 to 24kHz
       ,
       m_ssbshiftfilter(FilterParameters::jj1bdx_ssb_48khz_12to24khz, 1)
 
@@ -98,7 +135,11 @@ AmDecoder::AmDecoder(double sample_rate_demod, IQSampleCoeff &amfilter_coeff,
                                             // default value
                                             : 0.7,
               0.001 // rate
-      ) {
+              )
+
+      // fine tuner for pitch shifting (shift up 500Hz)
+      ,
+      m_finetuner(internal_rate_pcm / 100, 500 / 100) {
   // Do nothing
 }
 
@@ -119,27 +160,15 @@ void AmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
   case ModType::LSB:
     // Apply SSB filters
     m_ssbfilter.process(samples_in, m_buf_filtered);
-    // Shift Fs/2 and eliminate the lower sideband
+    // Shift Fs/2 and eliminate the upper sideband
     m_downshifter.process(m_buf_filtered, m_buf_filtered2a);
     m_ssbshiftfilter.process(m_buf_filtered2a, m_buf_filtered2b);
     m_upshifter.process(m_buf_filtered2b, m_buf_filtered3);
     break;
   case ModType::CW:
-    m_cw_downsampler.process(m_buf_filtered, m_buf_filtered2a);
-    // If no downsampled signal comes out, terminate and wait for next block.
-    if (m_buf_filtered2a.size() == 0) {
-      audio.resize(0);
-      return;
-    }
-    m_cwshiftfilter.process(m_buf_filtered2a, m_buf_filtered2b);
-    // CW pitch: 500Hz
-    m_upshifter_cw.process(m_buf_filtered2b, m_buf_filtered2c);
-    m_cw_upsampler.process(m_buf_filtered2c, m_buf_filtered3);
-    // If no upsampled signal comes out, terminate and wait for next block.
-    if (m_buf_filtered3.size() == 0) {
-      audio.resize(0);
-      return;
-    }
+    // Apply CW filter
+    m_cwfilter.process(samples_in, m_buf_filtered);
+    m_finetuner.process(m_buf_filtered, m_buf_filtered3);
     break;
   default:
     m_buf_filtered3 = std::move(m_buf_filtered);
