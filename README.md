@@ -2,7 +2,7 @@
 
 # airspy-fmradion
 
-* Version v0.9.1, 23-SEP-2020
+* Version v0.9.2, 27-SEP-2020
 * For MacOS and Linux
 
 ### Contributing
@@ -186,6 +186,10 @@ Compile and install
 
 ## Major changes
 
+### Smaller latency
+
+* v0.9.2 uses smaller latency algorithms for all modulation types and filters. The output frequency characteristics may be different from the previous versions.
+
 ### Audio gain adjustment
 
 * Since v0.4.2, output maximum level is back at -6dB (0.5) (`adjust_gain()` is reintroduced) again, as in pre-v0.2.7
@@ -257,14 +261,14 @@ Compile and install
 
 ### For SSB
 
-* Filter method applied by shifting 0 - 3kHz to 3 - 6kHz (when sampling frequency is 12kHz)
-* SSB filter: designed for 3 to 6kHz, BW 2.4kHz, from 3.3 to 5.7kHz
+* Filter method applied by shifting 0 - 3kHz to 12 - 15kHz (when sampling frequency is 48kHz)
+* Applied AM narrow filter option + 12kHz shifting up/down to remove the unnecessary sideband
 * Use `-f narrow` option
 
 ### For CW
 
 * Pitch: 500Hz
-* Filter width: +- 250Hz
+* Filter width: +- 400Hz
 
 ### For NBFM
 
