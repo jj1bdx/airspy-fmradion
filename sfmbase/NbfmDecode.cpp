@@ -27,10 +27,15 @@
 
 // class NbfmDecoder
 
-NbfmDecoder::NbfmDecoder(double sample_rate_demod)
+NbfmDecoder::NbfmDecoder(double sample_rate_demod, IQSampleCoeff &nbfmfilter_coeff)
     // Initialize member fields
-    : m_sample_rate_fmdemod(sample_rate_demod), m_baseband_mean(0),
+    : m_nbfmfilter_coeff(nbfmfilter_coeff),
+      m_sample_rate_fmdemod(sample_rate_demod), m_baseband_mean(0),
       m_baseband_level(0), m_if_rms(0.0)
+
+      // Construct NBFM narrow filter
+      ,
+      m_nbfmfilter(m_nbfmfilter_coeff, 1)
 
       // Construct AudioResampler
       ,
@@ -54,11 +59,14 @@ NbfmDecoder::NbfmDecoder(double sample_rate_demod)
 void NbfmDecoder::process(const IQSampleVector &samples_in,
                           SampleVector &audio) {
 
+  // Apply IF filter.
+  m_nbfmfilter.process(samples_in, m_buf_filtered);
+
   // Measure IF RMS level.
-  m_if_rms = Utility::rms_level_approx(samples_in);
+  m_if_rms = Utility::rms_level_approx(m_buf_filtered);
 
   // Perform IF AGC.
-  m_ifagc.process(samples_in, m_samples_in_after_agc);
+  m_ifagc.process(m_buf_filtered, m_samples_in_after_agc);
 
 #ifdef DEBUG_IF_AGC
   // Measure IF RMS level for checking how IF AGC works.

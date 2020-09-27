@@ -49,7 +49,7 @@
 // define this for enabling coefficient monitor functions
 // #undef COEFF_MONITOR
 
-#define AIRSPY_FMRADION_VERSION "v0.9.2-test0"
+#define AIRSPY_FMRADION_VERSION "v0.9.2-test1"
 
 /** Flag is set on SIGINT / SIGTERM. */
 static std::atomic_bool stop_flag(false);
@@ -642,7 +642,7 @@ int main(int argc, char **argv) {
   double if_decimation_ratio = 1.0;
   double fm_target_rate;
   double am_target_rate = AmDecoder::internal_rate_pcm;
-  double nbfm_target_rate;
+  double nbfm_target_rate = NbfmDecoder::internal_rate_pcm;
 
   switch (filtertype) {
   case FilterType::Default:
@@ -656,18 +656,6 @@ int main(int argc, char **argv) {
   case FilterType::Narrow:
     // 246 * 0.982 ~= 242kHz
     fm_target_rate = 246000;
-    break;
-  }
-
-  switch (filtertype) {
-  case FilterType::Default:
-    nbfm_target_rate = 20000;
-    break;
-  case FilterType::Medium:
-    nbfm_target_rate = 16000;
-    break;
-  case FilterType::Narrow:
-    nbfm_target_rate = 12500;
     break;
   }
 
@@ -766,16 +754,20 @@ int main(int argc, char **argv) {
   );
 
   IQSampleCoeff amfilter_coeff;
+  IQSampleCoeff nbfmfilter_coeff;
 
   switch (filtertype) {
   case FilterType::Default:
     amfilter_coeff = FilterParameters::jj1bdx_am_48khz_default;
+    nbfmfilter_coeff = FilterParameters::jj1bdx_nbfm_48khz_default;
     break;
   case FilterType::Medium:
     amfilter_coeff = FilterParameters::jj1bdx_am_48khz_medium;
+    nbfmfilter_coeff = FilterParameters::jj1bdx_nbfm_48khz_medium;
     break;
   case FilterType::Narrow:
     amfilter_coeff = FilterParameters::jj1bdx_am_48khz_narrow;
+    nbfmfilter_coeff = FilterParameters::jj1bdx_nbfm_48khz_narrow;
     break;
   }
 
@@ -786,7 +778,8 @@ int main(int argc, char **argv) {
   );
 
   // Prepare narrow band FM decoder.
-  NbfmDecoder nbfm(demodulator_rate // sample_rate_demod
+  NbfmDecoder nbfm(demodulator_rate, // sample_rate_demod
+		   nbfmfilter_coeff  // nbfmfilter_coeff
   );
 
   // Initialize moving average object for FM ppm monitoring.
