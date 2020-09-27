@@ -36,7 +36,7 @@ class AmDecoder {
 public:
   // Static constants.
   static constexpr double sample_rate_pcm = 48000;
-  static constexpr double internal_rate_pcm = 12000;
+  static constexpr double internal_rate_pcm = 48000;
   static constexpr double cw_rate_pcm = 2000;
   // Half bandwidth of audio signal in Hz (4.5kHz for AM)
   static constexpr double bandwidth_pcm = 4500;
@@ -89,6 +89,8 @@ private:
   IQSampleVector m_buf_filtered2a;
   IQSampleVector m_buf_filtered2b;
   IQSampleVector m_buf_filtered2c;
+  IQSampleVector m_buf_filtered2d;
+  IQSampleVector m_buf_filtered2e;
   IQSampleVector m_buf_filtered3;
   IQSampleVector m_buf_filtered4;
   IQSampleDecodedVector m_buf_decoded;
@@ -98,8 +100,8 @@ private:
   SampleVector m_buf_mono;
 
   AudioResampler m_audioresampler;
-  IfResampler m_ifresampler;
   LowPassFilterFirIQ m_amfilter;
+  LowPassFilterFirIQ m_ssbfilter;
   FourthConverterIQ m_upshifter;
   FourthConverterIQ m_downshifter;
   LowPassFilterFirIQ m_ssbshiftfilter;

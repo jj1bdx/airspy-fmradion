@@ -49,7 +49,7 @@
 // define this for enabling coefficient monitor functions
 // #undef COEFF_MONITOR
 
-#define AIRSPY_FMRADION_VERSION "v0.9.1"
+#define AIRSPY_FMRADION_VERSION "v0.9.2-test0"
 
 /** Flag is set on SIGINT / SIGTERM. */
 static std::atomic_bool stop_flag(false);
@@ -563,8 +563,8 @@ int main(int argc, char **argv) {
     outputbuf_samples = (unsigned int)(bufsecs * pcmrate);
   }
   // Set minimum limit for the output buffer length.
-  if (outputbuf_samples < 1024) {
-    outputbuf_samples = 1024;
+  if (outputbuf_samples < 48) {
+    outputbuf_samples = 48;
   }
   fprintf(stderr, "output buffer length: %g [s]\n",
           outputbuf_samples / double(pcmrate));
@@ -769,13 +769,13 @@ int main(int argc, char **argv) {
 
   switch (filtertype) {
   case FilterType::Default:
-    amfilter_coeff = FilterParameters::delay_3taps_only_iq;
+    amfilter_coeff = FilterParameters::jj1bdx_am_48khz_default;
     break;
   case FilterType::Medium:
-    amfilter_coeff = FilterParameters::jj1bdx_am_12khz_medium;
+    amfilter_coeff = FilterParameters::jj1bdx_am_48khz_medium;
     break;
   case FilterType::Narrow:
-    amfilter_coeff = FilterParameters::jj1bdx_am_12khz_narrow;
+    amfilter_coeff = FilterParameters::jj1bdx_am_48khz_narrow;
     break;
   }
 

@@ -40,7 +40,8 @@ public:
   static const IQSampleCoeff jj1bdx_ssb_3to6khz;
   static const IQSampleCoeff jj1bdx_cw_250hz;
 
-  static const IQSampleCoeff jj1bdx_ssb_48khz_12to15khz;
+  static const IQSampleCoeff jj1bdx_ssb_48khz_0to3khz;
+  static const IQSampleCoeff jj1bdx_ssb_48khz_12to24khz;
   static const IQSampleCoeff jj1bdx_am_48khz_narrow;
   static const IQSampleCoeff jj1bdx_am_48khz_medium;
   static const IQSampleCoeff jj1bdx_am_48khz_default;

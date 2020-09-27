@@ -35,21 +35,21 @@ AmDecoder::AmDecoder(double sample_rate_demod, IQSampleCoeff &amfilter_coeff,
       ,
       m_audioresampler(internal_rate_pcm, sample_rate_pcm)
 
-      // Construct IfResampler to first convert to internal PCM rate
-      ,
-      m_ifresampler(m_sample_rate_demod, internal_rate_pcm)
-
       // Construct AM narrow filter
       ,
       m_amfilter(m_amfilter_coeff, 1)
+
+      // Construct AM narrow filter
+      ,
+      m_ssbfilter(FilterParameters::jj1bdx_am_48khz_narrow, 1)
 
       // IF down/upshifter
       ,
       m_upshifter(true), m_downshifter(false)
 
-      // SSB shifted-audio filter from 3 to 6kHz
+      // SSB shifted-audio filter from 0 to 3kHz
       ,
-      m_ssbshiftfilter(FilterParameters::jj1bdx_ssb_3to6khz, 1)
+      m_ssbshiftfilter(FilterParameters::jj1bdx_ssb_48khz_12to24khz, 1)
 
       // Construct IfResampler to first convert to internal PCM rate
       ,
@@ -103,18 +103,23 @@ AmDecoder::AmDecoder(double sample_rate_demod, IQSampleCoeff &amfilter_coeff,
 }
 
 void AmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
-
-  // Apply narrower filters
-  m_amfilter.process(samples_in, m_buf_filtered);
-
-  // Shift Fs/4 and filter Fs/4~Fs/2 frequency bandwidth only
   switch (m_mode) {
+  case ModType::AM:
+    // Apply narrower filters
+    m_amfilter.process(samples_in, m_buf_filtered3);
+    break;
   case ModType::USB:
+    // Apply SSB filters
+    m_ssbfilter.process(samples_in, m_buf_filtered);
+    // Shift Fs/2 and eliminate the lower sideband
     m_upshifter.process(m_buf_filtered, m_buf_filtered2a);
     m_ssbshiftfilter.process(m_buf_filtered2a, m_buf_filtered2b);
     m_downshifter.process(m_buf_filtered2b, m_buf_filtered3);
     break;
   case ModType::LSB:
+    // Apply SSB filters
+    m_ssbfilter.process(samples_in, m_buf_filtered);
+    // Shift Fs/2 and eliminate the lower sideband
     m_downshifter.process(m_buf_filtered, m_buf_filtered2a);
     m_ssbshiftfilter.process(m_buf_filtered2a, m_buf_filtered2b);
     m_upshifter.process(m_buf_filtered2b, m_buf_filtered3);
@@ -183,17 +188,14 @@ void AmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
   // DC blocking.
   m_dcblock.process_inplace(m_buf_baseband_demod);
 
-  // Upsample baseband signal.
-  m_audioresampler.process(m_buf_baseband_demod, m_buf_baseband_preagc);
-
   // If no baseband audio signal comes out, terminate and wait for next block,
-  if (m_buf_baseband_preagc.size() == 0) {
+  if (m_buf_baseband_demod.size() == 0) {
     audio.resize(0);
     return;
   }
 
   // Audio AGC
-  m_afagc.process(m_buf_baseband_preagc, m_buf_baseband);
+  m_afagc.process(m_buf_baseband_demod, m_buf_baseband);
 
   // Measure baseband level after DC blocking.
   float baseband_mean, baseband_rms;
