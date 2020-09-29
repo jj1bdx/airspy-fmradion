@@ -2,7 +2,7 @@
 
 # airspy-fmradion
 
-* Version v0.9.4, 28-SEP-2020
+* Version v0.9.5-test0, 29-SEP-2020
 * For MacOS and Linux
 
 ### Contributing
@@ -201,6 +201,7 @@ Compile and install
 * Output of the stereo decoder is downsampled by libsoxr to 48kHz
 * Quality: `SOXR_VHQ`
 * 19kHz cut LPF implemented for post-processing libsoxr output
+* *Do not use* `SOXR_STEEP_FILTER` because it induces unacceptable higher latency
 
 ### Phase discriminator uses GNU Radio fast_atan2f() 
 
