@@ -7,3 +7,5 @@
 ./generate-cxx-coeff-list.py jj1bdx_nbfm_48khz_default 48kHz-nbfm-10kHz-127taps-coeff.txt
 ./generate-cxx-coeff-list.py jj1bdx_nbfm_48khz_narrow 48kHz-nbfm-6.25kHz-127taps-coeff.txt
 ./generate-cxx-coeff-list.py jj1bdx_nbfm_48khz_medium 48kHz-nbfm-8kHz-127taps-coeff.txt
+./generate-cxx-coeff-list.py jj1bdx_fm_384kHz_narrow 384kHz-242kHz-127taps-coeff.txt
+./generate-cxx-coeff-list.py jj1bdx_fm_384kHz_medium 384kHz-312kHz-127taps-coeff.txt
