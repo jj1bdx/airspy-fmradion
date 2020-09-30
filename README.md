@@ -181,6 +181,7 @@ Compile and install
  - `-f` Set Filter type
    - for FM: default: none, medium: +-156kHz, narrow: +-121kHz
    - for AM: default: +-6kHz, medium: +-4.5kHz, narrow: +-3kHz
+   - for NBFM: default: +-10kHz, medium: +-8kHz, narrow: +-6.25kHz
  - `-l dB` Enable IF squelch, set the level to minus given value of dB
  - `-E stages` Enable multipath filter for FM (For stable reception only: turn off if reception becomes unstable)
 
