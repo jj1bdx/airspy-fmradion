@@ -195,20 +195,25 @@ void PilotPhaseLock::process(const SampleVector &samples_in,
 
 // class FmDecoder
 
-FmDecoder::FmDecoder(double sample_rate_demod, bool stereo, double deemphasis,
-                     bool pilot_shift, unsigned int multipath_stages)
+FmDecoder::FmDecoder(IQSampleCoeff &fmfilter_coeff, bool stereo,
+                     double deemphasis, bool pilot_shift,
+                     unsigned int multipath_stages)
     // Initialize member fields
-    : m_sample_rate_fmdemod(sample_rate_demod), m_pilot_shift(pilot_shift),
+    : m_fmfilter_coeff(fmfilter_coeff), m_pilot_shift(pilot_shift),
       m_enable_multipath_filter((multipath_stages > 0)),
       // Wait first 100 blocks to enable the multipath filter
       m_wait_multipath_blocks(100), m_multipath_stages(multipath_stages),
       m_stereo_enabled(stereo), m_stereo_detected(false), m_baseband_mean(0),
       m_baseband_level(0), m_if_rms(0.0)
 
+      // Construct FM narrow filter
+      ,
+      m_fmfilter(m_fmfilter_coeff, 1)
+
       // Construct AudioResampler for mono and stereo channels
       ,
-      m_audioresampler_mono(m_sample_rate_fmdemod, sample_rate_pcm),
-      m_audioresampler_stereo(m_sample_rate_fmdemod, sample_rate_pcm)
+      m_audioresampler_mono(sample_rate_if, sample_rate_pcm),
+      m_audioresampler_stereo(sample_rate_if, sample_rate_pcm)
 
       // Construct 19kHz pilot signal cut filter
       ,
@@ -217,13 +222,13 @@ FmDecoder::FmDecoder(double sample_rate_demod, bool stereo, double deemphasis,
 
       // Construct PhaseDiscriminator
       ,
-      m_phasedisc(freq_dev / m_sample_rate_fmdemod)
+      m_phasedisc(freq_dev / sample_rate_if)
 
       // Construct PilotPhaseLock
       ,
-      m_pilotpll(pilot_freq / m_sample_rate_fmdemod, // freq
-                 50 / m_sample_rate_fmdemod,         // bandwidth
-                 0.01)                               // minsignal (was 0.04)
+      m_pilotpll(pilot_freq / sample_rate_if, // freq
+                 50 / sample_rate_if,         // bandwidth
+                 0.01)                        // minsignal (was 0.04)
 
       // Construct HighPassFilterIir
       // cutoff: 4.8Hz for 48kHz sampling rate
@@ -233,12 +238,10 @@ FmDecoder::FmDecoder(double sample_rate_demod, bool stereo, double deemphasis,
       // Construct LowPassFilterRC for deemphasis
       // Note: sampling rate is of the FM demodulator
       ,
-      m_deemph_mono((deemphasis == 0)
-                        ? 1.0
-                        : (deemphasis * m_sample_rate_fmdemod * 1.0e-6)),
-      m_deemph_stereo((deemphasis == 0)
-                          ? 1.0
-                          : (deemphasis * m_sample_rate_fmdemod * 1.0e-6))
+      m_deemph_mono((deemphasis == 0) ? 1.0
+                                      : (deemphasis * sample_rate_if * 1.0e-6)),
+      m_deemph_stereo(
+          (deemphasis == 0) ? 1.0 : (deemphasis * sample_rate_if * 1.0e-6))
 
       // Construct IF AGC
       ,
@@ -265,8 +268,11 @@ void FmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
   // Measure IF RMS level.
   m_if_rms = Utility::rms_level_approx(samples_in);
 
+  // Apply IF filter.
+  m_fmfilter.process(samples_in, m_samples_in_iffiltered);
+
   // Perform IF AGC.
-  m_ifagc.process(samples_in, m_samples_in_after_agc);
+  m_ifagc.process(m_samples_in_iffiltered, m_samples_in_after_agc);
 
 #ifdef DEBUG_IF_AGC
   // Measure IF RMS level for checking how IF AGC works.
@@ -277,12 +283,12 @@ void FmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
   if (m_wait_multipath_blocks > 0) {
     m_wait_multipath_blocks--;
     // No multipath filter applied.
-    m_samples_in_filtered = std::move(m_samples_in_after_agc);
+    m_samples_in_multipathfiltered = std::move(m_samples_in_after_agc);
   } else {
     if (m_enable_multipath_filter) {
       // Apply multipath filter.
       bool done_ok = m_multipathfilter.process(m_samples_in_after_agc,
-                                               m_samples_in_filtered);
+                                               m_samples_in_multipathfiltered);
       // Check if the error evaluation becomes invalid/infinite.
       if (!done_ok) {
         // Reset the filter coefficients.
@@ -290,16 +296,16 @@ void FmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
         // fprintf(stderr, "Reset Multipath Filter coefficients\n");
         // Discard the invalid filter output, and
         // use the no-filter input after resetting the filter.
-        m_samples_in_filtered = std::move(m_samples_in_after_agc);
+        m_samples_in_multipathfiltered = std::move(m_samples_in_after_agc);
       }
     } else {
       // No multipath filter applied.
-      m_samples_in_filtered = std::move(m_samples_in_after_agc);
+      m_samples_in_multipathfiltered = std::move(m_samples_in_after_agc);
     }
   }
 
   // Demodulate FM to MPX signal.
-  m_phasedisc.process(m_samples_in_filtered, m_buf_decoded);
+  m_phasedisc.process(m_samples_in_multipathfiltered, m_buf_decoded);
 
   // If no downsampled baseband signal comes out,
   // terminate and wait for next block,

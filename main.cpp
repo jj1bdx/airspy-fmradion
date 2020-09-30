@@ -49,7 +49,7 @@
 // define this for enabling coefficient monitor functions
 // #undef COEFF_MONITOR
 
-#define AIRSPY_FMRADION_VERSION "v0.9.5-test1"
+#define AIRSPY_FMRADION_VERSION "v0.9.5-test2"
 
 /** Flag is set on SIGINT / SIGTERM. */
 static std::atomic_bool stop_flag(false);
@@ -640,26 +640,9 @@ int main(int argc, char **argv) {
 
   bool enable_downsampling = true;
   double if_decimation_ratio = 1.0;
-  double fm_target_rate;
+  double fm_target_rate = FmDecoder::sample_rate_if;
   double am_target_rate = AmDecoder::internal_rate_pcm;
   double nbfm_target_rate = NbfmDecoder::internal_rate_pcm;
-
-  switch (filtertype) {
-  case FilterType::Default:
-    // 384 * 0.911 ~= 350kHz
-    // Note: for Airspy HF+, this rate is native
-    //       so no rate conversion will occur
-    fm_target_rate = 384000;
-    break;
-  case FilterType::Medium:
-    // 342 * 0.911 ~= 312kHz
-    fm_target_rate = 342000;
-    break;
-  case FilterType::Narrow:
-    // 266 * 0.911 ~= 242kHz
-    fm_target_rate = 266000;
-    break;
-  }
 
   // Configure blocksize.
   switch (devtype) {
@@ -746,36 +729,40 @@ int main(int argc, char **argv) {
   );
   enable_downsampling = (ifrate != demodulator_rate);
 
-  // Prepare FM decoder.
-  FmDecoder fm(demodulator_rate, // sample_rate_demod
-               stereo,           // stereo
-               deemphasis,       // deemphasis,
-               pilot_shift,      // pilot_shift
-               static_cast<unsigned int>(multipathfilter_stages)
-               // multipath_stages
-  );
-
   IQSampleCoeff amfilter_coeff;
+  IQSampleCoeff fmfilter_coeff;
   IQSampleCoeff nbfmfilter_coeff;
 
   switch (filtertype) {
   case FilterType::Default:
     amfilter_coeff = FilterParameters::jj1bdx_am_48khz_default;
+    fmfilter_coeff = FilterParameters::delay_3taps_only_iq;
     nbfmfilter_coeff = FilterParameters::jj1bdx_nbfm_48khz_default;
     break;
   case FilterType::Medium:
     amfilter_coeff = FilterParameters::jj1bdx_am_48khz_medium;
+    fmfilter_coeff = FilterParameters::jj1bdx_fm_384kHz_medium;
     nbfmfilter_coeff = FilterParameters::jj1bdx_nbfm_48khz_medium;
     break;
   case FilterType::Narrow:
     amfilter_coeff = FilterParameters::jj1bdx_am_48khz_narrow;
+    fmfilter_coeff = FilterParameters::jj1bdx_fm_384kHz_narrow;
     nbfmfilter_coeff = FilterParameters::jj1bdx_nbfm_48khz_narrow;
     break;
   }
 
   // Prepare AM decoder.
-  AmDecoder am(amfilter_coeff,   // amfilter_coeff
-               modtype           // mode
+  AmDecoder am(amfilter_coeff, // amfilter_coeff
+               modtype         // mode
+  );
+
+  // Prepare FM decoder.
+  FmDecoder fm(fmfilter_coeff, // fmfilter_coeff
+               stereo,         // stereo
+               deemphasis,     // deemphasis,
+               pilot_shift,    // pilot_shift
+               static_cast<unsigned int>(multipathfilter_stages)
+               // multipath_stages
   );
 
   // Prepare narrow band FM decoder.
