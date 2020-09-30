@@ -42,6 +42,8 @@ public:
   static const IQSampleCoeff jj1bdx_nbfm_48khz_default;
   static const IQSampleCoeff jj1bdx_nbfm_48khz_narrow;
   static const IQSampleCoeff jj1bdx_nbfm_48khz_medium;
+  static const IQSampleCoeff jj1bdx_fm_384kHz_narrow;
+  static const IQSampleCoeff jj1bdx_fm_384kHz_medium;
 
   // TODO: Hilbert filter coefficients are ASYMMETRIC,
   // so they should not be treated the same as
