@@ -2,7 +2,7 @@
 
 # airspy-fmradion
 
-* Version v0.9.5-test0, 29-SEP-2020
+* Version v0.9.5-test2, 30-SEP-2020
 * For MacOS and Linux
 
 ### Contributing
@@ -179,8 +179,8 @@ Compile and install
  - `-X` Shift pilot phase (for Quadrature Multipath Monitor) (-X is ignored under mono mode (-M))
  - `-U` Set deemphasis to 75 microseconds (default: 50)
  - `-f` Set Filter type
-   - for FM: default: +-189kHz, medium: +-156kHz, narrow: +-121kHz
-   - for AM: default: +-6kHz, medium: +-4kHz, narrow: +-3kHz
+   - for FM: default: none, medium: +-156kHz, narrow: +-121kHz
+   - for AM: default: +-6kHz, medium: +-4.5kHz, narrow: +-3kHz
  - `-l dB` Enable IF squelch, set the level to minus given value of dB
  - `-E stages` Enable multipath filter for FM (For stable reception only: turn off if reception becomes unstable)
 
@@ -241,7 +241,6 @@ Compile and install
 
 * CIC filters for the IF 1st stage (unable to explore parallelism, too complex to compensate)
 * Using lock-free threads (`boost::lockfree::spsc_queue` didn't make things faster, and consumed x2 CPU power)
-* Fixed IF for FM to 384kHz did not increase the processing speed; the current variable IF design works well
 
 ## Filter design documentation
 
