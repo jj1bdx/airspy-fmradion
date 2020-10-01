@@ -2,7 +2,7 @@
 
 # airspy-fmradion
 
-* Version v0.9.5, 30-SEP-2020
+* Version v0.9.6, 30-SEP-2020
 * For MacOS and Linux
 
 ### Contributing
@@ -15,6 +15,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for the details.
 * Building on MacOS 10.15 Catalina is still not tested yet. The development is going on with the last Mojave 10.14.6.
 * For Raspberry Pi 3 and 4, Airspy R2 10Mbps and Airspy Mini 6Mbps sampling rates are *not supported* due to the hardware limitation. Use in 2.5Mbps for R2, 3Mbps for Mini.
 * v0.8.5 and the earlier versions set the compilation flag of `-ffast-math`, which disabled the processing of NaN. This will cause a latch-up bug when the multipath filter coefficients diverge. Removed `-ffast-math` for the stable operation.
+* v0.9.0-test1 to v0.9.5 had calculation error due to `volk_32f_expfast_32f()` in `IfAgc::process()` method. Fixed this by replacing to the more accurate calculation code of `volk_32f_exp_32f()`.
 
 ### What is airspy-fmradion?
 
