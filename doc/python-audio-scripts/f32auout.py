@@ -32,9 +32,8 @@ def signal_handler(signal, frame):
 
 signal.signal(signal.SIGINT, signal_handler)
 
-def callback(in_data, frame_count, time_info, status):
-    data = sys.stdin.buffer.read(frame_count * sample_width * channels)
-    return (data, pyaudio.paContinue)
+framesize = 1024 # 10msec
+readsize = framesize * sample_width * channels
 
 p = pyaudio.PyAudio()
 
@@ -43,12 +42,12 @@ stream = p.open(format = pyaudio.paFloat32,
                 rate = sample_rate,
                 output = True,
                 output_device_index = devidx,
-                frames_per_buffer = 48,
-                stream_callback = callback)
+                frames_per_buffer = framesize
+                )
 
-stream.start_stream()
-
-while stream.is_active():
-    time.sleep(0.1)
+data = sys.stdin.buffer.read(readsize)
+while data != '':
+    stream.write(data)
+    data = sys.stdin.buffer.read(readsize)
 
 terminate()
