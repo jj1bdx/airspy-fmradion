@@ -2,12 +2,18 @@
 
 # airspy-fmradion
 
-* Version v0.9.6, 30-SEP-2020
+* Version 20201001-0
 * For MacOS and Linux
 
 ### Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the details.
+
+### No more semantic versioning
+
+The semantic versioning scheme of airspy-fmradion has utterly failed.
+
+New version number scheme: YYYYMMDD-N (N: subnumber, starting from 0, unsigned integer)
 
 ### Known issues and changes
 
