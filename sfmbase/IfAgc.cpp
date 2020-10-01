@@ -69,7 +69,9 @@ void IfAgc::process(const IQSampleVector &samples_in,
     m_log_current_gain = new_log_current_gain;
   }
   // Compute output based on the saved logarithm of current gain.
-  volk_32f_expfast_32f(gain.data(), log_gain.data(), n);
+  // NOTE: DO NOT USE volk_32f_expfast_32f() here
+  //       because the calculation error is audible on AM mode!
+  volk_32f_exp_32f(gain.data(), log_gain.data(), n);
   volk_32fc_32f_multiply_32fc(samples_out.data(), samples_in.data(),
                               gain.data(), n);
 }
