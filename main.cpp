@@ -2,7 +2,7 @@
 //
 // Copyright (C) 2013, Joris van Rantwijk.
 // Copyright (C) 2015 Edouard Griffiths, F4EXB
-// Copyright (C) 2018, 2019 Kenji Rikitake, JJ1BDX
+// Copyright (C) 2018, 2019, 2020 Kenji Rikitake, JJ1BDX
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -49,7 +49,7 @@
 // define this for enabling coefficient monitor functions
 // #undef COEFF_MONITOR
 
-#define AIRSPY_FMRADION_VERSION "20201001-0"
+#define AIRSPY_FMRADION_VERSION "20201009-0"
 
 /** Flag is set on SIGINT / SIGTERM. */
 static std::atomic_bool stop_flag(false);

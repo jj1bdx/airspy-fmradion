@@ -2,7 +2,7 @@
 
 # airspy-fmradion
 
-* Version 20201001-0
+* Version 20201009-0
 * For MacOS and Linux
 
 ### Contributing
@@ -281,11 +281,12 @@ Compile and install
 ### For NBFM
 
 * Deviation: normal +-8kHz, for wide +-17kHz
-* Output audio LPF: flat up to 3kHz
+* Output audio LPF: flat up to 4kHz
 * NBFM Filter coefficients are listed under `doc/filter-design`
 * `default` filter width: +-10kHz
 * Narrower filters by `-f` options: `middle` +-8kHz, `narrow` +-6.25kHz
 * Wider filters by `-f` options: `wide` +-20kHz (with wider deviation of +-17kHz)
+* Audio gain reduced by -3dB to prevent output clipping
 
 ## AM AGC
 
@@ -293,7 +294,6 @@ Compile and install
 * See <https://www.mathworks.com/help/comm/ref/comm.agc-system-object.html> for the implementation details
 * IF AGC: gain up to 100dB (100000)
 * Audio AGC: gain up to 7dB (5.0)
-* TODO: an audio level compression/limiting algorithm?
 
 ## FM AGC
 
