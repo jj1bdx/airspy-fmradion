@@ -283,7 +283,7 @@ Compile and install
 * Output audio LPF: flat up to 3kHz
 * NBFM Filter coefficients are listed under `doc/filter-design`
 * `default` filter width: +-10kHz
-* Narrower filters by `-f` options: `middle` +-8kHz, `narrow` +-6.27kHz
+* Narrower filters by `-f` options: `middle` +-8kHz, `narrow` +-6.25kHz
 
 ## AM AGC
 
