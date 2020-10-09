@@ -27,10 +27,10 @@
 
 // class NbfmDecoder
 
-NbfmDecoder::NbfmDecoder(IQSampleCoeff &nbfmfilter_coeff)
+NbfmDecoder::NbfmDecoder(IQSampleCoeff &nbfmfilter_coeff, const double freq_dev)
     // Initialize member fields
-    : m_nbfmfilter_coeff(nbfmfilter_coeff), m_baseband_mean(0),
-      m_baseband_level(0), m_if_rms(0.0)
+    : m_nbfmfilter_coeff(nbfmfilter_coeff), m_freq_dev(freq_dev),
+      m_baseband_mean(0), m_baseband_level(0), m_if_rms(0.0)
 
       // Construct NBFM narrow filter
       ,
@@ -38,7 +38,7 @@ NbfmDecoder::NbfmDecoder(IQSampleCoeff &nbfmfilter_coeff)
 
       // Construct PhaseDiscriminator
       ,
-      m_phasedisc(freq_dev / internal_rate_pcm)
+      m_phasedisc(m_freq_dev / internal_rate_pcm)
 
       // Construct LowPassFilterFirAudio
       ,

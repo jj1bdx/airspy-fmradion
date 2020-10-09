@@ -35,15 +35,20 @@ public:
   // Static constants.
   static constexpr double sample_rate_pcm = 48000;
   static constexpr double internal_rate_pcm = 48000;
-  // Full scale carrier frequency deviation (5kHz nominal)
-  static constexpr double freq_dev = 8000;
+  // Full scale carrier frequency deviation
+  // for <=20kHz channel (deviation: +-5kHz nominal)
+  static constexpr double freq_dev_normal = 8000;
+  // Full scale carrier frequency deviation
+  // for NOAA Satellites (Width: ~40kHz, deviation: +-17kHz)
+  static constexpr double freq_dev_wide = 17000;
 
   /**
    * Construct Narrow Band FM decoder.
    *
    * nbfmfilter_coeff  :: IQSample Filter Coefficients.
+   * freq_dev          :: full scale deviation in Hz.
    */
-  NbfmDecoder(IQSampleCoeff &nbfmfilter_coeff);
+  NbfmDecoder(IQSampleCoeff &nbfmfilter_coeff, const double freq_dev);
 
   /**
    * Process IQ samples and return audio samples.
@@ -51,7 +56,7 @@ public:
   void process(const IQSampleVector &samples_in, SampleVector &audio);
 
   /** Return actual frequency offset in Hz with respect to receiver LO. */
-  float get_tuning_offset() const { return m_baseband_mean * freq_dev; }
+  float get_tuning_offset() const { return m_baseband_mean * m_freq_dev; }
 
   /** Return RMS baseband signal level (where nominal level is 0.707). */
   float get_baseband_level() const { return m_baseband_level; }
@@ -62,6 +67,7 @@ public:
 private:
   // Data members.
   const IQSampleCoeff &m_nbfmfilter_coeff;
+  const double m_freq_dev;
   float m_baseband_mean;
   float m_baseband_level;
   float m_if_rms;
