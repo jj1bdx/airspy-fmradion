@@ -756,9 +756,9 @@ int main(int argc, char **argv) {
     nbfmfilter_coeff = FilterParameters::jj1bdx_nbfm_48khz_narrow;
     break;
   case FilterType::Wide:
-    amfilter_coeff = FilterParameters::jj1bdx_am_48khz_default;
+    amfilter_coeff = FilterParameters::jj1bdx_am_48khz_wide;
     fmfilter_coeff = FilterParameters::delay_3taps_only_iq;
-    nbfmfilter_coeff = FilterParameters::jj1bdx_nbfm_48khz_default;
+    nbfmfilter_coeff = FilterParameters::jj1bdx_nbfm_48khz_wide;
     break;
   }
 
