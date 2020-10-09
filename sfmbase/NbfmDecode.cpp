@@ -99,6 +99,10 @@ void NbfmDecoder::process(const IQSampleVector &samples_in,
   // Filter out audio high frequency noise.
   m_audiofilter.process(m_buf_baseband, m_buf_baseband_filtered);
 
+  // Adjust gain by -3dB (0.707)
+  const double audio_gain = std::pow(10.0, (-3.0 / 20.0));
+  Utility::adjust_gain(m_buf_baseband_filtered, audio_gain);
+
   // Just return mono channel.
   audio = std::move(m_buf_baseband_filtered);
 }
