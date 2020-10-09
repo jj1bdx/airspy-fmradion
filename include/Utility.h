@@ -281,6 +281,14 @@ inline float estimate_magnitude(IQSample sample) {
   }
 }
 
+// Simple linear gain adjustment.
+inline void adjust_gain(SampleVector &samples, double gain) {
+  for (unsigned int i = 0, n = samples.size(); i < n; i++) {
+    double amplitude = samples[i] * gain;
+    samples[i] = amplitude;
+  }
+}
+
 }; // namespace Utility
 
 #endif /* INCLUDE_UTILITY_H_ */
