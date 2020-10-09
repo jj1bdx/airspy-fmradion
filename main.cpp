@@ -54,22 +54,6 @@
 /** Flag is set on SIGINT / SIGTERM. */
 static std::atomic_bool stop_flag(false);
 
-#define PEAK_LIMIT_LEVEL (0.95)
-
-// Simple linear gain adjustment and peak limiting.
-inline void adjust_gain_and_peak_limit(SampleVector &samples, double gain) {
-  for (unsigned int i = 0, n = samples.size(); i < n; i++) {
-    double amplitude = samples[i] * gain;
-    // hard limiting
-    if (amplitude > PEAK_LIMIT_LEVEL) {
-      amplitude = PEAK_LIMIT_LEVEL;
-    } else if (amplitude < -(PEAK_LIMIT_LEVEL)) {
-      amplitude = -(PEAK_LIMIT_LEVEL);
-    }
-    samples[i] = amplitude;
-  }
-}
-
 /**
  * Get data from output buffer and write to output stream.
  *
@@ -940,8 +924,7 @@ int main(int argc, char **argv) {
 
       // Set nominal audio volume (-6dB) when IF squelch is open,
       // set to zero volume if the squelch is closed.
-      adjust_gain_and_peak_limit(audiosamples,
-                                 if_rms >= squelch_level ? 0.5 : 0.0);
+      Utility::adjust_gain(audiosamples, if_rms >= squelch_level ? 0.5 : 0.0);
     }
 
     if (modtype == ModType::FM) {
