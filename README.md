@@ -186,9 +186,9 @@ Compile and install
  - `-X` Shift pilot phase (for Quadrature Multipath Monitor) (-X is ignored under mono mode (-M))
  - `-U` Set deemphasis to 75 microseconds (default: 50)
  - `-f` Set Filter type
-   - for FM: default: none, medium: +-156kHz, narrow: +-121kHz
-   - for AM: default: +-6kHz, medium: +-4.5kHz, narrow: +-3kHz
-   - for NBFM: default: +-10kHz, medium: +-8kHz, narrow: +-6.25kHz
+   - for FM: wide and default: none, medium: +-156kHz, narrow: +-121kHz
+   - for AM: wide: +-9kHz, default: +-6kHz, medium: +-4.5kHz, narrow: +-3kHz
+   - for NBFM: wide: +-20kHz, default: +-10kHz, medium: +-8kHz, narrow: +-6.25kHz
  - `-l dB` Enable IF squelch, set the level to minus given value of dB
  - `-E stages` Enable multipath filter for FM (For stable reception only: turn off if reception becomes unstable)
 
@@ -266,6 +266,7 @@ Compile and install
 * AM Filter coefficients are listed under `doc/filter-design`
 * `default` filter width: +-6kHz
 * Narrower filters by `-f` options: `middle` +-4.5kHz, `narrow` +-3kHz
+* Wider filters by `-f` options: `wide` +-9kHz
 
 ### For SSB
 
@@ -279,11 +280,12 @@ Compile and install
 
 ### For NBFM
 
-* Deviation: max +-8kHz
+* Deviation: normal +-8kHz, for wide +-17kHz
 * Output audio LPF: flat up to 3kHz
 * NBFM Filter coefficients are listed under `doc/filter-design`
 * `default` filter width: +-10kHz
 * Narrower filters by `-f` options: `middle` +-8kHz, `narrow` +-6.25kHz
+* Wider filters by `-f` options: `wide` +-20kHz (with wider deviation of +-17kHz)
 
 ## AM AGC
 
