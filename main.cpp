@@ -502,6 +502,8 @@ int main(int argc, char **argv) {
     filtertype = FilterType::Medium;
   } else if (strcasecmp(filtertype_str.c_str(), "narrow") == 0) {
     filtertype = FilterType::Narrow;
+  } else if (strcasecmp(filtertype_str.c_str(), "wide") == 0) {
+    filtertype = FilterType::Wide;
   } else {
     fprintf(stderr, "Filter type string unsuppored\n");
     exit(1);
@@ -753,6 +755,11 @@ int main(int argc, char **argv) {
     fmfilter_coeff = FilterParameters::jj1bdx_fm_384kHz_narrow;
     nbfmfilter_coeff = FilterParameters::jj1bdx_nbfm_48khz_narrow;
     break;
+  case FilterType::Wide:
+    amfilter_coeff = FilterParameters::jj1bdx_am_48khz_default;
+    fmfilter_coeff = FilterParameters::delay_3taps_only_iq;
+    nbfmfilter_coeff = FilterParameters::jj1bdx_nbfm_48khz_default;
+    break;
   }
 
   // Prepare AM decoder.
@@ -770,7 +777,8 @@ int main(int argc, char **argv) {
   );
 
   // Prepare narrow band FM decoder.
-  NbfmDecoder nbfm(nbfmfilter_coeff // nbfmfilter_coeff
+  NbfmDecoder nbfm(nbfmfilter_coeff,            // nbfmfilter_coeff
+                   NbfmDecoder::freq_dev_normal // freq_dev
   );
 
   // Initialize moving average object for FM ppm monitoring.
