@@ -276,7 +276,8 @@ Compile and install
 ### For CW
 
 * Pitch: 500Hz
-* Filter width: +- 400Hz
+* Filter width: +- 250Hz
+* Uses downsampling to 12kHz for applying a steep filter
 
 ### For NBFM
 
