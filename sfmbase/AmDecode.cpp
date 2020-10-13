@@ -67,9 +67,9 @@ AmDecoder::AmDecoder(IQSampleCoeff &amfilter_coeff, const ModType mode)
       ,
       m_amfilter(m_amfilter_coeff, 1)
 
-      // Construct CW narrow filter
+      // Construct CW narrow filter (in sample rate 12kHz)
       ,
-      m_cwfilter(FilterParameters::jj1bdx_cw_48khz_800hz, 1)
+      m_cwfilter(FilterParameters::jj1bdx_cw_12khz_500hz, 1)
 
       // Construct SSB narrow filter
       ,
@@ -121,7 +121,14 @@ AmDecoder::AmDecoder(IQSampleCoeff &amfilter_coeff, const ModType mode)
 
       // fine tuner for pitch shifting (shift up 500Hz)
       ,
-      m_finetuner(internal_rate_pcm / 100, 500 / 100) {
+      m_finetuner(internal_rate_pcm / 100, 500 / 100)
+
+      // CW downsampler and upsampler
+      ,
+      m_cw_downsampler(internal_rate_pcm, cw_rate_pcm),
+      m_cw_upsampler(cw_rate_pcm, internal_rate_pcm)
+
+{
   // Do nothing
 }
 
@@ -150,8 +157,21 @@ void AmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
     break;
   case ModType::CW:
     // Apply CW filter
-    m_cwfilter.process(samples_in, m_buf_filtered);
-    m_finetuner.process(m_buf_filtered, m_buf_filtered3);
+    m_cw_downsampler.process(samples_in, m_buf_filtered);
+    // If no downsampled signal comes out, terminate and wait for next block.
+    if (m_buf_filtered.size() == 0) {
+      audio.resize(0);
+      return;
+    }
+    m_cwfilter.process(m_buf_filtered, m_buf_filtered2a);
+    m_cw_upsampler.process(m_buf_filtered2a, m_buf_filtered2b);
+    // If no upsampled signal comes out, terminate and wait for next block.
+    if (m_buf_filtered2b.size() == 0) {
+      audio.resize(0);
+      return;
+    }
+    // Shift up to an audio frequency (500Hz)
+    m_finetuner.process(m_buf_filtered2b, m_buf_filtered3);
     break;
   default:
     m_buf_filtered3 = std::move(m_buf_filtered);
