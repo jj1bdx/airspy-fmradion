@@ -25,7 +25,7 @@
 
 #include "Filter.h"
 
-/* ****************  class LowPassFilterFirIQ  **************** */
+// class LowPassFilterFirIQ
 
 // Construct low-pass filter.
 LowPassFilterFirIQ::LowPassFilterFirIQ(const IQSampleCoeff &coeff,
@@ -92,6 +92,35 @@ void LowPassFilterFirIQ::process(const IQSampleVector &samples_in,
     copy(samples_in.begin(), samples_in.end(), m_state.end() - n);
   } else {
     copy(samples_in.end() - order, samples_in.end(), m_state.begin());
+  }
+}
+
+// class LowPassFilterFirIQ
+
+// Construct low-pass filter.
+UpSamplerIQ::UpSamplerIQ(const unsigned int upsample) : m_upsample(upsample) {
+  assert(upsample >= 1);
+}
+
+// Process samples.
+void UpSamplerIQ::process(const IQSampleVector &samples_in,
+                     IQSampleVector &samples_out) {
+
+  unsigned int n = samples_in.size();
+
+  if (n == 0) {
+    return;
+  }
+
+  samples_out.resize(n * m_upsample);
+
+  for (unsigned int i = 0, k = 0; i < n; i++) {
+    samples_out[k] = samples_in[i];
+    k++;
+    for (unsigned int j = 1; j < m_upsample; j++) {
+      samples_out[k] = IQSample(0, 0);
+      k++;
+    }
   }
 }
 
