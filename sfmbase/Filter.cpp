@@ -29,7 +29,7 @@
 
 // Construct low-pass filter.
 LowPassFilterFirIQ::LowPassFilterFirIQ(const IQSampleCoeff &coeff,
-                                       unsigned int downsample)
+                                       const unsigned int downsample)
     : m_coeff(coeff), m_order(coeff.size() - 1), m_downsample(downsample),
       m_pos(0) {
   assert(downsample >= 1);
@@ -189,7 +189,7 @@ void LowPassFilterFirAudio::process(const SampleVector &samples_in,
 /* ****************  class LowPassFilterRC  **************** */
 
 // Construct 1st order low-pass IIR filter.
-LowPassFilterRC::LowPassFilterRC(double timeconst)
+LowPassFilterRC::LowPassFilterRC(const double timeconst)
     : m_timeconst(timeconst), m_y0_1(0), m_y1_1(0) {
   m_a1 = -exp(-1 / m_timeconst);
   ;
@@ -289,7 +289,7 @@ void LowPassFilterRC::process_interleaved_inplace(SampleVector &samples) {
 /* ****************  class HighPassFilterIir  **************** */
 
 // Construct 2nd order high-pass IIR filter.
-HighPassFilterIir::HighPassFilterIir(double cutoff)
+HighPassFilterIir::HighPassFilterIir(const double cutoff)
     : x1(0), x2(0), y1(0), y2(0) {
   typedef std::complex<double> CDbl;
 

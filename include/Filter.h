@@ -31,7 +31,7 @@ public:
   // coeff        :: FIR filter coefficients.
   // downsample   :: Integer downsampling rate (>= 1)
   //
-  LowPassFilterFirIQ(const IQSampleCoeff &coeff, unsigned int downsample);
+  LowPassFilterFirIQ(const IQSampleCoeff &coeff, const unsigned int downsample);
 
   // Process samples.
   void process(const IQSampleVector &samples_in, IQSampleVector &samples_out);
@@ -89,7 +89,7 @@ public:
   //
   // timeconst :: RC time constant in seconds (1 / (2 * PI * cutoff_freq)
   //
-  LowPassFilterRC(double timeconst);
+  LowPassFilterRC(const double timeconst);
 
   // Process samples.
   void process(const SampleVector &samples_in, SampleVector &samples_out);
@@ -121,7 +121,7 @@ public:
   // cutoff   :: High-pass cutoff relative to the sample frequency
   //             (valid range 0.0 .. 0.5, 0.5 = Nyquist)
   //
-  HighPassFilterIir(double cutoff);
+  HighPassFilterIir(const double cutoff);
 
   // Process samples.
   void process(const SampleVector &samples_in, SampleVector &samples_out);
