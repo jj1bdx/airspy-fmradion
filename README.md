@@ -77,7 +77,6 @@ For the latest version, see https://github.com/jj1bdx/airspy-fmradion
   - Official releases are tagged
   - _master_ is the "production" branch with the most stable release (often ahead of the latest release though)
   - _dev_ is the development branch that contains current developments that will be eventually released in the master branch
-  - _libvolk_ is the libvolk-specific development branch that might contain unstable test code of current developments ahead of the dev branch
   - Other branches are experimental (and presumably abandoned)
 
 ## Prerequisites
