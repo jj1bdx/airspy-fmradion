@@ -44,23 +44,6 @@ private:
   unsigned int m_pos;
 };
 
-// Upsampler for IQ samples.
-class UpSamplerIQ {
-public:
-  //
-  // Construct low-pass filter.
-  //
-  // upsample   :: Integer upsampling rate (>= 1)
-  //
-  UpSamplerIQ(const unsigned int upsample);
-
-  // Process samples.
-  void process(const IQSampleVector &samples_in, IQSampleVector &samples_out);
-
-private:
-  unsigned int m_upsample;
-};
-
 // Low-pass filter for mono audio signal.
 class LowPassFilterFirAudio {
 public:
