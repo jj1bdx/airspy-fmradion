@@ -536,18 +536,17 @@ int main(int argc, char **argv) {
   }
 
   // Calculate number of samples in audio buffer.
-  unsigned int outputbuf_samples = 0;
   // Set default buffer length to 1 second.
-  outputbuf_samples = pcmrate;
+  unsigned int outputbuf_samples = pcmrate;
   // if bufsecs is explicitly set in the command line (not negative),
   // set the calculate number of samples for configured buffer length.
   if (bufsecs > 0) {
-    // Calculate nr of samples for configured buffer length.
+    // Calculate numberr of samples for configured buffer length.
     outputbuf_samples = (unsigned int)(bufsecs * pcmrate);
   }
   // Set minimum limit for the output buffer length.
-  if (outputbuf_samples < 48) {
-    outputbuf_samples = 48;
+  if (outputbuf_samples < 480) {
+    outputbuf_samples = 480;
   }
   fprintf(stderr, "output buffer length: %g [s]\n",
           outputbuf_samples / double(pcmrate));
@@ -794,12 +793,9 @@ int main(int argc, char **argv) {
   // If buffering enabled, start background output thread.
   DataBuffer<Sample> output_buffer;
   std::thread output_thread;
-
-  if (outputbuf_samples > 0) {
-    output_thread = std::thread(write_output_data, audio_output.get(),
+  // Always use output_thread for smooth output.
+  output_thread = std::thread(write_output_data, audio_output.get(),
                                 &output_buffer);
-  }
-
   SampleVector audiosamples;
   bool inbuf_length_warning = false;
   float audio_level = 0;
@@ -1031,13 +1027,8 @@ int main(int argc, char **argv) {
     // (Increased from one to support high sampling rates)
     if ((block > discarding_blocks) && audio_exists) {
       // Write samples to output.
-      if (outputbuf_samples > 0) {
-        // Buffered write.
-        output_buffer.push(std::move(audiosamples));
-      } else {
-        // Direct write.
-        audio_output->write(audiosamples);
-      }
+      // Always use buffered write.
+      output_buffer.push(std::move(audiosamples));
     }
   }
 
@@ -1046,10 +1037,8 @@ int main(int argc, char **argv) {
   // Join background threads.
   up_srcsdr->stop();
 
-  if (outputbuf_samples > 0) {
-    output_buffer.push_end();
-    output_thread.join();
-  }
+  output_buffer.push_end();
+  output_thread.join();
 
   // No cleanup needed; everything handled by destructors
 
