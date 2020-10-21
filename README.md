@@ -2,7 +2,7 @@
 
 # airspy-fmradion
 
-* Version 20201013-0
+* Version 20201013-0-portaudio (experimental)
 * For MacOS and Linux
 
 ### Contributing
@@ -66,6 +66,7 @@ airspy-fmradion -m am -t airspyhf -q \
  - [sox](http://sox.sourceforge.net/)
  - [The SoX Resampler library aka libsoxr](https://sourceforge.net/p/soxr/wiki/Home/)
  - [VOLK](http://libvolk.org/)
+ - [PortAudio](http://www.portaudio.com)
  - Tested: Airspy R2, Airspy Mini, Airspy HF+ Dual Port, RTL-SDR V3
  - Fast computer
  - Medium-strong FM and/or AM radio signals, or DSB/USB/LSB/CW signals
@@ -96,7 +97,7 @@ For example if you installed it in `/opt/install/libairspy` you have to add `-DA
 
 ### Debian/Ubuntu Linux
 
-  - `sudo apt-get install cmake pkg-config libusb-1.0-0-dev libasound2-dev libairspy-dev libairspyhf-dev librtlsdr-dev libsoxr-dev libsndfile1-dev`
+  - `sudo apt-get install cmake pkg-config libusb-1.0-0-dev libasound2-dev libairspy-dev libairspyhf-dev librtlsdr-dev libsoxr-dev libsndfile1-dev portaudio19-dev`
 
 ### macOS
 
@@ -108,6 +109,7 @@ For example if you installed it in `/opt/install/libairspy` you have to add `-DA
 brew tap pothosware/homebrew-pothos
 brew tap dholm/homebrew-sdr #other sdr apps
 brew update
+brew install portaudio
 brew install libsoxr
 brew install libsndfile
 brew install rtl-sdr
@@ -179,7 +181,7 @@ Compile and install
  - `-R filename` Write audio data as raw `S16_LE` samples. Use filename `-` to write to stdout
  - `-F filename` Write audio data as raw `FLOAT_LE` samples. Use filename `-` to write to stdout
  - `-W filename` Write audio data to .WAV file
- - `-P [device]` Play audio via PortAudio device (default `default`). Use `aplay -L` to get the list of devices for your system
+ - `-P device_num` Play audio via PortAudio device index number. Use string `-` to specify the default PortAudio device
  - `-T filename` Write pulse-per-second timestamps. Use filename '-' to write to stdout
  - `-b seconds` Set audio buffer size in seconds (default: 1 second)
  - `-X` Shift pilot phase (for Quadrature Multipath Monitor) (-X is ignored under mono mode (-M))
