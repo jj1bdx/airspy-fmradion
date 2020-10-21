@@ -63,6 +63,8 @@ public:
   /** Return true if the stream is OK, return false if there is an error. */
   operator bool() const { return (!m_zombie) && m_error.empty(); }
 
+  const std::string get_device_name() { return m_device_name; }
+
 protected:
   /** Constructor. */
   AudioOutput() : m_zombie(false), m_converter(samplesToInt16) {}
@@ -70,6 +72,7 @@ protected:
   std::string m_error;
   bool m_zombie;
   void (*m_converter)(const SampleVector &, std::vector<std::uint8_t> &);
+  std::string m_device_name;
 
 private:
   AudioOutput(const AudioOutput &);            // no copy constructor
