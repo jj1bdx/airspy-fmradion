@@ -59,18 +59,8 @@ static std::atomic_bool stop_flag(false);
  *
  * This code runs in a separate thread.
  */
-void write_output_data(AudioOutput *output, DataBuffer<Sample> *buf,
-                       unsigned int buf_minfill) {
+void write_output_data(AudioOutput *output, DataBuffer<Sample> *buf) {
   while (!stop_flag.load()) {
-
-    if (buf->queued_samples() == 0) {
-      // The buffer is empty. Perhaps the output stream is consuming
-      // samples faster than we can produce them. Wait until the buffer
-      // is back at its nominal level to make sure this does not happen
-      // too often.
-      buf->wait_buffer_fill(buf_minfill);
-    }
-
     if (buf->pull_end_reached()) {
       // Reached end of stream.
       break;
@@ -807,7 +797,7 @@ int main(int argc, char **argv) {
 
   if (outputbuf_samples > 0) {
     output_thread = std::thread(write_output_data, audio_output.get(),
-                                &output_buffer, outputbuf_samples * nchannel);
+                                &output_buffer);
   }
 
   SampleVector audiosamples;
