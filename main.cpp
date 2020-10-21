@@ -794,8 +794,8 @@ int main(int argc, char **argv) {
   DataBuffer<Sample> output_buffer;
   std::thread output_thread;
   // Always use output_thread for smooth output.
-  output_thread = std::thread(write_output_data, audio_output.get(),
-                                &output_buffer);
+  output_thread =
+      std::thread(write_output_data, audio_output.get(), &output_buffer);
   SampleVector audiosamples;
   bool inbuf_length_warning = false;
   float audio_level = 0;
