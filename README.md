@@ -179,7 +179,7 @@ Compile and install
  - `-R filename` Write audio data as raw `S16_LE` samples. Use filename `-` to write to stdout
  - `-F filename` Write audio data as raw `FLOAT_LE` samples. Use filename `-` to write to stdout
  - `-W filename` Write audio data to .WAV file
- - `-P [device]` Play audio via ALSA device (default `default`). Use `aplay -L` to get the list of devices for your system
+ - `-P [device]` Play audio via PortAudio device (default `default`). Use `aplay -L` to get the list of devices for your system
  - `-T filename` Write pulse-per-second timestamps. Use filename '-' to write to stdout
  - `-b seconds` Set audio buffer size in seconds (default: 1 second)
  - `-X` Shift pilot phase (for Quadrature Multipath Monitor) (-X is ignored under mono mode (-M))

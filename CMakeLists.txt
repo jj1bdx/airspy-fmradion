@@ -13,11 +13,6 @@ include(FindPkgConfig)
 
 find_package(Threads)
 
-# Require ALSA only for Linux
-if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    find_package(ALSA REQUIRED)
-endif()
-
 # Find Volk library.
 pkg_check_modules(PKG_VOLK volk)
 if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
@@ -127,12 +122,6 @@ endif (PORTAUDIO2_FOUND)
 message(STATUS "libportaudio: ${PORTAUDIO_INCLUDE_DIR}, ${PORTAUDIO_LIBRARY}")
 message(STATUS "PortAudio libs: ${PORTAUDIO_LINK_LIBRARIES}")
 
-if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    set(ALSA_OPTION "-DUSE_ALSA")
-else ()
-    set(ALSA_OPTION "")
-endif()
-
 if(RTLSDR_INCLUDE_DIR AND RTLSDR_LIBRARY)
     message(STATUS "Found librtlsdr: ${RTLSDR_INCLUDE_DIR}, ${RTLSDR_LIBRARY}")
 else()
@@ -170,7 +159,7 @@ set(OPTIMIZATION_FLAGS "-O3 -ftree-vectorize -march=native")
 
 # Common compiler flags and options.
 ##
-set(CMAKE_CXX_FLAGS "-Wall -std=c++11 ${OPTIMIZATION_FLAGS} ${ALSA_OPTION} ${AIRSPY_INCLUDE_OPTION} ${AIRSPYHF_INCLUDE_OPTION} ${EXTRA_FLAGS}")
+set(CMAKE_CXX_FLAGS "-Wall -std=c++11 ${OPTIMIZATION_FLAGS} ${AIRSPY_INCLUDE_OPTION} ${AIRSPYHF_INCLUDE_OPTION} ${EXTRA_FLAGS}")
 
 set(sfmbase_SOURCES
     sfmbase/AfAgc.cpp
@@ -239,7 +228,6 @@ add_executable(airspy-fmradion
 
 include_directories(
     ${CMAKE_SOURCE_DIR}/include
-    ${ALSA_INCLUDE_DIRS}
     ${PORTAUDIO_INCLUDE_DIR}
     ${EXTRA_INCLUDES}
 )
@@ -247,7 +235,6 @@ include_directories(
 target_link_libraries(airspy-fmradion
     sfmbase
     ${CMAKE_THREAD_LIBS_INIT}
-    ${ALSA_LIBRARIES}
     ${PORTAUDIO_LINK_LIBRARIES}
     ${VOLK_LIBRARY}
     ${EXTRA_LIBS}
