@@ -268,8 +268,6 @@ template <typename T> void WavAudioOutput::set_value(uint8_t *ptr, T value) {
 
 // Class PortAudioOutput
 
-#define PA_FRAMES_PER_BUFFER (128)
-
 // Construct PortAudio output stream.
 PortAudioOutput::PortAudioOutput(const PaDeviceIndex device_index,
                                  unsigned int samplerate, bool stereo) {
@@ -293,13 +291,14 @@ PortAudioOutput::PortAudioOutput(const PaDeviceIndex device_index,
       Pa_GetDeviceInfo(m_outputparams.device)->defaultLowOutputLatency;
   m_outputparams.hostApiSpecificStreamInfo = NULL;
 
-  m_paerror = Pa_OpenStream(&m_stream,
-                            NULL, // no input
-                            &m_outputparams, samplerate, PA_FRAMES_PER_BUFFER,
-                            paClipOff, // no clipping
-                            NULL,      // no callback, blocking API
-                            NULL       // no callback userData
-  );
+  m_paerror =
+      Pa_OpenStream(&m_stream,
+                    NULL, // no input
+                    &m_outputparams, samplerate, paFramesPerBufferUnspecified,
+                    paClipOff, // no clipping
+                    NULL,      // no callback, blocking API
+                    NULL       // no callback userData
+      );
   if (m_paerror != paNoError) {
     add_paerror("Pa_OpenStream()");
     return;
@@ -332,7 +331,8 @@ bool PortAudioOutput::write(const SampleVector &samples) {
   // Convert samples to bytes.
   samplesToFloat32(samples, m_bytebuf);
 
-  m_paerror = Pa_WriteStream(m_stream, m_bytebuf.data(), sample_size);
+  m_paerror =
+      Pa_WriteStream(m_stream, m_bytebuf.data(), sample_size / m_nchannels);
   if (m_paerror == paNoError) {
     return true;
   } else if (m_paerror == paOutputUnderflowed) {
@@ -340,7 +340,7 @@ bool PortAudioOutput::write(const SampleVector &samples) {
     // fprintf(stderr, "paOutputUnderflowed\n");
     return true;
   } else
-  add_paerror("Pa_WriteStream()");
+    add_paerror("Pa_WriteStream()");
   return false;
 }
 
