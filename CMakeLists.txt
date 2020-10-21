@@ -21,17 +21,13 @@ endif()
 # Find Volk library.
 pkg_check_modules(PKG_VOLK volk)
 if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-    find_path(VOLK_INCLUDE_DIRS volk.h
-	HINTS /usr/local/include/volk ${PKG_VOLK_INCLUDE_DIRS})
     find_library(VOLK_LIBRARY libvolk.dylib
 	HINTS /usr/local/lib ${PKG_VOLK_LIBRARY_DIRS})
 else()
-    find_path(VOLK_INCLUDE_DIRS volk.h
-	HINTS ${PKG_VOLK_INCLUDE_DIRS})
     find_library(VOLK_LIBRARY libvolk.so
 	HINTS ${PKG_VOLK_LIBRARY_DIRS})
 endif()
-message(STATUS "volk: ${VOLK_INCLUDE_DIRS}, ${VOLK_LIBRARY}")
+message(STATUS "volk library: ${VOLK_LIBRARY}")
 
 # Find Airspy library.
 pkg_check_modules(PKG_AIRSPY libairspy)
@@ -117,7 +113,7 @@ if (PORTAUDIO2_FOUND)
     set(PORTAUDIO_VERSION 19)
     set(PORTAUDIO_FOUND TRUE)
     find_path(PORTAUDIO_INCLUDE_DIR portaudio.h
-           HINTS /usr/local/include ${PORTAUDIO_INCLUDE_DIRS})
+        HINTS /usr/local/include ${PORTAUDIO_INCLUDE_DIRS})
     if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
         find_library(PORTAUDIO_LIBRARY libportaudio.dylib
                HINTS /usr/local/lib ${PORTAUDIO_LIBRARY_DIRS})
@@ -245,7 +241,6 @@ include_directories(
     ${CMAKE_SOURCE_DIR}/include
     ${ALSA_INCLUDE_DIRS}
     ${PORTAUDIO_INCLUDE_DIR}
-    ${VOLK_INCLUDE_DIR}
     ${EXTRA_INCLUDES}
 )
 
