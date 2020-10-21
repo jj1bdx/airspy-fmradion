@@ -349,7 +349,7 @@ bool AlsaAudioOutput::write(const SampleVector &samples) {
 
 // Class PortAudioOutput
 
-#define PA_FRAMES_PER_BUFFER (1024)
+#define PA_FRAMES_PER_BUFFER (128)
 
 // Construct PortAudio output stream.
 PortAudioOutput::PortAudioOutput(const PaDeviceIndex device_index,
@@ -411,16 +411,19 @@ bool PortAudioOutput::write(const SampleVector &samples) {
   }
 
   unsigned long sample_size = samples.size();
+  fprintf(stderr, "sample_size = %lu\n", sample_size);
   // Convert samples to bytes.
   samplesToFloat32(samples, m_bytebuf);
 
   m_paerror = Pa_WriteStream(m_stream, m_bytebuf.data(), sample_size);
-  if (m_paerror != paNoError) {
-    add_paerror("Pa_WriteStream()");
-    return false;
-  }
-
-  return true;
+  if (m_paerror == paNoError) {
+    return true;
+  } else if (m_paerror == paOutputUnderflowed) {
+    fprintf(stderr, "paOutputUnderflowed\n");
+    return true;
+  } 
+  
+  return false;
 }
 
 // Terminate PortAudio

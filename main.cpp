@@ -49,7 +49,7 @@
 // define this for enabling coefficient monitor functions
 // #undef COEFF_MONITOR
 
-#define AIRSPY_FMRADION_VERSION "20201013-0"
+#define AIRSPY_FMRADION_VERSION "20201013-0-portaudio"
 
 /** Flag is set on SIGINT / SIGTERM. */
 static std::atomic_bool stop_flag(false);
@@ -128,7 +128,7 @@ void usage() {
       "  -F filename    Write audio data as raw FLOAT_LE samples\n"
       "                 use filename '-' to write to stdout\n"
       "  -W filename    Write audio data to .WAV file\n"
-      "  -P [device]    Play audio via ALSA device (default 'default')\n"
+      "  -P [device]    Play audio via PortAudio device (default 'default')\n"
       "  -T filename    Write pulse-per-second timestamps\n"
       "                 use filename '-' to write to stdout\n"
       "  -b seconds     Set audio buffer size in seconds (default: 1 second)\n"
@@ -300,13 +300,8 @@ int main(int argc, char **argv) {
   int devidx = 0;
   int pcmrate = FmDecoder::sample_rate_pcm;
   bool stereo = true;
-#ifdef USE_ALSA
-  OutputMode outmode = OutputMode::ALSA;
-  std::string filename;
-#else  // !USE_ALSA
   OutputMode outmode = OutputMode::RAW_INT16;
   std::string filename("-");
-#endif // USE_ALSA
   std::string alsadev("default");
   bool quietmode = false;
   std::string ppsfilename;
@@ -394,7 +389,7 @@ int main(int argc, char **argv) {
       enable_squelch = true;
       break;
     case 'P':
-      outmode = OutputMode::ALSA;
+      outmode = OutputMode::PORTAUDIO;
       if (optarg != nullptr) {
         alsadev = optarg;
       }
@@ -584,15 +579,11 @@ int main(int argc, char **argv) {
     fprintf(stderr, "writing audio samples to '%s'\n", filename.c_str());
     audio_output.reset(new WavAudioOutput(filename, pcmrate, stereo));
     break;
-  case OutputMode::ALSA:
-#ifdef USE_ALSA
-    fprintf(stderr, "playing audio to ALSA device '%s'\n", alsadev.c_str());
-    audio_output.reset(new AlsaAudioOutput(alsadev, pcmrate, stereo));
+  case OutputMode::PORTAUDIO:
+    fprintf(stderr, "playing audio to PortAudio device '%s'\n", alsadev.c_str());
+    // TODO
+    audio_output.reset(new PortAudioOutput(0, pcmrate, stereo));
     break;
-#else  // !USE_ALSA
-    fprintf(stderr, "ALSA not implemented\n");
-    exit(1);
-#endif // USE_ALSA
   }
 
   if (!(*audio_output)) {
