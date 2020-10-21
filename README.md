@@ -41,8 +41,7 @@ New version number scheme: YYYYMMDD-N (N: subnumber, starting from 0, unsigned i
 ```sh
 airspy-fmradion -t airspy -q \
     -c freq=88100000,srate=10000000,lgain=2,mgain=0,vgain=10 \
-    -b 1.0 -R - | \
-    play -t raw -esigned-integer -b16 -r 48000 -c 2 -q -
+    -b 1.0 -P -
 
 airspy-fmradion -t airspyhf -q \
     -c freq=88100000,srate=768000 \
