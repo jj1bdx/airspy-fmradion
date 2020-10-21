@@ -102,6 +102,8 @@ RawAudioOutput::RawAudioOutput(const std::string &filename) {
       return;
     }
   }
+
+  m_device_name = "RawAudioOutput";
 }
 
 // Destructor.
@@ -161,6 +163,7 @@ WavAudioOutput::WavAudioOutput(const std::string &filename,
     m_error = "can not write to '" + filename + "' (" + strerror(errno) + ")";
     m_zombie = true;
   }
+  m_device_name = "WavAudioOutput";
 }
 
 // Destructor.
@@ -279,11 +282,21 @@ PortAudioOutput::PortAudioOutput(const PaDeviceIndex device_index,
     return;
   }
 
-  m_outputparams.device = Pa_GetDefaultOutputDevice();
+  if (device_index == -1) {
+    m_outputparams.device = Pa_GetDefaultOutputDevice();
+  } else {
+    PaDeviceIndex index = static_cast<PaDeviceIndex>(device_index);
+    if (index >= Pa_GetDeviceCount()) {
+      add_paerror("Device number out of range");
+      return;
+    }
+    m_outputparams.device = index;
+  }
   if (m_outputparams.device == paNoDevice) {
     add_paerror("No default output device");
     return;
   }
+  m_device_name = Pa_GetDeviceInfo(m_outputparams.device)->name;
 
   m_outputparams.channelCount = m_nchannels;
   m_outputparams.sampleFormat = paFloat32;
