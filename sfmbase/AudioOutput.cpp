@@ -395,10 +395,9 @@ PortAudioOutput::PortAudioOutput(const PaDeviceIndex device_index,
 
 // Destructor.
 PortAudioOutput::~PortAudioOutput() {
-  Pa_Sleep(1000);
-  m_paerror = Pa_CloseStream(m_stream);
+  m_paerror = Pa_StopStream(m_stream);
   if (m_paerror != paNoError) {
-    add_paerror("Pa_CloseStream()");
+    add_paerror("Pa_StopStream()");
     return;
   }
   Pa_Terminate();
@@ -411,7 +410,6 @@ bool PortAudioOutput::write(const SampleVector &samples) {
   }
 
   unsigned long sample_size = samples.size();
-  fprintf(stderr, "sample_size = %lu\n", sample_size);
   // Convert samples to bytes.
   samplesToFloat32(samples, m_bytebuf);
 
@@ -419,10 +417,11 @@ bool PortAudioOutput::write(const SampleVector &samples) {
   if (m_paerror == paNoError) {
     return true;
   } else if (m_paerror == paOutputUnderflowed) {
-    fprintf(stderr, "paOutputUnderflowed\n");
+    // This error is benign
+    // fprintf(stderr, "paOutputUnderflowed\n");
     return true;
-  } 
-  
+  } else
+  add_paerror("Pa_WriteStream()");
   return false;
 }
 
