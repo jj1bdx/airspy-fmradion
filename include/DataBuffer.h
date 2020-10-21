@@ -67,9 +67,7 @@ public:
   std::vector<Element> pull() {
     std::vector<Element> ret;
     std::unique_lock<std::mutex> lock(m_mutex);
-    while (m_queue.empty() && !m_end_marked) {
-      m_cond.wait(lock);
-    }
+    m_cond.wait(lock, [&] { return !(m_queue.empty() && !m_end_marked); });
     if (!m_queue.empty()) {
       m_qlen -= m_queue.front().size();
       std::swap(ret, m_queue.front());
@@ -87,9 +85,7 @@ public:
   /** Wait until the buffer contains minfill samples or an end marker. */
   void wait_buffer_fill(std::size_t minfill) {
     std::unique_lock<std::mutex> lock(m_mutex);
-    while (m_qlen < minfill && !m_end_marked) {
-      m_cond.wait(lock);
-    }
+    m_cond.wait(lock, [&] { return !(m_qlen < minfill && !m_end_marked); });
   }
 
 private:
