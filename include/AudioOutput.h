@@ -25,6 +25,8 @@
 
 #include "SoftFM.h"
 
+#include "portaudio.h"
+
 /** Base class for writing audio data to file or playback. */
 class AudioOutput {
 public:
@@ -163,5 +165,23 @@ private:
   std::vector<std::uint8_t> m_bytebuf;
 };
 #endif // USE_ALSA
+
+class PortAudioOutput : public AudioOutput {
+public:
+  //
+  // Construct PortAudio output stream.
+  //
+  // device_index :: device index number
+  // samplerate   :: audio sample rate in Hz
+  // stereo       :: true if the output stream contains stereo data
+  PortAudioOutput(const PaDeviceIndex device_index, unsigned int samplerate,
+                  bool stereo);
+
+  virtual ~PortAudioOutput() override;
+  virtual bool write(const SampleVector &samples) override;
+
+private:
+  unsigned int m_nchannels;
+};
 
 #endif

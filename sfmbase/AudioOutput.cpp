@@ -347,4 +347,25 @@ bool AlsaAudioOutput::write(const SampleVector &samples) {
 
 #endif // USE_ALSA
 
+// Class PortAudioOutput
+
+// Construct PortAudio output stream.
+PortAudioOutput::PortAudioOutput(
+                 const PaDeviceIndex device_index, unsigned int samplerate,
+                  bool stereo) {
+  m_nchannels = stereo ? 2 : 1;
+  // TODO
+}
+
+// Destructor.
+PortAudioOutput::~PortAudioOutput() {
+// TODO
+}
+
+// Write audio data.
+bool PortAudioOutput::write(const SampleVector &samples) {
+  // TODO
+  return true;
+}
+
 /* end */
