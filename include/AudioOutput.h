@@ -181,7 +181,15 @@ public:
   virtual bool write(const SampleVector &samples) override;
 
 private:
+  // Terminate PortAudio
+  // then add PortAudio error string to m_error and set m_zombie flag.
+  void add_paerror(const std::string &msg);
+
   unsigned int m_nchannels;
+  PaStreamParameters m_outputparams;
+  PaStream *m_stream;
+  PaError m_paerror;
+  std::vector<std::uint8_t> m_bytebuf;
 };
 
 #endif

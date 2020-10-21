@@ -349,23 +349,91 @@ bool AlsaAudioOutput::write(const SampleVector &samples) {
 
 // Class PortAudioOutput
 
+#define PA_FRAMES_PER_BUFFER (1024)
+
 // Construct PortAudio output stream.
-PortAudioOutput::PortAudioOutput(
-                 const PaDeviceIndex device_index, unsigned int samplerate,
-                  bool stereo) {
+PortAudioOutput::PortAudioOutput(const PaDeviceIndex device_index,
+                                 unsigned int samplerate, bool stereo) {
   m_nchannels = stereo ? 2 : 1;
-  // TODO
+
+  m_paerror = Pa_Initialize();
+  if (m_paerror != paNoError) {
+    add_paerror("Pa_Initialize()");
+    return;
+  }
+
+  m_outputparams.device = Pa_GetDefaultOutputDevice();
+  if (m_outputparams.device == paNoDevice) {
+    add_paerror("No default output device");
+    return;
+  }
+
+  m_outputparams.channelCount = m_nchannels;
+  m_outputparams.sampleFormat = paFloat32;
+  m_outputparams.suggestedLatency =
+      Pa_GetDeviceInfo(m_outputparams.device)->defaultLowOutputLatency;
+  m_outputparams.hostApiSpecificStreamInfo = NULL;
+
+  m_paerror = Pa_OpenStream(&m_stream,
+                            NULL, // no input
+                            &m_outputparams, samplerate, PA_FRAMES_PER_BUFFER,
+                            paClipOff, // no clipping
+                            NULL,      // no callback, blocking API
+                            NULL       // no callback userData
+  );
+  if (m_paerror != paNoError) {
+    add_paerror("Pa_OpenStream()");
+    return;
+  }
+
+  m_paerror = Pa_StartStream(m_stream);
+  if (m_paerror != paNoError) {
+    add_paerror("Pa_StartStream()");
+    return;
+  }
 }
 
 // Destructor.
 PortAudioOutput::~PortAudioOutput() {
-// TODO
+  Pa_Sleep(1000);
+  m_paerror = Pa_CloseStream(m_stream);
+  if (m_paerror != paNoError) {
+    add_paerror("Pa_CloseStream()");
+    return;
+  }
+  Pa_Terminate();
 }
 
 // Write audio data.
 bool PortAudioOutput::write(const SampleVector &samples) {
-  // TODO
+  if (m_zombie) {
+    return false;
+  }
+
+  unsigned long sample_size = samples.size();
+  // Convert samples to bytes.
+  samplesToFloat32(samples, m_bytebuf);
+
+  m_paerror = Pa_WriteStream(m_stream, m_bytebuf.data(), sample_size);
+  if (m_paerror != paNoError) {
+    add_paerror("Pa_WriteStream()");
+    return false;
+  }
+
   return true;
+}
+
+// Terminate PortAudio
+// then add PortAudio error string to m_error and set m_zombie flag.
+void PortAudioOutput::add_paerror(const std::string &premsg) {
+  Pa_Terminate();
+  m_error += premsg;
+  m_error += ": PortAudio error: (number: ";
+  m_error += std::to_string(m_paerror);
+  m_error += " message: ";
+  m_error += Pa_GetErrorText(m_paerror);
+  m_error += ")";
+  m_zombie = true;
 }
 
 /* end */
