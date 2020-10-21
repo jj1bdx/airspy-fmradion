@@ -128,7 +128,9 @@ void usage() {
       "  -F filename    Write audio data as raw FLOAT_LE samples\n"
       "                 use filename '-' to write to stdout\n"
       "  -W filename    Write audio data to .WAV file\n"
-      "  -P [device]    Play audio via PortAudio device (default 'default')\n"
+      "  -P device_num  Play audio via PortAudio device index number\n"
+      "                 use string '-' to specify the default PortAudio "
+      "device\n"
       "  -T filename    Write pulse-per-second timestamps\n"
       "                 use filename '-' to write to stdout\n"
       "  -b seconds     Set audio buffer size in seconds (default: 1 second)\n"
@@ -302,7 +304,7 @@ int main(int argc, char **argv) {
   bool stereo = true;
   OutputMode outmode = OutputMode::RAW_INT16;
   std::string filename("-");
-  std::string alsadev("default");
+  int portaudiodev = -1;
   bool quietmode = false;
   std::string ppsfilename;
   FILE *ppsfile = nullptr;
@@ -326,27 +328,28 @@ int main(int argc, char **argv) {
   fprintf(stderr, "Software FM/AM radio for ");
   fprintf(stderr, "Airspy R2, Airspy HF+, and RTL-SDR\n");
 
-  const struct option longopts[] = {{"modtype", 2, nullptr, 'm'},
-                                    {"devtype", 2, nullptr, 't'},
-                                    {"quiet", 1, nullptr, 'q'},
-                                    {"config", 2, nullptr, 'c'},
-                                    {"dev", 1, nullptr, 'd'},
-                                    {"mono", 0, nullptr, 'M'},
-                                    {"raw", 1, nullptr, 'R'},
-                                    {"float", 1, nullptr, 'F'},
-                                    {"wav", 1, nullptr, 'W'},
-                                    {"play", 2, nullptr, 'P'},
-                                    {"pps", 1, nullptr, 'T'},
-                                    {"buffer", 1, nullptr, 'b'},
-                                    {"pilotshift", 0, nullptr, 'X'},
-                                    {"usa", 0, nullptr, 'U'},
-                                    {"filtertype", 2, nullptr, 'f'},
-                                    {"squelch", 1, nullptr, 'l'},
-                                    {"multipathfilter", 1, nullptr, 'E'},
-                                    {nullptr, 0, nullptr, 0}};
+  const struct option longopts[] = {
+      {"modtype", optional_argument, nullptr, 'm'},
+      {"devtype", optional_argument, nullptr, 't'},
+      {"quiet", required_argument, nullptr, 'q'},
+      {"config", optional_argument, nullptr, 'c'},
+      {"dev", required_argument, nullptr, 'd'},
+      {"mono", no_argument, nullptr, 'M'},
+      {"raw", required_argument, nullptr, 'R'},
+      {"float", required_argument, nullptr, 'F'},
+      {"wav", required_argument, nullptr, 'W'},
+      {"play", optional_argument, nullptr, 'P'},
+      {"pps", required_argument, nullptr, 'T'},
+      {"buffer", required_argument, nullptr, 'b'},
+      {"pilotshift", no_argument, nullptr, 'X'},
+      {"usa", no_argument, nullptr, 'U'},
+      {"filtertype", optional_argument, nullptr, 'f'},
+      {"squelch", required_argument, nullptr, 'l'},
+      {"multipathfilter", required_argument, nullptr, 'E'},
+      {nullptr, no_argument, nullptr, 0}};
 
   int c, longindex;
-  while ((c = getopt_long(argc, argv, "m:t:c:d:MR:F:W:f:l:P::T:b:qXUE:",
+  while ((c = getopt_long(argc, argv, "m:t:c:d:MR:F:W:f:l:P:T:b:qXUE:",
                           longopts, &longindex)) >= 0) {
     switch (c) {
     case 'm':
@@ -390,8 +393,10 @@ int main(int argc, char **argv) {
       break;
     case 'P':
       outmode = OutputMode::PORTAUDIO;
-      if (optarg != nullptr) {
-        alsadev = optarg;
+      if (0 == strncmp(optarg, "-", 1)) {
+        portaudiodev = -1;
+      } else if (!parse_int(optarg, portaudiodev) || portaudiodev < 0) {
+        badarg("-P");
       }
       break;
     case 'T':
@@ -580,9 +585,13 @@ int main(int argc, char **argv) {
     audio_output.reset(new WavAudioOutput(filename, pcmrate, stereo));
     break;
   case OutputMode::PORTAUDIO:
-    fprintf(stderr, "playing audio to PortAudio device '%s'\n", alsadev.c_str());
-    // TODO
-    audio_output.reset(new PortAudioOutput(0, pcmrate, stereo));
+    if (portaudiodev == -1) {
+      fprintf(stderr, "playing audio to PortAudio default device: ");
+    } else {
+      fprintf(stderr, "playing audio to PortAudio device %d: ", portaudiodev);
+    }
+    audio_output.reset(new PortAudioOutput(portaudiodev, pcmrate, stereo));
+    fprintf(stderr, "name '%s'\n", audio_output->get_device_name().c_str());
     break;
   }
 
