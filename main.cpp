@@ -49,7 +49,7 @@
 // define this for enabling coefficient monitor functions
 // #undef COEFF_MONITOR
 
-#define AIRSPY_FMRADION_VERSION "20201013-0-portaudio"
+#define AIRSPY_FMRADION_VERSION "20201023-0"
 
 /** Flag is set on SIGINT / SIGTERM. */
 static std::atomic_bool stop_flag(false);
@@ -653,13 +653,12 @@ int main(int argc, char **argv) {
     break;
   }
 
+  // TODO: rate compensation code here
+  // ifrate *= 1 + offset;
+
   // Configure if_decimation_ratio.
   switch (modtype) {
   case ModType::FM:
-    // the target_rate should not exceed the target rate
-    if (fm_target_rate > ifrate) {
-      fm_target_rate = ifrate;
-    }
     if_decimation_ratio = ifrate / fm_target_rate;
     break;
   case ModType::AM:
