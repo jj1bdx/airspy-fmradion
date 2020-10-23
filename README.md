@@ -17,7 +17,7 @@ New version number scheme: YYYYMMDD-N (N: subnumber, starting from 0, unsigned i
 
 ### Known issues and changes
 
-* PortAudio is required since Version 20201023-0. Use PortAudio v19.
+* PortAudio is required since Version 20201023-0. Use PortAudio v19. Former ALSA output driver is replaced by more versatile PortAudio driver, which is compatible both for Linux and macOS.
 * libvolk is required since v0.8.0. If you don't want to install libvolk, use v0.7.8 instead. Use the latest master branch of libvolk. Configure the `volk_config` file with `volk_profile -b` for the maximum performance. See [INSTALL-latest-libvolk.md](INSTALL-latest-libvolk.md) for the details.
 * Building on MacOS 10.15 Catalina is still not tested yet. The development is going on with the last Mojave 10.14.6.
 * For Raspberry Pi 3 and 4, Airspy R2 10Mbps and Airspy Mini 6Mbps sampling rates are *not supported* due to the hardware limitation. Use in 2.5Mbps for R2, 3Mbps for Mini.
@@ -192,8 +192,27 @@ Compile and install
    - for NBFM: wide: +-20kHz, default: +-10kHz, medium: +-8kHz, narrow: +-6.25kHz
  - `-l dB` Enable IF squelch, set the level to minus given value of dB
  - `-E stages` Enable multipath filter for FM (For stable reception only: turn off if reception becomes unstable)
+ - `-r ppm` Set IF offset in ppm (range: +-1000000ppm) (Note: this option affects output pitch and timing: *use for the output timing compensation only!*
 
 ## Major changes
+
+### Rate compensation for adjusting audio device playback speed offset
+
+* Background: some audio devices shows non-negligible offset of playback speed, which causes eventual audio output buffer overflow and significant delay in long-term playback.
+* How to fix: compensating the playback speed offset gives more accurate playback timing, by sacrificing output audio pitch accuracy. A proper compensation will eliminate the cause of increasing output buffer length, by sending less data (lower sampling rate) to the conversion process.
+* You can specify the compensation rate by ppm using `-r` option.
+* How to estimate the rate offset: when elapsed playback time is `Tp` [seconds] and output buffer length (`buf=` in the debug output) increases during the time is `Ts` [seconds], the compensation rate is `(Ts/Tp) * 1000000` [ppm].
+* For example, if the output buffer length increases for 1 second after playing back for 7 hours (25200 seconds), the offset rate is 1/25200 * 1000000 ~= 39.68ppm.
+* +- 100ppm offset is not uncommon among the consumer-grade audio devices.
+* +- 100ppm pitch change may not be recongizable by human.
+
+#### Caveats for the rate compensation
+
+* *Do not use this feature if the per-sample accuracy is essential.*
+* *Do not use this feature for non-realtime output (for example, to files).*
+* Output audio pitch increases as the offset increases.
+* Too much compensation will cause output underflow.
+* This feature causes fractional (non-integer) resampling by `IfResampler` class, which causes more CPU usage.
 
 ### Smaller latency
 
