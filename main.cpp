@@ -49,7 +49,7 @@
 // define this for enabling coefficient monitor functions
 // #undef COEFF_MONITOR
 
-#define AIRSPY_FMRADION_VERSION "20201023-0"
+#define AIRSPY_FMRADION_VERSION "20201023-0-test-rate-compensation"
 
 /** Flag is set on SIGINT / SIGTERM. */
 static std::atomic_bool stop_flag(false);
@@ -157,6 +157,9 @@ void usage() {
       "  -E stages      Enable multipath filter for FM\n"
       "                 (For stable reception only:\n"
       "                  turn off if reception becomes unstable)\n"
+      "  -r ppm         Set IF offset in ppm (range: +-1000000ppm)\n"
+      "                 (This option affects output pitch and timing:\n"
+      "                  use for the output timing compensation only!)\n"
       "\n"
       "Configuration options for RTL-SDR devices\n"
       "  freq=<int>     Frequency of radio station in Hz (default 100000000)\n"
@@ -314,6 +317,8 @@ int main(int argc, char **argv) {
   bool pilot_shift = false;
   bool deemphasis_na = false;
   int multipathfilter_stages = 0;
+  bool ifrate_offset_enable = false;
+  double ifrate_offset_ppm = 0;
   std::string config_str;
   std::string devtype_str;
   DevType devtype;
@@ -346,10 +351,11 @@ int main(int argc, char **argv) {
       {"filtertype", optional_argument, nullptr, 'f'},
       {"squelch", required_argument, nullptr, 'l'},
       {"multipathfilter", required_argument, nullptr, 'E'},
+      {"ifrateppm", optional_argument, nullptr, 'r'},
       {nullptr, no_argument, nullptr, 0}};
 
   int c, longindex;
-  while ((c = getopt_long(argc, argv, "m:t:c:d:MR:F:W:f:l:P:T:b:qXUE:",
+  while ((c = getopt_long(argc, argv, "m:t:c:d:MR:F:W:f:l:P:T:b:qXUE:r:",
                           longopts, &longindex)) >= 0) {
     switch (c) {
     case 'm':
@@ -420,6 +426,13 @@ int main(int argc, char **argv) {
       if (!parse_int(optarg, multipathfilter_stages) ||
           multipathfilter_stages < 1) {
         badarg("-E");
+      }
+      break;
+    case 'r':
+      ifrate_offset_enable = true;
+      if (!Utility::parse_dbl(optarg, ifrate_offset_ppm) ||
+          std::fabs(ifrate_offset_ppm) > 1000000.0) {
+        badarg("-r");
       }
       break;
     default:
@@ -653,8 +666,10 @@ int main(int argc, char **argv) {
     break;
   }
 
-  // TODO: rate compensation code here
-  // ifrate *= 1 + offset;
+  // IF rate compensation if requested.
+  if (ifrate_offset_enable) {
+    ifrate *= 1.0 + (ifrate_offset_ppm / 1000000.0);
+  }
 
   // Configure if_decimation_ratio.
   switch (modtype) {
@@ -682,6 +697,12 @@ int main(int argc, char **argv) {
   double demodulator_rate = ifrate / if_decimation_ratio;
   double total_decimation_ratio = ifrate / pcmrate;
   double audio_decimation_ratio = demodulator_rate / pcmrate;
+
+  // Display ifrate compensation if applicable.
+  if (ifrate_offset_enable) {
+    fprintf(stderr, "IF sample rate shifted by: %.9g [ppm]\n",
+            ifrate_offset_ppm);
+  }
 
   // Display filter configuration.
   fprintf(stderr, "IF sample rate: %.9g [Hz], ", ifrate);
