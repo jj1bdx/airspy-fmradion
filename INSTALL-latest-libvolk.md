@@ -1,5 +1,14 @@
 # Installing the latest libvolk on macOS and Linux
 
+## Build process change
+
+The latest libvolk requires git submodule files called [cpu\_features](https://github.com/google/cpu_features/). To enable this, run:
+
+```sh
+git submodule init
+git submodule update
+```
+
 ## Required version
 
 libvolk v2.3 and later. The software was first tested OK with libvolk v2.1 and v2.2.
@@ -54,6 +63,9 @@ git clone https://github.com/gnuradio/volk libvolk
 cd libvolk
 # use the master branch
 git checkout master
+# Fetch git submodule (cpu_features) for the latest libvolk
+git submodule init
+git submodule update
 # Latest libvolk prefers Python 3 to Python 2,
 # so you might need to run pip3 first
 # install pip3 if needed
