@@ -6,7 +6,7 @@ The latest libvolk requires git submodule files called [cpu\_features](https://g
 
 ```sh
 git submodule init
-git submodule update
+git submodule update --init
 ```
 
 ## Required version
@@ -25,7 +25,8 @@ These tools are not the requirement but may help increasing the execution speed.
 
 ### macOS
 
-* While macOS AppleClang works OK for the generic running environment, full support for Intel instructions such as MMX and AVX require GNU cc `gcc`.
+* For Xcode 12.1: use Apple's clang.
+* For Xcode 11.x and before: while macOS AppleClang works OK for the generic running environment, full support for Intel instructions such as MMX and AVX require GNU cc `gcc`.
 
 ```shell
 brew install gcc
@@ -59,7 +60,8 @@ sudo apt install libssl-dev libboost1.62-all
 ## Commands
 
 ```
-git clone https://github.com/gnuradio/volk libvolk
+# Fetch also submodule
+git clone --recursive https://github.com/gnuradio/volk libvolk
 cd libvolk
 # use the master branch
 git checkout master
@@ -74,10 +76,12 @@ pip3 install mako
 # pip install mako
 mkdir build
 cd build
-# Use GNU cc (gcc) if available
+# For Xcode 12.1, clang uses SIMD instructions
+cmake ..
+# Use GNU cc (gcc) for Xcode 11.x and before
 # C++ compiler optimization set to default for safe programming
-env CC=/usr/local/opt/gcc/bin/gcc-9 CXX=/usr/local/opt/gcc/bin/g++-9 \
-  cmake ..
+#env CC=/usr/local/opt/gcc/bin/gcc-9 CXX=/usr/local/opt/gcc/bin/g++-9 \
+#  cmake ..
 # For ARM, use the proper sequence documented in VOLK
 # Raspberry Pi 4
 # cmake -DCMAKE_TOOLCHAIN_FILE=../cmake/Toolchains/arm_cortex_a72_hardfp_native.cmake ..
