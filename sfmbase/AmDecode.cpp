@@ -125,8 +125,8 @@ AmDecoder::AmDecoder(IQSampleCoeff &amfilter_coeff, const ModType mode)
 
       // CW downsampler and upsampler
       ,
-      m_cw_downsampler(internal_rate_pcm, cw_rate_pcm),
-      m_cw_upsampler(cw_rate_pcm, internal_rate_pcm)
+      m_rate_downsampler(internal_rate_pcm, low_rate_pcm),
+      m_rate_upsampler(low_rate_pcm, internal_rate_pcm)
 
 {
   // Do nothing
@@ -157,14 +157,14 @@ void AmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
     break;
   case ModType::CW:
     // Apply CW filter
-    m_cw_downsampler.process(samples_in, m_buf_filtered);
+    m_rate_downsampler.process(samples_in, m_buf_filtered);
     // If no downsampled signal comes out, terminate and wait for next block.
     if (m_buf_filtered.size() == 0) {
       audio.resize(0);
       return;
     }
     m_cwfilter.process(m_buf_filtered, m_buf_filtered2a);
-    m_cw_upsampler.process(m_buf_filtered2a, m_buf_filtered2b);
+    m_rate_upsampler.process(m_buf_filtered2a, m_buf_filtered2b);
     // If no upsampled signal comes out, terminate and wait for next block.
     if (m_buf_filtered2b.size() == 0) {
       audio.resize(0);
