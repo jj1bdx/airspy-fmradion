@@ -99,9 +99,10 @@ AmDecoder::AmDecoder(IQSampleCoeff &amfilter_coeff, const ModType mode)
               1.5,    // max_gain
               // reference
               ((m_mode == ModType::USB) || (m_mode == ModType::LSB)) ? 0.1
-              : ((m_mode == ModType::CW) || (m_mode == ModType::WSPR)) ? 0.1
-                                        // default value
-                                        : 0.2,
+              : ((m_mode == ModType::CW) || (m_mode == ModType::WSPR))
+                  ? 0.1
+                  // default value
+                  : 0.2,
               0.002 // rate
               )
 
@@ -111,9 +112,10 @@ AmDecoder::AmDecoder(IQSampleCoeff &amfilter_coeff, const ModType mode)
       m_ifagc(1.0,      // initial_gain
               100000.0, // max_gain
               ((m_mode == ModType::USB) || (m_mode == ModType::LSB)) ? 0.25
-              : ((m_mode == ModType::CW) || (m_mode == ModType::WSPR)) ? 0.25
-                                        // default value
-                                        : 0.7,
+              : ((m_mode == ModType::CW) || (m_mode == ModType::WSPR))
+                  ? 0.25
+                  // default value
+                  : 0.7,
               0.001 // rate
               )
 
