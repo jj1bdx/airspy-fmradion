@@ -106,12 +106,13 @@ void usage() {
       "Usage: airspy-fmradion [options]\n"
       "  -m modtype     Modulation type:\n"
       "                   - fm (default)\n"
+      "                   - nbfm\n"
       "                   - am\n"
       "                   - dsb\n"
       "                   - usb\n"
       "                   - lsb\n"
       "                   - cw (pitch: 500Hz USB)\n"
-      "                   - nbfm\n"
+      "                   - wspr (pitch: 1500Hz USB)\n"
       "  -t devtype     Device type:\n"
       "                   - rtlsdr: RTL-SDR devices\n"
       "                   - airspy: Airspy R2\n"
@@ -473,6 +474,9 @@ int main(int argc, char **argv) {
 
   if (strcasecmp(modtype_str.c_str(), "fm") == 0) {
     modtype = ModType::FM;
+  } else if (strcasecmp(modtype_str.c_str(), "nbfm") == 0) {
+    modtype = ModType::NBFM;
+    stereo = false;
   } else if (strcasecmp(modtype_str.c_str(), "am") == 0) {
     modtype = ModType::AM;
     stereo = false;
@@ -488,8 +492,8 @@ int main(int argc, char **argv) {
   } else if (strcasecmp(modtype_str.c_str(), "cw") == 0) {
     modtype = ModType::CW;
     stereo = false;
-  } else if (strcasecmp(modtype_str.c_str(), "nbfm") == 0) {
-    modtype = ModType::NBFM;
+  } else if (strcasecmp(modtype_str.c_str(), "wspr") == 0) {
+    modtype = ModType::WSPR;
     stereo = false;
   } else {
     fprintf(stderr, "Modulation type string unsuppored\n");
@@ -546,12 +550,13 @@ int main(int argc, char **argv) {
     case ModType::FM:
       fprintf(ppsfile, "#pps_index sample_index   unix_time\n");
       break;
+    case ModType::NBFM:
     case ModType::AM:
     case ModType::DSB:
     case ModType::USB:
     case ModType::LSB:
     case ModType::CW:
-    case ModType::NBFM:
+    case ModType::WSPR:
       fprintf(ppsfile, "#  block   unix_time\n");
       break;
     }
@@ -676,15 +681,16 @@ int main(int argc, char **argv) {
   case ModType::FM:
     if_decimation_ratio = ifrate / fm_target_rate;
     break;
+  case ModType::NBFM:
+    if_decimation_ratio = ifrate / nbfm_target_rate;
+    break;
   case ModType::AM:
   case ModType::DSB:
   case ModType::USB:
   case ModType::LSB:
   case ModType::CW:
+  case ModType::WSPR:
     if_decimation_ratio = ifrate / am_target_rate;
-    break;
-  case ModType::NBFM:
-    if_decimation_ratio = ifrate / nbfm_target_rate;
     break;
   }
 
@@ -802,6 +808,7 @@ int main(int argc, char **argv) {
   case ModType::USB:
   case ModType::LSB:
   case ModType::CW:
+  case ModType::WSPR:
     fprintf(stderr, "AM demodulator deemphasis: %.9g [µs]\n",
             AmDecoder::default_deemphasis);
     break;
@@ -847,6 +854,7 @@ int main(int argc, char **argv) {
   case ModType::USB:
   case ModType::LSB:
   case ModType::CW:
+  case ModType::WSPR:
     discarding_blocks = stat_rate * 2;
     break;
   }
@@ -906,19 +914,20 @@ int main(int argc, char **argv) {
         fm.process(if_samples, audiosamples);
         if_rms = fm.get_if_rms();
         break;
+      case ModType::NBFM:
+        // Decode narrow band FM signal.
+        nbfm.process(if_samples, audiosamples);
+        if_rms = nbfm.get_if_rms();
+        break;
       case ModType::AM:
       case ModType::DSB:
       case ModType::USB:
       case ModType::LSB:
       case ModType::CW:
+      case ModType::WSPR:
         // Decode AM/DSB/USB/LSB/CW signals.
         am.process(if_samples, audiosamples);
         if_rms = am.get_if_rms();
-        break;
-      case ModType::NBFM:
-        // Decode narrow band FM signal.
-        nbfm.process(if_samples, audiosamples);
-        if_rms = nbfm.get_if_rms();
         break;
       }
       // Measure the average IF level.
@@ -995,6 +1004,7 @@ int main(int argc, char **argv) {
       case ModType::USB:
       case ModType::LSB:
       case ModType::CW:
+      case ModType::WSPR:
         // Show per-block statistics without ppm offset.
         double if_agc_gain_db = 20 * log10(am.get_if_agc_current_gain());
         if (((block % stat_rate) == 0) && (block > discarding_blocks)) {
@@ -1038,12 +1048,13 @@ int main(int argc, char **argv) {
           fm.erase_first_pps_event();
         }
         break;
+      case ModType::NBFM:
       case ModType::AM:
       case ModType::DSB:
       case ModType::USB:
       case ModType::LSB:
       case ModType::CW:
-      case ModType::NBFM:
+      case ModType::WSPR:
         if ((block % (stat_rate * 10)) == 0) {
           fprintf(ppsfile, "%8d %18.6f\n", block, prev_block_time);
           fflush(ppsfile);
