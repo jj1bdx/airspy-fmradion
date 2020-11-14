@@ -49,7 +49,7 @@
 // define this for enabling coefficient monitor functions
 // #undef COEFF_MONITOR
 
-#define AIRSPY_FMRADION_VERSION "20201025-0"
+#define AIRSPY_FMRADION_VERSION "20201114-0"
 
 /** Flag is set on SIGINT / SIGTERM. */
 static std::atomic_bool stop_flag(false);
@@ -111,8 +111,8 @@ void usage() {
       "                   - dsb\n"
       "                   - usb\n"
       "                   - lsb\n"
-      "                   - cw (pitch: 500Hz USB)\n"
-      "                   - wspr (pitch: 1500Hz USB)\n"
+      "                   - cw (zeroed-in pitch: 500Hz)\n"
+      "                   - wspr (USB 1500Hz +- 100Hz)\n"
       "  -t devtype     Device type:\n"
       "                   - rtlsdr: RTL-SDR devices\n"
       "                   - airspy: Airspy R2\n"

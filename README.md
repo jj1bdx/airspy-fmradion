@@ -2,7 +2,7 @@
 
 # airspy-fmradion
 
-* Version 20201025-0
+* Version 20201114-0
 * For MacOS and Linux
 
 ### Contributing
@@ -17,23 +17,22 @@ New version number scheme: YYYYMMDD-N (N: subnumber, starting from 0, unsigned i
 
 ### Known issues and changes
 
+* MacOS build is tested with 10.15.7 Catalina with Xcode 12.1 Command Line Tools. Big Sur 11.0 hasn't been tested yet.
+* For Raspberry Pi 3 and 4, Airspy R2 10Mbps and Airspy Mini 6Mbps sampling rates are *not supported* due to the hardware limitation. Use in 2.5Mbps for R2, 3Mbps for Mini.
 * PortAudio is required since Version 20201023-0. Use PortAudio v19. Former ALSA output driver is replaced by more versatile PortAudio driver, which is compatible both for Linux and macOS.
 * libvolk is required since v0.8.0. If you don't want to install libvolk, use v0.7.8 instead. Use the latest master branch of libvolk. Configure the `volk_config` file with `volk_profile -b` for the maximum performance. See [INSTALL-latest-libvolk.md](INSTALL-latest-libvolk.md) for the details.
-* Building on MacOS 10.15 Catalina is still not tested yet. The development is going on with the last Mojave 10.14.6.
-* For Raspberry Pi 3 and 4, Airspy R2 10Mbps and Airspy Mini 6Mbps sampling rates are *not supported* due to the hardware limitation. Use in 2.5Mbps for R2, 3Mbps for Mini.
 * v0.8.5 and the earlier versions set the compilation flag of `-ffast-math`, which disabled the processing of NaN. This will cause a latch-up bug when the multipath filter coefficients diverge. Removed `-ffast-math` for the stable operation.
 * v0.9.0-test1 to v0.9.5 had calculation error due to `volk_32f_expfast_32f()` in `IfAgc::process()` method. Fixed this by replacing to the more accurate calculation code of `volk_32f_exp_32f()`.
 
 ### What is airspy-fmradion?
 
-* **airspy-fmradion** is a software-defined radio receiver for FM and AM broadcast radio, and also DSB/USB/LSB/CW utility communications, specifically designed for Airspy R2, Airspy Mini, Airspy HF+, and RTL-SDR.
+* **airspy-fmradion** is a software-defined radio receiver for FM and AM broadcast radio, and also NBFM/DSB/USB/LSB/CW/WSPR utility communications, specifically designed for Airspy R2, Airspy Mini, Airspy HF+, and RTL-SDR.
 
 ### What does airspy-fmradion provide?
 
 - Mono or stereo decoding of FM broadcasting stations
-- Mono decoding of AM broadcasting stations
-- Decoding DSB/USB/LSB/CW communication/broadcasting stations
-- Decoding narrow band FM communication/broadcasting stations (experimental)
+- Mono decoding of AM stations
+- Decoding NBFM/DSB/USB/LSB/CW/WSPR stations
 - Buffered real-time playback to soundcard or dumping to file
 - Command-line interface (*only*)
 
@@ -63,15 +62,18 @@ airspy-fmradion -m am -t airspyhf -q \
  - [Airspy HF library](https://github.com/airspy/airspyhf)
  - [RTL-SDR library](http://sdr.osmocom.org/trac/wiki/rtl-sdr)
  - [sndfile](https://github.com/erikd/libsndfile)
- - [sox](http://sox.sourceforge.net/)
  - [The SoX Resampler library aka libsoxr](https://sourceforge.net/p/soxr/wiki/Home/)
  - [VOLK](http://libvolk.org/)
  - [PortAudio](http://www.portaudio.com)
  - Tested: Airspy R2, Airspy Mini, Airspy HF+ Dual Port, RTL-SDR V3
  - Fast computer
- - Medium-strong FM and/or AM radio signals, or DSB/USB/LSB/CW signals
+ - Medium-strong radio signals
 
 For the latest version, see https://github.com/jj1bdx/airspy-fmradion
+
+### Recommended utilities
+
+ - [sox](http://sox.sourceforge.net/)
 
 ### Branches and tags
 
@@ -172,7 +174,7 @@ Compile and install
 
 ## Basic command options
 
- - `-m devtype` is modulation type, one of `fm`, `am`, `dsb`, `usb`, `lsb`, `cw`, `nbfm` (default fm)
+ - `-m devtype` is modulation type, one of `fm`, `nbfm`, `am`, `dsb`, `usb`, `lsb`, `cw`, `wspr` (default fm)
  - `-t devtype` is mandatory and must be `airspy` for Airspy R2 / Airspy Mini, `airspyhf` for Airspy HF+, `rtlsdr` for RTL-SDR, and `filesource` for the File Source driver.
  - `-q` Quiet mode.
  - `-c config` Comma separated list of configuration options as key=value pairs or just key for switches. Depends on device type (see next paragraph).
@@ -281,24 +283,6 @@ Compile and install
 
 * FM Filter coefficients are listed under `doc/filter-design`
 
-### For AM and DSB
-
-* AM Filter coefficients are listed under `doc/filter-design`
-* `default` filter width: +-6kHz
-* Narrower filters by `-f` options: `middle` +-4.5kHz, `narrow` +-3kHz
-* Wider filters by `-f` options: `wide` +-9kHz
-
-### For SSB
-
-* Filter method applied by shifting 0 - 3kHz to 12 - 15kHz (when sampling frequency is 48kHz)
-* Applied fixed AM narrow filter option + 12kHz shifting up/down to remove the unnecessary sideband
-
-### For CW
-
-* Pitch: 500Hz
-* Filter width: +- 250Hz
-* Uses downsampling to 12kHz for applying a steep filter
-
 ### For NBFM
 
 * Deviation: normal +-8kHz, for wide +-17kHz
@@ -309,20 +293,37 @@ Compile and install
 * Wider filters by `-f` options: `wide` +-20kHz (with wider deviation of +-17kHz)
 * Audio gain reduced by -3dB to prevent output clipping
 
-## AM AGC
+### For AM and DSB
+
+* AM Filter coefficients are listed under `doc/filter-design`
+* `default` filter width: +-6kHz
+* Narrower filters by `-f` options: `middle` +-4.5kHz, `narrow` +-3kHz
+* Wider filters by `-f` options: `wide` +-9kHz
+
+### For SSB (USB/LSB)
+
+* Filter method applied by shifting 0 - 3kHz to 12 - 15kHz (when sampling frequency is 48kHz)
+* Applied fixed AM narrow filter option + 12kHz shifting up/down to remove the unnecessary sideband
+
+### For CW
+
+* Zeroed-in pitch: 500Hz
+* Filter width: +- 250Hz
+* Uses downsampling to 12kHz for applying a steep filter
+
+### For WSPR
+
+* Set USB TX carrier frequency for reception (as shown in [WSPRnet](https://wsprnet.org/))
+* Pitch: 1500Hz
+* Filter width: +- 100Hz flat, +-250Hz for cutoff
+* Uses downsampling to 12kHz for applying a steep filter
+
+## AGC algorithm
 
 * Use simple logarithm-based AGC algorithm, which only depends on the single previous sample
 * See <https://www.mathworks.com/help/comm/ref/comm.agc-system-object.html> for the implementation details
-* IF AGC: gain up to 100dB (100000)
+* IF AGC: gain up to 100dB (100000) (for broadcast FM: 80dB (10000))
 * Audio AGC: gain up to 7dB (5.0)
-
-## FM AGC
-
-* IF AGC: gain up to 80dB (10000)
-
-## NBFM AGC
-
-* IF AGC: gain up to 100dB (100000)
 
 ## Airspy R2 / Mini modification from ngsoftfm-jj1bdx
 
