@@ -224,10 +224,9 @@ bool RtlSdrSource::configure(uint32_t sample_rate, uint32_t frequency,
   }
 
   // set block length
-  m_block_length =
-      (block_length < 4096)
-          ? 4096
-          : (block_length > 1024 * 1024) ? 1024 * 1024 : block_length;
+  m_block_length = (block_length < 4096)          ? 4096
+                   : (block_length > 1024 * 1024) ? 1024 * 1024
+                                                  : block_length;
   m_block_length -= m_block_length % 4096;
 
   // reset buffer to start streaming
