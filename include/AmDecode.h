@@ -125,7 +125,7 @@ private:
   LowPassFilterRC m_deemph;
   AfAgc m_afagc;
   IfAgc m_ifagc;
-  FineTuner m_finetuner;
+  FineTuner m_cw_finetuner;
   IfResampler m_rate_downsampler;
   IfResampler m_rate_upsampler;
 };

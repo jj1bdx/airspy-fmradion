@@ -121,7 +121,7 @@ AmDecoder::AmDecoder(IQSampleCoeff &amfilter_coeff, const ModType mode)
 
       // fine tuner for pitch shifting (shift up 500Hz)
       ,
-      m_finetuner(internal_rate_pcm / 100, 500 / 100)
+      m_cw_finetuner(internal_rate_pcm / 100, 500 / 100)
 
       // CW downsampler and upsampler
       ,
@@ -171,7 +171,7 @@ void AmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
       return;
     }
     // Shift up to an audio frequency (500Hz)
-    m_finetuner.process(m_buf_filtered2b, m_buf_filtered3);
+    m_cw_finetuner.process(m_buf_filtered2b, m_buf_filtered3);
     break;
   default:
     m_buf_filtered3 = std::move(m_buf_filtered);
