@@ -104,6 +104,9 @@ private:
   float m_if_rms;
 
   IQSampleVector m_buf_filtered;
+  IQSampleVector m_buf_filtered1;
+  IQSampleVector m_buf_filtered1a;
+  IQSampleVector m_buf_filtered1b;
   IQSampleVector m_buf_filtered2;
   IQSampleVector m_buf_filtered2a;
   IQSampleVector m_buf_filtered2b;
@@ -126,6 +129,8 @@ private:
   AfAgc m_afagc;
   IfAgc m_ifagc;
   FineTuner m_cw_finetuner;
+  FineTuner m_wspr_up_finetuner;
+  FineTuner m_wspr_down_finetuner;
   IfResampler m_rate_downsampler;
   IfResampler m_rate_upsampler;
 };

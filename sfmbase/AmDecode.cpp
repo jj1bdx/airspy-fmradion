@@ -98,11 +98,10 @@ AmDecoder::AmDecoder(IQSampleCoeff &amfilter_coeff, const ModType mode)
       m_afagc(0.0001, // initial_gain
               1.5,    // max_gain
               // reference
-              ((m_mode == ModType::USB) || (m_mode == ModType::LSB))
-                  ? 0.1
-                  : (m_mode == ModType::CW) ? 0.1
-                                            // default value
-                                            : 0.2,
+              ((m_mode == ModType::USB) || (m_mode == ModType::LSB)) ? 0.1
+              : ((m_mode == ModType::CW) || (m_mode == ModType::WSPR)) ? 0.1
+                                        // default value
+                                        : 0.2,
               0.002 // rate
               )
 
@@ -111,17 +110,25 @@ AmDecoder::AmDecoder(IQSampleCoeff &amfilter_coeff, const ModType mode)
       ,
       m_ifagc(1.0,      // initial_gain
               100000.0, // max_gain
-              ((m_mode == ModType::USB) || (m_mode == ModType::LSB))
-                  ? 0.25
-                  : (m_mode == ModType::CW) ? 0.25
-                                            // default value
-                                            : 0.7,
+              ((m_mode == ModType::USB) || (m_mode == ModType::LSB)) ? 0.25
+              : ((m_mode == ModType::CW) || (m_mode == ModType::WSPR)) ? 0.25
+                                        // default value
+                                        : 0.7,
               0.001 // rate
               )
 
-      // fine tuner for pitch shifting (shift up 500Hz)
+      // fine tuner for CW pitch shifting (shift up 500Hz)
+      // sampling rate: 48kHz
+      // table size: 480 = 48000 / 100
       ,
       m_cw_finetuner(internal_rate_pcm / 100, 500 / 100)
+
+      // fine tuner for WSPR pitch shifting (shift up and down 1500Hz)
+      // sampling rate: 48kHz
+      // table size: 480 = 48000 / 100
+      ,
+      m_wspr_up_finetuner(internal_rate_pcm / 100, 1500 / 100),
+      m_wspr_down_finetuner(internal_rate_pcm / 100, -1500 / 100)
 
       // CW downsampler and upsampler
       ,
@@ -157,13 +164,16 @@ void AmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
     break;
   case ModType::CW:
     // Apply CW filter
+    // Downsanple first
     m_rate_downsampler.process(samples_in, m_buf_filtered);
     // If no downsampled signal comes out, terminate and wait for next block.
     if (m_buf_filtered.size() == 0) {
       audio.resize(0);
       return;
     }
+    // Apply CW LPF here
     m_cwfilter.process(m_buf_filtered, m_buf_filtered2a);
+    // Upsample back
     m_rate_upsampler.process(m_buf_filtered2a, m_buf_filtered2b);
     // If no upsampled signal comes out, terminate and wait for next block.
     if (m_buf_filtered2b.size() == 0) {
@@ -172,6 +182,29 @@ void AmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
     }
     // Shift up to an audio frequency (500Hz)
     m_cw_finetuner.process(m_buf_filtered2b, m_buf_filtered3);
+    break;
+  case ModType::WSPR:
+    // Apply WSPR filter
+    // Shift down 1500Hz first to filter
+    m_wspr_down_finetuner.process(samples_in, m_buf_filtered1);
+    // Downsanple first
+    m_rate_downsampler.process(m_buf_filtered1, m_buf_filtered1a);
+    // If no downsampled signal comes out, terminate and wait for next block.
+    if (m_buf_filtered1a.size() == 0) {
+      audio.resize(0);
+      return;
+    }
+    // Apply CW LPF here
+    m_cwfilter.process(m_buf_filtered1a, m_buf_filtered1b);
+    // Upsample back
+    m_rate_upsampler.process(m_buf_filtered1b, m_buf_filtered2);
+    // If no upsampled signal comes out, terminate and wait for next block.
+    if (m_buf_filtered2.size() == 0) {
+      audio.resize(0);
+      return;
+    }
+    // Shift up 1500Hz to make center frequency to 1500Hz
+    m_wspr_up_finetuner.process(m_buf_filtered2, m_buf_filtered3);
     break;
   default:
     m_buf_filtered3 = std::move(m_buf_filtered);
@@ -201,6 +234,7 @@ void AmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
   case ModType::USB:
   case ModType::LSB:
   case ModType::CW:
+  case ModType::WSPR:
     demodulate_dsb(m_buf_filtered4, m_buf_decoded);
     break;
   }
