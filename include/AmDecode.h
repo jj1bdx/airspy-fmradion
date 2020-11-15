@@ -121,16 +121,13 @@ private:
   LowPassFilterFirIQ m_amfilter;
   LowPassFilterFirIQ m_cwfilter;
   LowPassFilterFirIQ m_ssbfilter;
-  FourthConverterIQ m_upshifter;
-  FourthConverterIQ m_downshifter;
-  LowPassFilterFirIQ m_ssbshiftfilter;
   HighPassFilterIir m_dcblock;
   LowPassFilterRC m_deemph;
   AfAgc m_afagc;
   IfAgc m_ifagc;
   FineTuner m_cw_finetuner;
-  FineTuner m_wspr_up_finetuner;
-  FineTuner m_wspr_down_finetuner;
+  FineTuner m_wspr_ssb_up_finetuner;
+  FineTuner m_wspr_ssb_down_finetuner;
   IfResampler m_rate_downsampler;
   IfResampler m_rate_upsampler;
 };
