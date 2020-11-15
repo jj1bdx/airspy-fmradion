@@ -2,7 +2,7 @@
 
 # airspy-fmradion
 
-* Version 20201114-0
+* Version 20201115-0
 * For MacOS and Linux
 
 ### Contributing
@@ -302,13 +302,15 @@ Compile and install
 
 ### For SSB (USB/LSB)
 
-* Filter method applied by shifting 0 - 3kHz to 12 - 15kHz (when sampling frequency is 48kHz)
-* Applied fixed AM narrow filter option + 12kHz shifting up/down to remove the unnecessary sideband
+* For USB: shift down 1.5kHz -> LPF -> shift up 1.5kHz
+* For USB: shift up 1.5kHz -> LPF -> shift down 1.5kHz
+* Rate conversion of 48kHz to 12kHz and vice versa for the input and output of LPF
+* 12kHz sampling rate LPF: flat till +-1200Hz, -3dB +-1320Hz, -10dB +-1370Hz, -58.64dB at +-1465Hz
 
 ### For CW
 
 * Zeroed-in pitch: 500Hz
-* Filter width: +- 250Hz
+* Filter width: +- 100Hz flat, +-250Hz for cutoff
 * Uses downsampling to 12kHz for applying a steep filter
 
 ### For WSPR
