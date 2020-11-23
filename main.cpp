@@ -582,32 +582,33 @@ int main(int argc, char **argv) {
   // Prepare output writer.
   std::unique_ptr<AudioOutput> audio_output;
 
+  // Set output device first, then print the configuration to stderr.
   switch (outmode) {
   case OutputMode::RAW_INT16:
+    audio_output.reset(new RawAudioOutput(filename));
+    audio_output->SetConvertFunction(AudioOutput::samplesToInt16);
     fprintf(stderr,
             "writing raw 16-bit integer little-endian audio samples to '%s'\n",
             filename.c_str());
-    audio_output.reset(new RawAudioOutput(filename));
-    audio_output->SetConvertFunction(AudioOutput::samplesToInt16);
     break;
   case OutputMode::RAW_FLOAT32:
+    audio_output.reset(new RawAudioOutput(filename));
+    audio_output->SetConvertFunction(AudioOutput::samplesToFloat32);
     fprintf(stderr,
             "writing raw 32-bit float little-endian audio samples to '%s'\n",
             filename.c_str());
-    audio_output.reset(new RawAudioOutput(filename));
-    audio_output->SetConvertFunction(AudioOutput::samplesToFloat32);
     break;
   case OutputMode::WAV:
-    fprintf(stderr, "writing audio samples to '%s'\n", filename.c_str());
     audio_output.reset(new WavAudioOutput(filename, pcmrate, stereo));
+    fprintf(stderr, "writing audio samples to '%s'\n", filename.c_str());
     break;
   case OutputMode::PORTAUDIO:
+    audio_output.reset(new PortAudioOutput(portaudiodev, pcmrate, stereo));
     if (portaudiodev == -1) {
       fprintf(stderr, "playing audio to PortAudio default device: ");
     } else {
       fprintf(stderr, "playing audio to PortAudio device %d: ", portaudiodev);
     }
-    audio_output.reset(new PortAudioOutput(portaudiodev, pcmrate, stereo));
     fprintf(stderr, "name '%s'\n", audio_output->get_device_name().c_str());
     break;
   }
