@@ -49,7 +49,7 @@
 // define this for enabling coefficient monitor functions
 // #undef COEFF_MONITOR
 
-#define AIRSPY_FMRADION_VERSION "20201123-0"
+#define AIRSPY_FMRADION_VERSION "20201204-0"
 
 /** Flag is set on SIGINT / SIGTERM. */
 static std::atomic_bool stop_flag(false);
@@ -548,7 +548,7 @@ int main(int argc, char **argv) {
 
     switch (modtype) {
     case ModType::FM:
-      fprintf(ppsfile, "#pps_index sample_index   unix_time\n");
+      fprintf(ppsfile, "# pps_index sample_index unix_time if_level\n");
       break;
     case ModType::NBFM:
     case ModType::AM:
@@ -557,7 +557,7 @@ int main(int argc, char **argv) {
     case ModType::LSB:
     case ModType::CW:
     case ModType::WSPR:
-      fprintf(ppsfile, "#  block   unix_time\n");
+      fprintf(ppsfile, "# block unix_time if_level\n");
       break;
     }
     fflush(ppsfile);
@@ -1041,9 +1041,9 @@ int main(int argc, char **argv) {
         for (const PilotPhaseLock::PpsEvent &ev : fm.get_pps_events()) {
           double ts = prev_block_time;
           ts += ev.block_position * (block_time - prev_block_time);
-          fprintf(ppsfile, "%8s %14s %18.6f\n",
+          fprintf(ppsfile, "%8s %14s %18.6f %+9.3f\n",
                   std::to_string(ev.pps_index).c_str(),
-                  std::to_string(ev.sample_index).c_str(), ts);
+                  std::to_string(ev.sample_index).c_str(), ts, if_level_db);
           fflush(ppsfile);
           // Erase the marked event.
           fm.erase_first_pps_event();
@@ -1057,7 +1057,8 @@ int main(int argc, char **argv) {
       case ModType::CW:
       case ModType::WSPR:
         if ((block % (stat_rate * 10)) == 0) {
-          fprintf(ppsfile, "%8d %18.6f\n", block, prev_block_time);
+          fprintf(ppsfile, "%8d %18.6f %+9.3f\n", block, prev_block_time,
+                  if_level_db);
           fflush(ppsfile);
         }
         break;

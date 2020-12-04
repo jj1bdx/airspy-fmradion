@@ -2,7 +2,7 @@
 
 # airspy-fmradion
 
-* Version 20201123-0
+* Version 20201204-0
 * For MacOS and Linux
 
 ### Contributing
@@ -17,6 +17,7 @@ New version number scheme: YYYYMMDD-N (N: subnumber, starting from 0, unsigned i
 
 ### Known issues and changes
 
+* Timestamp file format has been changed since 20201204-0.
 * MacOS build is tested with 10.15.7 Catalina with Xcode 12.2 Command Line Tools. Big Sur 11.0 hasn't been tested yet.
 * For Raspberry Pi 3 and 4, Airspy R2 10Mbps and Airspy Mini 6Mbps sampling rates are *not supported* due to the hardware limitation. Use in 2.5Mbps for R2, 3Mbps for Mini.
 * PortAudio is required since Version 20201023-0. Use PortAudio v19. Former ALSA output driver is replaced by more versatile PortAudio driver, which is compatible both for Linux and macOS.
@@ -198,6 +199,12 @@ Compile and install
 
 ## Major changes
 
+### Timestamp file format
+
+* For FM: `pps_index sample_index unix_time if_level`
+* For the other modes: `block unix_time if_level`
+* if\_level is in dB
+
 ### Rate compensation for adjusting audio device playback speed offset
 
 * Background: some audio devices shows non-negligible offset of playback speed, which causes eventual audio output buffer overflow and significant delay in long-term playback.
@@ -232,6 +239,7 @@ Compile and install
 * Quality: `SOXR_VHQ`
 * 19kHz cut LPF implemented for post-processing libsoxr output
 * *Do not use* `SOXR_STEEP_FILTER` because it induces unacceptable higher latency
+* Audio sample rate is fixed to 48000Hz
 
 ### Phase discriminator uses GNU Radio fast_atan2f() 
 
@@ -339,7 +347,6 @@ Compile and install
 
 * Halfband kernel filter designed by Twitter @lambdaprog is set for Airspy conversion filter
 * Finetuner is removed (Not really needed for +-1ppm or less offset)
-* Audio sample rate is fixed to 48000Hz
 
 ### Airspy R2 / Mini configuration options
 
