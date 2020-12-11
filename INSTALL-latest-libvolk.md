@@ -1,5 +1,13 @@
 # Installing the latest libvolk on macOS and Linux
 
+## For macOS: use Homebrew
+
+For libvolk 2.4, the bottled binary works OK with the SIMD acceleration.
+
+```sh
+brew install volk
+```
+
 ## Build process change
 
 The latest libvolk requires git submodule files called [cpu\_features](https://github.com/google/cpu_features/). To enable this, run:
