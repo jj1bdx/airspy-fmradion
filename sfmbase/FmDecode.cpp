@@ -146,11 +146,22 @@ void PilotPhaseLock::process(const SampleVector &samples_in,
     m_pilot_level = std::min(m_pilot_level, phasor_i);
 
     // Run phase error through loop filter and update frequency estimate.
-    m_freq += m_loopfilter_b0 * phase_err + m_loopfilter_b1 * m_loopfilter_x1;
+    Sample new_phase_err =
+        m_loopfilter_b0 * phase_err + m_loopfilter_b1 * m_loopfilter_x1;
+    m_freq += new_phase_err;
     m_loopfilter_x1 = phase_err;
 
     // Limit frequency to allowable range.
     m_freq = std::max(m_minfreq, std::min(m_maxfreq, m_freq));
+
+#if 0
+    if (i == 0) {
+        fprintf(stderr, "m_freq = %.9g, new_freq_err = %.9g\n",
+			m_freq * FmDecoder::sample_rate_if / 2 / M_PI,
+			new_phase_err * FmDecoder::sample_rate_if / 2 / M_PI
+	       );
+    }
+#endif
 
     // Update locked phase.
     m_phase += m_freq;
@@ -227,7 +238,7 @@ FmDecoder::FmDecoder(IQSampleCoeff &fmfilter_coeff, bool stereo,
       // Construct PilotPhaseLock
       ,
       m_pilotpll(pilot_freq / sample_rate_if, // freq
-                 50 / sample_rate_if,         // bandwidth
+                 30 / sample_rate_if,         // bandwidth
                  0.01)                        // minsignal (was 0.04)
 
       // Construct HighPassFilterIir
