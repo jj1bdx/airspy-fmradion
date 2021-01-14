@@ -106,6 +106,9 @@ public:
   //        (1  + (a1 * z^(-1)) + (a2 * z^(-2)))
   BiquadIirFilter(const double b0, const double b1, const double b2,
                   const double a1, const double a2);
+  // Default constructor
+  BiquadIirFilter() : BiquadIirFilter(0, 0, 0, 0, 0) {}
+
   // Process a value
   double process(double input);
 
