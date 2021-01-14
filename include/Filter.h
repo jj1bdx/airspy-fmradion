@@ -95,6 +95,25 @@ private:
   Sample m_y1_1;
 };
 
+// Generic biquad (2nd-order) Direct Form 2 IIR filter
+class BiquadIirFilter {
+public:
+  //
+  // Construct generic 2nd-order Direct Form 2 IIR filter.
+  // b0, b1, b2, a1, a2:: filter coefficients
+  // representing the following filter of the transfer function H(z):
+  // H(z) = (b0 + (b1 * z^(-1)) + (b2 * z^(-2))) /
+  //        (1  + (a1 * z^(-1)) + (a2 * z^(-2)))
+  BiquadIirFilter(const double b0, const double b1, const double b2,
+                  const double a1, const double a2);
+  // Process a value
+  double process(double input);
+
+private:
+  double m_b0, m_b1, m_b2, m_a1, m_a2;
+  double m_x0, m_x1, m_x2;
+};
+
 // High-pass filter for real-valued signals based on Butterworth IIR filter.
 class HighPassFilterIir {
 public:
@@ -113,8 +132,7 @@ public:
   void process_inplace(SampleVector &samples);
 
 private:
-  Sample m_b0, m_b1, m_b2, m_a1, m_a2;
-  Sample m_x0, m_x1, m_x2;
+  BiquadIirFilter m_iirfilter;
 };
 
 #endif
