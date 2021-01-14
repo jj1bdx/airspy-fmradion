@@ -260,8 +260,7 @@ void LowPassFilterRC::process_interleaved_inplace(SampleVector &samples) {
 /* ****************  class HighPassFilterIir  **************** */
 
 // Construct 2nd order high-pass IIR filter.
-HighPassFilterIir::HighPassFilterIir(const double cutoff)
-    : x1(0), x2(0), y1(0), y2(0) {
+HighPassFilterIir::HighPassFilterIir(const double cutoff) : m_x1(0), m_x2(0) {
   typedef std::complex<double> CDbl;
 
   // Angular cutoff frequency.
@@ -284,17 +283,17 @@ HighPassFilterIir::HighPassFilterIir(const double cutoff)
   // Note that z2 = conj(z1).
   // Therefore p1+p2 == 2*real(p1), p1*2 == abs(p1*p1), z4 = conj(z1)
   //
-  b0 = 1;
-  b1 = -2;
-  b2 = 1;
-  a1 = -2 * real(p1z);
-  a2 = abs(p1z * p1z);
+  m_b0 = 1;
+  m_b1 = -2;
+  m_b2 = 1;
+  m_a1 = -2 * real(p1z);
+  m_a2 = abs(p1z * p1z);
 
   // Adjust b coefficients to get unit gain at Nyquist frequency (z=-1).
-  double g = (b0 - b1 + b2) / (1 - a1 + a2);
-  b0 /= g;
-  b1 /= g;
-  b2 /= g;
+  double g = (m_b0 - m_b1 + m_b2) / (1 - m_a1 + m_a2);
+  m_b0 /= g;
+  m_b1 /= g;
+  m_b2 /= g;
 }
 
 // Process samples.
@@ -306,11 +305,11 @@ void HighPassFilterIir::process(const SampleVector &samples_in,
 
   for (unsigned int i = 0; i < n; i++) {
     Sample x = samples_in[i];
-    Sample y = b0 * x + b1 * x1 + b2 * x2 - a1 * y1 - a2 * y2;
-    x2 = x1;
-    x1 = x;
-    y2 = y1;
-    y1 = y;
+    m_x0 = x;
+    m_x0 -= m_a1 * m_x1 + m_a2 * m_x2;
+    Sample y = m_b0 * m_x0 + m_b1 * m_x1 + m_b2 * m_x2;
+    m_x2 = m_x1;
+    m_x1 = m_x0;
     samples_out[i] = y;
   }
 }
@@ -321,11 +320,11 @@ void HighPassFilterIir::process_inplace(SampleVector &samples) {
 
   for (unsigned int i = 0; i < n; i++) {
     Sample x = samples[i];
-    Sample y = b0 * x + b1 * x1 + b2 * x2 - a1 * y1 - a2 * y2;
-    x2 = x1;
-    x1 = x;
-    y2 = y1;
-    y1 = y;
+    m_x0 = x;
+    m_x0 -= m_a1 * m_x1 + m_a2 * m_x2;
+    Sample y = m_b0 * m_x0 + m_b1 * m_x1 + m_b2 * m_x2;
+    m_x2 = m_x1;
+    m_x1 = m_x0;
     samples[i] = y;
   }
 }
