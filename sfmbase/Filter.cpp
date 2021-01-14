@@ -283,9 +283,7 @@ double BiquadIirFilter::process(double input) {
 /* ****************  class HighPassFilterIir  **************** */
 
 // Construct 2nd order high-pass IIR filter.
-HighPassFilterIir::HighPassFilterIir(const double cutoff)
-    : // dummy initialization of biquad IIR filter required
-      m_iirfilter(0, 0, 0, 0, 0) {
+HighPassFilterIir::HighPassFilterIir(const double cutoff) {
 
   typedef std::complex<double> CDbl;
 
