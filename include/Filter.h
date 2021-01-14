@@ -113,8 +113,8 @@ public:
   void process_inplace(SampleVector &samples);
 
 private:
-  Sample b0, b1, b2, a1, a2;
-  Sample x1, x2, y1, y2;
+  Sample m_b0, m_b1, m_b2, m_a1, m_a2;
+  Sample m_x0, m_x1, m_x2;
 };
 
 #endif
