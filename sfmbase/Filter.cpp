@@ -257,11 +257,34 @@ void LowPassFilterRC::process_interleaved_inplace(SampleVector &samples) {
   m_y1_1 = y1;
 }
 
+// Class BiquadIirFilter
+// Construct generic 2nd-order Direct Form 2 IIR filter.
+BiquadIirFilter::BiquadIirFilter(const double b0, const double b1,
+                                 const double b2, const double a1,
+                                 const double a2)
+    : m_x1(0), m_x2(0) {
+  m_b0 = b0;
+  m_b1 = b1;
+  m_b2 = b2;
+  m_a1 = a1;
+  m_a2 = a2;
+}
+
+// Process a value.
+double BiquadIirFilter::process(double input) {
+  m_x0 = input;
+  m_x0 -= m_a1 * m_x1 + m_a2 * m_x2;
+  double y = m_b0 * m_x0 + m_b1 * m_x1 + m_b2 * m_x2;
+  m_x2 = m_x1;
+  m_x1 = m_x0;
+  return y;
+}
+
 /* ****************  class HighPassFilterIir  **************** */
 
 // Construct 2nd order high-pass IIR filter.
-HighPassFilterIir::HighPassFilterIir(const double cutoff)
-    : x1(0), x2(0), y1(0), y2(0) {
+HighPassFilterIir::HighPassFilterIir(const double cutoff) {
+
   typedef std::complex<double> CDbl;
 
   // Angular cutoff frequency.
@@ -284,34 +307,29 @@ HighPassFilterIir::HighPassFilterIir(const double cutoff)
   // Note that z2 = conj(z1).
   // Therefore p1+p2 == 2*real(p1), p1*2 == abs(p1*p1), z4 = conj(z1)
   //
-  b0 = 1;
-  b1 = -2;
-  b2 = 1;
-  a1 = -2 * real(p1z);
-  a2 = abs(p1z * p1z);
+  double b0 = 1;
+  double b1 = -2;
+  double b2 = 1;
+  double a1 = -2 * real(p1z);
+  double a2 = abs(p1z * p1z);
 
   // Adjust b coefficients to get unit gain at Nyquist frequency (z=-1).
   double g = (b0 - b1 + b2) / (1 - a1 + a2);
   b0 /= g;
   b1 /= g;
   b2 /= g;
+
+  m_iirfilter = BiquadIirFilter(b0, b1, b2, a1, a2);
 }
 
 // Process samples.
 void HighPassFilterIir::process(const SampleVector &samples_in,
                                 SampleVector &samples_out) {
   unsigned int n = samples_in.size();
-
   samples_out.resize(n);
 
   for (unsigned int i = 0; i < n; i++) {
-    Sample x = samples_in[i];
-    Sample y = b0 * x + b1 * x1 + b2 * x2 - a1 * y1 - a2 * y2;
-    x2 = x1;
-    x1 = x;
-    y2 = y1;
-    y1 = y;
-    samples_out[i] = y;
+    samples_out[i] = m_iirfilter.process(samples_in[i]);
   }
 }
 
@@ -320,12 +338,7 @@ void HighPassFilterIir::process_inplace(SampleVector &samples) {
   unsigned int n = samples.size();
 
   for (unsigned int i = 0; i < n; i++) {
-    Sample x = samples[i];
-    Sample y = b0 * x + b1 * x1 + b2 * x2 - a1 * y1 - a2 * y2;
-    x2 = x1;
-    x1 = x;
-    y2 = y1;
-    y1 = y;
+    Sample y = m_iirfilter.process(samples[i]);
     samples[i] = y;
   }
 }
