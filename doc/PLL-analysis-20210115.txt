@@ -1,0 +1,14 @@
+FM demodulation PLL analysis memo
+15-JAN-2021 Kenji Rikitake
+
+* Still unable to find out how the PLL system constants were defined
+* Replacing the first 2nd-order LPF with the following
+  2nd-order Butterworth filter looked OK
+  scipy.signal.butter(2, 30, 'lowpass', False, 'sos', 384000)
+* Adding another 2nd-order LPF might or might NOT decrease the
+  lock frequency error
+* After the lock frequency measurement, the lock delay time can be
+  shortened to 0.5 second while maintaining the stability
+  (previously 0.667 second) when the lock bandwidth is 30Hz
+
+[End of memorandum]
