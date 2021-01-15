@@ -32,8 +32,12 @@
 /* ****************  class PilotPhaseLock  **************** */
 
 // Construct phase-locked loop.
-PilotPhaseLock::PilotPhaseLock(double freq, double bandwidth,
-                               double minsignal) {
+PilotPhaseLock::PilotPhaseLock(double freq, double bandwidth, double minsignal)
+    : // scipy.signal.butter(2, 60, 'lowpass', False, 'sos', 384000)
+      m_biquad_phasor_i(2.40789963e-07, 4.81579926e-07, 2.40789963e-07,
+                        -1.99861160e+00, 9.98612562e-01),
+      m_biquad_phasor_q(2.40789963e-07, 4.81579926e-07, 2.40789963e-07,
+                        -1.99861160e+00, 9.98612562e-01) {
   /*
    * This is a type-2, 4th order phase-locked loop.
    *
@@ -140,14 +144,18 @@ void PilotPhaseLock::process(const SampleVector &samples_in,
     Sample phasor_q = pcos * x;
 
     // Run IQ phase error through low-pass filter.
-    Sample new_phasor_i = m_phasor_b0 * phasor_i - m_phasor_a1 * m_phasor_i1 -
-                          m_phasor_a2 * m_phasor_i2;
-    Sample new_phasor_q = m_phasor_b0 * phasor_q - m_phasor_a1 * m_phasor_q1 -
-                          m_phasor_a2 * m_phasor_q2;
+    Sample pitemp = m_phasor_b0 * phasor_i - m_phasor_a1 * m_phasor_i1 -
+                    m_phasor_a2 * m_phasor_i2;
+    Sample pqtemp = m_phasor_b0 * phasor_q - m_phasor_a1 * m_phasor_q1 -
+                    m_phasor_a2 * m_phasor_q2;
     m_phasor_i2 = m_phasor_i1;
-    m_phasor_i1 = new_phasor_i;
+    m_phasor_i1 = pitemp;
     m_phasor_q2 = m_phasor_q1;
-    m_phasor_q1 = new_phasor_q;
+    m_phasor_q1 = pqtemp;
+
+    // More filtering by biquad LPF
+    Sample new_phasor_i = m_biquad_phasor_i.process(pitemp);
+    Sample new_phasor_q = m_biquad_phasor_q.process(pqtemp);
 
     // Convert I/Q ratio to estimate of phase error.
     // Note: maximum phase error during the locked state is +- 0.02 radian.
@@ -254,7 +262,7 @@ FmDecoder::FmDecoder(IQSampleCoeff &fmfilter_coeff, bool stereo,
       ,
       m_pilotpll(pilot_freq / sample_rate_if, // freq
                  30 / sample_rate_if,         // bandwidth
-                 0.01)                        // minsignal (was 0.04)
+                 0.005)                       // minsignal (was 0.04)
 
       // Construct HighPassFilterIir
       // cutoff: 4.8Hz for 48kHz sampling rate
