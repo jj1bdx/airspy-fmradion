@@ -59,7 +59,8 @@ PilotPhaseLock::PilotPhaseLock(double freq)
   m_maxfreq = (freq + bandwidth) * 2.0 * M_PI;
 
   // Set valid signal threshold.
-  m_lock_delay = int(20.0 / bandwidth);
+  // Lock decision time: 0.5 second (for 30Hz bandwidth)
+  m_lock_delay = int(15.0 / bandwidth);
   m_lock_cnt = 0;
   m_pilot_level = 0;
 
@@ -69,6 +70,7 @@ PilotPhaseLock::PilotPhaseLock(double freq)
   m_loopfilter_b1 = -m_loopfilter_b0 * q1;
 
 #ifdef DEBUG_PLL_FILTER
+  fprintf(stderr, "m_lock_delay = %d\n", m_lock_delay);
   fprintf(stderr, "q1 = %.9g, m_loopfilter_b0 = %.9g, m_loopfilter_b1 = %.9g\n",
           q1, m_loopfilter_b0, m_loopfilter_b1);
 #endif
@@ -154,9 +156,10 @@ void PilotPhaseLock::process(const SampleVector &samples_in,
 #ifdef DEBUG_PLL_FILTER
     if (i == 0) {
       fprintf(stderr,
+              "m_lock_cnt = %d, "
               "m_freq = %.9g, new_freq_err = %.9g, "
               "m_pilot_level = %.9g\n",
-              m_freq * FmDecoder::sample_rate_if / 2 / M_PI,
+              m_lock_cnt, m_freq * FmDecoder::sample_rate_if / 2 / M_PI,
               new_phase_err * FmDecoder::sample_rate_if / 2 / M_PI,
               m_pilot_level);
     }
