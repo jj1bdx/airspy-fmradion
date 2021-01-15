@@ -32,12 +32,15 @@
 /* ****************  class PilotPhaseLock  **************** */
 
 // Construct phase-locked loop.
-PilotPhaseLock::PilotPhaseLock(double freq, double bandwidth, double minsignal)
-    : // scipy.signal.butter(2, 60, 'lowpass', False, 'sos', 384000)
-      m_biquad_phasor_i(2.40789963e-07, 4.81579926e-07, 2.40789963e-07,
-                        -1.99861160e+00, 9.98612562e-01),
-      m_biquad_phasor_q(2.40789963e-07, 4.81579926e-07, 2.40789963e-07,
-                        -1.99861160e+00, 9.98612562e-01) {
+PilotPhaseLock::PilotPhaseLock(double freq)
+    // 30Hz LPF by 2nd-order biquad IIR filter
+    : // scipy.signal.butter(2, 30, 'lowpass', False, 'sos', 384000)
+      m_biquad_phasor_i(6.0218381651772552e-08, 1.2043676330354510e-07,
+                        6.0218381651772552e-08, -1.9993057995687766e+00,
+                        9.9930604044230320e-01),
+      m_biquad_phasor_q(6.0218381651772552e-08, 1.2043676330354510e-07,
+                        6.0218381651772552e-08, -1.9993057995687766e+00,
+                        9.9930604044230320e-01) {
   /*
    * This is a type-2, 4th order phase-locked loop.
    *
@@ -56,18 +59,9 @@ PilotPhaseLock::PilotPhaseLock(double freq, double bandwidth, double minsignal)
   m_maxfreq = (freq + bandwidth) * 2.0 * M_PI;
 
   // Set valid signal threshold.
-  m_minsignal = minsignal;
   m_lock_delay = int(20.0 / bandwidth);
   m_lock_cnt = 0;
   m_pilot_level = 0;
-
-  // Create 2nd order filter for I/Q representation of phase error.
-  // Filter has two poles, unit DC gain.
-  double p1 = exp(-1.146 * bandwidth * 2.0 * M_PI);
-  double p2 = exp(-5.331 * bandwidth * 2.0 * M_PI);
-  m_phasor_a1 = -p1 - p2;
-  m_phasor_a2 = p1 * p2;
-  m_phasor_b0 = 1 + m_phasor_a1 + m_phasor_a2;
 
   // Create loop filter to stabilize the loop.
   double q1 = exp(-0.1153 * bandwidth * 2.0 * M_PI);
@@ -75,10 +69,6 @@ PilotPhaseLock::PilotPhaseLock(double freq, double bandwidth, double minsignal)
   m_loopfilter_b1 = -m_loopfilter_b0 * q1;
 
 #ifdef DEBUG_PLL_FILTER
-  fprintf(stderr, "p1 = %.9g, p2 = %.9g\n", p1, p2);
-  fprintf(stderr,
-          "m_phasor_a1 = %.9g, m_phasor_a2 = %.9g, m_phasor_b0 = %.9g\n",
-          m_phasor_a1, m_phasor_a2, m_phasor_b0);
   fprintf(stderr, "q1 = %.9g, m_loopfilter_b0 = %.9g, m_loopfilter_b1 = %.9g\n",
           q1, m_loopfilter_b0, m_loopfilter_b1);
 #endif
@@ -91,10 +81,6 @@ PilotPhaseLock::PilotPhaseLock(double freq, double bandwidth, double minsignal)
   m_freq = freq * 2.0 * M_PI;
   m_phase = 0;
 
-  m_phasor_i1 = 0;
-  m_phasor_i2 = 0;
-  m_phasor_q1 = 0;
-  m_phasor_q2 = 0;
   m_loopfilter_x1 = 0;
 
   // Initialize PPS generator.
@@ -143,19 +129,9 @@ void PilotPhaseLock::process(const SampleVector &samples_in,
     Sample phasor_i = psin * x;
     Sample phasor_q = pcos * x;
 
-    // Run IQ phase error through low-pass filter.
-    Sample pitemp = m_phasor_b0 * phasor_i - m_phasor_a1 * m_phasor_i1 -
-                    m_phasor_a2 * m_phasor_i2;
-    Sample pqtemp = m_phasor_b0 * phasor_q - m_phasor_a1 * m_phasor_q1 -
-                    m_phasor_a2 * m_phasor_q2;
-    m_phasor_i2 = m_phasor_i1;
-    m_phasor_i1 = pitemp;
-    m_phasor_q2 = m_phasor_q1;
-    m_phasor_q1 = pqtemp;
-
-    // More filtering by biquad LPF
-    Sample new_phasor_i = m_biquad_phasor_i.process(pitemp);
-    Sample new_phasor_q = m_biquad_phasor_q.process(pqtemp);
+    // Run IQ phase error through biquad LPFs.
+    Sample new_phasor_i = m_biquad_phasor_i.process(phasor_i);
+    Sample new_phasor_q = m_biquad_phasor_q.process(phasor_q);
 
     // Convert I/Q ratio to estimate of phase error.
     // Note: maximum phase error during the locked state is +- 0.02 radian.
@@ -208,7 +184,7 @@ void PilotPhaseLock::process(const SampleVector &samples_in,
   }
 
   // Update lock status.
-  if (2 * m_pilot_level > m_minsignal) {
+  if (2 * m_pilot_level > minsignal) {
     if (m_lock_cnt < m_lock_delay) {
       m_lock_cnt += n;
     }
@@ -260,9 +236,7 @@ FmDecoder::FmDecoder(IQSampleCoeff &fmfilter_coeff, bool stereo,
 
       // Construct PilotPhaseLock
       ,
-      m_pilotpll(pilot_freq / sample_rate_if, // freq
-                 30 / sample_rate_if,         // bandwidth
-                 0.005)                       // minsignal (was 0.04)
+      m_pilotpll(pilot_freq / sample_rate_if) // freq
 
       // Construct HighPassFilterIir
       // cutoff: 4.8Hz for 48kHz sampling rate

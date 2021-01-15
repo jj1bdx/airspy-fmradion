@@ -33,8 +33,15 @@
 /** Phase-locked loop for stereo pilot. */
 class PilotPhaseLock {
 public:
-  /** Expected pilot frequency (used for PPS events). */
+  // Static constants.
+  // Expected pilot frequency (used for PPS events).
   static constexpr int pilot_frequency = 19000;
+  // IF sampling rate.
+  static constexpr double sample_rate_if = 384000;
+  // Bandwidth (30Hz) relative to sample frequency.
+  static constexpr double bandwidth = 30 / sample_rate_if;
+  // Minimum pilot amplitude
+  static constexpr double minsignal = 0.01;
 
   /** Timestamp event produced once every 19000 pilot periods. */
   struct PpsEvent {
@@ -48,10 +55,8 @@ public:
    *
    * freq        :: 19 kHz center frequency relative to sample freq
    *                (0.5 is Nyquist)
-   * bandwidth   :: bandwidth relative to sample frequency
-   * minsignal   :: minimum pilot amplitude
    */
-  PilotPhaseLock(double freq, double bandwidth, double minsignal);
+  PilotPhaseLock(double freq);
 
   /**
    * Process samples and extract 19 kHz pilot tone.
@@ -77,12 +82,9 @@ public:
 
 private:
   Sample m_minfreq, m_maxfreq;
-  Sample m_phasor_b0, m_phasor_a1, m_phasor_a2;
-  Sample m_phasor_i1, m_phasor_i2, m_phasor_q1, m_phasor_q2;
   Sample m_loopfilter_b0, m_loopfilter_b1;
   Sample m_loopfilter_x1;
   Sample m_freq, m_phase;
-  Sample m_minsignal;
   Sample m_pilot_level;
   int m_lock_delay;
   int m_lock_cnt;
