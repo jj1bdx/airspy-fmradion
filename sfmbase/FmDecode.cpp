@@ -33,14 +33,15 @@
 
 // Construct phase-locked loop.
 PilotPhaseLock::PilotPhaseLock(double freq)
-    // 30Hz LPF by 2nd-order biquad IIR filter
+    // 30Hz LPF by 2nd-order biquad IIR Butterworth filter
     : // scipy.signal.butter(2, 30, 'lowpass', False, 'sos', 384000)
       m_biquad_phasor_i(6.0218381651772552e-08, 1.2043676330354510e-07,
                         6.0218381651772552e-08, -1.9993057995687766e+00,
                         9.9930604044230320e-01),
       m_biquad_phasor_q(6.0218381651772552e-08, 1.2043676330354510e-07,
                         6.0218381651772552e-08, -1.9993057995687766e+00,
-                        9.9930604044230320e-01) {
+                        9.9930604044230320e-01),
+      m_biquad_phase_err(0.000304341788, -0.000304324564, 0, 0, 0) {
   /*
    * This is a type-2, 4th order phase-locked loop.
    *
@@ -144,9 +145,12 @@ void PilotPhaseLock::process(const SampleVector &samples_in,
     m_pilot_level = std::min(m_pilot_level, new_phasor_i);
 
     // Run phase error through loop filter and update frequency estimate.
+#if 0
     Sample new_phase_err =
         m_loopfilter_b0 * phase_err + m_loopfilter_b1 * m_loopfilter_x1;
     m_loopfilter_x1 = phase_err;
+#endif
+    Sample new_phase_err = m_biquad_phase_err.process(phase_err);
 
     m_freq += new_phase_err;
 
@@ -156,10 +160,12 @@ void PilotPhaseLock::process(const SampleVector &samples_in,
 #ifdef DEBUG_PLL_FILTER
     if (i == 0) {
       fprintf(stderr,
+              "phase_err ratio = %.9g, "
               "m_lock_cnt = %d, "
               "m_freq = %.9g, new_freq_err = %.9g, "
               "m_pilot_level = %.9g\n",
-              m_lock_cnt, m_freq * FmDecoder::sample_rate_if / 2 / M_PI,
+              new_phase_err / phase_err, m_lock_cnt,
+              m_freq * FmDecoder::sample_rate_if / 2 / M_PI,
               new_phase_err * FmDecoder::sample_rate_if / 2 / M_PI,
               m_pilot_level);
     }

@@ -94,6 +94,7 @@ private:
   std::vector<PpsEvent> m_pps_events;
   BiquadIirFilter m_biquad_phasor_i;
   BiquadIirFilter m_biquad_phasor_q;
+  BiquadIirFilter m_biquad_phase_err;
 };
 
 /** Complete decoder for FM broadcast signal. */
