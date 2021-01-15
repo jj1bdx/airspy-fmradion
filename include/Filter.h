@@ -70,7 +70,7 @@ public:
   //
   // Construct 1st order low-pass IIR filter.
   //
-  // timeconst :: RC time constant in seconds (1 / (2 * PI * cutoff_freq)
+  // timeconst :: RC time constant in seconds (1 / (2 * PI * cutoff_freq))
   //
   LowPassFilterRC(const double timeconst);
 
