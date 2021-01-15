@@ -26,6 +26,9 @@
 // Define this to print IF AGC level to stderr
 // #define DEBUG_IF_AGC
 
+// Define this to print PLL filter messages
+// #define DEBUG_PLL_FILTER
+
 /* ****************  class PilotPhaseLock  **************** */
 
 // Construct phase-locked loop.
@@ -66,6 +69,15 @@ PilotPhaseLock::PilotPhaseLock(double freq, double bandwidth,
   double q1 = exp(-0.1153 * bandwidth * 2.0 * M_PI);
   m_loopfilter_b0 = 0.62 * bandwidth * 2.0 * M_PI;
   m_loopfilter_b1 = -m_loopfilter_b0 * q1;
+
+#ifdef DEBUG_PLL_FILTER
+  fprintf(stderr, "p1 = %.9g, p2 = %.9g\n", p1, p2);
+  fprintf(stderr,
+          "m_phasor_a1 = %.9g, m_phasor_a2 = %.9g, m_phasor_b0 = %.9g\n",
+          m_phasor_a1, m_phasor_a2, m_phasor_b0);
+  fprintf(stderr, "q1 = %.9g, m_loopfilter_b0 = %.9g, m_loopfilter_b1 = %.9g\n",
+          q1, m_loopfilter_b0, m_loopfilter_b1);
+#endif
 
   // After the loop filter, the phase error is integrated to produce
   // the frequency. Then the frequency is integrated to produce the phase.
@@ -128,38 +140,41 @@ void PilotPhaseLock::process(const SampleVector &samples_in,
     Sample phasor_q = pcos * x;
 
     // Run IQ phase error through low-pass filter.
-    phasor_i = m_phasor_b0 * phasor_i - m_phasor_a1 * m_phasor_i1 -
-               m_phasor_a2 * m_phasor_i2;
-    phasor_q = m_phasor_b0 * phasor_q - m_phasor_a1 * m_phasor_q1 -
-               m_phasor_a2 * m_phasor_q2;
+    Sample new_phasor_i = m_phasor_b0 * phasor_i - m_phasor_a1 * m_phasor_i1 -
+                          m_phasor_a2 * m_phasor_i2;
+    Sample new_phasor_q = m_phasor_b0 * phasor_q - m_phasor_a1 * m_phasor_q1 -
+                          m_phasor_a2 * m_phasor_q2;
     m_phasor_i2 = m_phasor_i1;
-    m_phasor_i1 = phasor_i;
+    m_phasor_i1 = new_phasor_i;
     m_phasor_q2 = m_phasor_q1;
-    m_phasor_q1 = phasor_q;
+    m_phasor_q1 = new_phasor_q;
 
     // Convert I/Q ratio to estimate of phase error.
     // Note: maximum phase error during the locked state is +- 0.02 radian.
     // Sample phase_err = atan2(phasor_q, phasor_i);
-    Sample phase_err = Utility::fast_atan2f(phasor_q, phasor_i);
+    Sample phase_err = Utility::fast_atan2f(new_phasor_q, new_phasor_i);
 
     // Detect pilot level (conservative).
-    m_pilot_level = std::min(m_pilot_level, phasor_i);
+    m_pilot_level = std::min(m_pilot_level, new_phasor_i);
 
     // Run phase error through loop filter and update frequency estimate.
     Sample new_phase_err =
         m_loopfilter_b0 * phase_err + m_loopfilter_b1 * m_loopfilter_x1;
-    m_freq += new_phase_err;
     m_loopfilter_x1 = phase_err;
+
+    m_freq += new_phase_err;
 
     // Limit frequency to allowable range.
     m_freq = std::max(m_minfreq, std::min(m_maxfreq, m_freq));
 
-#if 0
+#ifdef DEBUG_PLL_FILTER
     if (i == 0) {
-        fprintf(stderr, "m_freq = %.9g, new_freq_err = %.9g\n",
-			m_freq * FmDecoder::sample_rate_if / 2 / M_PI,
-			new_phase_err * FmDecoder::sample_rate_if / 2 / M_PI
-	       );
+      fprintf(stderr,
+              "m_freq = %.9g, new_freq_err = %.9g, "
+              "m_pilot_level = %.9g\n",
+              m_freq * FmDecoder::sample_rate_if / 2 / M_PI,
+              new_phase_err * FmDecoder::sample_rate_if / 2 / M_PI,
+              m_pilot_level);
     }
 #endif
 
