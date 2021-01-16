@@ -1,0 +1,47 @@
+FM Pilot PLL design record
+Originally by Joris van Rantwijk <joris@jorisvr.nl> on 31-DEC-2013
+See commit f119f2f72c59327a81a0d7db80958ceff540c015 of
+https://github.com/jorisvr/SoftFM
+https://github.com/jorisvr/SoftFM/commit/f119f2f72c59327a81a0d7db80958ceff540c015
+
+The following values represent 30Hz bandwidth.
+
+When bandwidth = 30/384000 = 0.000078125:
+
+  /*
+   * This is a type-2, 4th order phase-locked loop.
+   *
+   * Open-loop transfer function:
+   *   G(z) = K * (z - q1) / ((z - p1) * (z - p2) * (z - 1) * (z - 1))
+   *   K  = 3.788 * (bandwidth * 2 * Pi)**3
+   *   q1 = exp(-0.1153 * bandwidth * 2*Pi)
+   *   p1 = exp(-1.146 * bandwidth * 2*Pi)
+   *   p2 = exp(-5.331 * bandwidth * 2*Pi)
+   *
+   * I don't understand what I'm doing; hopefully it will work.
+   */
+
+  // Create 2nd order filter for I/Q representation of phase error.
+  // Filter has two poles, unit DC gain.
+  double p1 = exp(-1.146 * bandwidth * 2.0 * M_PI);
+  double p2 = exp(-5.331 * bandwidth * 2.0 * M_PI);
+  m_phasor_a1 = -p1 - p2;
+  m_phasor_a2 = p1 * p2;
+  m_phasor_b0 = 1 + m_phasor_a1 + m_phasor_a2;
+
+  // Create loop filter to stabilize the loop.
+  double q1 = exp(-0.1153 * bandwidth * 2.0 * M_PI);
+  m_loopfilter_b0 = 0.62 * bandwidth * 2.0 * M_PI;
+  m_loopfilter_b1 = -m_loopfilter_b0 * q1;
+
+p1 = 0.999437617
+p2 = 0.997386572
+m_phasor_a1 = -1.99682419
+m_phasor_a2 = 0.996825659
+m_phasor_b0 = 1.46974784e-06
+
+q1 = 0.999943404
+m_loopfilter_b0 = 0.000304341788
+m_loopfilter_b1 = -0.000304324564
+
+[End of document]
