@@ -95,6 +95,26 @@ private:
   Sample m_y1_1;
 };
 
+// Generic 1st-order Direct Form 2 IIR filter
+class FirstOrderIirFilter {
+public:
+  //
+  // Construct generic 1st-order Direct Form 2 IIR filter.
+  // b0, b1, a1 :: filter coefficients
+  // representing the following filter of the transfer function H(z):
+  // H(z) = (b0 + (b1 * z^(-1))) / (1  + (a1 * z^(-1)))
+  FirstOrderIirFilter(const double b0, const double b1, const double a1);
+  // Default constructor
+  FirstOrderIirFilter() : FirstOrderIirFilter(0, 0, 0) {}
+
+  // Process a value
+  double process(double input);
+
+private:
+  double m_b0, m_b1, m_a1;
+  double m_x0, m_x1;
+};
+
 // Generic biquad (2nd-order) Direct Form 2 IIR filter
 class BiquadIirFilter {
 public:

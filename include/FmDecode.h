@@ -82,8 +82,6 @@ public:
 
 private:
   Sample m_minfreq, m_maxfreq;
-  Sample m_loopfilter_b0, m_loopfilter_b1;
-  Sample m_loopfilter_x1;
   Sample m_freq, m_phase;
   Sample m_pilot_level;
   int m_lock_delay;
@@ -94,7 +92,7 @@ private:
   std::vector<PpsEvent> m_pps_events;
   BiquadIirFilter m_biquad_phasor_i1, m_biquad_phasor_i2;
   BiquadIirFilter m_biquad_phasor_q1, m_biquad_phasor_q2;
-  BiquadIirFilter m_biquad_phase_err;
+  FirstOrderIirFilter m_first_phase_err;
 };
 
 /** Complete decoder for FM broadcast signal. */

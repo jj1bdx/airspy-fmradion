@@ -38,8 +38,8 @@ PilotPhaseLock::PilotPhaseLock(double freq)
       m_biquad_phasor_i2(1.46974784e-06, 0, 0, -1.99682419, 0.996825659),
       m_biquad_phasor_q1(1.46974784e-06, 0, 0, -1.99682419, 0.996825659),
       m_biquad_phasor_q2(1.46974784e-06, 0, 0, -1.99682419, 0.996825659),
-      // differentiator-like 1st-order HPF
-      m_biquad_phase_err(0.000304341788, -0.000304324564, 0, 0, 0) {
+      // differentiator-like 1st-order inverse LPF (not really an HPF)
+      m_first_phase_err(0.000304341788, -0.000304324564, 0) {
   /*
    * This is a type-2, 4th order phase-locked loop.
    *
@@ -63,11 +63,6 @@ PilotPhaseLock::PilotPhaseLock(double freq)
   m_lock_cnt = 0;
   m_pilot_level = 0;
 
-  // Create loop filter to stabilize the loop.
-  double q1 = exp(-0.1153 * bandwidth * 2.0 * M_PI);
-  m_loopfilter_b0 = 0.62 * bandwidth * 2.0 * M_PI;
-  m_loopfilter_b1 = -m_loopfilter_b0 * q1;
-
   // After the loop filter, the phase error is integrated to produce
   // the frequency. Then the frequency is integrated to produce the phase.
   // These integrators form the two remaining poles, both at z = 1.
@@ -75,8 +70,6 @@ PilotPhaseLock::PilotPhaseLock(double freq)
   // Initialize frequency and phase.
   m_freq = freq * 2.0 * M_PI;
   m_phase = 0;
-
-  m_loopfilter_x1 = 0;
 
   // Initialize PPS generator.
   m_pilot_periods = 0;
@@ -139,7 +132,7 @@ void PilotPhaseLock::process(const SampleVector &samples_in,
     m_pilot_level = std::min(m_pilot_level, new_phasor_i);
 
     // Run phase error through loop filter and update frequency estimate.
-    Sample new_phase_err = m_biquad_phase_err.process(phase_err);
+    Sample new_phase_err = m_first_phase_err.process(phase_err);
 
     m_freq += new_phase_err;
 
