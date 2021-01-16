@@ -257,6 +257,25 @@ void LowPassFilterRC::process_interleaved_inplace(SampleVector &samples) {
   m_y1_1 = y1;
 }
 
+// Class FirstOrderIirFilter
+// Construct generic 1st-order Direct Form 2 IIR filter
+FirstOrderIirFilter::FirstOrderIirFilter(const double b0, const double b1,
+                                         const double a1)
+    : m_x1(0) {
+  m_b0 = b0;
+  m_b1 = b1;
+  m_a1 = a1;
+}
+
+// Process a value.
+double FirstOrderIirFilter::process(double input) {
+  m_x0 = input;
+  m_x0 -= m_a1 * m_x1;
+  double y = m_b0 * m_x0 + m_b1 * m_x1;
+  m_x1 = m_x0;
+  return y;
+}
+
 // Class BiquadIirFilter
 // Construct generic 2nd-order Direct Form 2 IIR filter.
 BiquadIirFilter::BiquadIirFilter(const double b0, const double b1,
