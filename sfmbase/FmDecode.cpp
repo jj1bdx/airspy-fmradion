@@ -33,14 +33,12 @@
 
 // Construct phase-locked loop.
 PilotPhaseLock::PilotPhaseLock(double freq)
-    // 30Hz LPF by 2nd-order biquad IIR Butterworth filter
-    : // scipy.signal.butter(2, 30, 'lowpass', False, 'sos', 384000)
-      m_biquad_phasor_i(6.0218381651772552e-08, 1.2043676330354510e-07,
-                        6.0218381651772552e-08, -1.9993057995687766e+00,
-                        9.9930604044230320e-01),
-      m_biquad_phasor_q(6.0218381651772552e-08, 1.2043676330354510e-07,
-                        6.0218381651772552e-08, -1.9993057995687766e+00,
-                        9.9930604044230320e-01),
+    : //  approx 30Hz LPF by 2nd-order biquad IIR Butterworth filter
+      m_biquad_phasor_i1(1.46974784e-06, 0, 0, -1.99682419, 0.996825659),
+      m_biquad_phasor_i2(1.46974784e-06, 0, 0, -1.99682419, 0.996825659),
+      m_biquad_phasor_q1(1.46974784e-06, 0, 0, -1.99682419, 0.996825659),
+      m_biquad_phasor_q2(1.46974784e-06, 0, 0, -1.99682419, 0.996825659),
+      // differentiator-like 1st-order HPF
       m_biquad_phase_err(0.000304341788, -0.000304324564, 0, 0, 0) {
   /*
    * This is a type-2, 4th order phase-locked loop.
@@ -132,9 +130,11 @@ void PilotPhaseLock::process(const SampleVector &samples_in,
     Sample phasor_i = psin * x;
     Sample phasor_q = pcos * x;
 
-    // Run IQ phase error through biquad LPFs.
-    Sample new_phasor_i = m_biquad_phasor_i.process(phasor_i);
-    Sample new_phasor_q = m_biquad_phasor_q.process(phasor_q);
+    // Run IQ phase error through biquad LPFs twice.
+    Sample temppi = m_biquad_phasor_i1.process(phasor_i);
+    Sample new_phasor_i = m_biquad_phasor_i2.process(temppi);
+    Sample temppq = m_biquad_phasor_q1.process(phasor_q);
+    Sample new_phasor_q = m_biquad_phasor_q2.process(temppq);
 
     // Convert I/Q ratio to estimate of phase error.
     // Note: maximum phase error during the locked state is +- 0.02 radian.
@@ -145,11 +145,6 @@ void PilotPhaseLock::process(const SampleVector &samples_in,
     m_pilot_level = std::min(m_pilot_level, new_phasor_i);
 
     // Run phase error through loop filter and update frequency estimate.
-#if 0
-    Sample new_phase_err =
-        m_loopfilter_b0 * phase_err + m_loopfilter_b1 * m_loopfilter_x1;
-    m_loopfilter_x1 = phase_err;
-#endif
     Sample new_phase_err = m_biquad_phase_err.process(phase_err);
 
     m_freq += new_phase_err;
@@ -160,11 +155,8 @@ void PilotPhaseLock::process(const SampleVector &samples_in,
 #ifdef DEBUG_PLL_FILTER
     if (i == 0) {
       fprintf(stderr,
-              "phase_err ratio = %.9g, "
-              "m_lock_cnt = %d, "
               "m_freq = %.9g, new_freq_err = %.9g, "
               "m_pilot_level = %.9g\n",
-              new_phase_err / phase_err, m_lock_cnt,
               m_freq * FmDecoder::sample_rate_if / 2 / M_PI,
               new_phase_err * FmDecoder::sample_rate_if / 2 / M_PI,
               m_pilot_level);
