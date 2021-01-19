@@ -49,7 +49,7 @@
 // define this for enabling coefficient monitor functions
 // #undef COEFF_MONITOR
 
-#define AIRSPY_FMRADION_VERSION "20210116-0"
+#define AIRSPY_FMRADION_VERSION "20210119-test"
 
 /** Flag is set on SIGINT / SIGTERM. */
 static std::atomic_bool stop_flag(false);
@@ -991,9 +991,9 @@ int main(int argc, char **argv) {
             (((block % stat_rate) == 0) && (block > discarding_blocks))) {
           fprintf(stderr,
 #ifdef COEFF_MONITOR
-                  "blk=%8d:ppm=%+6.2f:IF=%+6.1fdB:AF=%+6.1fdB:buf=%.2fs\n",
+                  "blk=%8d:ppm=%+7.3f:IF=%+6.1fdB:AF=%+6.1fdB:buf=%.2fs\n",
 #else
-                  "\rblk=%8d:ppm=%+6.2f:IF=%+6.1fdB:AF=%+6.1fdB:buf=%.2fs",
+                  "\rblk=%8d:ppm=%+7.3f:IF=%+6.1fdB:AF=%+6.1fdB:buf=%.2fs",
 #endif
                   block, ppm_average.average(), if_level_db, audio_level_db,
                   buflen_sec);
