@@ -55,6 +55,7 @@ PilotPhaseLock::PilotPhaseLock(double freq)
   // Initialize frequency and phase.
   m_freq = freq * 2.0 * M_PI;
   m_phase = 0;
+  m_freq_err = 0;
 
   // Initialize PPS generator.
   m_pilot_periods = 0;
@@ -123,7 +124,8 @@ void PilotPhaseLock::process(const SampleVector &samples_in,
     // These two integrators form the two remaining poles, both at z = 1.
 
     Sample new_phase_err = m_first_phase_err.process(phase_err);
-    m_freq += new_phase_err * freq_adjust_rate;
+    m_freq_err = new_phase_err * freq_adjust_rate;
+    m_freq += m_freq_err;
 
     // Limit frequency to allowable range.
     m_freq = std::max(m_minfreq, std::min(m_maxfreq, m_freq));

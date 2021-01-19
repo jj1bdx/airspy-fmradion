@@ -74,6 +74,9 @@ public:
   /** Return detected amplitude of pilot signal. */
   double get_pilot_level() const { return 2 * m_pilot_level; }
 
+  // Return calculated frequency error.
+  double get_freq_err() const { return m_freq_err; }
+
   /** Return PPS events from the most recently processed block. */
   std::vector<PpsEvent> get_pps_events() const { return m_pps_events; }
 
@@ -93,6 +96,7 @@ private:
   BiquadIirFilter m_biquad_phasor_i1, m_biquad_phasor_i2;
   BiquadIirFilter m_biquad_phasor_q1, m_biquad_phasor_q2;
   FirstOrderIirFilter m_first_phase_err;
+  Sample m_freq_err;
 };
 
 /** Complete decoder for FM broadcast signal. */
