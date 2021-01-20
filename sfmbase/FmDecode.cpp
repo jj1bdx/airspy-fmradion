@@ -71,7 +71,6 @@ void PilotPhaseLock::process(const SampleVector &samples_in,
   samples_out.resize(n);
 
   bool was_locked = (m_lock_cnt >= m_lock_delay);
-  double freq_adjust_rate = was_locked ? 0.7 : 1.0;
   m_pps_events.clear();
 
   if (n > 0) {
@@ -124,7 +123,7 @@ void PilotPhaseLock::process(const SampleVector &samples_in,
     // These two integrators form the two remaining poles, both at z = 1.
 
     Sample new_phase_err = m_first_phase_err.process(phase_err);
-    m_freq_err = new_phase_err * freq_adjust_rate;
+    m_freq_err = new_phase_err;
     m_freq += m_freq_err;
 
     // Limit frequency to allowable range.
