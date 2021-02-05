@@ -132,13 +132,14 @@ public:
   // Process a value
   double process(double input);
 
-private:
+protected:
   double m_b0, m_b1, m_b2, m_a1, m_a2;
+private:
   double m_x0, m_x1, m_x2;
 };
 
 // High-pass filter for real-valued signals based on Butterworth IIR filter.
-class HighPassFilterIir {
+class HighPassFilterIir : public BiquadIirFilter {
 public:
   //
   // Construct 2nd order high-pass IIR filter.

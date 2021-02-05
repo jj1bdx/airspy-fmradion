@@ -326,19 +326,17 @@ HighPassFilterIir::HighPassFilterIir(const double cutoff) {
   // Note that z2 = conj(z1).
   // Therefore p1+p2 == 2*real(p1), p1*2 == abs(p1*p1), z4 = conj(z1)
   //
-  double b0 = 1;
-  double b1 = -2;
-  double b2 = 1;
-  double a1 = -2 * real(p1z);
-  double a2 = abs(p1z * p1z);
+  m_b0 = 1;
+  m_b1 = -2;
+  m_b2 = 1;
+  m_a1 = -2 * real(p1z);
+  m_a2 = abs(p1z * p1z);
 
   // Adjust b coefficients to get unit gain at Nyquist frequency (z=-1).
-  double g = (b0 - b1 + b2) / (1 - a1 + a2);
-  b0 /= g;
-  b1 /= g;
-  b2 /= g;
-
-  m_iirfilter = BiquadIirFilter(b0, b1, b2, a1, a2);
+  double g = (m_b0 - m_b1 + m_b2) / (1 - m_a1 + m_a2);
+  m_b0 /= g;
+  m_b1 /= g;
+  m_b2 /= g;
 }
 
 // Process samples.
@@ -348,7 +346,7 @@ void HighPassFilterIir::process(const SampleVector &samples_in,
   samples_out.resize(n);
 
   for (unsigned int i = 0; i < n; i++) {
-    samples_out[i] = m_iirfilter.process(samples_in[i]);
+    samples_out[i] = BiquadIirFilter::process(samples_in[i]);
   }
 }
 
@@ -357,7 +355,7 @@ void HighPassFilterIir::process_inplace(SampleVector &samples) {
   unsigned int n = samples.size();
 
   for (unsigned int i = 0; i < n; i++) {
-    Sample y = m_iirfilter.process(samples[i]);
+    Sample y = BiquadIirFilter::process(samples[i]);
     samples[i] = y;
   }
 }
