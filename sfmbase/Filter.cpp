@@ -157,106 +157,6 @@ void LowPassFilterFirAudio::process(const SampleVector &samples_in,
   }
 }
 
-/* ****************  class LowPassFilterRC  **************** */
-
-// Construct 1st order low-pass IIR filter.
-LowPassFilterRC::LowPassFilterRC(const double timeconst)
-    : m_timeconst(timeconst), m_y0_1(0), m_y1_1(0) {
-  m_a1 = -exp(-1 / m_timeconst);
-  ;
-  m_b0 = 1 + m_a1;
-}
-
-// Process samples.
-void LowPassFilterRC::process(const SampleVector &samples_in,
-                              SampleVector &samples_out) {
-  /*
-   * Continuous domain:
-   *   H(s) = 1 / (1 - s * timeconst)
-   *
-   * Discrete domain:
-   *   H(z) = (1 - exp(-1/timeconst)) / (1 - exp(-1/timeconst) / z)
-   */
-  unsigned int n = samples_in.size();
-  samples_out.resize(n);
-
-  Sample y = m_y0_1;
-
-  for (unsigned int i = 0; i < n; i++) {
-    Sample x = samples_in[i];
-    y = m_b0 * x - m_a1 * y;
-    samples_out[i] = y;
-  }
-
-  m_y0_1 = y;
-}
-
-// Process interleaved samples.
-void LowPassFilterRC::process_interleaved(const SampleVector &samples_in,
-                                          SampleVector &samples_out) {
-  /*
-   * Continuous domain:
-   *   H(s) = 1 / (1 - s * timeconst)
-   *
-   * Discrete domain:
-   *   H(z) = (1 - exp(-1/timeconst)) / (1 - exp(-1/timeconst) / z)
-   */
-  unsigned int n = samples_in.size();
-  samples_out.resize(n);
-
-  Sample y0 = m_y0_1;
-  Sample y1 = m_y1_1;
-
-  for (unsigned int i = 0; i < n - 1; i += 2) {
-    Sample x0 = samples_in[i];
-    y0 = m_b0 * x0 - m_a1 * y0;
-    samples_out[i] = y0;
-
-    Sample x1 = samples_in[i + 1];
-    y1 = m_b0 * x1 - m_a1 * y1;
-    samples_out[i + 1] = y1;
-  }
-
-  m_y0_1 = y0;
-  m_y1_1 = y1;
-}
-
-// Process samples in-place.
-void LowPassFilterRC::process_inplace(SampleVector &samples) {
-  unsigned int n = samples.size();
-
-  Sample y = m_y0_1;
-
-  for (unsigned int i = 0; i < n; i++) {
-    Sample x = samples[i];
-    y = m_b0 * x - m_a1 * y;
-    samples[i] = y;
-  }
-
-  m_y0_1 = y;
-}
-
-// Process interleaved samples in-place.
-void LowPassFilterRC::process_interleaved_inplace(SampleVector &samples) {
-  unsigned int n = samples.size();
-
-  Sample y0 = m_y0_1;
-  Sample y1 = m_y1_1;
-
-  for (unsigned int i = 0; i < n - 1; i += 2) {
-    Sample x0 = samples[i];
-    y0 = m_b0 * x0 - m_a1 * y0;
-    samples[i] = y0;
-
-    Sample x1 = samples[i + 1];
-    y1 = m_b0 * x1 - m_a1 * y1;
-    samples[i + 1] = y1;
-  }
-
-  m_y0_1 = y0;
-  m_y1_1 = y1;
-}
-
 // Class FirstOrderIirFilter
 // Construct generic 1st-order Direct Form 2 IIR filter
 FirstOrderIirFilter::FirstOrderIirFilter(const double b0, const double b1,
@@ -274,6 +174,75 @@ double FirstOrderIirFilter::process(double input) {
   double y = m_b0 * m_x0 + m_b1 * m_x1;
   m_x1 = m_x0;
   return y;
+}
+
+// Class LowPassFilterRC
+// Construct 1st order low-pass IIR filter.
+LowPassFilterRC::LowPassFilterRC(const double timeconst)
+    : m_timeconst(timeconst) {
+  m_a1 = -exp(-1 / m_timeconst);
+  m_b0 = 1 + m_a1;
+  m_filter0 = FirstOrderIirFilter(m_b0, 0, m_a1);
+  m_filter1 = FirstOrderIirFilter(m_b0, 0, m_a1);
+}
+
+// Process samples.
+void LowPassFilterRC::process(const SampleVector &samples_in,
+                              SampleVector &samples_out) {
+  /*
+   * Continuous domain:
+   *   H(s) = 1 / (1 - s * timeconst)
+   *
+   * Discrete domain:
+   *   H(z) = (1 - exp(-1/timeconst)) / (1 - exp(-1/timeconst) / z)
+   */
+  unsigned int n = samples_in.size();
+  samples_out.resize(n);
+
+  for (unsigned int i = 0; i < n; i++) {
+    samples_out[i] = m_filter0.process(samples_in[i]);
+  }
+}
+
+// Process interleaved samples.
+void LowPassFilterRC::process_interleaved(const SampleVector &samples_in,
+                                          SampleVector &samples_out) {
+  /*
+   * Continuous domain:
+   *   H(s) = 1 / (1 - s * timeconst)
+   *
+   * Discrete domain:
+   *   H(z) = (1 - exp(-1/timeconst)) / (1 - exp(-1/timeconst) / z)
+   */
+  unsigned int n = samples_in.size();
+  samples_out.resize(n);
+
+  for (unsigned int i = 0; i < n - 1; i += 2) {
+    samples_out[i] = m_filter0.process(samples_in[i]);
+    samples_out[i + 1] = m_filter1.process(samples_in[i + 1]);
+  }
+}
+
+// Process samples in-place.
+void LowPassFilterRC::process_inplace(SampleVector &samples) {
+  unsigned int n = samples.size();
+
+  for (unsigned int i = 0; i < n; i++) {
+    Sample x = samples[i];
+    samples[i] = m_filter0.process(x);
+  }
+}
+
+// Process interleaved samples in-place.
+void LowPassFilterRC::process_interleaved_inplace(SampleVector &samples) {
+  unsigned int n = samples.size();
+
+  for (unsigned int i = 0; i < n - 1; i += 2) {
+    Sample x0 = samples[i];
+    Sample x1 = samples[i + 1];
+    samples[i] = m_filter0.process(x0);
+    samples[i + 1] = m_filter1.process(x1);
+  }
 }
 
 // Class BiquadIirFilter

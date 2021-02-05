@@ -64,6 +64,26 @@ private:
   unsigned int m_pos;
 };
 
+// Generic 1st-order Direct Form 2 IIR filter
+class FirstOrderIirFilter {
+public:
+  //
+  // Construct generic 1st-order Direct Form 2 IIR filter.
+  // b0, b1, a1 :: filter coefficients
+  // representing the following filter of the transfer function H(z):
+  // H(z) = (b0 + (b1 * z^(-1))) / (1  + (a1 * z^(-1)))
+  FirstOrderIirFilter(const double b0, const double b1, const double a1);
+  // Default constructor
+  FirstOrderIirFilter() : FirstOrderIirFilter(0, 0, 0) {}
+
+  // Process a value
+  double process(double input);
+
+private:
+  double m_b0, m_b1, m_a1;
+  double m_x0, m_x1;
+};
+
 // First order low-pass IIR filter for real-valued signals.
 class LowPassFilterRC {
 public:
@@ -91,28 +111,8 @@ private:
   double m_timeconst;
   Sample m_a1;
   Sample m_b0;
-  Sample m_y0_1;
-  Sample m_y1_1;
-};
-
-// Generic 1st-order Direct Form 2 IIR filter
-class FirstOrderIirFilter {
-public:
-  //
-  // Construct generic 1st-order Direct Form 2 IIR filter.
-  // b0, b1, a1 :: filter coefficients
-  // representing the following filter of the transfer function H(z):
-  // H(z) = (b0 + (b1 * z^(-1))) / (1  + (a1 * z^(-1)))
-  FirstOrderIirFilter(const double b0, const double b1, const double a1);
-  // Default constructor
-  FirstOrderIirFilter() : FirstOrderIirFilter(0, 0, 0) {}
-
-  // Process a value
-  double process(double input);
-
-private:
-  double m_b0, m_b1, m_a1;
-  double m_x0, m_x1;
+  FirstOrderIirFilter m_filter0;
+  FirstOrderIirFilter m_filter1;
 };
 
 // Generic biquad (2nd-order) Direct Form 2 IIR filter
@@ -134,6 +134,7 @@ public:
 
 protected:
   double m_b0, m_b1, m_b2, m_a1, m_a2;
+
 private:
   double m_x0, m_x1, m_x2;
 };
