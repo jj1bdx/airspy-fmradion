@@ -135,8 +135,7 @@ void PilotPhaseLock::process(const SampleVector &samples_in,
               "m_freq = %.9g, m_freq_err = %.9g, "
               "m_pilot_level = %.9g\n",
               m_freq * FmDecoder::sample_rate_if / 2 / M_PI,
-              m_freq_err * FmDecoder::sample_rate_if / 2 / M_PI,
-              m_pilot_level);
+              m_freq_err * FmDecoder::sample_rate_if / 2 / M_PI, m_pilot_level);
     }
 #endif
 
