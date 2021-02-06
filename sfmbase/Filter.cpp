@@ -179,12 +179,8 @@ double FirstOrderIirFilter::process(double input) {
 // Class LowPassFilterRC
 // Construct 1st order low-pass IIR filter.
 LowPassFilterRC::LowPassFilterRC(const double timeconst)
-    : m_timeconst(timeconst) {
-  m_a1 = -exp(-1 / m_timeconst);
-  m_b0 = 1 + m_a1;
-  m_filter0 = FirstOrderIirFilter(m_b0, 0, m_a1);
-  m_filter1 = FirstOrderIirFilter(m_b0, 0, m_a1);
-}
+    : m_timeconst(timeconst), m_a1(-exp(-1 / m_timeconst)), m_b0(1 + m_a1),
+      m_filter0(m_b0, 0, m_a1), m_filter1(m_b0, 0, m_a1) {}
 
 // Process samples.
 void LowPassFilterRC::process(const SampleVector &samples_in,
