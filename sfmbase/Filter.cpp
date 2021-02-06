@@ -174,20 +174,17 @@ double FirstOrderIirFilter::process(double input) {
 
 // Class LowPassFilterRC
 // Construct 1st order low-pass IIR filter.
+// Continuous domain:
+//   H(s) = 1 / (1 - s * timeconst)
+// Discrete domain:
+//   H(z) = (1 - exp(-1/timeconst)) / (1 - exp(-1/timeconst) / z)
 LowPassFilterRC::LowPassFilterRC(const double timeconst)
-    : m_timeconst(timeconst), m_a1(-exp(-1 / m_timeconst)), m_b0(1 + m_a1),
+    : m_timeconst(timeconst), m_a1(-std::exp(-1 / m_timeconst)), m_b0(1 + m_a1),
       m_filter0(m_b0, 0, m_a1), m_filter1(m_b0, 0, m_a1) {}
 
 // Process samples.
 void LowPassFilterRC::process(const SampleVector &samples_in,
                               SampleVector &samples_out) {
-  /*
-   * Continuous domain:
-   *   H(s) = 1 / (1 - s * timeconst)
-   *
-   * Discrete domain:
-   *   H(z) = (1 - exp(-1/timeconst)) / (1 - exp(-1/timeconst) / z)
-   */
   unsigned int n = samples_in.size();
   samples_out.resize(n);
 
@@ -199,13 +196,6 @@ void LowPassFilterRC::process(const SampleVector &samples_in,
 // Process interleaved samples.
 void LowPassFilterRC::process_interleaved(const SampleVector &samples_in,
                                           SampleVector &samples_out) {
-  /*
-   * Continuous domain:
-   *   H(s) = 1 / (1 - s * timeconst)
-   *
-   * Discrete domain:
-   *   H(z) = (1 - exp(-1/timeconst)) / (1 - exp(-1/timeconst) / z)
-   */
   unsigned int n = samples_in.size();
   samples_out.resize(n);
 
@@ -254,8 +244,7 @@ double BiquadIirFilter::process(double input) {
   return y;
 }
 
-/* ****************  class HighPassFilterIir  **************** */
-
+// Class HighPassFilterIir
 // Construct 2nd order high-pass IIR filter.
 HighPassFilterIir::HighPassFilterIir(const double cutoff) {
 
@@ -267,10 +256,10 @@ HighPassFilterIir::HighPassFilterIir(const double cutoff) {
   // Poles 1 and 2 are a conjugate pair.
   // Continuous-domain:
   //   p_k = w / exp( (2*k + n - 1) / (2*n) * pi * j)
-  CDbl p1s = w / exp((2 * 1 + 2 - 1) / double(2 * 2) * CDbl(0, M_PI));
+  CDbl p1s = w / std::exp((2 * 1 + 2 - 1) / double(2 * 2) * CDbl(0, M_PI));
 
   // Map poles to discrete-domain via matched Z transform.
-  CDbl p1z = exp(p1s);
+  CDbl p1z = std::exp(p1s);
 
   // Both zeros are located in s = 0, z = 1.
 
@@ -280,12 +269,13 @@ HighPassFilterIir::HighPassFilterIir(const double cutoff) {
   //
   // Note that z2 = conj(z1).
   // Therefore p1+p2 == 2*real(p1), p1*2 == abs(p1*p1), z4 = conj(z1)
-  //
+
+  // Modify the values of parent BiquadIirFilter private variables
   m_b0 = 1;
   m_b1 = -2;
   m_b2 = 1;
-  m_a1 = -2 * real(p1z);
-  m_a2 = abs(p1z * p1z);
+  m_a1 = -2 * std::real(p1z);
+  m_a2 = std::abs(p1z * p1z);
 
   // Adjust b coefficients to get unit gain at Nyquist frequency (z=-1).
   double g = (m_b0 - m_b1 + m_b2) / (1 - m_a1 + m_a2);
