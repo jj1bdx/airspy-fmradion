@@ -161,11 +161,7 @@ void LowPassFilterFirAudio::process(const SampleVector &samples_in,
 // Construct generic 1st-order Direct Form 2 IIR filter
 FirstOrderIirFilter::FirstOrderIirFilter(const double b0, const double b1,
                                          const double a1)
-    : m_x1(0) {
-  m_b0 = b0;
-  m_b1 = b1;
-  m_a1 = a1;
-}
+    : m_b0(b0), m_b1(b1), m_a1(a1), m_x1(0) {}
 
 // Process a value.
 double FirstOrderIirFilter::process(double input) {
@@ -246,13 +242,7 @@ void LowPassFilterRC::process_interleaved_inplace(SampleVector &samples) {
 BiquadIirFilter::BiquadIirFilter(const double b0, const double b1,
                                  const double b2, const double a1,
                                  const double a2)
-    : m_x1(0), m_x2(0) {
-  m_b0 = b0;
-  m_b1 = b1;
-  m_b2 = b2;
-  m_a1 = a1;
-  m_a2 = a2;
-}
+    : m_b0(b0), m_b1(b1), m_b2(b2), m_a1(a1), m_a2(a2), m_x1(0), m_x2(0) {}
 
 // Process a value.
 double BiquadIirFilter::process(double input) {
