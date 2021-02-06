@@ -2,7 +2,7 @@
 
 # airspy-fmradion
 
-* Version 20210116-0
+* Version 20210206-0
 * For MacOS and Linux
 
 ### Contributing
@@ -17,11 +17,12 @@ New version number scheme: YYYYMMDD-N (N: subnumber, starting from 0, unsigned i
 
 ### Known issues and changes
 
+* MacOS build is tested with 10.15.7 Catalina with Xcode 12.4 Command Line Tools. MacOS Big Sur 11.x versions haven't been tested yet.
+* For Raspberry Pi 3 and 4, Airspy R2 10Mbps and Airspy Mini 6Mbps sampling rates are *not supported* due to the hardware limitation. Use in 2.5Mbps for R2, 3Mbps for Mini.
+* FM ppm display shows ppb (0.001ppm) digits since 20210206-0.
 * FM Pilot PLL is under revision and reconstruction. Initial analysis result is available at doc/fm-pll-filtereval.py (requires Python 3, SciPy, matplotlib, and NumPy).
 * The 2nd-order LPF of FM Pilot PLL is applied twice since 20210116-0.
 * Timestamp file format has been changed since 20201204-0.
-* MacOS build is tested with 10.15.7 Catalina with Xcode 12.3 Command Line Tools. Big Sur 11.0 hasn't been tested yet.
-* For Raspberry Pi 3 and 4, Airspy R2 10Mbps and Airspy Mini 6Mbps sampling rates are *not supported* due to the hardware limitation. Use in 2.5Mbps for R2, 3Mbps for Mini.
 * PortAudio is required since Version 20201023-0. Use PortAudio v19. Former ALSA output driver is replaced by more versatile PortAudio driver, which is compatible both for Linux and macOS.
 * libvolk is required since v0.8.0. If you don't want to install libvolk, use v0.7.8 instead. Use the latest master branch of libvolk. Configure the `volk_config` file with `volk_profile -b` for the maximum performance. See [INSTALL-latest-libvolk.md](INSTALL-latest-libvolk.md) for the details.
 * v0.8.5 and the earlier versions set the compilation flag of `-ffast-math`, which disabled the processing of NaN. This will cause a latch-up bug when the multipath filter coefficients diverge. Removed `-ffast-math` for the stable operation.
