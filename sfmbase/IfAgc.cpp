@@ -38,7 +38,7 @@ IfAgc::IfAgc(const float initial_gain, const float max_gain,
 // https://www.mathworks.com/help/comm/ref/linear_loop_block_diagram.png
 // Note: in the original algorithm,
 // log_amplitude was
-//    std::log(Utility::estimate_magnitude(input)) + (m_log_current_gain * 2.0),
+//    std::log(input_magnitude) + (m_log_current_gain * 2.0),
 // but in this implementation the 2.0 was removed (and set to 1.0).
 
 void IfAgc::process(const IQSampleVector &samples_in,
@@ -46,9 +46,13 @@ void IfAgc::process(const IQSampleVector &samples_in,
   unsigned int n = samples_in.size();
   samples_out.resize(n);
 
-  volk::vector<float> log_gain, gain;
+  volk::vector<float> samples_in_mag, log_gain, gain;
+  samples_in_mag.resize(n);
   log_gain.resize(n);
   gain.resize(n);
+
+  // Compute magnitude of sample input.
+  volk_32fc_magnitude_32f(samples_in_mag.data(), samples_in.data(), n);
 
   for (unsigned int i = 0; i < n; i++) {
     // Store logarithm of current gain.
@@ -59,8 +63,7 @@ void IfAgc::process(const IQSampleVector &samples_in,
     //       then took the logarithm value, but the sequence can be
     //       realigned as taking the log value of the abs(input)
     //       then add the log_current_gain.
-    float log_amplitude = std::log(Utility::estimate_magnitude(samples_in[i])) +
-                          m_log_current_gain;
+    float log_amplitude = std::log(samples_in_mag[i]) + m_log_current_gain;
     float error = (m_log_reference - log_amplitude) * m_rate;
     float new_log_current_gain = m_log_current_gain + error;
     if (new_log_current_gain > m_log_max_gain) {
