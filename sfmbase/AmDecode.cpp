@@ -200,7 +200,7 @@ void AmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
   }
 
   // Measure IF RMS level.
-  m_if_rms = Utility::rms_level_approx(m_buf_filtered3);
+  m_if_rms = Utility::rms_level_sample(m_buf_filtered3);
 
   // If AGC
   m_ifagc.process(m_buf_filtered3, m_buf_filtered4);

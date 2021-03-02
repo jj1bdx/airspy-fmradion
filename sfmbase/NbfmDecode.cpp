@@ -58,16 +58,10 @@ void NbfmDecoder::process(const IQSampleVector &samples_in,
   m_nbfmfilter.process(samples_in, m_buf_filtered);
 
   // Measure IF RMS level.
-  m_if_rms = Utility::rms_level_approx(m_buf_filtered);
+  m_if_rms = Utility::rms_level_sample(m_buf_filtered);
 
   // Perform IF AGC.
   m_ifagc.process(m_buf_filtered, m_samples_in_after_agc);
-
-#ifdef DEBUG_IF_AGC
-  // Measure IF RMS level for checking how IF AGC works.
-  float if_agc_rms = Utility::rms_level_approx(m_samples_in_after_agc);
-  fprintf(stderr, "if_agc_rms = %.9g\n", if_agc_rms);
-#endif
 
   // Demodulate FM to audio signal.
   m_phasedisc.process(m_samples_in_after_agc, m_buf_decoded);

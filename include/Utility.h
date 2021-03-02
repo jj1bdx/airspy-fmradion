@@ -76,10 +76,9 @@ inline bool parse_dbl(const char *s, double &v) {
   return (*endp == '\0');
 }
 
-// Compute RMS over a small prefix of the specified IQSample vector.
-inline float rms_level_approx(const IQSampleVector &samples) {
+// Compute RMS over the specified IQSample vector.
+inline float rms_level_sample(const IQSampleVector &samples) {
   unsigned int n = samples.size();
-  n = (n + 63) / 64;
   volk::vector<float> magnitude_sq;
   magnitude_sq.resize(n);
 
@@ -91,8 +90,7 @@ inline float rms_level_approx(const IQSampleVector &samples) {
   return std::sqrt(level / n);
 }
 
-// Compute mean value and RMS over a small prefix of the specified Sample
-// vector.
+// Compute mean value and RMS over the specified Sample vector.
 inline void samples_mean_rms(const IQSampleDecodedVector &samples, float &mean,
                              float &rms) {
   float vsum = 0;
