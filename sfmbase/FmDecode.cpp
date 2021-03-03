@@ -23,13 +23,10 @@
 #include "FmDecode.h"
 #include "Utility.h"
 
-// Define this to print IF AGC level to stderr
-// #define DEBUG_IF_AGC
-
 // Define this to print PLL filter messages
 // #define DEBUG_PLL_FILTER
 
-/* ****************  class PilotPhaseLock  **************** */
+// class PilotPhaseLock
 
 // Construct phase-locked loop.
 PilotPhaseLock::PilotPhaseLock(double freq)
@@ -84,8 +81,8 @@ void PilotPhaseLock::process(const SampleVector &samples_in,
   for (unsigned int i = 0; i < n; i++) {
 
     // Generate locked pilot tone.
-    Sample psin = sin(m_phase);
-    Sample pcos = cos(m_phase);
+    Sample psin = std::sin(m_phase);
+    Sample pcos = std::cos(m_phase);
 
     // Generate double-frequency output.
     if (pilot_shift) {
@@ -434,4 +431,4 @@ inline void FmDecoder::zero_to_left_right(const SampleVector &samples_mono,
   }
 }
 
-/* end */
+// end

@@ -22,9 +22,6 @@
 #include "NbfmDecode.h"
 #include "Utility.h"
 
-// Define this to print IF AGC level to stderr
-// #define DEBUG_IF_AGC
-
 // class NbfmDecoder
 
 NbfmDecoder::NbfmDecoder(IQSampleCoeff &nbfmfilter_coeff, const double freq_dev)
@@ -101,4 +98,4 @@ void NbfmDecoder::process(const IQSampleVector &samples_in,
   audio = std::move(m_buf_baseband_filtered);
 }
 
-/* end */
+//
