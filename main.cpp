@@ -49,7 +49,7 @@
 // define this for enabling coefficient monitor functions
 // #undef COEFF_MONITOR
 
-#define AIRSPY_FMRADION_VERSION "20210303-test-1"
+#define AIRSPY_FMRADION_VERSION "20210303-0"
 
 /** Flag is set on SIGINT / SIGTERM. */
 static std::atomic_bool stop_flag(false);
@@ -1088,4 +1088,4 @@ int main(int argc, char **argv) {
   return 0;
 }
 
-/* end */
+// end
