@@ -23,7 +23,7 @@
 #include "PhaseDiscriminator.h"
 #include "Utility.h"
 
-/* ****************  class PhaseDiscriminator  **************** */
+// class PhaseDiscriminator
 
 // Construct phase discriminator.
 // frequency scaling factor = 1.0 / (max_freq_dev * 2.0 * M_PI)
@@ -46,4 +46,4 @@ void PhaseDiscriminator::process(const IQSampleVector &samples_in,
                                   m_boundary, &m_save_value, n);
 }
 
-/* end */
+// end
