@@ -26,7 +26,6 @@
 IfResampler::IfResampler(const double input_rate, const double output_rate)
     : m_irate(input_rate), m_orate(output_rate),
       m_ratio(output_rate / input_rate) {
-  soxr_error_t error;
   // Use float, see typedef of IQSample
   soxr_io_spec_t io_spec = soxr_io_spec(SOXR_FLOAT32_I, SOXR_FLOAT32_I);
   // Steep: passband_end = 0.91132832
@@ -35,6 +34,7 @@ IfResampler::IfResampler(const double input_rate, const double output_rate)
   soxr_runtime_spec_t runtime_spec = soxr_runtime_spec(1);
 
   // Create a resampler objects of two interleave channels.
+  soxr_error_t error;
   m_soxr = soxr_create(m_irate, m_orate, 2, &error, &io_spec, &quality_spec,
                        &runtime_spec);
   if (error) {
@@ -56,7 +56,6 @@ void IfResampler::process(const IQSampleVector &samples_in,
   samples_out.resize(output_size);
 
   size_t output_length;
-  soxr_error_t error;
 
   IQSampleCoeff samples_in_interleaved;
   IQSampleCoeff samples_out_interleaved;
@@ -72,11 +71,12 @@ void IfResampler::process(const IQSampleVector &samples_in,
   }
 
   // Process the real and imaginary parts.
-  error = soxr_process(
-      m_soxr, static_cast<soxr_in_t>(samples_in_interleaved.data()), input_size,
-      nullptr, static_cast<soxr_out_t>(samples_out_interleaved.data()),
-      output_size, &output_length);
-  if (error) {
+  if (soxr_error_t error = soxr_process(
+          m_soxr, static_cast<soxr_in_t>(samples_in_interleaved.data()),
+          input_size, nullptr,
+          static_cast<soxr_out_t>(samples_out_interleaved.data()), output_size,
+          &output_length);
+      error) {
     soxr_delete(m_soxr);
     fprintf(stderr, "IfResampler: soxr_process error of m_soxr: %s\n", error);
     exit(1);

@@ -27,7 +27,6 @@ AudioResampler::AudioResampler(const double input_rate,
                                const double output_rate)
     : m_irate(input_rate), m_orate(output_rate),
       m_ratio(output_rate / input_rate) {
-  soxr_error_t error;
   // Use double
   soxr_io_spec_t io_spec = soxr_io_spec(SOXR_FLOAT64_I, SOXR_FLOAT64_I);
   // Not steep: passband_end = 0.91132832
@@ -35,6 +34,7 @@ AudioResampler::AudioResampler(const double input_rate,
       soxr_quality_spec((SOXR_VHQ | SOXR_LINEAR_PHASE), 0);
   soxr_runtime_spec_t runtime_spec = soxr_runtime_spec(1);
 
+  soxr_error_t error;
   m_soxr = soxr_create(m_irate, m_orate, 1, &error, &io_spec, &quality_spec,
                        &runtime_spec);
   if (error) {
@@ -55,13 +55,10 @@ void AudioResampler::process(const SampleVector &samples_in,
   }
   samples_out.resize(output_size);
   size_t output_length;
-  soxr_error_t error;
-
-  error = soxr_process(
+  if (soxr_error_t error = soxr_process(
       m_soxr, static_cast<soxr_in_t>(samples_in.data()), input_size, nullptr,
       static_cast<soxr_out_t>(samples_out.data()), output_size, &output_length);
-
-  if (error) {
+      error) {
     soxr_delete(m_soxr);
     fprintf(stderr, "AudioResampler: soxr_process error: %s\n", error);
     exit(1);
