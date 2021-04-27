@@ -112,9 +112,8 @@ public:
   // Half bandwidth of audio signal in Hz (15 kHz for broadcast FM)
   static constexpr double bandwidth_pcm = 15000;
   static constexpr double pilot_freq = 19000;
-  static constexpr double default_deemphasis = 50;
-  static constexpr double default_deemphasis_eu = 50; // Europe and Japan
-  static constexpr double default_deemphasis_na = 75; // USA/Canada
+  static constexpr double deemphasis_time_eu = 50; // Europe and Japan
+  static constexpr double deemphasis_time_na = 75; // USA/Canada
 
   /**
    * Construct FM decoder.

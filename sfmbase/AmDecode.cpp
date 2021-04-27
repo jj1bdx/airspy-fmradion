@@ -82,7 +82,7 @@ AmDecoder::AmDecoder(IQSampleCoeff &amfilter_coeff, const ModType mode)
 
       // Construct LowPassFilterRC
       ,
-      m_deemph(default_deemphasis * sample_rate_pcm * 1.0e-6)
+      m_deemph(deemphasis_time * sample_rate_pcm * 1.0e-6)
 
       // Construct AF AGC
       // Use mostly as peak limiter

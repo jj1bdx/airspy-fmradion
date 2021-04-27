@@ -737,8 +737,8 @@ int main(int argc, char **argv) {
   }
 
   // Prevent aliasing at very low output sample rates.
-  double deemphasis = deemphasis_na ? FmDecoder::default_deemphasis_na
-                                    : FmDecoder::default_deemphasis_eu;
+  double deemphasis = deemphasis_na ? FmDecoder::deemphasis_time_na
+                                    : FmDecoder::deemphasis_time_eu;
 
   // Prepare Fs/4 downconverter.
   FourthConverterIQ fourth_downconverter(false);
@@ -811,7 +811,7 @@ int main(int argc, char **argv) {
   case ModType::CW:
   case ModType::WSPR:
     fprintf(stderr, "AM demodulator deemphasis: %.9g [µs]\n",
-            AmDecoder::default_deemphasis);
+            AmDecoder::deemphasis_time);
     break;
   }
   if (modtype == ModType::FM) {

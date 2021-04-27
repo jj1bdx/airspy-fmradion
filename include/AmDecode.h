@@ -63,7 +63,7 @@ public:
   // Half bandwidth of audio signal in Hz (4.5kHz for AM)
   static constexpr double bandwidth_pcm = 4500;
   // Deemphasis constant in microseconds.
-  static constexpr double default_deemphasis = 100;
+  static constexpr double deemphasis_time = 100;
 
   /**
    * Construct AM decoder.
