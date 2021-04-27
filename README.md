@@ -17,6 +17,7 @@ New version number scheme: YYYYMMDD-N (N: subnumber, starting from 0, unsigned i
 
 ### Known issues and changes
 
+* After 20210303-0, C++17 is required (instead of previous C++11). Modern compilers of Raspberry Pi OS, Ubuntu, and macOS do support C++17 extensions.
 * MacOS build is tested with 10.15.7 Catalina with Xcode 12.4 Command Line Tools. MacOS Big Sur 11.x versions haven't been tested yet.
 * For Raspberry Pi 3 and 4, Airspy R2 10Mbps and Airspy Mini 6Mbps sampling rates are *not supported* due to the hardware limitation. Use in 2.5Mbps for R2, 3Mbps for Mini.
 * FM ppm display shows ppb (0.001ppm) digits since 20210206-0.
@@ -61,7 +62,7 @@ airspy-fmradion -m am -t airspyhf -q \
 ### airspy-fmradion requires
 
  - Linux / macOS
- - C++11 (gcc, clang/llvm)
+ - C++17 (gcc, clang/llvm)
  - [Airspy library](https://github.com/airspy/airspyone_host)
  - [Airspy HF library](https://github.com/airspy/airspyhf)
  - [RTL-SDR library](http://sdr.osmocom.org/trac/wiki/rtl-sdr)

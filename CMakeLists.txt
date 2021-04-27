@@ -159,7 +159,7 @@ set(OPTIMIZATION_FLAGS "-O3 -ftree-vectorize -march=native")
 
 # Common compiler flags and options.
 ##
-set(CMAKE_CXX_FLAGS "-Wall -std=c++11 ${OPTIMIZATION_FLAGS} ${AIRSPY_INCLUDE_OPTION} ${AIRSPYHF_INCLUDE_OPTION} ${EXTRA_FLAGS}")
+set(CMAKE_CXX_FLAGS "-Wall -std=c++17 ${OPTIMIZATION_FLAGS} ${AIRSPY_INCLUDE_OPTION} ${AIRSPYHF_INCLUDE_OPTION} ${EXTRA_FLAGS}")
 
 set(sfmbase_SOURCES
     sfmbase/AfAgc.cpp
