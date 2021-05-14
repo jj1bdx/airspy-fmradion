@@ -964,7 +964,7 @@ int main(int argc, char **argv) {
     float if_level_db = 20 * log10(if_level);
     float audio_level_db = 20 * log10(audio_level) + 3.01;
     std::size_t buflen = output_buffer.queued_samples();
-    double buflen_sec = buflen / nchannel / double(pcmrate);
+    double buflen_sec = double(buflen) / double(nchannel) / double(pcmrate);
 
     // Show status messages for each block if not in quiet mode.
     bool stereo_change = false;
