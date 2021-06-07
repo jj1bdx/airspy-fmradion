@@ -6,7 +6,6 @@
 
 * Since 20210427-0, C++17 is required (instead of previous C++11). Modern compilers of Raspberry Pi OS, Ubuntu, and macOS do support C++17 extensions.
 * FM Pilot PLL is under revision and reconstruction. Initial analysis result is available at doc/fm-pll-filtereval.py (requires Python 3, SciPy, matplotlib, and NumPy).
-* The 2nd-order LPF of FM Pilot PLL is applied twice since 20210116-0.
 
 ## Known limitations
 
@@ -15,6 +14,8 @@
 
 ## Changes (including requirement changes)
 
+* FM Pilot PLL threshold level has been lowered from 0.01 to 0.001 since 20210607-0, for preventing unwanted unlocking.
+* The 2nd-order LPF of FM Pilot PLL had been applied twice since 20210116-0 to 20210427-0, but rolled back to once (as in original SoftFM) since 20210607-0.
 * FM ppm display shows ppb (0.001ppm) digits since 20210206-0.
 * Timestamp file format has been changed since 20201204-0.
 * PortAudio is required since Version 20201023-0. Use PortAudio v19. Former ALSA output driver is replaced by more versatile PortAudio driver, which is compatible both for Linux and macOS.
@@ -26,3 +27,4 @@
 
 * Current version number scheme: YYYYMMDD-N (N: subnumber, starting from 0, unsigned integer)
 * The semantic versioning scheme of airspy-fmradion has utterly failed.
+
