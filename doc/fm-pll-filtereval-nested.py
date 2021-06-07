@@ -16,7 +16,7 @@ sosref = [sosprelpf, sosfirsthpf, sosinteg, sosinteg]
 
 sostwofilt = [sosprelpf, sosfirsthpf]
 
-w, h = signal.sosfreqz(sosref, 38400000, False, 384000)
+w, h = signal.sosfreqz(sostest, 38400000, False, 384000)
 
 plt.subplot(2, 1, 1)
 db = 20*np.log10(np.maximum(np.abs(h), 1e-20))
