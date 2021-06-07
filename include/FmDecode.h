@@ -38,10 +38,10 @@ public:
   static constexpr int pilot_frequency = 19000;
   // IF sampling rate.
   static constexpr double sample_rate_if = 384000;
-  // Bandwidth (30Hz) relative to sample frequency.
-  static constexpr double bandwidth = 30 / sample_rate_if;
-  // Minimum pilot amplitude
-  static constexpr double minsignal = 0.01;
+  // Bandwidth (50Hz) relative to sample frequency.
+  static constexpr double bandwidth = 50 / sample_rate_if;
+  // Minimum pilot amplitude (lowered to prevent accidental unlocking)
+  static constexpr double minsignal = 0.001;
 
   /** Timestamp event produced once every 19000 pilot periods. */
   struct PpsEvent {

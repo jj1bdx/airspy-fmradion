@@ -31,11 +31,9 @@
 // Construct phase-locked loop.
 PilotPhaseLock::PilotPhaseLock(double freq)
     : // approx 30Hz LPF by 2nd-order biquad IIR Butterworth filter
-      // nested twice for lesser phase_err
+      // Caution: use only once for stable PLL locking
       m_biquad_phasor_i1(1.46974784e-06, 0, 0, -1.99682419, 0.996825659),
-      m_biquad_phasor_i2(1.46974784e-06, 0, 0, -1.99682419, 0.996825659),
       m_biquad_phasor_q1(1.46974784e-06, 0, 0, -1.99682419, 0.996825659),
-      m_biquad_phasor_q2(1.46974784e-06, 0, 0, -1.99682419, 0.996825659),
       // differentiator-like 1st-order inverse LPF (not really an HPF)
       m_first_phase_err(0.000304341788, -0.000304324564, 0) {
 
@@ -100,11 +98,9 @@ void PilotPhaseLock::process(const SampleVector &samples_in,
     Sample phasor_i = psin * x;
     Sample phasor_q = pcos * x;
 
-    // Run IQ phase error through biquad LPFs twice.
-    Sample temppi = m_biquad_phasor_i1.process(phasor_i);
-    Sample new_phasor_i = m_biquad_phasor_i2.process(temppi);
-    Sample temppq = m_biquad_phasor_q1.process(phasor_q);
-    Sample new_phasor_q = m_biquad_phasor_q2.process(temppq);
+    // Run IQ phase error through biquad LPFs once.
+    Sample new_phasor_i= m_biquad_phasor_i1.process(phasor_i);
+    Sample new_phasor_q= m_biquad_phasor_q1.process(phasor_q);
 
     // Convert I/Q ratio to estimate of phase error.
     // Note: maximum phase error during the locked state is +- 0.02 radian.
