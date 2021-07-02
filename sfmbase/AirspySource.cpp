@@ -303,28 +303,6 @@ bool AirspySource::configure(int sampleRateIndex, uint32_t frequency,
     return false;
   }
 
-  // A halfband filter kernel for filtering aliases.
-  // Twitter @lambdaprog says:
-  // "This half band sets the aliasing ratio of the IQ conversion.
-  // You only need the center 300kHz alias free for proper demod.
-  // The rest will be shaved up by the decimation."
-  // See <https://twitter.com/lambdaprog/status/1101500018618523659>
-  // and <https://twitter.com/lambdaprog/status/1101456999743717376>
-  // and <https://twitter.com/lambdaprog/status/1102181099793539072>
-
-  const float halfband_kernel[7] = {
-      -0.031534955091398462, 0.0, 0.281533904166905770, 0.5,
-      0.281533904166905770,  0.0, -0.031534955091398462};
-  rc = (airspy_error)airspy_set_conversion_filter_float32(m_dev,
-                                                          halfband_kernel, 7);
-
-  if (rc != AIRSPY_SUCCESS) {
-    std::ostringstream err_ostr;
-    err_ostr << "Could not set conversion filter";
-    m_error = err_ostr.str();
-    return false;
-  }
-
   return true;
 }
 
