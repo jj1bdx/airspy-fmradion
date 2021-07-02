@@ -10,10 +10,12 @@
 ## Known limitations
 
 * MacOS build is tested with 10.15.7 Catalina with Xcode 12.4 Command Line Tools. MacOS Big Sur 11.x versions haven't been tested yet.
-* For Raspberry Pi 3 and 4, Airspy R2 10Mbps and Airspy Mini 6Mbps sampling rates are *not supported* due to the hardware limitation. Use in 2.5Mbps for R2, 3Mbps for Mini.
+* For Raspberry Pi 3 and 4, Airspy R2 10Msps and Airspy Mini 6Msps sampling rates are *not supported* due to the hardware limitation. Use in 2.5Msps for R2, 3Msps for Mini.
 
 ## Changes (including requirement changes)
 
+* Since 20210702-0, if IF rate is 3.1MHz (3100kHz) or larger, a decimation LPF of +-400kHz width by decimation ratio 4 is inserted after the Fs/4 shifter to reduce the ratio of fractional resampler for increasing the output stability to prevent FM stereo PLL unlocking. This function increases the CPU usage, so for a lower CPU usage use a lower sampling rate.
+* Since 20210702-0, halfband filter kernel for Airspy R2/Mini is no longer used.
 * FM Pilot PLL threshold level has been lowered from 0.01 to 0.001 since 20210607-0, for preventing unwanted unlocking.
 * The 2nd-order LPF of FM Pilot PLL had been applied twice since 20210116-0 to 20210427-0, but rolled back to once (as in original SoftFM) since 20210607-0.
 * FM ppm display shows ppb (0.001ppm) digits since 20210206-0.

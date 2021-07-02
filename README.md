@@ -2,7 +2,7 @@
 
 # airspy-fmradion
 
-* Version 20210607-0
+* Version 20210702-0
 * For MacOS and Linux
 
 ## Contributing
@@ -325,15 +325,8 @@ Compile and install
 
 ## Airspy R2 / Mini modification from ngsoftfm-jj1bdx
 
-### The modification strategy
-
-[Twitter @lambdaprog suggested the following strategy](https://twitter.com/lambdaprog/status/1101495337292910594):
-
-> Try starting with 10MSPS and that small conversion filter (7 taps vs. the standard 47 taps), then decimate down to approx. 312.5 ksps (decimation by 32), then feed the FM demod. The overall CPU usage will be very low and the bit growth will give 14.5 bit resolution.
-
 ### Feature changes
 
-* Halfband kernel filter designed by Twitter @lambdaprog is set for Airspy conversion filter
 * Finetuner is removed (Not really needed for +-1ppm or less offset)
 
 ### Airspy R2 / Mini configuration options
