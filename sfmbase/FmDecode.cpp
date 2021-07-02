@@ -99,8 +99,8 @@ void PilotPhaseLock::process(const SampleVector &samples_in,
     Sample phasor_q = pcos * x;
 
     // Run IQ phase error through biquad LPFs once.
-    Sample new_phasor_i= m_biquad_phasor_i1.process(phasor_i);
-    Sample new_phasor_q= m_biquad_phasor_q1.process(phasor_q);
+    Sample new_phasor_i = m_biquad_phasor_i1.process(phasor_i);
+    Sample new_phasor_q = m_biquad_phasor_q1.process(phasor_q);
 
     // Convert I/Q ratio to estimate of phase error.
     // Note: maximum phase error during the locked state is +- 0.02 radian.
