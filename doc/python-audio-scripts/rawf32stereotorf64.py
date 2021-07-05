@@ -29,7 +29,8 @@ if (rawfilesize % 8) != 0:
           file=sys.stderr)
   quit()
 
-print(rawfilesize)
+print("raw filesize =", rawfilesize)
+
 # set raw file seek position to the top
 rawfile.seek(0, os.SEEK_SET)
 
@@ -102,6 +103,9 @@ while True:
     # eof
     break
   wavfile.write(chunk)
+  ratio = float(rawfile.tell()) / float(rawfilesize)
+  print('Progress: {:.2%}\r'.format(ratio), end='')
 
+print()
 rawfile.close()
 wavfile.close()
