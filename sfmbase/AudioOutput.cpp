@@ -30,56 +30,6 @@
 #include "AudioOutput.h"
 #include "SoftFM.h"
 
-// class AudioOutput
-
-// Encode a list of samples as signed 16-bit little-endian integers.
-void AudioOutput::samplesToInt16(const SampleVector &samples,
-                                 std::vector<uint8_t> &bytes) {
-  bytes.resize(2 * samples.size());
-
-  SampleVector::const_iterator i = samples.begin();
-  SampleVector::const_iterator n = samples.end();
-  std::vector<uint8_t>::iterator k = bytes.begin();
-
-  while (i != n) {
-    Sample s = *(i++);
-    // Limit output within [-1.0, 1.0].
-    s = std::max(Sample(-1.0), std::min(Sample(1.0), s));
-    // Convert output to [-32767, 32767].
-    long v = lrint(s * 32767);
-    unsigned long u = v;
-    *(k++) = u & 0xff;
-    *(k++) = (u >> 8) & 0xff;
-  }
-}
-
-// Encode a list of samples as signed 32-bit little-endian floats.
-// Note: no output range limitation.
-void AudioOutput::samplesToFloat32(const SampleVector &samples,
-                                   std::vector<uint8_t> &bytes) {
-  bytes.resize(4 * samples.size());
-
-  SampleVector::const_iterator i = samples.begin();
-  SampleVector::const_iterator n = samples.end();
-  std::vector<uint8_t>::iterator k = bytes.begin();
-
-  while (i != n) {
-    // Union for converting float and uint32_t.
-    union {
-      float f;
-      uint32_t u32;
-    } v;
-    Sample s = *(i++);
-    // Note: no output range limitation.
-    v.f = (float)s;
-    uint32_t u = v.u32;
-    *(k++) = u & 0xff;
-    *(k++) = (u >> 8) & 0xff;
-    *(k++) = (u >> 16) & 0xff;
-    *(k++) = (u >> 24) & 0xff;
-  }
-}
-
 // class SndfileOutput
 
 // Constructor
@@ -243,11 +193,13 @@ bool PortAudioOutput::write(const SampleVector &samples) {
   }
 
   unsigned long sample_size = samples.size();
-  // Convert samples to bytes.
-  samplesToFloat32(samples, m_bytebuf);
+  m_floatbuf.resize(sample_size);
+
+  // Convert double samples to float.
+  volk_64f_convert_32f(m_floatbuf.data(), samples.data(), sample_size);
 
   m_paerror =
-      Pa_WriteStream(m_stream, m_bytebuf.data(), sample_size / m_nchannels);
+      Pa_WriteStream(m_stream, m_floatbuf.data(), sample_size / m_nchannels);
   if (m_paerror == paNoError) {
     return true;
   } else if (m_paerror == paOutputUnderflowed) {

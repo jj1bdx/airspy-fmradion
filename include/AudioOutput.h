@@ -42,14 +42,6 @@ public:
    */
   virtual bool write(const SampleVector &samples) = 0;
 
-  /** Encode a list of samples as signed 16-bit little-endian integers. */
-  static void samplesToInt16(const SampleVector &samples,
-                             std::vector<std::uint8_t> &bytes);
-
-  /** Encode a list of samples as signed 32-bit little-endian floats. */
-  static void samplesToFloat32(const SampleVector &samples,
-                               std::vector<std::uint8_t> &bytes);
-
   /** Return the last error, or return an empty string if there is no error. */
   std::string error() {
     std::string ret(m_error);
@@ -68,7 +60,6 @@ protected:
 
   std::string m_error;
   bool m_zombie;
-  void (*m_converter)(const SampleVector &, std::vector<std::uint8_t> &);
   std::string m_device_name;
 
 private:
@@ -124,7 +115,7 @@ private:
   PaStreamParameters m_outputparams;
   PaStream *m_stream;
   PaError m_paerror;
-  std::vector<std::uint8_t> m_bytebuf;
+  volk::vector<float> m_floatbuf;
 };
 
 #endif
