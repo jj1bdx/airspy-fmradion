@@ -586,8 +586,7 @@ int main(int argc, char **argv) {
   // Set output device first, then print the configuration to stderr.
   switch (outmode) {
   case OutputMode::RAW_INT16:
-    audio_output.reset(new RawAudioOutput(filename));
-    audio_output->SetConvertFunction(AudioOutput::samplesToInt16);
+    audio_output.reset(new RawAudioOutput(filename, pcmrate, stereo));
     fprintf(stderr,
             "writing raw 16-bit integer little-endian audio samples to '%s'\n",
             filename.c_str());
