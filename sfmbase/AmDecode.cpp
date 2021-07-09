@@ -49,8 +49,9 @@ void FineTuner::process(const IQSampleVector &samples_in,
   for (unsigned int i = 0; i < n; i++) {
     samples_out[i] = samples_in[i] * m_table[tblidx];
     tblidx++;
-    if (tblidx == tblsiz)
+    if (tblidx == tblsiz) {
       tblidx = 0;
+    }
   }
 
   m_index = tblidx;
