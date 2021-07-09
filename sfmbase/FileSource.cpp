@@ -25,8 +25,6 @@
 #include <sstream>
 #include <thread>
 
-#include <sndfile.h>
-
 #include "ConfigParser.h"
 #include "FileSource.h"
 #include "Utility.h"
