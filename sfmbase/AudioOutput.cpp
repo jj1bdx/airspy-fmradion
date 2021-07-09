@@ -91,11 +91,8 @@ void AudioOutput::samplesToFloat32(const SampleVector &samples,
 // Construct raw audio writer.
 RawAudioOutput::RawAudioOutput(const std::string &filename) {
   if (filename == "-") {
-
     m_fd = STDOUT_FILENO;
-
   } else {
-
     m_fd = open(filename.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0666);
     if (m_fd < 0) {
       m_error = "can not open '" + filename + "' (" + strerror(errno) + ")";
@@ -145,9 +142,68 @@ bool RawAudioOutput::write(const SampleVector &samples) {
   return true;
 }
 
-/* ****************  class WavAudioOutput  **************** */
+// class FloatAudioOutput
+// Construct Raw 32bit float little-endian ran audio writer.
+FloatAudioOutput::FloatAudioOutput(const std::string &filename,
+                                   unsigned int samplerate, bool stereo)
+    : numberOfChannels(stereo ? 2 : 1), sampleRate(samplerate) {
+  if (filename == "-") {
+    m_fd = STDOUT_FILENO;
+  } else {
+    m_fd = open(filename.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0666);
+    if (m_fd < 0) {
+      m_error = "can not open '" + filename + "' (" + strerror(errno) + ")";
+      m_zombie = true;
+      return;
+    }
+  }
 
-// Construct .WAV writer.
+  m_sndfile_sfinfo.format = SF_FORMAT_RAW | SF_FORMAT_FLOAT | SF_ENDIAN_LITTLE;
+  m_sndfile_sfinfo.samplerate = sampleRate;
+  m_sndfile_sfinfo.channels = numberOfChannels;
+
+  m_sndfile = sf_open_fd(m_fd, SFM_WRITE, &m_sndfile_sfinfo, SF_TRUE);
+  if (m_sndfile == nullptr) {
+    m_error =
+        "can not open '" + filename + "' (" + sf_strerror(m_sndfile) + ")";
+    m_zombie = true;
+    return;
+  }
+
+  m_device_name = "FloatAudioOutput";
+}
+
+// Destructor.
+FloatAudioOutput::~FloatAudioOutput() {
+  // Nothing special to handle m_zombie..
+  // Done writing the file
+  if (m_sndfile) {
+    sf_close(m_sndfile);
+  }
+}
+
+// Write audio data.
+bool FloatAudioOutput::write(const SampleVector &samples) {
+  // Fail if zombied.
+  if (m_zombie) {
+    return false;
+  }
+
+  sf_count_t size = samples.size();
+  // Write samples to file with items.
+  sf_count_t k = sf_write_double(m_sndfile, samples.data(), size);
+  if (k != size) {
+    m_error = "write failed (";
+    m_error += sf_strerror(m_sndfile);
+    m_error += ")";
+    return false;
+  }
+  return true;
+}
+
+// class WavAudioOutput
+
+// Construct RF64/WAV writer.
 WavAudioOutput::WavAudioOutput(const std::string &filename,
                                unsigned int samplerate, bool stereo)
     : numberOfChannels(stereo ? 2 : 1), sampleRate(samplerate) {

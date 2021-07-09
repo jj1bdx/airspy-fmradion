@@ -102,18 +102,24 @@ private:
 class FloatAudioOutput : public AudioOutput {
 public:
   /**
-   * Construct raw audio writer.
+   * Construct 32bit little-endian raw audio writer.
    *
    * filename :: file name (including path) or "-" to write to stdout
+   * samplerate   :: audio sample rate in Hz
+   * stereo       :: true if the output stream contains stereo data
    */
-  FloatAudioOutput(const std::string &filename);
+  FloatAudioOutput(const std::string &filename, unsigned int samplerate,
+                   bool stereo);
 
   virtual ~FloatAudioOutput() override;
   virtual bool write(const SampleVector &samples) override;
 
 private:
+  const unsigned numberOfChannels;
+  const unsigned sampleRate;
   int m_fd;
-  std::vector<std::uint8_t> m_bytebuf;
+  SNDFILE *m_sndfile;
+  SF_INFO m_sndfile_sfinfo;
 };
 
 /** Write audio data as .WAV file. */
