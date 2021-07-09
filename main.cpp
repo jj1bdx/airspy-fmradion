@@ -129,7 +129,10 @@ void usage() {
       "                 use filename '-' to write to stdout\n"
       "  -F filename    Write audio data as raw FLOAT_LE samples\n"
       "                 use filename '-' to write to stdout\n"
-      "  -W filename    Write audio data to .WAV file\n"
+      "  -W filename    Write audio data to RF64/WAV S16_LE file\n"
+      "                 use filename '-' to write to stdout\n"
+      "  -G filename    Write audio data to RF64/WAV FLOAT_LE file\n"
+      "                 use filename '-' to write to stdout\n"
       "  -P device_num  Play audio via PortAudio device index number\n"
       "                 use string '-' to specify the default PortAudio "
       "device\n"
@@ -345,6 +348,7 @@ int main(int argc, char **argv) {
       {"raw", required_argument, nullptr, 'R'},
       {"float", required_argument, nullptr, 'F'},
       {"wav", required_argument, nullptr, 'W'},
+      {"wavfloat", required_argument, nullptr, 'G'},
       {"play", optional_argument, nullptr, 'P'},
       {"pps", required_argument, nullptr, 'T'},
       {"buffer", required_argument, nullptr, 'b'},
@@ -357,7 +361,7 @@ int main(int argc, char **argv) {
       {nullptr, no_argument, nullptr, 0}};
 
   int c, longindex;
-  while ((c = getopt_long(argc, argv, "m:t:c:d:MR:F:W:f:l:P:T:b:qXUE:r:",
+  while ((c = getopt_long(argc, argv, "m:t:c:d:MR:F:W:G:f:l:P:T:b:qXUE:r:",
                           longopts, &longindex)) >= 0) {
     switch (c) {
     case 'm':
@@ -386,7 +390,11 @@ int main(int argc, char **argv) {
       filename = optarg;
       break;
     case 'W':
-      outmode = OutputMode::WAV;
+      outmode = OutputMode::WAV_INT16;
+      filename = optarg;
+      break;
+    case 'G':
+      outmode = OutputMode::WAV_FLOAT32;
       filename = optarg;
       break;
     case 'f':
@@ -601,11 +609,18 @@ int main(int argc, char **argv) {
             "writing raw 32-bit float little-endian audio samples to '%s'\n",
             filename.c_str());
     break;
-  case OutputMode::WAV:
+  case OutputMode::WAV_INT16:
     audio_output.reset(new SndfileOutput(filename, pcmrate, stereo,
                                          SF_FORMAT_RF64 | SF_FORMAT_PCM_16 |
                                              SF_ENDIAN_LITTLE));
-    fprintf(stderr, "writing RF64/WAV audio samples to '%s'\n",
+    fprintf(stderr, "writing RF64/WAV int16 audio samples to '%s'\n",
+            filename.c_str());
+    break;
+  case OutputMode::WAV_FLOAT32:
+    audio_output.reset(
+        new SndfileOutput(filename, pcmrate, stereo,
+                          SF_FORMAT_RF64 | SF_FORMAT_FLOAT | SF_ENDIAN_LITTLE));
+    fprintf(stderr, "writing RF64/WAV float32 audio samples to '%s'\n",
             filename.c_str());
     break;
   case OutputMode::PORTAUDIO:
