@@ -586,19 +586,25 @@ int main(int argc, char **argv) {
   // Set output device first, then print the configuration to stderr.
   switch (outmode) {
   case OutputMode::RAW_INT16:
-    audio_output.reset(new RawAudioOutput(filename, pcmrate, stereo));
+    audio_output.reset(
+        new SndfileOutput(filename, pcmrate, stereo,
+                          SF_FORMAT_RAW | SF_FORMAT_PCM_16 | SF_ENDIAN_LITTLE));
     fprintf(stderr,
             "writing raw 16-bit integer little-endian audio samples to '%s'\n",
             filename.c_str());
     break;
   case OutputMode::RAW_FLOAT32:
-    audio_output.reset(new FloatAudioOutput(filename, pcmrate, stereo));
+    audio_output.reset(
+        new SndfileOutput(filename, pcmrate, stereo,
+                          SF_FORMAT_RAW | SF_FORMAT_FLOAT | SF_ENDIAN_LITTLE));
     fprintf(stderr,
             "writing raw 32-bit float little-endian audio samples to '%s'\n",
             filename.c_str());
     break;
   case OutputMode::WAV:
-    audio_output.reset(new WavAudioOutput(filename, pcmrate, stereo));
+    audio_output.reset(new SndfileOutput(filename, pcmrate, stereo,
+                                         SF_FORMAT_RF64 | SF_FORMAT_PCM_16 |
+                                             SF_ENDIAN_LITTLE));
     fprintf(stderr, "writing RF64/WAV audio samples to '%s'\n",
             filename.c_str());
     break;
