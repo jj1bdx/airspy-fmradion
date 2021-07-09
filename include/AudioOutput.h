@@ -147,6 +147,31 @@ private:
   SF_INFO m_sndfile_sfinfo;
 };
 
+// Output via libsndfile
+class SndfileOutput : public AudioOutput {
+public:
+  /**
+   * Construct libsndfile audio writer.
+   *
+   * filename     :: file name (including path) or "-" to write to stdout
+   * samplerate   :: audio sample rate in Hz
+   * stereo       :: true if the output stream contains stereo data
+   * sf_info:     :: specify output format by SF_INFO.format
+   */
+  SndfileOutput(const std::string &filename, unsigned int samplerate,
+                bool stereo, int format);
+
+  virtual ~SndfileOutput() override;
+  virtual bool write(const SampleVector &samples) override;
+
+private:
+  const unsigned numberOfChannels;
+  const unsigned sampleRate;
+  int m_fd;
+  SNDFILE *m_sndfile;
+  SF_INFO m_sndfile_sfinfo;
+};
+
 class PortAudioOutput : public AudioOutput {
 public:
   //

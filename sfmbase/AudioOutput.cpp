@@ -265,6 +265,97 @@ bool WavAudioOutput::write(const SampleVector &samples) {
   return true;
 }
 
+// class SndfileOutput
+
+// Constructor
+SndfileOutput::SndfileOutput(const std::string &filename,
+                             unsigned int samplerate, bool stereo, int format)
+    : numberOfChannels(stereo ? 2 : 1), sampleRate(samplerate) {
+
+  if (filename == "-") {
+    m_fd = STDOUT_FILENO;
+  } else {
+    m_fd = open(filename.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0666);
+    if (m_fd < 0) {
+      m_error = "can not open '" + filename + "' (" + strerror(errno) + ")";
+      m_zombie = true;
+      return;
+    }
+  }
+
+  m_sndfile_sfinfo.format = format;
+  m_sndfile_sfinfo.samplerate = sampleRate;
+  m_sndfile_sfinfo.channels = numberOfChannels;
+
+  if (!sf_format_check(&m_sndfile_sfinfo)) {
+    m_error = "SF_INFO for file '" + filename + "' is invalid";
+    m_zombie = true;
+    return;
+  }
+
+  m_sndfile = sf_open_fd(m_fd, SFM_WRITE, &m_sndfile_sfinfo, SF_TRUE);
+  if (m_sndfile == nullptr) {
+    m_error =
+        "can not open '" + filename + "' (" + sf_strerror(m_sndfile) + ")";
+    m_zombie = true;
+    return;
+  }
+
+  int filetype = m_sndfile_sfinfo.format & SF_FORMAT_TYPEMASK;
+
+  // For RF64 file, downgrade to WAV if filesize is smaller than 4GB
+  if (filetype == SF_FORMAT_RF64) {
+    if (SF_TRUE !=
+        sf_command(m_sndfile, SFC_RF64_AUTO_DOWNGRADE, NULL, SF_TRUE)) {
+      m_error = "unable to set SFC_RF64_AUTO_DOWNGRADE to SF_TRUE on '" +
+                filename + "' (" + sf_strerror(m_sndfile) + ")";
+      m_zombie = true;
+      return;
+    }
+  }
+
+  // For filetypes with header, header is updated for every sf_write() calls
+  if ((filetype == SF_FORMAT_RF64) || (filetype == SF_FORMAT_WAV)) {
+    if (SF_TRUE !=
+        sf_command(m_sndfile, SFC_SET_UPDATE_HEADER_AUTO, NULL, SF_TRUE)) {
+      m_error = "unable to set SFC_SET_UPDATE_HEADER_AUTO to SF_TRUE on '" +
+                filename + "' (" + sf_strerror(m_sndfile) + ")";
+      m_zombie = true;
+      return;
+    }
+  }
+
+  m_device_name = "SndfileOutput";
+}
+
+// Destructor.
+SndfileOutput::~SndfileOutput() {
+  // Nothing special to handle m_zombie..
+  // Done writing the file
+  if (m_sndfile) {
+    sf_close(m_sndfile);
+  }
+}
+
+// Write audio data.
+bool SndfileOutput::write(const SampleVector &samples) {
+  // Fail if zombied.
+  if (m_zombie) {
+    return false;
+  }
+
+  sf_count_t size = samples.size();
+  // Write samples to file with items.
+  sf_count_t k = sf_write_double(m_sndfile, samples.data(), size);
+  if (k != size) {
+    m_error = "write failed (";
+    m_error += sf_strerror(m_sndfile);
+    m_error += ")";
+    return false;
+  }
+  return true;
+}
+
 // Class PortAudioOutput
 
 // Construct PortAudio output stream.
