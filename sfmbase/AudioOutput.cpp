@@ -30,13 +30,7 @@
 #include "AudioOutput.h"
 #include "SoftFM.h"
 
-/* ****************  class AudioOutput  **************** */
-
-// Set type conversion function of samples.
-void AudioOutput::SetConvertFunction(
-    void (*converter)(const SampleVector &, std::vector<std::uint8_t> &)) {
-  m_converter = converter;
-}
+// class AudioOutput
 
 // Encode a list of samples as signed 16-bit little-endian integers.
 void AudioOutput::samplesToInt16(const SampleVector &samples,

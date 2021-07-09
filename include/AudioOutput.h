@@ -42,10 +42,6 @@ public:
    */
   virtual bool write(const SampleVector &samples) = 0;
 
-  // Set type conversion function of samples.
-  void SetConvertFunction(void (*converter)(const SampleVector &,
-                                            std::vector<std::uint8_t> &));
-
   /** Encode a list of samples as signed 16-bit little-endian integers. */
   static void samplesToInt16(const SampleVector &samples,
                              std::vector<std::uint8_t> &bytes);
@@ -68,7 +64,7 @@ public:
 
 protected:
   /** Constructor. */
-  AudioOutput() : m_zombie(false), m_converter(samplesToInt16) {}
+  AudioOutput() : m_zombie(false) {}
 
   std::string m_error;
   bool m_zombie;
