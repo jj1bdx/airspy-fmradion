@@ -26,6 +26,7 @@
 #include "SoftFM.h"
 
 #include "portaudio.h"
+#include <sndfile.h>
 
 /** Base class for writing audio data to file or playback. */
 class AudioOutput {
@@ -132,17 +133,10 @@ public:
   virtual bool write(const SampleVector &samples) override;
 
 private:
-  /** (Re-)Write .WAV header. */
-  bool write_header(unsigned int nsamples);
-
-  static void encode_chunk_id(std::uint8_t *ptr, const char *chunkname);
-
-  template <typename T> static void set_value(std::uint8_t *ptr, T value);
-
   const unsigned numberOfChannels;
   const unsigned sampleRate;
-  std::FILE *m_stream;
-  std::vector<std::uint8_t> m_bytebuf;
+  SNDFILE *m_sndfile;
+  SF_INFO m_sndfile_sfinfo;
 };
 
 class PortAudioOutput : public AudioOutput {
