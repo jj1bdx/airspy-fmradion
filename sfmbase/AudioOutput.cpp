@@ -86,10 +86,11 @@ void AudioOutput::samplesToFloat32(const SampleVector &samples,
   }
 }
 
-/* ****************  class RawAudioOutput  **************** */
-
-// Construct raw audio writer.
-RawAudioOutput::RawAudioOutput(const std::string &filename) {
+// class RawAudioOutput
+// Construct Raw 32bit float little-endian ran audio writer.
+RawAudioOutput::RawAudioOutput(const std::string &filename,
+                               unsigned int samplerate, bool stereo)
+    : numberOfChannels(stereo ? 2 : 1), sampleRate(samplerate) {
   if (filename == "-") {
     m_fd = STDOUT_FILENO;
   } else {
@@ -101,44 +102,46 @@ RawAudioOutput::RawAudioOutput(const std::string &filename) {
     }
   }
 
+  m_sndfile_sfinfo.format = SF_FORMAT_RAW | SF_FORMAT_PCM_16 | SF_ENDIAN_LITTLE;
+  m_sndfile_sfinfo.samplerate = sampleRate;
+  m_sndfile_sfinfo.channels = numberOfChannels;
+
+  m_sndfile = sf_open_fd(m_fd, SFM_WRITE, &m_sndfile_sfinfo, SF_TRUE);
+  if (m_sndfile == nullptr) {
+    m_error =
+        "can not open '" + filename + "' (" + sf_strerror(m_sndfile) + ")";
+    m_zombie = true;
+    return;
+  }
+
   m_device_name = "RawAudioOutput";
 }
 
 // Destructor.
 RawAudioOutput::~RawAudioOutput() {
-  // Close file descriptor.
-  if (m_fd >= 0 && m_fd != STDOUT_FILENO) {
-    close(m_fd);
+  // Nothing special to handle m_zombie..
+  // Done writing the file
+  if (m_sndfile) {
+    sf_close(m_sndfile);
   }
 }
 
 // Write audio data.
 bool RawAudioOutput::write(const SampleVector &samples) {
-  if (m_fd < 0) {
+  // Fail if zombied.
+  if (m_zombie) {
     return false;
   }
 
-  // Convert samples to bytes.
-  m_converter(samples, m_bytebuf);
-
-  // Write data.
-  std::size_t p = 0;
-  std::size_t n = m_bytebuf.size();
-  while (p < n) {
-
-    ssize_t k = ::write(m_fd, m_bytebuf.data() + p, n - p);
-    if (k <= 0) {
-      if (k == 0 || errno != EINTR) {
-        m_error = "write failed (";
-        m_error += strerror(errno);
-        m_error += ")";
-        return false;
-      }
-    } else {
-      p += k;
-    }
+  sf_count_t size = samples.size();
+  // Write samples to file with items.
+  sf_count_t k = sf_write_double(m_sndfile, samples.data(), size);
+  if (k != size) {
+    m_error = "write failed (";
+    m_error += sf_strerror(m_sndfile);
+    m_error += ")";
+    return false;
   }
-
   return true;
 }
 
