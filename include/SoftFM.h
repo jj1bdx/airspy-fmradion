@@ -39,6 +39,12 @@ using SampleCoeff = std::vector<SampleVector::value_type>;
 enum class FilterType { Default, Medium, Narrow, Wide };
 enum class DevType { Airspy, AirspyHF, RTLSDR, FileSource };
 enum class ModType { FM, NBFM, AM, DSB, USB, LSB, CW, WSPR };
-enum class OutputMode { RAW_INT16, RAW_FLOAT32, WAV, PORTAUDIO };
+enum class OutputMode {
+  RAW_INT16,
+  RAW_FLOAT32,
+  WAV_INT16,
+  WAV_FLOAT32,
+  PORTAUDIO
+};
 
 #endif
