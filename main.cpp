@@ -593,15 +593,15 @@ int main(int argc, char **argv) {
             filename.c_str());
     break;
   case OutputMode::RAW_FLOAT32:
-    audio_output.reset(new RawAudioOutput(filename));
-    audio_output->SetConvertFunction(AudioOutput::samplesToFloat32);
+    audio_output.reset(new FloatAudioOutput(filename, pcmrate, stereo));
     fprintf(stderr,
             "writing raw 32-bit float little-endian audio samples to '%s'\n",
             filename.c_str());
     break;
   case OutputMode::WAV:
     audio_output.reset(new WavAudioOutput(filename, pcmrate, stereo));
-    fprintf(stderr, "writing audio samples to '%s'\n", filename.c_str());
+    fprintf(stderr, "writing RF64/WAV audio samples to '%s'\n",
+            filename.c_str());
     break;
   case OutputMode::PORTAUDIO:
     audio_output.reset(new PortAudioOutput(portaudiodev, pcmrate, stereo));
