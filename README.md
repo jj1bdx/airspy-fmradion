@@ -2,7 +2,7 @@
 
 # airspy-fmradion
 
-* Version 20210702-0
+* Version 20210709-0
 * For MacOS and Linux
 
 ## Contributing
@@ -171,7 +171,8 @@ Compile and install
  - `-M` Disable stereo decoding
  - `-R filename` Write audio data as raw `S16_LE` samples. Use filename `-` to write to stdout
  - `-F filename` Write audio data as raw `FLOAT_LE` samples. Use filename `-` to write to stdout
- - `-W filename` Write audio data to .WAV file
+ - `-W filename` Write audio data as RF64/WAV `S16_LE` samples. Use filename `-` to write to stdout
+ - `-G filename` Write audio data as RF64/WAV `FLOAT_LE` samples. Use filename `-` to write to stdout
  - `-P device_num` Play audio via PortAudio device index number. Use string `-` to specify the default PortAudio device
  - `-T filename` Write pulse-per-second timestamps. Use filename '-' to write to stdout
  - `-b seconds` Set audio buffer size in seconds (default: 1 second)
