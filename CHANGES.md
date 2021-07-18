@@ -14,6 +14,7 @@
 
 ## Changes (including requirement changes)
 
+* Since 20210718-0, receiving block number is uint64\_t, and 12 digits are displayed.
 * Since 20210709-0, all file output is controlled under libsndfile. Previous output formats are compatible with the older version of airspy-fmradion.
 * Since 20210709-0, WAV file output is RF64 compatible, and automatically degraded to WAV if the output is less than WAV file length limit (4GB), controlled by libsndfile.
 * Since 20210709-0, -G option is added for RF64/WAV FLOAT\_LE output.
