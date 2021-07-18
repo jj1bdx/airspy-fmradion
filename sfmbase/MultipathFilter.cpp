@@ -28,9 +28,6 @@
 // Institute of Television Engineers of Japan, Vol. 39, No. 3, pp. 228-234
 // (1985). https://doi.org/10.3169/itej1978.39.228
 
-#include <cassert>
-#include <cmath>
-
 #include "MultipathFilter.h"
 
 // Class MultipathFilter

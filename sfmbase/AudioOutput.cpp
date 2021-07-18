@@ -20,7 +20,6 @@
 #define _FILE_OFFSET_BITS 64
 
 #include <algorithm>
-#include <cassert>
 #include <cerrno>
 #include <cstdio>
 #include <cstring>

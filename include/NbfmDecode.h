@@ -19,8 +19,6 @@
 #ifndef SOFTFM_NBFMDECODE_H
 #define SOFTFM_NBFMDECODE_H
 
-#include <cstdint>
-
 #include "AudioResampler.h"
 #include "Filter.h"
 #include "FilterParameters.h"

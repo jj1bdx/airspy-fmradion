@@ -43,7 +43,6 @@
 #ifndef INCLUDE_UTILITY_H_
 #define INCLUDE_UTILITY_H_
 
-#include <cmath>
 #include <cstdlib>
 
 #include "SoftFM.h"

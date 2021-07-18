@@ -19,10 +19,6 @@
 #ifndef SOFTFM_FOURTHCONVERTERIQ_H
 #define SOFTFM_FOURTHCONVERTERIQ_H
 
-#include <cassert>
-#include <cmath>
-#include <cstdint>
-
 #include "SoftFM.h"
 
 // Converting Fs/4 tuner.

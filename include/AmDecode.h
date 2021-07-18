@@ -20,8 +20,6 @@
 #ifndef SOFTFM_AMDECODE_H
 #define SOFTFM_AMDECODE_H
 
-#include <cstdint>
-
 #include "AfAgc.h"
 #include "AudioResampler.h"
 #include "Filter.h"

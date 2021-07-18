@@ -19,7 +19,6 @@
 #ifndef SOFTFM_FILESOURCE_H
 #define SOFTFM_FILESOURCE_H
 
-#include <cstdint>
 #include <string>
 #include <thread>
 #include <vector>

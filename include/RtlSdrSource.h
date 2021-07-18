@@ -18,10 +18,8 @@
 #ifndef SOFTFM_RTLSDRSOURCE_H
 #define SOFTFM_RTLSDRSOURCE_H
 
-#include <cstdint>
 #include <string>
 #include <thread>
-#include <vector>
 
 #include "Source.h"
 

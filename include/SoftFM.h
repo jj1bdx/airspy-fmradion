@@ -19,7 +19,11 @@
 #ifndef SOFTFM_H
 #define SOFTFM_H
 
+#include <cassert>
+#include <cinttypes>
+#include <cmath>
 #include <complex>
+#include <cstdint>
 #include <vector>
 
 #include <volk/volk_alloc.hh>

@@ -19,7 +19,6 @@
 #ifndef SOFTFM_AUDIOOUTPUT_H
 #define SOFTFM_AUDIOOUTPUT_H
 
-#include <cstdint>
 #include <cstdio>
 #include <string>
 

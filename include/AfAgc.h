@@ -19,9 +19,6 @@
 #ifndef SOFTFM_AFAGC_H
 #define SOFTFM_AFAGC_H
 
-#include <cmath>
-#include <cstdint>
-
 #include "SoftFM.h"
 
 // Class AfAgc

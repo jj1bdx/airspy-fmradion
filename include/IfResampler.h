@@ -19,8 +19,6 @@
 #ifndef SOFTFM_IFRESAMPLER_H
 #define SOFTFM_IFRESAMPLER_H
 
-#include <cstdint>
-
 #include "SoftFM.h"
 
 #include "soxr.h"

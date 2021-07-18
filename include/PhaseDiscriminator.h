@@ -20,9 +20,6 @@
 #ifndef SOFTFM_PHASEDISCRIMINATOR_H
 #define SOFTFM_PHASEDISCRIMINATOR_H
 
-#include <cstdint>
-#include <vector>
-
 #include "SoftFM.h"
 
 /* Detect frequency by phase discrimination between successive samples. */
