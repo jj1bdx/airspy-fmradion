@@ -20,7 +20,6 @@
 #include <algorithm>
 #include <atomic>
 #include <climits>
-#include <cmath>
 #include <csignal>
 #include <cstdio>
 #include <cstdlib>
