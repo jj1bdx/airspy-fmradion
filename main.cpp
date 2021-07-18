@@ -907,7 +907,7 @@ int main(int argc, char **argv) {
   float if_level = 0;
 
   // Main loop.
-  for (unsigned int block = 0; !stop_flag.load(); block++) {
+  for (uint64_t block = 0; !stop_flag.load(); block++) {
 
     // Check for overflow of source buffer.
     if (!inbuf_length_warning && source_buffer.queued_samples() > 10 * ifrate) {
@@ -1044,9 +1044,11 @@ int main(int argc, char **argv) {
             (((block % stat_rate) == 0) && (block > discarding_blocks))) {
           fprintf(stderr,
 #ifdef COEFF_MONITOR
-                  "blk=%8d:ppm=%+7.3f:IF=%+6.1fdB:AF=%+6.1fdB:buf=%.2fs\n",
+                  "blk=%11" PRIu64
+                  ":ppm=%+7.3f:IF=%+6.1fdB:AF=%+6.1fdB:buf=%.2fs\n",
 #else
-                  "\rblk=%8d:ppm=%+7.3f:IF=%+6.1fdB:AF=%+6.1fdB:buf=%.2fs",
+                  "\rblk=%11" PRIu64
+                  ":ppm=%+7.3f:IF=%+6.1fdB:AF=%+6.1fdB:buf=%.2fs",
 #endif
                   block, ppm_average.average(), if_level_db, audio_level_db,
                   buflen_sec);
@@ -1063,7 +1065,8 @@ int main(int argc, char **argv) {
         double if_agc_gain_db = 20 * log10(am.get_if_agc_current_gain());
         if (((block % stat_rate) == 0) && (block > discarding_blocks)) {
           fprintf(stderr,
-                  "\rblk=%8d:IF=%+6.1fdB:AGC=%+6.1fdB:AF=%+6.1fdB:buf=%.2fs",
+                  "\rblk=%11" PRIu64
+                  ":IF=%+6.1fdB:AGC=%+6.1fdB:AF=%+6.1fdB:buf=%.2fs",
                   block, if_level_db, if_agc_gain_db, audio_level_db,
                   buflen_sec);
           fflush(stderr);
@@ -1076,7 +1079,8 @@ int main(int argc, char **argv) {
           ((block % (stat_rate * 10)) == 0) && (block > discarding_blocks)) {
         double mf_error = fm.get_multipath_error();
         const MfCoeffVector &mf_coeff = fm.get_multipath_coefficients();
-        fprintf(stderr, "block,%u,mf_error,%.9f,mf_coeff,", block, mf_error);
+        fprintf(stderr, "block," PRIu64 ",mf_error,%.9f,mf_coeff,", block,
+                mf_error);
         for (unsigned int i = 0; i < mf_coeff.size(); i++) {
           MfCoeff val = mf_coeff[i];
           fprintf(stderr, "%d,%.9f,%.9f,", i, val.real(), val.imag());
@@ -1110,8 +1114,8 @@ int main(int argc, char **argv) {
       case ModType::CW:
       case ModType::WSPR:
         if ((block % (stat_rate * 10)) == 0) {
-          fprintf(ppsfile, "%8d %18.6f %+9.3f\n", block, prev_block_time,
-                  if_level_db);
+          fprintf(ppsfile, "%11" PRIu64 " %18.6f %+9.3f\n", block,
+                  prev_block_time, if_level_db);
           fflush(ppsfile);
         }
         break;
