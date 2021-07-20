@@ -1,7 +1,7 @@
 // airspy-fmradion
 // Software decoder for FM broadcast radio with Airspy
 //
-// Copyright (C) 2019 Kenji Rikitake, JJ1BDX
+// Copyright (C) 2019-2021 Kenji Rikitake, JJ1BDX
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
