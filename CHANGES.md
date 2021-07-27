@@ -9,7 +9,7 @@
 
 ## Known limitations
 
-* MacOS build is tested with 10.15.7 Catalina with Xcode 12.4 Command Line Tools. MacOS Big Sur 11.x versions haven't been tested yet.
+* MacOS build is tested with 11.15.1 Big Sur with Xcode 12.5.1 Command Line Tools.
 * For Raspberry Pi 3 and 4, Airspy R2 10Msps and Airspy Mini 6Msps sampling rates are *not supported* due to the hardware limitation. Use in 2.5Msps for R2, 3Msps for Mini.
 
 ## Changes (including requirement changes)
