@@ -157,6 +157,14 @@ cmake .. \
 PKG_CONFIG_PATH=/path/to/airspy/lib/pkgconfig cmake ..
 ```
 
+For using static analyzers such as [OCLint](https://oclint.org) and [Clangd](https://clangd.llvm.org), run the following commands:
+
+```
+cd build
+ln -s `pwd`/compile_commands.json ..
+cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON ..
+```
+
 Compile and install
 
  - `make -j4` (for machines with 4 CPUs)
