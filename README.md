@@ -2,7 +2,7 @@
 
 # airspy-fmradion
 
-* Version 20210718-0
+* Version 20210817-0
 * For MacOS and Linux
 
 ## Contributing
@@ -28,19 +28,20 @@ Please read [CHANGES.md](CHANGES.md) before using the software.
 ## Usage
 
 ```sh
+# Portaudio output
 airspy-fmradion -t airspy -q \
     -c freq=88100000,srate=10000000,lgain=2,mgain=0,vgain=10 \
     -b 1.0 -P -
 
+# 16-bit signed integer WAV output
 airspy-fmradion -t airspyhf -q \
     -c freq=88100000,srate=768000 \
-    -b 1.0 -R - | \
-    play -t raw -esigned-integer -b16 -r 48000 -c 2 -q -
+    -b 1.0 -W output_s16_le.wav
 
+# 32-bit float WAV output
 airspy-fmradion -m am -t airspyhf -q \
     -c freq=666000 \
-    -b 0.5 -F - | \
-    play --buffer=1024 -t raw -e floating-point -b32 -r 48000 -c 1 -q -
+    -b 0.5 -G output_f32_le.wav
 ```
 
 ### airspy-fmradion requirements
