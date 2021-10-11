@@ -1078,7 +1078,7 @@ int main(int argc, char **argv) {
           ((block % (stat_rate * 10)) == 0) && (block > discarding_blocks)) {
         double mf_error = fm.get_multipath_error();
         const MfCoeffVector &mf_coeff = fm.get_multipath_coefficients();
-        fprintf(stderr, "block," PRIu64 ",mf_error,%.9f,mf_coeff,", block,
+        fprintf(stderr, "block,%" PRIu64 ",mf_error,%.9f,mf_coeff,", block,
                 mf_error);
         for (unsigned int i = 0; i < mf_coeff.size(); i++) {
           MfCoeff val = mf_coeff[i];
