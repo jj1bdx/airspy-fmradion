@@ -156,6 +156,10 @@ set(OPTIMIZATION_FLAGS "-O3 -ftree-vectorize -march=native")
 #set(OPTIMIZATION_FLAGS "-O3 -ftree-vectorize -march=native -g -fprofile-instr-generate -fcoverage-mapping")
 #SET(CMAKE_EXE_LINKER_FLAGS "-fprofile-instr-generate")
 ##
+# For Sanitizers
+# with Thread Sanitizer
+#set(OPTIMIZATION_FLAGS "-fsanitize=thread -O3 -ftree-vectorize -march=native")
+##
 
 # Common compiler flags and options.
 ##
