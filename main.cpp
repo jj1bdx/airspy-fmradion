@@ -26,6 +26,7 @@
 #include <cstring>
 #include <getopt.h>
 #include <memory>
+#include <signal.h>
 #include <sys/time.h>
 #include <thread>
 #include <unistd.h>
@@ -87,17 +88,15 @@ void write_output_data(AudioOutput *output, DataBuffer<Sample> *buf,
   }
 }
 
-/** Handle Ctrl-C and SIGTERM. */
+// Handle SIGINT and SIGTERM
 static void handle_sigterm(int sig) {
+  // save errno in the signalhandler
+  int old_errno = errno;
   stop_flag.store(true);
-
-  std::string msg = "\nGot signal ";
-  msg += strsignal(sig);
-  msg += ", stopping ...\n";
-
-  const char *s = msg.c_str();
-  ssize_t size = write(STDERR_FILENO, s, strlen(s));
-  size++; // dummy
+  // Uses psignal() to make this thread-safe
+  psignal(sig, "\nStopping by getting signal");
+  // restore saved errno
+  errno = old_errno;
 }
 
 void usage() {
@@ -1130,6 +1129,8 @@ int main(int argc, char **argv) {
       output_buffer.push(std::move(audiosamples));
     }
   }
+
+  // End of main loop
 
   fprintf(stderr, "\n");
 
