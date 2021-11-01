@@ -9,11 +9,12 @@
 
 ## Known limitations
 
-* MacOS build is tested with 11.6 Big Sur with Xcode 13 Command Line Tools.
+* MacOS build is tested with 11.6.1 Big Sur with Xcode 13.1 Command Line Tools.
 * For Raspberry Pi 3 and 4, Airspy R2 10Msps and Airspy Mini 6Msps sampling rates are *not supported* due to the hardware limitation. Use in 2.5Msps for R2, 3Msps for Mini.
 
 ## Changes (including requirement changes)
 
+* 20211101-0: `handle_sigterm()` now uses `psignal()` instead of `strsignal()` for the thread safety of Linux. Also fixed the bug of not saving `errno` in the signal handler. This bug was found by the ThreadSanitizer of macOS clang.
 * 20211022-0: minor bugfix of COEFF\_MONITOR coefficient display code.
 * Since 20210718-0, receiving block number is uint64\_t, and 12 digits are displayed.
 * Since 20210709-0, all file output is controlled under libsndfile. Previous output formats are compatible with the older version of airspy-fmradion.
