@@ -13,6 +13,7 @@ brew install volk
 * Use libvolk 2.5, but apply the patch in libvolk-Apple-M1/ directory.
   - copy `libvolk-Apple-M1/patch-cpu_features-add-support-for-ARM64.diff.txt` into `cpu_features` directory
   - apply the patch with `patch -p1`
+  - Use the [patched repository](https://github.com/jj1bdx/cpu_features/tree/m1-patched) for the fix
 * For M1 Mac, `volk_32f_log2_32f` does not work
 * So use the generic setting for the function by rewriting the entry as `volk_32f_log2_32f generic generic`
 * Copy `libvolk-Apple-M1/volk_config_M1` as `~/.volk/volk_config`
