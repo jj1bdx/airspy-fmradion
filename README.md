@@ -2,8 +2,8 @@
 
 # airspy-fmradion
 
-* Version 20211101-0
-* For MacOS and Linux
+* Version 20211209-0
+* For MacOS (both Intel and Apple Silicon) and Linux
 
 ## Contributing
 
@@ -118,7 +118,6 @@ Install libvolk as described in [INSTALL-latest-libvolk.md](INSTALL-latest-libvo
 #### libvolk
 
 * See [GitHub gnuradio/volk repository](https://github.com/gnuradio/volk) for the details.
-* libvolk requires Boost to compile.
 
 #### libairspyhf
 
