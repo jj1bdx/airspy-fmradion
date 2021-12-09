@@ -17,7 +17,8 @@ find_package(Threads)
 pkg_check_modules(PKG_VOLK volk)
 if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     find_library(VOLK_LIBRARY libvolk.dylib
-	HINTS /usr/local/lib ${PKG_VOLK_LIBRARY_DIRS})
+	HINTS /usr/local/lib /opt/homebrew/lib
+	      ${PKG_VOLK_LIBRARY_DIRS})
 else()
     find_library(VOLK_LIBRARY libvolk.so
 	HINTS ${PKG_VOLK_LIBRARY_DIRS})
@@ -28,15 +29,19 @@ message(STATUS "volk library: ${VOLK_LIBRARY}")
 pkg_check_modules(PKG_AIRSPY libairspy)
 if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     find_path(AIRSPY_INCLUDE_DIR airspy.h
-             HINT /usr/local/include/libairspy ${PKG_AIRSPY_INCLUDE_DIRS})
+	    HINTS /usr/local/include/libairspy
+	          /opt/homebrew/include/libairspy
+	          ${PKG_AIRSPY_INCLUDE_DIRS})
     find_library(AIRSPY_LIBRARY libairspy.a
-             HINT /usr/local/lib ${PKG_AIRSPY_LIBRARY_DIRS})
-    set(AIRSPY_INCLUDE_OPTION "-I/usr/local/include")
+	    HINTS /usr/local/lib
+	          /opt/homebrew/lib
+	          ${PKG_AIRSPY_LIBRARY_DIRS})
+    set(AIRSPY_INCLUDE_OPTION "-I/usr/local/include -I/opt/homebrew/include")
 else()
     find_path(AIRSPY_INCLUDE_DIR airspy.h
-             HINT ${PKG_AIRSPY_INCLUDE_DIRS})
+	    HINTS ${PKG_AIRSPY_INCLUDE_DIRS})
     find_library(AIRSPY_LIBRARY libairspy.a
-             HINT ${PKG_AIRSPY_LIBRARY_DIRS})
+	    HINTS ${PKG_AIRSPY_LIBRARY_DIRS})
     set(AIRSPY_INCLUDE_OPTION "")
 endif()
 message(STATUS "libairspy: ${AIRSPY_INCLUDE_DIR}, ${AIRSPY_LIBRARY}")
@@ -45,10 +50,14 @@ message(STATUS "libairspy: ${AIRSPY_INCLUDE_DIR}, ${AIRSPY_LIBRARY}")
 pkg_check_modules(PKG_AIRSPYHF libairspyhf)
 if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     find_path(AIRSPYHF_INCLUDE_DIR airspyhf.h
-        HINT /usr/local/include/libairspyhf ${PKG_AIRSPYHF_INCLUDE_DIRS})
+	HINTS /usr/local/include/libairspyhf
+	      /opt/homebrew/include/libairspyhf
+	      ${PKG_AIRSPYHF_INCLUDE_DIRS})
     find_library(AIRSPYHF_LIBRARY libairspyhf.a
-        HINT /usr/local/lib ${PKG_AIRSPYHF_LIBRARY_DIRS})
-    set(AIRSPYHF_INCLUDE_OPTION "-I/usr/local/include")
+	HINTS /usr/local/lib
+	      /opt/homebrew/lib
+	      ${PKG_AIRSPYHF_LIBRARY_DIRS})
+    set(AIRSPYHF_INCLUDE_OPTION "-I/usr/local/include -I/opt/homebrew/include")
 else()
     find_path(AIRSPYHF_INCLUDE_DIR airspyhf.h
              HINT ${PKG_AIRSPYHF_INCLUDE_DIRS})
@@ -61,29 +70,31 @@ message(STATUS "libairspyhf: ${AIRSPYHF_INCLUDE_DIR}, ${AIRSPYHF_LIBRARY}")
 # Find RTL-SDR library.
 pkg_check_modules(PKG_RTLSDR librtlsdr)
 find_path(RTLSDR_INCLUDE_DIR rtl-sdr.h
-          HINT ${PKG_RTLSDR_INCLUDE_DIRS})
+	HINTS ${PKG_RTLSDR_INCLUDE_DIRS})
 find_library(RTLSDR_LIBRARY librtlsdr.a
-             HINT ${PKG_RTLSDR_LIBRARY_DIRS})
+	HINTS ${PKG_RTLSDR_LIBRARY_DIRS})
 message(STATUS "librtlsdr: ${RTLSDR_INCLUDE_DIR}, ${RTLSDR_LIBRARY}")
 
 # Find libusb
 # See https://github.com/texane/stlink/blob/master/cmake/modules/FindLibUSB.cmake
 pkg_check_modules(PKG_LIBUSB libusb-1.0)
 find_path(LIBUSB_INCLUDE_DIR libusb.h
-    HINTS /usr /usr/local /opt ${PKG_LIBUSB_INCLUDE_DIRS}
+    HINTS /usr /usr/local /opt /opt/homebrew ${PKG_LIBUSB_INCLUDE_DIRS}
     PATH_SUFFIXES libusb-1.0)
 set(LIBUSB_NAME usb-1.0)
 find_library(LIBUSB_LIBRARY ${LIBUSB_NAME}
-             HINTS /usr /usr/local /opt ${PKG_LIBUSB_LIBRARY_DIRS})
+    HINTS /usr /usr/local /opt /opt/homebrew ${PKG_LIBUSB_LIBRARY_DIRS})
 message(STATUS "libusb: ${LIBUSB_INCLUDE_DIR}, ${LIBUSB_LIBRARY}")
 
 # Find libsoxr
 pkg_check_modules(PKG_LIBSOXR libsoxr)
 if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     find_path(LIBSOXR_INCLUDE_DIR soxr.h
-        HINTS /usr/local/include ${PKG_LIBSOXR_INCLUDE_DIRS})
+        HINTS /usr/local/include /opt/homebrew/include
+	    ${PKG_LIBSOXR_INCLUDE_DIRS})
     find_library(LIBSOXR_LIBRARY libsoxr.dylib
-        HINTS /usr/local/lib ${PKG_LIBSOXR_LIBRARY_DIRS})
+        HINTS /usr/local/lib /opt/homebrew/lib
+	    ${PKG_LIBSOXR_LIBRARY_DIRS})
 else()
     find_path(LIBSOXR_INCLUDE_DIR soxr.h
         HINTS ${PKG_LIBSOXR_INCLUDE_DIRS})
@@ -96,7 +107,7 @@ message(STATUS "libsoxr: ${LIBSOXR_INCLUDE_DIR}, ${LIBSOXR_LIBRARY}")
 FIND_LIBRARY(SNDFILE_LIBRARY sndfile)
 
 FIND_PATH(SNDFILE_INCLUDE_DIR sndfile.h
-        HINT ${PKG_SNDFILE_INCLUDE_DIRS})
+	HINTS ${PKG_SNDFILE_INCLUDE_DIRS})
 MESSAGE(STATUS "Sndfile: ${SNDFILE_LIBRARY}, ${SNDFILE_INCLUDE_DIR}")
 
 # for PortAudio
@@ -108,13 +119,16 @@ if (PORTAUDIO2_FOUND)
     set(PORTAUDIO_VERSION 19)
     set(PORTAUDIO_FOUND TRUE)
     find_path(PORTAUDIO_INCLUDE_DIR portaudio.h
-        HINTS /usr/local/include ${PORTAUDIO_INCLUDE_DIRS})
+        HINTS /usr/local/include /opt/homebrew/include
+	    ${PORTAUDIO_INCLUDE_DIRS})
     if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
         find_library(PORTAUDIO_LIBRARY libportaudio.dylib
-               HINTS /usr/local/lib ${PORTAUDIO_LIBRARY_DIRS})
+               HINTS /usr/local/lib /opt/homebrew/lib
+	           ${PORTAUDIO_LIBRARY_DIRS})
     else (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
         find_library(PORTAUDIO_LIBRARY libportaudio.so
-               HINTS /usr/local/lib ${PORTAUDIO_LIBRARY_DIRS})
+               HINTS /usr/local/lib /opt/homebrew/lib
+	           ${PORTAUDIO_LIBRARY_DIRS})
     endif (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
 else (PORTAUDIO2_FOUND)
     message(FATAL_ERROR "Could not find Portaudio")
@@ -144,21 +158,21 @@ set(AIRSPYHF_LIBRARIES    ${AIRSPYHF_LIBRARY} ${LIBUSB_LIBRARY})
 # Enable speed-based optimization
 # Do not apply -ffast-math; it enables -menable-no-nans
 # which cancels detection functions of multipath filter abnormality!
-set(OPTIMIZATION_FLAGS "-O3 -ftree-vectorize -march=native")
+set(OPTIMIZATION_FLAGS "-O3 -ftree-vectorize ")
 ##
 # Use conservative options when failed to run
 #set(OPTIMIZATION_FLAGS "-O2")
 ##
 # For vectorization analysis (in Clang only)
-#set(OPTIMIZATION_FLAGS "-O3 -ftree-vectorize -march=native -Rpass=loop-vectorize -Rpass-missed=loop-vectorize -Rpass-analysis=loop-vectorize")
+#set(OPTIMIZATION_FLAGS "-O3 -ftree-vectorize -Rpass=loop-vectorize -Rpass-missed=loop-vectorize -Rpass-analysis=loop-vectorize")
 ##
 # For clang profiling with optimization
-#set(OPTIMIZATION_FLAGS "-O3 -ftree-vectorize -march=native -g -fprofile-instr-generate -fcoverage-mapping")
+#set(OPTIMIZATION_FLAGS "-O3 -ftree-vectorize -g -fprofile-instr-generate -fcoverage-mapping")
 #SET(CMAKE_EXE_LINKER_FLAGS "-fprofile-instr-generate")
 ##
 # For Sanitizers
 # with Thread Sanitizer
-#set(OPTIMIZATION_FLAGS "-fsanitize=thread -O3 -ftree-vectorize -march=native")
+#set(OPTIMIZATION_FLAGS "-fsanitize=thread -O3 -ftree-vectorize ")
 ##
 
 # Common compiler flags and options.
@@ -232,6 +246,9 @@ add_executable(airspy-fmradion
 
 include_directories(
     ${CMAKE_SOURCE_DIR}/include
+    ${AIRSPYHF_INCLUDE_DIRS}
+    ${AIRSPY_INCLUDE_DIRS}
+    ${RTLSDR_INCLUDE_DIRS}
     ${PORTAUDIO_INCLUDE_DIR}
     ${EXTRA_INCLUDES}
 )
