@@ -1,12 +1,21 @@
 # Installing the latest libvolk on macOS and Linux
 
-## For macOS: use Homebrew
+## For x86_64 macOS: use Homebrew
 
-For libvolk 2.4, the bottled binary works OK with the SIMD acceleration.
+For libvolk 2.5, the bottled binary works OK with the SIMD acceleration.
 
 ```sh
 brew install volk
 ```
+
+## For M1 macOS: build independently, but patch is required
+
+* Use libvolk 2.5, but apply the patch in libvolk-Apple-M1/ directory.
+  - copy `libvolk-Apple-M1/patch-cpu_features-add-support-for-ARM64.diff.txt` into `cpu_features` directory
+  - apply the patch with `patch -p1`
+* For M1 Mac, `volk_32f_log2_32f` does not work
+* So use the generic setting for the function by rewriting the entry as `volk_32f_log2_32f generic generic`
+* Copy `libvolk-Apple-M1/volk_config_M1` as `~/.volk/volk_config`
 
 ## Build process change
 
@@ -98,8 +107,15 @@ cmake ..
 # if build fails, try
 # `sudo rm -rf /usr/local/include/volk`
 # then try `make` again
+#
+# For M1 Mac:
+# * copy libvolk-Apple-M1/patch-cpu_features-add-support-for-ARM64.diff.txt
+#   into cpu_features directory
+# * apply the patch with `patch -p1`
+# 
 make
 make test
+# For M1 Mac: the test fails on volk_32f_log2_32f
 # superuser
 sudo zsh
 umask 022
@@ -114,6 +130,10 @@ Do the full benchmark by `volk_profile -b -p .`. Use the result at `~/.volk/volk
 
 ```shell
 volk_profile -b -p .
+# For M1 Mac: volk_32f_log2_32f does not work
+# So use the generic setting for the function by rewriting the entry as:
+#     volk_32f_log2_32f generic generic
+#
 cp ./volk_config ~/.volk/
 ```
 
