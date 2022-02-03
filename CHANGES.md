@@ -4,7 +4,7 @@
 
 ## Platforms tested
 
-* Mac mini 2018, macOS 12.0.1 x86\_64, Xcode 13.1
+* Mac mini 2018, macOS 12.2 x86\_64, Xcode 13.1 Command Line Tools
 * MacBook Air Apple Silicon 2020, macOS 12.0.1 arm64, Xcode 13.1 Command Line Tools
 * Ubuntu 21.10 x86\_64
 
@@ -15,11 +15,11 @@
 
 ## Known limitations
 
-
 * For Raspberry Pi 3 and 4, Airspy R2 10Msps and Airspy Mini 6Msps sampling rates are *not supported* due to the hardware limitation. Use in 2.5Msps for R2, 3Msps for Mini.
 
 ## Changes (including requirement changes)
 
+* 20220203-0: Explicitly state that pipe is not supported for `-W` and `-G` RIFF/WAV file output options.
 * 20211209-0: Support for Apple Silicon M1: Add more default dirctories to CMakeLists.txt, add VOLK 2.5 installation instruction
 * 20211101-0: `handle_sigterm()` now uses `psignal()` instead of `strsignal()` for the thread safety of Linux. Also fixed the bug of not saving `errno` in the signal handler. This bug was found by the ThreadSanitizer of macOS clang.
 * 20211022-0: minor bugfix of COEFF\_MONITOR coefficient display code.

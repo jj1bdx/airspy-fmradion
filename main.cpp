@@ -50,7 +50,7 @@
 // define this for enabling coefficient monitor functions
 // #undef COEFF_MONITOR
 
-#define AIRSPY_FMRADION_VERSION "20211209-0"
+#define AIRSPY_FMRADION_VERSION "20220203-0"
 
 /** Flag is set on SIGINT / SIGTERM. */
 static std::atomic_bool stop_flag(false);
@@ -129,8 +129,10 @@ void usage() {
       "                 use filename '-' to write to stdout\n"
       "  -W filename    Write audio data to RF64/WAV S16_LE file\n"
       "                 use filename '-' to write to stdout\n"
+      "                 (Pipe is not supported)\n"
       "  -G filename    Write audio data to RF64/WAV FLOAT_LE file\n"
       "                 use filename '-' to write to stdout\n"
+      "                 (Pipe is not supported)\n"
       "  -P device_num  Play audio via PortAudio device index number\n"
       "                 use string '-' to specify the default PortAudio "
       "device\n"

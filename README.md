@@ -2,7 +2,7 @@
 
 # airspy-fmradion
 
-* Version 20211209-0
+* Version 20220203-0
 * For MacOS (both Intel and Apple Silicon) and Linux
 
 ## Contributing
@@ -33,12 +33,12 @@ airspy-fmradion -t airspy -q \
     -c freq=88100000,srate=10000000,lgain=2,mgain=0,vgain=10 \
     -b 1.0 -P -
 
-# 16-bit signed integer WAV output
+# 16-bit signed integer WAV output (pipe is not supported)
 airspy-fmradion -t airspyhf -q \
     -c freq=88100000,srate=768000 \
     -b 1.0 -W output_s16_le.wav
 
-# 32-bit float WAV output
+# 32-bit float WAV output (pipe is not supported)
 airspy-fmradion -m am -t airspyhf -q \
     -c freq=666000 \
     -b 0.5 -G output_f32_le.wav
@@ -179,8 +179,8 @@ Compile and install
  - `-M` Disable stereo decoding
  - `-R filename` Write audio data as raw `S16_LE` samples. Use filename `-` to write to stdout
  - `-F filename` Write audio data as raw `FLOAT_LE` samples. Use filename `-` to write to stdout
- - `-W filename` Write audio data as RF64/WAV `S16_LE` samples. Use filename `-` to write to stdout
- - `-G filename` Write audio data as RF64/WAV `FLOAT_LE` samples. Use filename `-` to write to stdout
+ - `-W filename` Write audio data as RF64/WAV `S16_LE` samples. Use filename `-` to write to stdout (*pipe is not supported*)
+ - `-G filename` Write audio data as RF64/WAV `FLOAT_LE` samples. Use filename `-` to write to stdout (*pipe is not supported*)
  - `-P device_num` Play audio via PortAudio device index number. Use string `-` to specify the default PortAudio device
  - `-T filename` Write pulse-per-second timestamps. Use filename '-' to write to stdout
  - `-b seconds` Set audio buffer size in seconds (default: 1 second)
