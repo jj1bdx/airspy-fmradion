@@ -1144,6 +1144,8 @@ int main(int argc, char **argv) {
 
   // No cleanup needed; everything handled by destructors
 
+  fprintf(stderr, "airspy-fmradion terminated\n");
+
   return 0;
 }
 

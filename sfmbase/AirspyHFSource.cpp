@@ -65,10 +65,6 @@ AirspyHFSource::AirspyHFSource(int dev_index)
     return;
   }
 
-  // EXPERIMENTAL:
-  // Open the device by opening-closing-opening
-  // to ensure the internal state reset.
-
   // Open the matched device.
   airspyhf_error rc =
       (airspyhf_error)airspyhf_open_sn(&m_dev, m_serials[dev_index]);
@@ -77,18 +73,6 @@ AirspyHFSource::AirspyHFSource(int dev_index)
     err_ostr
         << "Failed to open Airspy HF device for the first time at device index "
         << dev_index;
-    m_error = err_ostr.str();
-    m_dev = 0;
-  }
-  // Close it once to reopen.
-  airspyhf_close(m_dev);
-  // Reopen the device.
-  rc = (airspyhf_error)airspyhf_open_sn(&m_dev, m_serials[dev_index]);
-  if (rc != AIRSPYHF_SUCCESS) {
-    std::ostringstream err_ostr;
-    err_ostr << "Failed to open Airspy HF device for the second time at device "
-                "index "
-             << dev_index;
     m_error = err_ostr.str();
     m_dev = 0;
   }
@@ -133,10 +117,15 @@ AirspyHFSource::AirspyHFSource(int dev_index)
 }
 
 AirspyHFSource::~AirspyHFSource() {
+#ifdef DEBUG_AIRSPYHFSOURCE
+  std::cerr << "AirspyHFSource::~AirspyHFSource()" << std::endl;
+#endif
+#if 0
   if (m_dev) {
     airspyhf_close(m_dev);
   }
   m_this = 0;
+#endif
 }
 
 void AirspyHFSource::get_device_names(std::vector<std::string> &devices) {
@@ -360,8 +349,8 @@ bool AirspyHFSource::start(DataBuffer<IQSample> *buf,
     std::cerr << "AirspySource::start: starting" << std::endl;
 #endif
     m_running = true;
-    m_thread = new std::thread(run, m_dev, stop_flag);
-    return *this;
+    m_thread = new std::thread(run, m_dev, m_stop_flag);
+    return true;
   } else {
     std::cerr << "AirspyHFSource::start: error" << std::endl;
     m_error = "Source thread already started";
@@ -370,7 +359,7 @@ bool AirspyHFSource::start(DataBuffer<IQSample> *buf,
 }
 
 void AirspyHFSource::run(airspyhf_device *dev, std::atomic_bool *stop_flag) {
-#ifdef DEBUG_AIRSPYSOURCE
+#ifdef DEBUG_AIRSPYHFSOURCE
   std::cerr << "AirspyHFSource::run" << std::endl;
 #endif
   airspyhf_error rc = (airspyhf_error)airspyhf_start(dev, rx_callback, nullptr);
@@ -379,13 +368,6 @@ void AirspyHFSource::run(airspyhf_device *dev, std::atomic_bool *stop_flag) {
     while (!stop_flag->load() && (airspyhf_is_streaming(dev) == true)) {
       sleep(1);
     }
-
-    rc = (airspyhf_error)airspyhf_stop(dev);
-
-    if (rc != AIRSPYHF_SUCCESS) {
-      std::cerr << "AirspyHFSource::run: Cannot stop Airspy HF Rx: " << rc
-                << std::endl;
-    }
   } else {
     std::cerr << "AirspyHFSource::run: Cannot start Airspy HF Rx: " << rc
               << std::endl;
@@ -393,9 +375,20 @@ void AirspyHFSource::run(airspyhf_device *dev, std::atomic_bool *stop_flag) {
 }
 
 bool AirspyHFSource::stop() {
-#ifdef DEBUG_AIRSPYSOURCE
+#ifdef DEBUG_AIRSPYHFSOURCE
   std::cerr << "AirspyHFSource::stop" << std::endl;
 #endif
+  airspyhf_error rc = (airspyhf_error)airspyhf_stop(m_dev);
+    if (rc != AIRSPYHF_SUCCESS) {
+      std::cerr << "AirspyHFSource::run: Cannot stop Airspy HF Rx: " << rc
+                << std::endl;
+    }
+
+  rc = (airspyhf_error)airspyhf_close(m_dev);
+  if (rc != AIRSPYHF_SUCCESS) {
+    std::cerr << "AirspyHFSource::run: Cannot close Airspy HF Rx: " << rc
+              << std::endl;
+  }
   m_thread->join();
   delete m_thread;
   return true;
