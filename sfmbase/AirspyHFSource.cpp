@@ -379,10 +379,10 @@ bool AirspyHFSource::stop() {
   std::cerr << "AirspyHFSource::stop" << std::endl;
 #endif
   airspyhf_error rc = (airspyhf_error)airspyhf_stop(m_dev);
-    if (rc != AIRSPYHF_SUCCESS) {
-      std::cerr << "AirspyHFSource::run: Cannot stop Airspy HF Rx: " << rc
-                << std::endl;
-    }
+  if (rc != AIRSPYHF_SUCCESS) {
+    std::cerr << "AirspyHFSource::run: Cannot stop Airspy HF Rx: " << rc
+              << std::endl;
+  }
 
   rc = (airspyhf_error)airspyhf_close(m_dev);
   if (rc != AIRSPYHF_SUCCESS) {
