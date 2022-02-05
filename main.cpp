@@ -310,6 +310,7 @@ void *process_signals(void *arg) {
     }
     switch (signum) {
     case SIGINT:
+    case SIGQUIT:
     case SIGTERM:
       stop_flag.store(true);
       psignal(signum, "\nStopping by getting signal");
@@ -354,10 +355,11 @@ int main(int argc, char **argv) {
   int err;
   pthread_t sigmask_thread_id;
 
-  // Perform signal mask on SIGINT and SIGTERM.
+  // Perform signal mask on SIGINT, SIGQUIT, and SIGTERM.
   // See APUE 3rd Figure 12.16.
   sigemptyset(&signalmask);
   sigaddset(&signalmask, SIGINT);
+  sigaddset(&signalmask, SIGQUIT);
   sigaddset(&signalmask, SIGTERM);
   if ((err = pthread_sigmask(SIG_BLOCK, &signalmask, &old_signalmask)) != 0) {
     fprintf(stderr, "ERROR: can not mask signals (%s)\n", strerror(err));
@@ -1155,14 +1157,12 @@ int main(int argc, char **argv) {
   }
 
   // End of main loop
-
   fprintf(stderr, "\n");
-
-  // Join background threads.
-  up_srcsdr->stop();
-
+  // Terminate background audio output thread first.
   output_buffer.push_end();
   output_thread.join();
+  // Terminate receiver thread.
+  up_srcsdr->stop();
 
   // No cleanup needed; everything handled by destructors
 
