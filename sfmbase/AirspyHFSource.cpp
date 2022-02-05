@@ -381,12 +381,6 @@ bool AirspyHFSource::stop() {
     std::cerr << "AirspyHFSource::run: Cannot stop Airspy HF Rx: " << rc
               << std::endl;
   }
-
-  rc = (airspyhf_error)airspyhf_stop(m_dev);
-  if (rc != AIRSPYHF_SUCCESS) {
-    std::cerr << "AirspyHFSource::run: Cannot stop Airspy HF Rx: " << rc
-              << std::endl;
-  }
   m_thread->join();
   delete m_thread;
   return true;
