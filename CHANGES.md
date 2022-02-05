@@ -2,10 +2,14 @@
 
 # changes and known issues of airspy-fmradion
 
+## libusb-1.0.25 glitch on macOS
+
+The author has noticed [libusb-1.0.25 on macOS 12.2 causes segfault when stopping the code with SIGINT or SIGTERM with Airspy HF+ Discovery](https://github.com/jj1bdx/airspy-fmradion/issues/35). Version 20220205-0 has a workaround to prevent data loss for this bug: the main() loop closes the audio output before calling the function which might cause this segmentation fault (SIGSEGV), which is the stopping function of the SDR source driver.
+
 ## Platforms tested
 
 * Mac mini 2018, macOS 12.2 x86\_64, Xcode 13.1 Command Line Tools
-* MacBook Air Apple Silicon 2020, macOS 12.0.1 arm64, Xcode 13.1 Command Line Tools
+* MacBook Air Apple Silicon 2020, macOS 12.2 arm64, Xcode 13.1 Command Line Tools
 * Ubuntu 21.10 x86\_64
 
 ## Features under development
@@ -19,6 +23,7 @@
 
 ## Changes (including requirement changes)
 
+* 20220205-0: Signal handling is now performed on a dedicated thread. SIGQUIT is also captured and will terminate the program gracefully as SIGINT and SIGTERM does. Redundant initialization sequences removed from Airspy HF+ source driver.
 * 20220203-0: Explicitly state that pipe is not supported for `-W` and `-G` RIFF/WAV file output options.
 * 20211209-0: Support for Apple Silicon M1: Add more default dirctories to CMakeLists.txt, add VOLK 2.5 installation instruction
 * 20211101-0: `handle_sigterm()` now uses `psignal()` instead of `strsignal()` for the thread safety of Linux. Also fixed the bug of not saving `errno` in the signal handler. This bug was found by the ThreadSanitizer of macOS clang.

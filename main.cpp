@@ -50,9 +50,10 @@
 // define this for enabling coefficient monitor functions
 // #undef COEFF_MONITOR
 
-#define AIRSPY_FMRADION_VERSION "20220204-dev3"
+#define AIRSPY_FMRADION_VERSION "20220205-0"
 
-/** Flag is set on SIGINT / SIGTERM. */
+// Flag to set graceful termination
+// in process_signals()
 static std::atomic_bool stop_flag(false);
 
 /**
