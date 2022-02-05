@@ -88,17 +88,6 @@ void write_output_data(AudioOutput *output, DataBuffer<Sample> *buf,
   }
 }
 
-// Handle SIGINT and SIGTERM
-static void handle_sigterm(int sig) {
-  // save errno in the signalhandler
-  int old_errno = errno;
-  stop_flag.store(true);
-  // Uses psignal() to make this thread-safe
-  psignal(sig, "\nStopping by getting signal");
-  // restore saved errno
-  errno = old_errno;
-}
-
 void usage() {
   fprintf(
       stderr,
@@ -305,6 +294,35 @@ static bool get_device(std::vector<std::string> &devnames, DevType devtype,
   return true;
 }
 
+// Signal masks to let these signals handled by a dedicated thread.
+static sigset_t old_signalmask, signalmask;
+
+// Signal handling thread code, started from main().
+// See APUE 3rd Figure 12.16.
+void *process_signals(void *arg) {
+  int err, signum;
+  for (;;) {
+    // wait for a signal
+    err = sigwait(&signalmask, &signum);
+    if (err != 0) {
+      fprintf(stderr, "ERROR: sigwait failed, (%s)\n", strerror(err));
+      exit(1);
+    }
+    switch (signum) {
+    case SIGINT:
+    case SIGTERM:
+      stop_flag.store(true);
+      psignal(signum, "\nStopping by getting signal");
+      break;
+    default:
+      psignal(signum, "\nERROR: unexpected signal");
+      exit(1);
+    }
+  }
+}
+
+// Main program.
+
 int main(int argc, char **argv) {
 
   int devidx = 0;
@@ -333,7 +351,27 @@ int main(int argc, char **argv) {
   FilterType filtertype = FilterType::Default;
   std::vector<std::string> devnames;
   Source *srcsdr = 0;
+  int err;
+  pthread_t sigmask_thread_id;
 
+  // Perform signal mask on SIGINT and SIGTERM.
+  // See APUE 3rd Figure 12.16.
+  sigemptyset(&signalmask);
+  sigaddset(&signalmask, SIGINT);
+  sigaddset(&signalmask, SIGTERM);
+  if ((err = pthread_sigmask(SIG_BLOCK, &signalmask, &old_signalmask)) != 0) {
+    fprintf(stderr, "ERROR: can not mask signals (%s)\n", strerror(err));
+    exit(1);
+  }
+  // Start thread to catch the masked signals.
+  err = pthread_create(&sigmask_thread_id, NULL, process_signals, 0);
+  if (err != 0) {
+    fprintf(stderr, "ERROR: unable to create pthread of process_signals(%s)\n",
+            strerror(err));
+    exit(1);
+  }
+
+  // Print starting messages.
   fprintf(stderr, "airspy-fmradion " AIRSPY_FMRADION_VERSION "\n");
   fprintf(stderr, "Software FM/AM radio for ");
   fprintf(stderr, "Airspy R2, Airspy HF+, and RTL-SDR\n");
@@ -520,22 +558,6 @@ int main(int argc, char **argv) {
   } else {
     fprintf(stderr, "Filter type string unsuppored\n");
     exit(1);
-  }
-
-  // Catch Ctrl-C and SIGTERM
-  struct sigaction sigact;
-  sigact.sa_handler = handle_sigterm;
-  sigemptyset(&sigact.sa_mask);
-  sigact.sa_flags = SA_RESETHAND;
-
-  if (sigaction(SIGINT, &sigact, nullptr) < 0) {
-    fprintf(stderr, "WARNING: can not install SIGINT handler (%s)\n",
-            strerror(errno));
-  }
-
-  if (sigaction(SIGTERM, &sigact, nullptr) < 0) {
-    fprintf(stderr, "WARNING: can not install SIGTERM handler (%s)\n",
-            strerror(errno));
   }
 
   // Open PPS file.
