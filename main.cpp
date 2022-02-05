@@ -50,7 +50,7 @@
 // define this for enabling coefficient monitor functions
 // #undef COEFF_MONITOR
 
-#define AIRSPY_FMRADION_VERSION "20220205-dev1"
+#define AIRSPY_FMRADION_VERSION "20220205-1"
 
 // Flag to set graceful termination
 // in process_signals()
@@ -1170,11 +1170,10 @@ int main(int argc, char **argv) {
   // Note: libusb-1.0.25 causes crashing of this function.
   up_srcsdr->stop();
 
-  // No cleanup needed; everything handled by destructors
-
   fprintf(stderr, "airspy-fmradion terminated\n");
-
-  return 0;
+  
+  // Perform explicit exit here to avoid libusb-1.0.25 segfault issue
+  exit(0);
 }
 
 // end

@@ -23,6 +23,7 @@ The author has noticed [libusb-1.0.25 on macOS 12.2 causes segfault when stoppin
 
 ## Changes (including requirement changes)
 
+* 20220205-1: Rolled back Airspy HF+ source driver stop/close semantics. Add exit(0) at the end of program to force-exit the code to avoid causing segfault.
 * 20220205-0: Signal handling is now performed on a dedicated thread. SIGQUIT is also captured and will terminate the program gracefully as SIGINT and SIGTERM does. Redundant initialization sequences removed from Airspy HF+ source driver.
 * 20220203-0: Explicitly state that pipe is not supported for `-W` and `-G` RIFF/WAV file output options.
 * 20211209-0: Support for Apple Silicon M1: Add more default dirctories to CMakeLists.txt, add VOLK 2.5 installation instruction
