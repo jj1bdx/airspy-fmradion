@@ -1161,7 +1161,12 @@ int main(int argc, char **argv) {
   // Terminate background audio output thread first.
   output_buffer.push_end();
   output_thread.join();
+  // Close audio output.
+  audio_output->output_close();
+  // DEBUG: fprintf(stderr, "Audio Output closed\n");
+
   // Terminate receiver thread.
+  // Note: libusb-1.0.25 causes crashing of this function.
   up_srcsdr->stop();
 
   // No cleanup needed; everything handled by destructors
