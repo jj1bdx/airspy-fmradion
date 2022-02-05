@@ -42,6 +42,9 @@ public:
    */
   virtual bool write(const SampleVector &samples) = 0;
 
+  // Close audio output.
+  virtual void output_close() = 0;
+
   /** Return the last error, or return an empty string if there is no error. */
   std::string error() {
     std::string ret(m_error);
@@ -56,11 +59,12 @@ public:
 
 protected:
   /** Constructor. */
-  AudioOutput() : m_zombie(false) {}
+  AudioOutput() : m_zombie(false), m_closed(false) {}
 
   std::string m_error;
   bool m_zombie;
   std::string m_device_name;
+  bool m_closed;
 
 private:
   AudioOutput(const AudioOutput &);            // no copy constructor
@@ -83,6 +87,7 @@ public:
 
   virtual ~SndfileOutput() override;
   virtual bool write(const SampleVector &samples) override;
+  virtual void output_close() override;
 
 private:
   const unsigned numberOfChannels;
@@ -105,6 +110,7 @@ public:
 
   virtual ~PortAudioOutput() override;
   virtual bool write(const SampleVector &samples) override;
+  virtual void output_close() override;
 
 private:
   // Terminate PortAudio

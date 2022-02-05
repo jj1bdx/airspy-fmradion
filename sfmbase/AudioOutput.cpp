@@ -93,12 +93,22 @@ SndfileOutput::SndfileOutput(const std::string &filename,
   m_device_name = "SndfileOutput";
 }
 
-// Destructor.
-SndfileOutput::~SndfileOutput() {
+// Output closing method.
+void SndfileOutput::output_close() {
   // Nothing special to handle m_zombie..
   // Done writing the file
   if (m_sndfile) {
     sf_close(m_sndfile);
+  }
+  // Set closed flag to prevent multiple closing
+  m_closed = true;
+}
+
+// Destructor.
+SndfileOutput::~SndfileOutput() {
+  // close output if not yet closed
+  if (!m_closed) {
+    SndfileOutput::output_close();
   }
 }
 
@@ -176,14 +186,24 @@ PortAudioOutput::PortAudioOutput(const PaDeviceIndex device_index,
   }
 }
 
-// Destructor.
-PortAudioOutput::~PortAudioOutput() {
+// Output closing method.
+void PortAudioOutput::output_close() {
   m_paerror = Pa_StopStream(m_stream);
   if (m_paerror != paNoError) {
     add_paerror("Pa_StopStream()");
     return;
   }
   Pa_Terminate();
+  // Set closed flag to prevent multiple closing
+  m_closed = true;
+}
+
+// Destructor.
+PortAudioOutput::~PortAudioOutput() {
+  // close output if not yet closed
+  if (!m_closed) {
+    PortAudioOutput::output_close();
+  }
 }
 
 // Write audio data.
