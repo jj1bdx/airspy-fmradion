@@ -120,12 +120,10 @@ AirspyHFSource::~AirspyHFSource() {
 #ifdef DEBUG_AIRSPYHFSOURCE
   std::cerr << "AirspyHFSource::~AirspyHFSource()" << std::endl;
 #endif
-#if 0
   if (m_dev) {
     airspyhf_close(m_dev);
   }
   m_this = 0;
-#endif
 }
 
 void AirspyHFSource::get_device_names(std::vector<std::string> &devices) {
@@ -384,9 +382,9 @@ bool AirspyHFSource::stop() {
               << std::endl;
   }
 
-  rc = (airspyhf_error)airspyhf_close(m_dev);
+  rc = (airspyhf_error)airspyhf_stop(m_dev);
   if (rc != AIRSPYHF_SUCCESS) {
-    std::cerr << "AirspyHFSource::run: Cannot close Airspy HF Rx: " << rc
+    std::cerr << "AirspyHFSource::run: Cannot stop Airspy HF Rx: " << rc
               << std::endl;
   }
   m_thread->join();
