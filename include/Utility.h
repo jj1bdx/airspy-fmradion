@@ -263,6 +263,16 @@ inline void adjust_gain(SampleVector &samples, double gain) {
   }
 }
 
+// Sleep in milliseconds.
+inline void millisleep(unsigned int milliseconds) {
+  struct timespec ts_sleep =
+  {
+    .tv_sec = milliseconds / 1000,
+    .tv_nsec = (milliseconds % 1000) * 1000000L	  			
+  };
+  nanosleep(&ts_sleep, NULL);
+}
+
 }; // namespace Utility
 
 #endif /* INCLUDE_UTILITY_H_ */
