@@ -28,6 +28,7 @@
 
 #include "AirspyHFSource.h"
 #include "ConfigParser.h"
+#include "Utility.h"
 
 // #define DEBUG_AIRSPYHFSOURCE 1
 
@@ -364,7 +365,7 @@ void AirspyHFSource::run(airspyhf_device *dev, std::atomic_bool *stop_flag) {
 
   if (rc == AIRSPYHF_SUCCESS) {
     while (!stop_flag->load() && (airspyhf_is_streaming(dev) == true)) {
-      sleep(1);
+	    Utility::millisleep(100);
     }
   } else {
     std::cerr << "AirspyHFSource::run: Cannot start Airspy HF Rx: " << rc
