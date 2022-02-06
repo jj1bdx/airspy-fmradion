@@ -2,9 +2,14 @@
 
 # changes and known issues of airspy-fmradion
 
-## libusb-1.0.25 glitch on macOS
+## libusb-1.0.25 glitch
 
-The author has noticed [libusb-1.0.25 on macOS 12.2 causes segfault when stopping the code with SIGINT or SIGTERM with Airspy HF+ Discovery](https://github.com/jj1bdx/airspy-fmradion/issues/35). Version 20220205-0 has a workaround to prevent data loss for this bug: the main() loop closes the audio output before calling the function which might cause this segmentation fault (SIGSEGV), which is the stopping function of the SDR source driver.
+* The author has noticed [libusb-1.0.25 on macOS 12.2 causes segfault when stopping the code with SIGINT or SIGTERM with Airspy HF+ Discovery](https://github.com/jj1bdx/airspy-fmradion/issues/35). 
+* A proper fix of this is to [fix the Airspy HF+ driver](https://github.com/airspy/airspyhf/pull/31).
+* [A similar case of SDR++ with ArchLinux](https://github.com/libusb/libusb/issues/1059#issuecomment-1030638617) is also reported.
+* Since Version 20220205-0, a workaround is implemented to prevent data loss for this bug: the main() loop closes the audio output before calling the function which might cause this segmentation fault (SIGSEGV), which is the stopping function of the SDR source driver. 
+* Airspy R2 and Mini are not affected. Use the latest driver with [this fix](https://github.com/airspy/airspyone_host/commit/41c439f16818d931c4d0f8a620413ea5131c0bd6).
+* You can still use 20220205-1 if you need to; there is no functional difference between 20220205-1 and 20220206-0.
 
 ## Platforms tested
 
@@ -23,6 +28,7 @@ The author has noticed [libusb-1.0.25 on macOS 12.2 causes segfault when stoppin
 
 ## Changes (including requirement changes)
 
+* 20220206-0: Rolled back the workaround of exit(0) in 20220205-1, because this is no longer necessary when a proper fix is done on Airspy HF+ driver.
 * 20220205-1: Rolled back Airspy HF+ source driver stop/close semantics. Add exit(0) at the end of program to force-exit the code to avoid causing segfault.
 * 20220205-0: Signal handling is now performed on a dedicated thread. SIGQUIT is also captured and will terminate the program gracefully as SIGINT and SIGTERM does. Redundant initialization sequences removed from Airspy HF+ source driver.
 * 20220203-0: Explicitly state that pipe is not supported for `-W` and `-G` RIFF/WAV file output options.

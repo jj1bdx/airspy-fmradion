@@ -2,16 +2,18 @@
 
 # airspy-fmradion
 
-* Version 20220205-0
+* Version 20220206-0
 * For MacOS (both Intel and Apple Silicon) and Linux
 
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the details.
 
-## libusb-1.0.25 glitch on macOS
+## libusb-1.0.25 glitch
 
-See this issue: [libusb-1.0.25 on macOS 12.2 causes segfault when stopping the code with SIGINT or SIGTERM with Airspy HF+ Discovery](https://github.com/jj1bdx/airspy-fmradion/issues/35). A workaround is added on 20220205-0 and 20220205-1.
+* libusb-1.0.25 with Airspy HF+ may cause crash at the exit sequence.
+* A proper fix for this is to [fix the Airspy HF+ driver](https://github.com/airspy/airspyhf/pull/31).
+* See CHANGES.md for the details.
 
 ## Known issues and changes
 

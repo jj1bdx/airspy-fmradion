@@ -50,7 +50,7 @@
 // define this for enabling coefficient monitor functions
 // #undef COEFF_MONITOR
 
-#define AIRSPY_FMRADION_VERSION "20220205-1"
+#define AIRSPY_FMRADION_VERSION "20220206-0"
 
 // Flag to set graceful termination
 // in process_signals()
@@ -1159,21 +1159,22 @@ int main(int argc, char **argv) {
 
   // End of main loop
   fprintf(stderr, "\n");
+
   // Terminate background audio output thread first.
   output_buffer.push_end();
   output_thread.join();
   // Close audio output.
   audio_output->output_close();
-  // DEBUG: fprintf(stderr, "Audio Output closed\n");
 
   // Terminate receiver thread.
-  // Note: libusb-1.0.25 causes crashing of this function.
+  // Note: libusb-1.0.25 with Airspy HF+ driver
+  // may cause crashing of this function.
   up_srcsdr->stop();
 
   fprintf(stderr, "airspy-fmradion terminated\n");
-  
-  // Perform explicit exit here to avoid libusb-1.0.25 segfault issue
-  exit(0);
+
+  // Destructors of the source driver and other objects
+  // will perform the proper cleanup.
 }
 
 // end
