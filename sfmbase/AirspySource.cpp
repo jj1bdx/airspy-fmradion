@@ -27,6 +27,7 @@
 
 #include "AirspySource.h"
 #include "ConfigParser.h"
+#include "Utility.h"
 
 // #define DEBUG_AIRSPYSOURCE 1
 
@@ -464,7 +465,7 @@ void AirspySource::run(airspy_device *dev, std::atomic_bool *stop_flag) {
 
   if (rc == AIRSPY_SUCCESS) {
     while (!stop_flag->load() && (airspy_is_streaming(dev) == AIRSPY_TRUE)) {
-      sleep(1);
+      Utility::millisleep(100);
     }
 
     rc = (airspy_error)airspy_stop_rx(dev);
