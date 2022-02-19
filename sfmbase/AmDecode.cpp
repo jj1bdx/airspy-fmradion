@@ -93,8 +93,11 @@ AmDecoder::AmDecoder(IQSampleCoeff &amfilter_coeff, const ModType mode)
                   ? 0.1
                   // default value
                   : 0.2,
-              0.002 // rate
-              )
+              // rate
+              ((m_mode == ModType::CW) || (m_mode == ModType::WSPR))
+                  ? 0.0025
+                  // default value
+                  : 0.002)
 
       // Construct IF AGC
       // Use as AM level compressor, raise the level to one
@@ -103,11 +106,14 @@ AmDecoder::AmDecoder(IQSampleCoeff &amfilter_coeff, const ModType mode)
               100000.0, // max_gain
               ((m_mode == ModType::USB) || (m_mode == ModType::LSB)) ? 0.25
               : ((m_mode == ModType::CW) || (m_mode == ModType::WSPR))
-                  ? 0.25
+                  ? 0.1
                   // default value
                   : 0.7,
-              0.001 // rate
-              )
+              // rate
+              ((m_mode == ModType::CW) || (m_mode == ModType::WSPR))
+                  ? 0.005
+                  // default value
+                  : 0.001)
 
       // fine tuner for CW pitch shifting (shift up 500Hz)
       // sampling rate: 12kHz
