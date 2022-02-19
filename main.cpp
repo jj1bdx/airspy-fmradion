@@ -50,7 +50,7 @@
 // define this for enabling coefficient monitor functions
 // #undef COEFF_MONITOR
 
-#define AIRSPY_FMRADION_VERSION "20220206-dev1"
+#define AIRSPY_FMRADION_VERSION "20220219-dev1"
 
 // Flag to set graceful termination
 // in process_signals()
