@@ -74,9 +74,10 @@ For the latest version, see https://github.com/jj1bdx/airspy-fmradion
 ### Branches and tags
 
   - Official releases are tagged
-  - _master_ is the "production" branch with the most stable release (often ahead of the latest release though)
-  - _dev_ is the development branch that contains current developments that will be eventually released in the master branch
+  - _main_ is the "production" branch with the most stable release (often ahead of the latest release though)
+  - _dev_ is the development branch that contains current developments that will be eventually released in the main branch
   - Other branches are experimental (and presumably abandoned)
+  - The `master` branch is deprecated and to be deleted. Use _main_ branch.
 
 ## Prerequisites
 
@@ -88,7 +89,7 @@ airspy-fmradion sets the default sampling rates to 384kHz for FM broadcast, and 
 
 ### Required libraries
 
-Note: the master branch of libvolk is now required from v0.8.1.
+Note: the main (formerly master) branch of libvolk is now required from v0.8.1.
 
 If you install from source in your own installation path, you have to specify the include path and library path.
 For example if you installed it in `/opt/install/libairspy` you have to add `-DAIRSPY_INCLUDE_DIR=/opt/install/libairspy/include -DAIRSPYHF_INCLUDE_DIR=/opt/install/libairspyhf/include` to the cmake options.
