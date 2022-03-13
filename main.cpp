@@ -51,7 +51,7 @@
 // define this for enabling coefficient monitor functions
 // #undef COEFF_MONITOR
 
-#define AIRSPY_FMRADION_VERSION "20220221-0"
+#define AIRSPY_FMRADION_VERSION "20220313-0"
 
 // Flag to set graceful termination
 // in process_signals()
@@ -156,6 +156,7 @@ void usage() {
       "  -r ppm         Set IF offset in ppm (range: +-1000000ppm)\n"
       "                 (This option affects output pitch and timing:\n"
       "                  use for the output timing compensation only!)\n"
+      "  -A             (FM only) experimental 10Hz-step IF AFC\n"
       "\n"
       "Configuration options for RTL-SDR devices\n"
       "  freq=<int>     Frequency of radio station in Hz (default 100000000)\n"
@@ -345,6 +346,7 @@ int main(int argc, char **argv) {
   int multipathfilter_stages = 0;
   bool ifrate_offset_enable = false;
   double ifrate_offset_ppm = 0;
+  bool enable_fm_afc = false;
   std::string config_str;
   std::string devtype_str;
   DevType devtype;
@@ -400,10 +402,11 @@ int main(int argc, char **argv) {
       {"squelch", required_argument, nullptr, 'l'},
       {"multipathfilter", required_argument, nullptr, 'E'},
       {"ifrateppm", optional_argument, nullptr, 'r'},
+      {"afc", optional_argument, nullptr, 'A'},
       {nullptr, no_argument, nullptr, 0}};
 
   int c, longindex;
-  while ((c = getopt_long(argc, argv, "m:t:c:d:MR:F:W:G:f:l:P:T:b:qXUE:r:",
+  while ((c = getopt_long(argc, argv, "m:t:c:d:MR:F:W:G:f:l:P:T:b:qXUE:r:A",
                           longopts, &longindex)) >= 0) {
     switch (c) {
     case 'm':
@@ -486,6 +489,9 @@ int main(int argc, char **argv) {
           std::fabs(ifrate_offset_ppm) > 1000000.0) {
         badarg("-r");
       }
+      break;
+    case 'A':
+      enable_fm_afc = true;
       break;
     default:
       usage();
@@ -971,15 +977,13 @@ int main(int argc, char **argv) {
     // within the range of +- 1ppm (~100Hz or less).
 
     // Experimental FM broadcast AFC code
-    if (modtype == ModType::FM) {
+    if (modtype == ModType::FM && enable_fm_afc) {
       // get the frequency offset
       fm_afc_average.feed(fm.get_tuning_offset());
       if ((block % fm_afc_average_stages) == 0) {
         fm_afc_offset_sum += 0.7 * fm_afc_average.average();
         fm_afc_finetuner.set_freq_shift(
             -((unsigned int)std::round(fm_afc_offset_sum / fm_afc_hz_step)));
-        fprintf(stderr, " offset_sum=%9.3f\n", fm_afc_offset_sum);
-        fflush(stderr);
       }
       fm_afc_finetuner.process(iqsamples, if_afc_samples);
     } else {

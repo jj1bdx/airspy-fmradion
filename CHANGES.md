@@ -28,6 +28,7 @@
 
 ## Changes (including requirement changes)
 
+* 20220313-0: Moved FineTuner object into independent files. Added experimental 10Hz-step IF AFC for FM broadcast (use `-A` option to enable). Simplified INSTALL-latest-libvolk.md.
 * 20220221-0: Shortened polling periods for Airspy R2/Mini and Airspy HF+ from 1 second to 100 milliseconds. Also reduced AGC output levels for CW and WSPR to prevent output overdrive.
 * 20220206-0: Rolled back the workaround of exit(0) in 20220205-1, because this is no longer necessary when a proper fix is done on Airspy HF+ driver.
 * 20220205-1: Rolled back Airspy HF+ source driver stop/close semantics. Add exit(0) at the end of program to force-exit the code to avoid causing segfault.
