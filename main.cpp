@@ -39,6 +39,7 @@
 #include "FileSource.h"
 #include "Filter.h"
 #include "FilterParameters.h"
+#include "FineTuner.h"
 #include "FmDecode.h"
 #include "FourthConverterIQ.h"
 #include "MovingAverage.h"
@@ -892,6 +893,16 @@ int main(int argc, char **argv) {
                              : ppm_average_stages,
       0.0f);
 
+  // Initialize moving average object for FM AFC.
+  const unsigned int fm_afc_average_stages = 1000;
+  MovingAverage<float> fm_afc_average(
+      enable_predownsampling ? fm_afc_average_stages * predownsample_ratio
+                             : fm_afc_average_stages,
+      0.0f);
+  const unsigned int fm_afc_hz_step = 10;
+  FineTuner fm_afc_finetuner((unsigned int)fm_target_rate / fm_afc_hz_step);
+  float fm_afc_offset_sum = 0.0;
+
   unsigned int nchannel = stereo ? 2 : 1;
 
   // If buffering enabled, start background output thread.
@@ -943,6 +954,7 @@ int main(int argc, char **argv) {
     // Pull next block from source buffer.
     IQSampleVector iqsamples = source_buffer.pull();
 
+    IQSampleVector if_afc_samples;
     IQSampleVector if_shifted_samples;
     IQSampleVector if_downsampled_samples;
     IQSampleVector if_samples;
@@ -957,13 +969,30 @@ int main(int argc, char **argv) {
     // Fine tuning is not needed
     // so long as the stability of the receiver device is
     // within the range of +- 1ppm (~100Hz or less).
+
+    // Experimental FM broadcast AFC code
+    if (modtype == ModType::FM) {
+      // get the frequency offset
+      fm_afc_average.feed(fm.get_tuning_offset());
+      if ((block % fm_afc_average_stages) == 0) {
+        fm_afc_offset_sum += fm_afc_average.average();
+        fm_afc_finetuner.set_freq_shift(
+            -((unsigned int)std::round(fm_afc_offset_sum / fm_afc_hz_step)));
+        fprintf(stderr, " offset_sum=%9.3f\n", fm_afc_offset_sum);
+        fflush(stderr);
+      }
+      fm_afc_finetuner.process(iqsamples, if_afc_samples);
+    } else {
+      if_afc_samples = std::move(iqsamples);
+    }
+
     if (enable_fs_fourth_downconverter) {
       // Fs/4 downconvering is required
       // to avoid frequency zero offset
       // because Airspy HF+ and RTL-SDR are Zero IF receivers
-      fourth_downconverter.process(iqsamples, if_shifted_samples);
+      fourth_downconverter.process(if_afc_samples, if_shifted_samples);
     } else {
-      if_shifted_samples = std::move(iqsamples);
+      if_shifted_samples = std::move(if_afc_samples);
     }
 
     // Downsample if pre-downsampling is enable_downsampling
