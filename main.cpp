@@ -975,7 +975,7 @@ int main(int argc, char **argv) {
       // get the frequency offset
       fm_afc_average.feed(fm.get_tuning_offset());
       if ((block % fm_afc_average_stages) == 0) {
-        fm_afc_offset_sum += fm_afc_average.average();
+        fm_afc_offset_sum += 0.7 * fm_afc_average.average();
         fm_afc_finetuner.set_freq_shift(
             -((unsigned int)std::round(fm_afc_offset_sum / fm_afc_hz_step)));
         fprintf(stderr, " offset_sum=%9.3f\n", fm_afc_offset_sum);
