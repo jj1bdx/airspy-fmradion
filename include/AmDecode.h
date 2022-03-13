@@ -24,32 +24,11 @@
 #include "AudioResampler.h"
 #include "Filter.h"
 #include "FilterParameters.h"
+#include "FineTuner.h"
 #include "FourthConverterIQ.h"
 #include "IfAgc.h"
 #include "IfResampler.h"
 #include "SoftFM.h"
-
-// Fine tuner which shifts the frequency of an IQ signal by a fixed offset.
-class FineTuner {
-public:
-  /**
-   * Construct fine tuner.
-   *
-   * table_size :: Size of internal sin/cos tables, determines the resolution
-   *               of the frequency shift.
-   *
-   * freq_shift :: Frequency shift. Signal frequency will be shifted by
-   *               (sample_rate * freq_shift / table_size).
-   */
-  FineTuner(unsigned const int table_size, const int freq_shift);
-
-  /** Process samples. */
-  void process(const IQSampleVector &samples_in, IQSampleVector &samples_out);
-
-private:
-  unsigned int m_index;
-  IQSampleVector m_table;
-};
 
 /** Complete decoder for FM broadcast signal. */
 class AmDecoder {

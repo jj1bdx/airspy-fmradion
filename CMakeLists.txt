@@ -190,6 +190,7 @@ set(sfmbase_SOURCES
     sfmbase/FileSource.cpp
     sfmbase/Filter.cpp
     sfmbase/FilterParameters.cpp
+    sfmbase/FineTuner.cpp
     sfmbase/FmDecode.cpp
     sfmbase/IfAgc.cpp
     sfmbase/IfResampler.cpp
@@ -211,6 +212,7 @@ set(sfmbase_HEADERS
     include/FileSource.h
     include/Filter.h
     include/FilterParameters.h
+    include/FineTuner.h
     include/FmDecode.h
     include/FourthConverterIQ.h
     include/IfAgc.h
