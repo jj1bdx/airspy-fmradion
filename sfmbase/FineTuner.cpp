@@ -22,25 +22,31 @@
 // class FineTuner
 
 // Constructors.
-FineTuner::FineTuner(unsigned const int table_size)
-    : m_table_size(table_size), m_table(table_size) {
-  set_freq_shift(0);
-}
 FineTuner::FineTuner(unsigned const int table_size, const int freq_shift)
-    : m_table_size(table_size), m_table(table_size) {
+    : m_index(0), m_table_size(table_size), m_table(table_size),
+      m_phase_table(table_size) {
   set_freq_shift(freq_shift);
 }
 
-// Set shift frequency table.
+// Set shift frequency table while maintaining the phase continuity.
 void FineTuner::set_freq_shift(const int freq_shift) {
+  // Get the current phase shigt value and set it to the offset,
+  // and if the offset > 2*M_PI, put in in the range of 0 <= offset <= 2*M_PI.
+  // When right after the FineTuner object is constructed,
+  // m_index == 0, and m_phase_table[0] == 0,
+  // so phase offset is set to zero and has no problem.
+  double phase_offset = std::fmod(m_phase_table[m_index], 2.0 * M_PI);
+  m_index = 0;
+  // Initialize the sin/cos and phase values.
   double phase_step = 2.0 * M_PI / double(m_table_size);
   for (unsigned int i = 0; i < m_table_size; i++) {
-    double phi = (((int64_t)freq_shift * i) % m_table_size) * phase_step;
+    double phi = ((((int64_t)freq_shift * i) % m_table_size) * phase_step) +
+                 phase_offset;
     double pcos = cos(phi);
     double psin = sin(phi);
     m_table[i] = IQSample(pcos, psin);
+    m_phase_table[i] = phi;
   }
-  m_index = 0;
 }
 
 // Process samples.

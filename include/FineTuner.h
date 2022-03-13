@@ -31,10 +31,11 @@ public:
   //               of the frequency shift.
   // freq_shift :: Frequency shift. Signal frequency will be shifted by
   //               (sample_rate * freq_shift / table_size).
-  FineTuner(unsigned const int table_size);
   FineTuner(unsigned const int table_size, const int freq_shift);
+  FineTuner(unsigned const int table_size) : FineTuner(table_size, 0) {}
 
   // Initialize freq_shift table.
+  // The phase continuity with ongoing (i.e., phase != 0) table is guaranteed.
   // freq_shift :: Frequency shift. Signal frequency will be shifted by
   //               (sample_rate * freq_shift / table_size).
   void set_freq_shift(const int freq_shift);
@@ -46,6 +47,7 @@ private:
   unsigned int m_index;
   unsigned const int m_table_size;
   IQSampleVector m_table;
+  SampleVector m_phase_table;
 };
 
 #endif
