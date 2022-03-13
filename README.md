@@ -2,7 +2,7 @@
 
 # airspy-fmradion
 
-* Version 20220313-0
+* Version 20220313-1
 * For MacOS (both Intel and Apple Silicon) and Linux
 
 ## Contributing
@@ -200,7 +200,6 @@ Compile and install
  - `-l dB` Enable IF squelch, set the level to minus given value of dB
  - `-E stages` Enable multipath filter for FM (For stable reception only: turn off if reception becomes unstable)
  - `-r ppm` Set IF offset in ppm (range: +-1000000ppm) (Note: this option affects output pitch and timing: *use for the output timing compensation only!*
- - `-A` (For FM only) Experimental 10Hz-step IF AFC
 
 ## Major changes
 
