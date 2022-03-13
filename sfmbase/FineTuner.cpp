@@ -23,14 +23,20 @@
 
 // Construct finetuner.
 FineTuner::FineTuner(unsigned const int table_size, const int freq_shift)
-    : m_index(0), m_table(table_size) {
-  double phase_step = 2.0 * M_PI / double(table_size);
-  for (unsigned int i = 0; i < table_size; i++) {
-    double phi = (((int64_t)freq_shift * i) % table_size) * phase_step;
+    : m_table_size(table_size), m_table(table_size) {
+  set_freq_shift(freq_shift);
+}
+
+// Set shift frequency table.
+void FineTuner::set_freq_shift(const int freq_shift) {
+  double phase_step = 2.0 * M_PI / double(m_table_size);
+  for (unsigned int i = 0; i < m_table_size; i++) {
+    double phi = (((int64_t)freq_shift * i) % m_table_size) * phase_step;
     double pcos = cos(phi);
     double psin = sin(phi);
     m_table[i] = IQSample(pcos, psin);
   }
+  m_index = 0;
 }
 
 // Process samples.
