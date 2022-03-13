@@ -31,6 +31,7 @@ public:
   //               of the frequency shift.
   // freq_shift :: Frequency shift. Signal frequency will be shifted by
   //               (sample_rate * freq_shift / table_size).
+  FineTuner(unsigned const int table_size);
   FineTuner(unsigned const int table_size, const int freq_shift);
 
   // Initialize freq_shift table.

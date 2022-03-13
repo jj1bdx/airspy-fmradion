@@ -21,7 +21,11 @@
 
 // class FineTuner
 
-// Construct finetuner.
+// Constructors.
+FineTuner::FineTuner(unsigned const int table_size)
+    : m_table_size(table_size), m_table(table_size) {
+  set_freq_shift(0);
+}
 FineTuner::FineTuner(unsigned const int table_size, const int freq_shift)
     : m_table_size(table_size), m_table(table_size) {
   set_freq_shift(freq_shift);
