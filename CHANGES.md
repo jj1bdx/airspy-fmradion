@@ -28,6 +28,7 @@
 
 ## Changes (including requirement changes)
 
+* 20220412-0: Re-enabled experimental FM AFC code after the continuous-phase frequency shifting was implemented in the commit 37742981c34e53eb8083af07c0bc518491dc18ee.
 * 20220313-1: Removed experimental FM AFC code due to periodical noise generation. `-A` option is removed as well.
 * 20220313-0: Moved FineTuner object into independent files. Added experimental 10Hz-step IF AFC for FM broadcast (use `-A` option to enable). Simplified INSTALL-latest-libvolk.md.
 * 20220221-0: Shortened polling periods for Airspy R2/Mini and Airspy HF+ from 1 second to 100 milliseconds. Also reduced AGC output levels for CW and WSPR to prevent output overdrive.
