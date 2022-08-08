@@ -180,7 +180,6 @@ set(OPTIMIZATION_FLAGS "-O3 -ftree-vectorize ")
 set(CMAKE_CXX_FLAGS "-Wall -std=c++17 ${OPTIMIZATION_FLAGS} ${AIRSPY_INCLUDE_OPTION} ${AIRSPYHF_INCLUDE_OPTION} ${EXTRA_FLAGS}")
 
 set(sfmbase_SOURCES
-    sfmbase/AfAgc.cpp
     sfmbase/AfSimpleAgc.cpp
     sfmbase/AirspyHFSource.cpp
     sfmbase/AirspySource.cpp
@@ -193,7 +192,6 @@ set(sfmbase_SOURCES
     sfmbase/FilterParameters.cpp
     sfmbase/FineTuner.cpp
     sfmbase/FmDecode.cpp
-    sfmbase/IfAgc.cpp
     sfmbase/IfResampler.cpp
     sfmbase/IfSimpleAgc.cpp
     sfmbase/MultipathFilter.cpp
@@ -203,7 +201,6 @@ set(sfmbase_SOURCES
 )
 
 set(sfmbase_HEADERS
-    include/AfAgc.h
     include/AfSimpleAgc.h
     include/AirspyHFSource.h
     include/AirspySource.h
@@ -218,7 +215,6 @@ set(sfmbase_HEADERS
     include/FineTuner.h
     include/FmDecode.h
     include/FourthConverterIQ.h
-    include/IfAgc.h
     include/IfResampler.h
     include/IfSimpleAgc.h
     include/MovingAverage.h
