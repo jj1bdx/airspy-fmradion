@@ -4,6 +4,7 @@
 
 ## libusb-1.0.25 glitch
 
+* Note: This problem has been fixed by the latest implementation of Airspy HF+ driver after [this commit](https://github.com/airspy/airspyhf/commit/3b823ad8fa729358e0729e6c1ca60ac5dfcd656e).
 * The author has noticed [libusb-1.0.25 on macOS 12.2 causes segfault when stopping the code with SIGINT or SIGTERM with Airspy HF+ Discovery](https://github.com/jj1bdx/airspy-fmradion/issues/35). 
 * A proper fix of this is to [fix the Airspy HF+ driver](https://github.com/airspy/airspyhf/pull/31).
 * [A similar case of SDR++ with ArchLinux](https://github.com/libusb/libusb/issues/1059#issuecomment-1030638617) is also reported.
@@ -19,6 +20,7 @@
 
 ## Features under development
 
+* Since 20220808-0, Tisserand-Berviller AGC algorithm is implemented to IF AGC.
 * Since 20210427-0, C++17 is required (instead of previous C++11). Modern compilers of Raspberry Pi OS, Ubuntu, and macOS do support C++17 extensions.
 * FM Pilot PLL is under revision and reconstruction. Initial analysis result is available at doc/fm-pll-filtereval.py (requires Python 3, SciPy, matplotlib, and NumPy).
 
@@ -28,6 +30,7 @@
 
 ## Changes (including requirement changes)
 
+* 20220808-0: IF AGC is replaced by the Tisserand-Berviller AGC algorithm. This is still experimental and more evaluation is needed.
 * 20220412-0: Re-enabled experimental FM AFC code after the continuous-phase frequency shifting was implemented in the commit 37742981c34e53eb8083af07c0bc518491dc18ee.
 * 20220313-1: Removed experimental FM AFC code due to periodical noise generation. `-A` option is removed as well.
 * 20220313-0: Moved FineTuner object into independent files. Added experimental 10Hz-step IF AFC for FM broadcast (use `-A` option to enable). Simplified INSTALL-latest-libvolk.md.

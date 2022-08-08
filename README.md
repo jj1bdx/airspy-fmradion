@@ -2,7 +2,7 @@
 
 # airspy-fmradion
 
-* Version 20220412-0
+* Version 20220808-0
 * For MacOS (both Intel and Apple Silicon) and Linux
 
 ## Contributing
@@ -333,12 +333,20 @@ Compile and install
 * Filter width: +- 100Hz flat, +-250Hz for cutoff
 * Uses downsampling to 12kHz for applying a steep filter
 
-## AGC algorithm
+## AGC algorithms
+
+### Conventional AGC algorithm up to 20220412-0
 
 * Use simple logarithm-based AGC algorithm, which only depends on the single previous sample
 * See <https://www.mathworks.com/help/comm/ref/comm.agc-system-object.html> for the implementation details
 * IF AGC: gain up to 100dB (100000) (for broadcast FM: 80dB (10000))
 * Audio AGC: gain up to 7dB (5.0)
+
+### Simple AGC with Tisserand-Berviller Algorithm
+
+* Reference: Etienne Tisserand, Yves Berviller. Design and implementation of a new digital automatic gain control. Electronics Letters, IET, 2016, 52 (22), pp.1847 - 1849. ff10.1049/el.2016.1398ff. ffhal-01397371f
+* Implementation reference: <https://github.com/sile/dagc/>
+* Implemented for IF AGC since 20220808-0
 
 ## Airspy R2 / Mini modification from ngsoftfm-jj1bdx
 
