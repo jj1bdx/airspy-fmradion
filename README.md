@@ -347,6 +347,7 @@ Compile and install
 * Reference: Etienne Tisserand, Yves Berviller. Design and implementation of a new digital automatic gain control. Electronics Letters, IET, 2016, 52 (22), pp.1847 - 1849. ff10.1049/el.2016.1398ff. ffhal-01397371f
 * Implementation reference: <https://github.com/sile/dagc/>
 * Implemented for IF AGC since 20220808-0
+* Implemented for AF AGC since 20220808-3
 
 ## Airspy R2 / Mini modification from ngsoftfm-jj1bdx
 

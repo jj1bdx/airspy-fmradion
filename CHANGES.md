@@ -20,6 +20,7 @@
 
 ## Features under development
 
+* Since 20220808-3, Tisserand-Berviller AGC algorithm is implemented also to AF AGC.
 * Since 20220808-0, Tisserand-Berviller AGC algorithm is implemented to IF AGC.
 * Since 20210427-0, C++17 is required (instead of previous C++11). Modern compilers of Raspberry Pi OS, Ubuntu, and macOS do support C++17 extensions.
 * FM Pilot PLL is under revision and reconstruction. Initial analysis result is available at doc/fm-pll-filtereval.py (requires Python 3, SciPy, matplotlib, and NumPy).
@@ -30,6 +31,8 @@
 
 ## Changes (including requirement changes)
 
+* 20220808-3: AF AGC is replaced by the Tisserand-Berviller AGC algorithm. This is still experimental and more evaluation is needed.
+* 20220808-1: commit 40e342b2cf0e6710800c578272caf515a8b83add: IF AGC distortion rate reduced to improve multipath filter result.
 * 20220808-0: IF AGC is replaced by the Tisserand-Berviller AGC algorithm. This is still experimental and more evaluation is needed.
 * 20220412-0: Re-enabled experimental FM AFC code after the continuous-phase frequency shifting was implemented in the commit 37742981c34e53eb8083af07c0bc518491dc18ee.
 * 20220313-1: Removed experimental FM AFC code due to periodical noise generation. `-A` option is removed as well.
