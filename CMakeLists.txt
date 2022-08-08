@@ -181,6 +181,7 @@ set(CMAKE_CXX_FLAGS "-Wall -std=c++17 ${OPTIMIZATION_FLAGS} ${AIRSPY_INCLUDE_OPT
 
 set(sfmbase_SOURCES
     sfmbase/AfAgc.cpp
+    sfmbase/AfSimpleAgc.cpp
     sfmbase/AirspyHFSource.cpp
     sfmbase/AirspySource.cpp
     sfmbase/AmDecode.cpp
@@ -203,6 +204,7 @@ set(sfmbase_SOURCES
 
 set(sfmbase_HEADERS
     include/AfAgc.h
+    include/AfSimpleAgc.h
     include/AirspyHFSource.h
     include/AirspySource.h
     include/AmDecode.h

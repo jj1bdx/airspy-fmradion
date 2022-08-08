@@ -51,8 +51,8 @@ AmDecoder::AmDecoder(IQSampleCoeff &amfilter_coeff, const ModType mode)
       // Construct AF AGC
       // Use mostly as peak limiter
       ,
-      m_afagc(0.0001, // initial_gain
-              1.5,    // max_gain
+      m_afagc(1.0, // initial_gain
+              1.5, // max_gain
               // reference
               ((m_mode == ModType::USB) || (m_mode == ModType::LSB)) ? 0.1
               : ((m_mode == ModType::CW) || (m_mode == ModType::WSPR))
@@ -61,9 +61,9 @@ AmDecoder::AmDecoder(IQSampleCoeff &amfilter_coeff, const ModType mode)
                   : 0.2,
               // rate
               ((m_mode == ModType::CW) || (m_mode == ModType::WSPR))
-                  ? 0.0025
+                  ? 0.00125
                   // default value
-                  : 0.002)
+                  : 0.001)
 
       // Construct IF AGC
       // Use as AM level compressor, raise the level to one

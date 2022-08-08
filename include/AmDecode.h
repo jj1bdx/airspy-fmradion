@@ -20,7 +20,7 @@
 #ifndef SOFTFM_AMDECODE_H
 #define SOFTFM_AMDECODE_H
 
-#include "AfAgc.h"
+#include "AfSimpleAgc.h"
 #include "AudioResampler.h"
 #include "Filter.h"
 #include "FilterParameters.h"
@@ -100,7 +100,7 @@ private:
   LowPassFilterFirIQ m_ssbfilter;
   HighPassFilterIir m_dcblock;
   LowPassFilterRC m_deemph;
-  AfAgc m_afagc;
+  AfSimpleAgc m_afagc;
   IfSimpleAgc m_ifagc;
   FineTuner m_cw_finetuner;
   FineTuner m_wspr_ssb_up_finetuner;
