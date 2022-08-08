@@ -77,9 +77,9 @@ AmDecoder::AmDecoder(IQSampleCoeff &amfilter_coeff, const ModType mode)
                   : 0.7,
               // rate
               ((m_mode == ModType::CW) || (m_mode == ModType::WSPR))
-                  ? 0.005
+                  ? 0.001
                   // default value
-                  : 0.001)
+                  : 0.0005)
 
       // fine tuner for CW pitch shifting (shift up 500Hz)
       // sampling rate: 12kHz

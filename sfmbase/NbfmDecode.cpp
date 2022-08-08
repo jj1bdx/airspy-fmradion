@@ -41,7 +41,7 @@ NbfmDecoder::NbfmDecoder(IQSampleCoeff &nbfmfilter_coeff, const double freq_dev)
       // Construct IF AGC
       // Reference level: 1.0
       ,
-      m_ifagc(1.0, 100000.0, 1.0, 0.001) {
+      m_ifagc(1.0, 100000.0, 1.0, 0.0001) {
   // Do nothing
 }
 
