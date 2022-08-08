@@ -194,6 +194,7 @@ set(sfmbase_SOURCES
     sfmbase/FmDecode.cpp
     sfmbase/IfAgc.cpp
     sfmbase/IfResampler.cpp
+    sfmbase/IfSimpleAgc.cpp
     sfmbase/MultipathFilter.cpp
     sfmbase/NbfmDecode.cpp
     sfmbase/PhaseDiscriminator.cpp
@@ -217,6 +218,7 @@ set(sfmbase_HEADERS
     include/FourthConverterIQ.h
     include/IfAgc.h
     include/IfResampler.h
+    include/IfSimpleAgc.h
     include/MovingAverage.h
     include/MultipathFilter.h
     include/NbfmDecode.h

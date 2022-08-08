@@ -24,7 +24,7 @@
 #include "AudioResampler.h"
 #include "Filter.h"
 #include "FilterParameters.h"
-#include "IfAgc.h"
+#include "IfSimpleAgc.h"
 #include "PhaseDiscriminator.h"
 #include "SoftFM.h"
 
@@ -81,7 +81,7 @@ private:
   LowPassFilterFirIQ m_nbfmfilter;
   PhaseDiscriminator m_phasedisc;
   LowPassFilterFirAudio m_audiofilter;
-  IfAgc m_ifagc;
+  IfSimpleAgc m_ifagc;
 };
 
 #endif

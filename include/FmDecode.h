@@ -23,7 +23,7 @@
 #include "AudioResampler.h"
 #include "Filter.h"
 #include "FilterParameters.h"
-#include "IfAgc.h"
+#include "IfSimpleAgc.h"
 #include "MultipathFilter.h"
 #include "PhaseDiscriminator.h"
 #include "SoftFM.h"
@@ -223,7 +223,7 @@ private:
   HighPassFilterIir m_dcblock_stereo;
   LowPassFilterRC m_deemph_mono;
   LowPassFilterRC m_deemph_stereo;
-  IfAgc m_ifagc;
+  IfSimpleAgc m_ifagc;
   MultipathFilter m_multipathfilter;
 };
 

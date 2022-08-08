@@ -26,8 +26,8 @@
 #include "FilterParameters.h"
 #include "FineTuner.h"
 #include "FourthConverterIQ.h"
-#include "IfAgc.h"
 #include "IfResampler.h"
+#include "IfSimpleAgc.h"
 #include "SoftFM.h"
 
 /** Complete decoder for FM broadcast signal. */
@@ -101,7 +101,7 @@ private:
   HighPassFilterIir m_dcblock;
   LowPassFilterRC m_deemph;
   AfAgc m_afagc;
-  IfAgc m_ifagc;
+  IfSimpleAgc m_ifagc;
   FineTuner m_cw_finetuner;
   FineTuner m_wspr_ssb_up_finetuner;
   FineTuner m_wspr_ssb_down_finetuner;
