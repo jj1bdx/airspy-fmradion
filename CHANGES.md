@@ -14,8 +14,8 @@
 
 ## Platforms tested
 
-* Mac mini 2018, macOS 12.4 x86\_64, Xcode 13.4 Command Line Tools
-* MacBook Air Apple Silicon 2020, macOS 12.2 arm64, Xcode 13.4 Command Line Tools
+* Mac mini 2018, macOS 12.5 x86\_64, Xcode 13.4 Command Line Tools
+* MacBook Air 13" Apple Silicon (M1) 2020, macOS 12.5 arm64, Xcode 13.4 Command Line Tools
 * Ubuntu 22.04 LTS x86\_64, gcc 11.2
 
 ## Features under development
