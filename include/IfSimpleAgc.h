@@ -40,8 +40,8 @@ public:
   // max_gain     :: Maximum gain value.
   // reference    :: target output level.
   // rate         :: rate factor for changing the gain value.
-  IfSimpleAgc(const float initial_gain, const float max_gain, const float reference,
-        const float rate);
+  IfSimpleAgc(const float initial_gain, const float max_gain,
+              const float reference, const float rate);
 
   // Process IQ samples.
   void process(const IQSampleVector &samples_in, IQSampleVector &samples_out);

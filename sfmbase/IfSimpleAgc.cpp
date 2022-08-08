@@ -22,18 +22,17 @@
 // class IfSimpleAgc
 
 IfSimpleAgc::IfSimpleAgc(const float initial_gain, const float max_gain,
-             const float reference, const float rate)
+                         const float reference, const float rate)
     // Initialize member fields
-    : m_current_gain(initial_gain),
-      m_max_gain(max_gain), m_reference(reference),
-      m_distortion_rate(rate) {
+    : m_current_gain(initial_gain), m_max_gain(max_gain),
+      m_reference(reference), m_distortion_rate(rate) {
   // Do nothing
 }
 
 // IF AGC based on the Tisserand-Berviller algorithm
 
 void IfSimpleAgc::process(const IQSampleVector &samples_in,
-                    IQSampleVector &samples_out) {
+                          IQSampleVector &samples_out) {
   unsigned int n = samples_in.size();
   samples_out.resize(n);
 
@@ -46,7 +45,7 @@ void IfSimpleAgc::process(const IQSampleVector &samples_in,
     float z = 1.0 + (m_distortion_rate * (1.0 - y));
     m_current_gain *= z;
     if (m_current_gain > m_max_gain) {
-        m_current_gain = m_max_gain;
+      m_current_gain = m_max_gain;
     }
   }
 }

@@ -40,7 +40,7 @@ public:
   // reference    :: target output level.
   // rate         :: rate factor for changing the gain value.
   AfSimpleAgc(const double initial_gain, const double max_gain,
-        const double reference, const double rate);
+              const double reference, const double rate);
 
   // Process audio samples.
   void process(const SampleVector &samples_in, SampleVector &samples_out);

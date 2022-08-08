@@ -21,18 +21,17 @@
 // class AfSimpleAgc
 
 AfSimpleAgc::AfSimpleAgc(const double initial_gain, const double max_gain,
-             const double reference, const double rate)
+                         const double reference, const double rate)
     // Initialize member fields
-    : m_current_gain(initial_gain),
-    m_max_gain(max_gain), m_reference(reference),
-    m_distortion_rate(rate) {
+    : m_current_gain(initial_gain), m_max_gain(max_gain),
+      m_reference(reference), m_distortion_rate(rate) {
   // Do nothing
 }
 
 // AF AGC based on the Tisserand-Berviller algorithm
 
-void AfSimpleAgc::process(const SampleVector &samples_in, 
-		SampleVector &samples_out) {
+void AfSimpleAgc::process(const SampleVector &samples_in,
+                          SampleVector &samples_out) {
   unsigned int n = samples_in.size();
   samples_out.resize(n);
 
@@ -45,9 +44,9 @@ void AfSimpleAgc::process(const SampleVector &samples_in,
     double z = 1.0 + (m_distortion_rate * (1.0 - y));
     m_current_gain *= z;
     if (m_current_gain > m_max_gain) {
-        m_current_gain = m_max_gain;
+      m_current_gain = m_max_gain;
     }
-  } 
+  }
 }
 
 // end
