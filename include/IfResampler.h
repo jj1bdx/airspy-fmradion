@@ -1,7 +1,7 @@
 // airspy-fmradion
 // Software decoder for FM broadcast radio with Airspy
 //
-// Copyright (C) 2019-2021 Kenji Rikitake, JJ1BDX
+// Copyright (C) 2019-2022 Kenji Rikitake, JJ1BDX
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -16,8 +16,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef SOFTFM_IFRESAMPLER_H
-#define SOFTFM_IFRESAMPLER_H
+#ifndef INCLUDE_IFRESAMPLER_H
+#define INCLUDE_IFRESAMPLER_H
 
 #include "SoftFM.h"
 

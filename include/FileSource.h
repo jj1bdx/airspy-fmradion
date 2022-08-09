@@ -16,8 +16,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef SOFTFM_FILESOURCE_H
-#define SOFTFM_FILESOURCE_H
+#ifndef INCLUDE_FILESOURCE_H
+#define INCLUDE_FILESOURCE_H
 
 #include <string>
 #include <thread>

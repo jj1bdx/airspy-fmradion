@@ -2,7 +2,7 @@
 // Software decoder for FM broadcast radio with Airspy HF
 //
 // Copyright (C) 2015 Edouard Griffiths, F4EXB
-// Copyright (C) 2019-2021 Kenji Rikitake, JJ1BDX
+// Copyright (C) 2019-2022 Kenji Rikitake, JJ1BDX
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,8 +17,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef INCLUDE_AIRSPYHFSOURCE_H_
-#define INCLUDE_AIRSPYHFSOURCE_H_
+#ifndef INCLUDE_AIRSPYHFSOURCE_H
+#define INCLUDE_AIRSPYHFSOURCE_H
 
 #include "libairspyhf/airspyhf.h"
 #include <cstdint>

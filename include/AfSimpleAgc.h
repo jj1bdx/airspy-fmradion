@@ -16,8 +16,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef SOFTFM_AFSIMPLEAGC_H
-#define SOFTFM_AFSIMPLEAGC_H
+#ifndef INCLUDE_AFSIMPLEAGC_H
+#define INCLUDE_AFSIMPLEAGC_H
 
 #include "SoftFM.h"
 

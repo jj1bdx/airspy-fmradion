@@ -1,7 +1,7 @@
 // airspy-fmradion
 // Software decoder for FM broadcast radio with Airspy
 //
-// Copyright (C) 2019-2021 Kenji Rikitake, JJ1BDX
+// Copyright (C) 2019-2022 Kenji Rikitake, JJ1BDX
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -15,6 +15,9 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+#ifndef INCLUDE_CONFIGPARSER_H
+#define INCLUDE_CONFIGPARSER_H
 
 #include <map>
 #include <string>
@@ -67,3 +70,5 @@ int main() {
 }
 
 */
+
+#endif /* INCLUDE_CONFIGPARSER_H */
