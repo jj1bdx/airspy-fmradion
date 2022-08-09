@@ -2,18 +2,12 @@
 
 # airspy-fmradion
 
-* Version 20220808-0
+* Version 20220809-0
 * For MacOS (both Intel and Apple Silicon) and Linux
 
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the details.
-
-## libusb-1.0.25 glitch
-
-* libusb-1.0.25 with Airspy HF+ may cause crash at the exit sequence.
-* A proper fix for this is to [fix the Airspy HF+ driver](https://github.com/airspy/airspyhf/pull/31).
-* See CHANGES.md for the details.
 
 ## Known issues and changes
 
@@ -335,13 +329,6 @@ Compile and install
 
 ## AGC algorithms
 
-### Conventional AGC algorithm up to 20220412-0
-
-* Use simple logarithm-based AGC algorithm, which only depends on the single previous sample
-* See <https://www.mathworks.com/help/comm/ref/comm.agc-system-object.html> for the implementation details
-* IF AGC: gain up to 100dB (100000) (for broadcast FM: 80dB (10000))
-* Audio AGC: gain up to 7dB (5.0)
-
 ### Simple AGC with Tisserand-Berviller Algorithm
 
 * Reference: Etienne Tisserand, Yves Berviller. Design and implementation of a new digital automatic gain control. Electronics Letters, IET, 2016, 52 (22), pp.1847 - 1849. ff10.1049/el.2016.1398ff. ffhal-01397371f
@@ -431,7 +418,7 @@ Compile and install
 
 * Joris van Rantwijk, primary author of SoftFM
 * Edouard Griffiths, F4EXB, primary author of NGSoftFM (no longer involving in maintaining NGSoftFM)
-* Kenji Rikitake, JJ1BDX, maintainer
+* Kenji Rikitake, JJ1BDX, maintainer/developer/experimenter
 * András Retzler, HA7ILM, for the former AF/IF AGC code in [csdr](https://github.com/simonyiszk/csdr)
 * Youssef Touil, Airspy Founder, aka Twitter [@lambdaprog](https://twitter.com/lambdaprog/), for the intriguing exchange of Airspy product design details and the technical support
 * [Iowa Hills Software](http://iowahills.com), for their FIR and IIR filter design tools
@@ -439,6 +426,7 @@ Compile and install
 * [Ryuji Suzuki](https://github.com/rsuzuki0), for reviewing the FM multipath filter coefficients and suggesting putting more weight on picking up more previous samples from the reference point than the samples after
 * [Teruhiko Hayashi, JA2SVZ](http://fpga.world.coocan.jp/FM/), the creator of FM FPGA Tuner popular in Japan, for reviewing the measurement results of FM broadcast reception of airspy-fmradion, and various constructive suggestions
 * [Takehiro Sekine](https://github.com/bstalk), for suggesting using GNU Radio's [VOLK](http://libvolk.org/) for faster calculation, and implementing Filesource device driver
+* [Takeru Ohta](https://github.com/sile), for his [Rust implementation](https://github.com/sile/dagc) of [Tisserand-Berviller AGC algorithm](https://hal.univ-lorraine.fr/hal-01397371/document)
 
 ## License
 

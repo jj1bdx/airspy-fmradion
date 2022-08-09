@@ -31,7 +31,8 @@
 
 ## Changes (including requirement changes)
 
-* 20220808-3: AF AGC is replaced by the Tisserand-Berviller AGC algorithm. This is still experimental and more evaluation is needed.
+* 20220809-0: Source code comments and documentation changes only.
+* 20220808-3: AF AGC is replaced by the Tisserand-Berviller AGC algorithm. This is still experimental and more evaluation is needed. Output level of the AM (including USB/LSB/DSB/CW/WSPR) modes may increase by 2dB to 3dB, due to the algorithm change.
 * 20220808-1: commit 40e342b2cf0e6710800c578272caf515a8b83add: IF AGC distortion rate reduced to improve multipath filter result.
 * 20220808-0: IF AGC is replaced by the Tisserand-Berviller AGC algorithm. This is still experimental and more evaluation is needed.
 * 20220412-0: Re-enabled experimental FM AFC code after the continuous-phase frequency shifting was implemented in the commit 37742981c34e53eb8083af07c0bc518491dc18ee.
