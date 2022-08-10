@@ -220,7 +220,7 @@ FmDecoder::FmDecoder(IQSampleCoeff &fmfilter_coeff, bool stereo,
 
       // Construct IF AGC
       ,
-      m_ifagc(1.0, 10000.0, MultipathFilter::if_target_level, 0.0001)
+      m_ifagc(1.0, 10000.0, 0.0001)
 
       // Construct multipath filter
       // for 384kHz IF: 288 -> 750 microseconds (288/384000 * 1000000)

@@ -37,12 +37,11 @@
 class IfSimpleAgc {
 public:
   // Construct IF AGC.
+  // Target level = 1.0.
   // initial_gain :: Initial gain value.
   // max_gain     :: Maximum gain value.
-  // reference    :: target output level.
   // rate         :: rate factor for changing the gain value.
-  IfSimpleAgc(const float initial_gain, const float max_gain,
-              const float reference, const float rate);
+  IfSimpleAgc(const float initial_gain, const float max_gain, const float rate);
 
   // Process IQ samples.
   void process(const IQSampleVector &samples_in, IQSampleVector &samples_out);
@@ -53,7 +52,6 @@ public:
 private:
   float m_current_gain;
   float m_max_gain;
-  float m_reference;
   float m_distortion_rate;
 };
 

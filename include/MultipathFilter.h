@@ -33,7 +33,8 @@ class MultipathFilter {
 public:
   // IF AGC target level is 1.0
   // Note: this constant is for memorandum use only,
-  // and the actual code ASSUMES the reference level is 1.0.
+  // and the actual code of IfSimpleAGC
+  // ASSUMES the reference level is 1.0.
   static constexpr double if_target_level = 1.0;
 
   // LMS algorithm stepsize.
