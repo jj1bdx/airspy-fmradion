@@ -26,6 +26,7 @@
 // Design and implementation of a new digital automatic gain control.
 // Electronics Letters, IET, 2016, 52 (22), pp.1847 - 1849.
 // ff10.1049/el.2016.1398ff. ffhal-01397371f
+// https://hal.univ-lorraine.fr/hal-01397371/document
 
 // Implementation reference:
 // https://github.com/sile/dagc/

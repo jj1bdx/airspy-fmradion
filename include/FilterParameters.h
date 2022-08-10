@@ -54,4 +54,4 @@ public:
   // LPF/BPF with symmetric coefficients
 };
 
-#endif // SOFTFM_EQPARAMETERS_H
+#endif // INCLUDE_FILTERPARAMETERS_H
