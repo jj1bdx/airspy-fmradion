@@ -20,6 +20,7 @@
 
 ## Features under development
 
+* Since 20220810-1, IF AGC max gain for FM is raised to 10^5, AM/DSB/USB/LSB/WSPR/CW is raised to 10^6.
 * Since 20220810-0, AGC algorithms are refactored.
 * Since 20220808-3, Tisserand-Berviller AGC algorithm is implemented also to AF AGC.
 * Since 20220808-0, Tisserand-Berviller AGC algorithm is implemented to IF AGC.

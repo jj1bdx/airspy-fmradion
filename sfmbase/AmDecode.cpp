@@ -68,8 +68,8 @@ AmDecoder::AmDecoder(IQSampleCoeff &amfilter_coeff, const ModType mode)
       // Construct IF AGC
       // Use as AM level compressor, raise the level to one
       ,
-      m_ifagc(1.0,      // initial_gain
-              100000.0, // max_gain
+      m_ifagc(1.0,       // initial_gain
+              1000000.0, // max_gain
               // rate
               ((m_mode == ModType::CW) || (m_mode == ModType::WSPR))
                   ? 0.001
