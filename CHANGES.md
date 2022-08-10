@@ -20,6 +20,7 @@
 
 ## Features under development
 
+* Since 20220810-0, AGC algorithms are refactored.
 * Since 20220808-3, Tisserand-Berviller AGC algorithm is implemented also to AF AGC.
 * Since 20220808-0, Tisserand-Berviller AGC algorithm is implemented to IF AGC.
 * Since 20210427-0, C++17 is required (instead of previous C++11). Modern compilers of Raspberry Pi OS, Ubuntu, and macOS do support C++17 extensions.
