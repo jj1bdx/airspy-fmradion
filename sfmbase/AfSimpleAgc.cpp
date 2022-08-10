@@ -38,10 +38,8 @@ void AfSimpleAgc::process(const SampleVector &samples_in,
   for (unsigned int i = 0; i < n; i++) {
     Sample x = samples_in[i];
     Sample x2 = x * m_current_gain;
-    samples_out[i] = x2;
-    double mag = x2 * x2;
-    double y = mag / m_reference;
-    double z = 1.0 + (m_distortion_rate * (1.0 - y));
+    samples_out[i] = x2 * m_reference;
+    double z = 1.0 + (m_distortion_rate * (1.0 - (x2 * x2)));
     m_current_gain *= z;
     if (m_current_gain > m_max_gain) {
       m_current_gain = m_max_gain;
