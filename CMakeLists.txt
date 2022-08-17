@@ -219,10 +219,10 @@ set(sfmbase_HEADERS
 # For building r8brain-free-src
 # See https://github.com/baconpaul/SampleRateComparison for the details
 # (Licensed GPLv3)
+# Use R8B_PFFFT_DOUBLE for double-precision conversion
 
 add_library(r8b
     r8brain-free-src/r8bbase.cpp
-    r8brain-free-src/pffft.cpp
     r8brain-free-src/pffft_double/pffft_double.c
 )
 target_include_directories(r8b PUBLIC
