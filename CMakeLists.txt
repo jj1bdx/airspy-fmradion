@@ -190,12 +190,6 @@ set(OPTIMIZATION_FLAGS "-O3 -ftree-vectorize ")
 ##
 set(CMAKE_CXX_FLAGS "-Wall -std=c++17 ${OPTIMIZATION_FLAGS} ${AIRSPY_INCLUDE_OPTION} ${AIRSPYHF_INCLUDE_OPTION} ${EXTRA_FLAGS}")
 
-# For building r8brain-free-src
-
-add_library(r8b r8brain-free-src/r8bbase.cpp r8brain-free-src/pffft.cpp)
-target_include_directories(r8b PUBLIC r8brain-free-src)
-target_compile_definitions(r8b PUBLIC R8B_PFFFT=1 R8B_FASTTIMING=1 )
-
 # For building airspy-fmradion sources
 
 set(sfmbase_SOURCES
@@ -244,6 +238,23 @@ set(sfmbase_HEADERS
     include/Source.h
     include/SoftFM.h
     include/Utility.h
+)
+
+# For building r8brain-free-src
+# See https://github.com/baconpaul/SampleRateComparison for the details
+# (Licensed GPLv3)
+
+add_library(r8b
+    r8brain-free-src/r8bbase.cpp
+    r8brain-free-src/pffft.cpp
+    r8brain-free-src/pffft_double/pffft_double.c
+)
+target_include_directories(r8b PUBLIC
+	r8brain-free-src
+)
+target_compile_definitions(r8b PUBLIC
+	R8B_PFFFT_DOUBLE=1
+	R8B_FASTTIMING=1
 )
 
 # Base sources
