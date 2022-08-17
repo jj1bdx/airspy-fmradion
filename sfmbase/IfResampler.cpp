@@ -62,12 +62,13 @@ void IfResampler::process(const IQSampleVector &samples_in,
 
   // Process the real and imaginary parts.
   SRC_DATA src_data;
-  long output_length = 0;
+  long output_frame_length = 0;
 
   src_data.data_in = samples_in_interleaved.data();
   src_data.data_out = samples_out_interleaved.data();
-  src_data.input_frames = input_size * CHANNELS;
-  src_data.output_frames = output_size * CHANNELS;
+  // Frame sizes here!
+  src_data.input_frames = input_size;
+  src_data.output_frames = output_size;
   src_data.src_ratio = m_ratio;
   src_data.end_of_input = 0;
 
@@ -75,7 +76,7 @@ void IfResampler::process(const IQSampleVector &samples_in,
   while (src_data.input_frames > 0) {
     if (int error = src_process(m_src, &src_data)) {
       src_delete(m_src);
-      fprintf(stderr, "IfResampler: unable to create m_src: %s\n",
+      fprintf(stderr, "IfResampler: unable to process m_src: %s\n",
               src_strerror(error));
       exit(1);
     }
@@ -83,20 +84,24 @@ void IfResampler::process(const IQSampleVector &samples_in,
     // Recalculate pointers as the input data are used
     // and the output data are added.
 
-    src_data.data_out += src_data.output_frames * CHANNELS;
-    output_length += src_data.output_frames_gen;
+    // Here samples (= frames * CHANNELS)
+    src_data.data_out += src_data.output_frames_gen * CHANNELS;
+    // Here frames
+    output_frame_length += src_data.output_frames_gen;
 
+    // Here samples (= frames * CHANNELS)
     src_data.data_in += src_data.input_frames_used * CHANNELS;
+    // Here frames
     src_data.input_frames -= src_data.input_frames_used;
   }
 
   // Create complex sample output from the real and imaginary part vectors.
-  for (unsigned int i = 0, j = 0; i < output_length; i++, j += 2) {
+  for (unsigned int i = 0, j = 0; i < output_frame_length; i++, j += 2) {
     samples_out[i] =
         IQSample(samples_out_interleaved[j], samples_out_interleaved[j + 1]);
   }
 
-  samples_out.resize(output_length);
+  samples_out.resize(output_frame_length);
 }
 
 // end
