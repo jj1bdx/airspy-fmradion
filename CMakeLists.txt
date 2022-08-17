@@ -173,6 +173,10 @@ set(OPTIMIZATION_FLAGS "-O3 -ftree-vectorize ")
 # For Sanitizers
 # with Thread Sanitizer
 #set(OPTIMIZATION_FLAGS "-fsanitize=thread -O3 -ftree-vectorize ")
+# with Address Sanitizer
+#set(OPTIMIZATION_FLAGS "-fsanitize=address -O3 -ftree-vectorize ")
+# For valgrind check
+#set(OPTIMIZATION_FLAGS "-g")
 ##
 
 # Common compiler flags and options.
