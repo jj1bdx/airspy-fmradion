@@ -17,28 +17,18 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "AudioResampler.h"
+#include "CDSPResampler.h"
+
+#define MAXINLEN (131072)
 
 // class AudioResampler
 
 AudioResampler::AudioResampler(const double input_rate,
                                const double output_rate)
     : m_irate(input_rate), m_orate(output_rate),
-      m_ratio(output_rate / input_rate) {
-  // Use double
-  soxr_io_spec_t io_spec = soxr_io_spec(SOXR_FLOAT64_I, SOXR_FLOAT64_I);
-  // Not steep: passband_end = 0.91132832
-  soxr_quality_spec_t quality_spec =
-      soxr_quality_spec((SOXR_VHQ | SOXR_LINEAR_PHASE), 0);
-  soxr_runtime_spec_t runtime_spec = soxr_runtime_spec(1);
-
-  soxr_error_t error;
-  m_soxr = soxr_create(m_irate, m_orate, 1, &error, &io_spec, &quality_spec,
-                       &runtime_spec);
-  if (error) {
-    soxr_delete(m_soxr);
-    fprintf(stderr, "AudioResampler: unable to create soxr: %s\n", error);
-    exit(1);
-  }
+      m_ratio(output_rate / input_rate),
+      m_cdspr(new r8b::CDSPResampler(input_rate, output_rate, MAXINLEN)) {
+  // do nothing
 }
 
 void AudioResampler::process(const SampleVector &samples_in,
@@ -51,15 +41,15 @@ void AudioResampler::process(const SampleVector &samples_in,
     output_size = input_size;
   }
   samples_out.resize(output_size);
+
   size_t output_length;
-  if (soxr_error_t error = soxr_process(
-          m_soxr, static_cast<soxr_in_t>(samples_in.data()), input_size,
-          nullptr, static_cast<soxr_out_t>(samples_out.data()), output_size,
-          &output_length);
-      error) {
-    soxr_delete(m_soxr);
-    fprintf(stderr, "AudioResampler: soxr_process error: %s\n", error);
-    exit(1);
+  double *input0 = const_cast<double *>(samples_in.data());
+  double *output0;
+
+  output_length = m_cdspr->process(input0, input_size, output0);
+
+  for (int i = 0; i < output_length; i++) {
+    samples_out[i] = output0[i];
   }
 
   samples_out.resize(output_length);

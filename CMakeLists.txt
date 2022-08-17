@@ -278,6 +278,7 @@ add_executable(airspy-fmradion
 
 include_directories(
     ${CMAKE_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/r8brain-free-src
     ${AIRSPYHF_INCLUDE_DIRS}
     ${AIRSPY_INCLUDE_DIRS}
     ${RTLSDR_INCLUDE_DIRS}

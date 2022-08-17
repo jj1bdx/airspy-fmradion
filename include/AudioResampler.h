@@ -21,7 +21,7 @@
 
 #include "SoftFM.h"
 
-#include "soxr.h"
+#include "CDSPResampler.h"
 
 // class AudioResampler
 
@@ -39,7 +39,7 @@ private:
   const double m_irate;
   const double m_orate;
   const double m_ratio;
-  soxr_t m_soxr;
+  r8b::CDSPResampler *m_cdspr;
 };
 
 #endif
