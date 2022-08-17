@@ -20,9 +20,7 @@
 
 ## Features under development
 
-* Since 20220810-1, IF AGC max gain for FM is raised to 10^5, AM/DSB/USB/LSB/WSPR/CW is raised to 10^6.
-* Since 20220810-0, AGC algorithms are refactored.
-* Since 20220808-3, Tisserand-Berviller AGC algorithm is implemented also to AF AGC.
+* Since 20220818-0, [r8brain-free-src](https://github.com/avaneev/r8brain-free-src) resampler library is used instead of libsoxr. r8brain-free-src is a sample rate converter designed by Aleksey Vaneev of Voxengo.
 * Since 20220808-0, Tisserand-Berviller AGC algorithm is implemented to IF AGC.
 * Since 20210427-0, C++17 is required (instead of previous C++11). Modern compilers of Raspberry Pi OS, Ubuntu, and macOS do support C++17 extensions.
 * FM Pilot PLL is under revision and reconstruction. Initial analysis result is available at doc/fm-pll-filtereval.py (requires Python 3, SciPy, matplotlib, and NumPy).
@@ -33,6 +31,11 @@
 
 ## Changes (including requirement changes)
 
+* 20220818-0: Implemented r8brain-free-src also for IfResampler. libsamplerate is removed.
+* 20220817-1: Introduced r8brain-free-src for AudioResampler.
+* 20220817-0: Introduced libsamplerate aka Secret Rabbit Code for IfResampler.
+* 20220810-1: IF AGC max gain for FM is raised to 10^5, AM/DSB/USB/LSB/WSPR/CW is raised to 10^6.
+* 20220810-0: AGC algorithms are refactored.
 * 20220809-0: Source code comments and documentation changes only.
 * 20220808-3: AF AGC is replaced by the Tisserand-Berviller AGC algorithm. This is still experimental and more evaluation is needed. Output level of the AM (including USB/LSB/DSB/CW/WSPR) modes may increase by 2dB to 3dB, due to the algorithm change.
 * 20220808-1: commit 40e342b2cf0e6710800c578272caf515a8b83add: IF AGC distortion rate reduced to improve multipath filter result.

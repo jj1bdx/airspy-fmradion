@@ -2,7 +2,7 @@
 
 # airspy-fmradion
 
-* Version 20220810-1
+* Version 20220818-0
 * For MacOS (both Intel and Apple Silicon) and Linux
 
 ## Contributing
@@ -52,7 +52,7 @@ airspy-fmradion -m am -t airspyhf -q \
  - [Airspy HF library](https://github.com/airspy/airspyhf)
  - [RTL-SDR library](http://sdr.osmocom.org/trac/wiki/rtl-sdr)
  - [sndfile](https://github.com/erikd/libsndfile)
- - [The SoX Resampler library aka libsoxr](https://sourceforge.net/p/soxr/wiki/Home/)
+ - [r8brain-free-src](https://github.com/avaneev/r8brain-free-src), a sample rate converter designed by Aleksey Vaneev of Voxengo 
  - [VOLK](http://libvolk.org/)
  - [PortAudio](http://www.portaudio.com)
  - Tested: Airspy R2, Airspy Mini, Airspy HF+ Dual Port, RTL-SDR V3
@@ -90,7 +90,7 @@ For example if you installed it in `/opt/install/libairspy` you have to add `-DA
 
 ### Debian/Ubuntu Linux
 
-  - `sudo apt-get install cmake pkg-config libusb-1.0-0-dev libasound2-dev libairspy-dev libairspyhf-dev librtlsdr-dev libsoxr-dev libsndfile1-dev portaudio19-dev`
+  - `sudo apt-get install cmake pkg-config libusb-1.0-0-dev libasound2-dev libairspy-dev libairspyhf-dev librtlsdr-dev libsndfile1-dev portaudio19-dev`
 
 ### macOS
 
@@ -103,11 +103,11 @@ brew tap pothosware/homebrew-pothos
 brew tap dholm/homebrew-sdr #other sdr apps
 brew update
 brew install portaudio
-brew install libsoxr
 brew install libsndfile
 brew install rtl-sdr
 brew install airspy --HEAD
 brew install airspyhf --HEAD
+brew install volk
 ```
 
 ### Install the latest libvolk
@@ -133,10 +133,16 @@ Use the latest HEAD version.
 * Working `airspy_open_devices()`, required by `airspy_open_sn()`. See [this commit](https://github.com/airspy/airspyone_host/commit/61fec20fbd710fc54d57dfec732d314d693b5a2f) for the details.
 * Proper transfer block size. `if_blocksize` for Airspy HF+ is reduced from 16384 to 2048, following [this commit](https://github.com/airspy/airspyhf/commit/a1f6f4a0537f53bede6e80c51826fc9d45061c28).
 
+#### r8brain-free-src
+
+r8brain-free-src is a submodule of this repository. Download the repository by the following git procedure:
+
+- `git submodule init`
+- `git submodule update`
+
 ## Installing
 
-To install airspy-fmradion, download and unpack the source code and go to the
-top level directory. Then do like this:
+To install airspy-fmradion, download and unpack the source code (as well as the r8brain-free-src submodule) and go to the top level directory. Then do like this:
 
  - `mkdir build`
  - `cd build`
@@ -232,13 +238,12 @@ Compile and install
 * During v0.2.7 to v0.4.1, output level was at unity (`adjust_gain()` is removed)
 * Before v0.2.7, output maximum level is at -6dB (0.5) 
 
-### Audio and IF downsampling is now performed by libsoxr
+### Audio and IF downsampling is performed by r8brain-free-src
 
-* Output of the stereo decoder is downsampled by libsoxr to 48kHz
-* Quality: `SOXR_VHQ`
-* 19kHz cut LPF implemented for post-processing libsoxr output
-* *Do not use* `SOXR_STEEP_FILTER` because it induces unacceptable higher latency
+* Output of the stereo decoder is downsampled to 48kHz
+* 19kHz cut LPF implemented for post-processing resampler output
 * Audio sample rate is fixed to 48000Hz
+* `r8b::CDSPResampler24` is used for IF resampling
 
 ### Phase discriminator uses GNU Radio fast_atan2f() 
 
@@ -283,8 +288,7 @@ Compile and install
 
 ### General characteristics
 
-* Filter is implemented as the libsoxr sampling converter
-* Filter cutoff by libsoxr: 0.982 * sampling frequency
+* If resampling converter affects the passband characteristics
 
 ### For FM
 
