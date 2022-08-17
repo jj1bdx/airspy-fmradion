@@ -93,13 +93,6 @@ FIND_PATH(SNDFILE_INCLUDE_DIR sndfile.h
 	HINTS ${PKG_SNDFILE_INCLUDE_DIRS})
 MESSAGE(STATUS "Sndfile: ${SNDFILE_LIBRARY}, ${SNDFILE_INCLUDE_DIR}")
 
-# Find samplerate library (libsamplerate).
-FIND_LIBRARY(SAMPLERATE_LIBRARY samplerate)
-
-FIND_PATH(SAMPLERATE_INCLUDE_DIR samplerate.h
-	HINTS ${PKG_SAMPLERATE_INCLUDE_DIRS})
-MESSAGE(STATUS "Samplerate: ${SAMPLERATE_LIBRARY}, ${SNDFILE_INCLUDE_DIR}")
-
 # for PortAudio
 pkg_check_modules(PORTAUDIO2 portaudio-2.0)
 if (PORTAUDIO2_FOUND)
@@ -280,7 +273,6 @@ target_link_libraries(airspy-fmradion
 
 target_link_libraries(sfmbase
     ${SNDFILE_LIBRARY}
-    ${SAMPLERATE_LIBRARY}
     ${AIRSPY_LIBRARIES}
     ${AIRSPYHF_LIBRARIES}
     ${RTLSDR_LIBRARIES}

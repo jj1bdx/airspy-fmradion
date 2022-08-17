@@ -18,23 +18,15 @@
 
 #include "IfResampler.h"
 
-#define CHANNELS (2)
+#define MAXINLEN (65536)
 
 // class IfResampler
 
-// This code uses libsamplerate aka Secret Rabbit Code as the resampler.
-// See http://libsndfile.github.io/libsamplerate/ for the documentation.
-
 IfResampler::IfResampler(const double input_rate, const double output_rate)
-    : m_ratio(output_rate / input_rate) {
-  int error;
-  m_src = src_new(SRC_SINC_MEDIUM_QUALITY, CHANNELS, &error);
-  if (error) {
-    src_delete(m_src);
-    fprintf(stderr, "IfResampler: unable to create m_src: %s\n",
-            src_strerror(error));
-    exit(1);
-  }
+    : m_ratio(output_rate / input_rate),
+      m_cdspr_re(new r8b::CDSPResampler24(input_rate, output_rate, MAXINLEN)),
+      m_cdspr_im(new r8b::CDSPResampler24(input_rate, output_rate, MAXINLEN)) {
+  // do nothing
 }
 
 void IfResampler::process(const IQSampleVector &samples_in,
@@ -48,60 +40,35 @@ void IfResampler::process(const IQSampleVector &samples_in,
   }
   samples_out.resize(output_size);
 
-  IQSampleCoeff samples_in_interleaved;
-  IQSampleCoeff samples_out_interleaved;
-  samples_in_interleaved.resize(input_size * CHANNELS);
-  samples_out_interleaved.resize(output_size * CHANNELS);
+  // Use two independent sample rate converters in sync.
+  DoubleVector samples_in_re;
+  DoubleVector samples_in_im;
+  samples_in_re.resize(input_size);
+  samples_in_im.resize(input_size);
 
-  // Create real and imaginary part vectors from sample input.
-  for (unsigned int i = 0, j = 0; i < input_size; i++, j += CHANNELS) {
-    IQSample value = samples_in[i];
-    samples_in_interleaved[j] = value.real();
-    samples_in_interleaved[j + 1] = value.imag();
-  }
+  // See lv_cmake() definition for VOLK complex processing.
+  volk_32fc_deinterleave_64f_x2(samples_in_re.data(), samples_in_im.data(),
+                                samples_in.data(), input_size);
 
-  // Process the real and imaginary parts.
-  SRC_DATA src_data;
-  long output_frame_length = 0;
+  size_t output_length_re, output_length_im;
+  double *output0_re, *output0_im;
 
-  src_data.data_in = samples_in_interleaved.data();
-  src_data.data_out = samples_out_interleaved.data();
-  // Frame sizes here!
-  src_data.input_frames = input_size;
-  src_data.output_frames = output_size;
-  src_data.src_ratio = m_ratio;
-  src_data.end_of_input = 0;
+  output_length_re =
+      m_cdspr_re->process(samples_in_re.data(), input_size, output0_re);
+  output_length_im =
+      m_cdspr_im->process(samples_in_im.data(), input_size, output0_im);
+  assert(output_length_re == output_length_im);
 
-  // Repeat processing until all input frames are processed
-  while (src_data.input_frames > 0) {
-    if (int error = src_process(m_src, &src_data)) {
-      src_delete(m_src);
-      fprintf(stderr, "IfResampler: unable to process m_src: %s\n",
-              src_strerror(error));
-      exit(1);
+  // Copy CDSPReampler24 internal buffers to given output buffer
+  // with type conversion.
+
+  if (output_length_re > 0) {
+    for (size_t i = 0; i < output_length_re; i++) {
+      samples_out[i] = IQSample(static_cast<float>(output0_re[i]),
+                                static_cast<float>(output0_im[i]));
     }
-
-    // Recalculate pointers as the input data are used
-    // and the output data are added.
-
-    // Here samples (= frames * CHANNELS)
-    src_data.data_out += src_data.output_frames_gen * CHANNELS;
-    // Here frames
-    output_frame_length += src_data.output_frames_gen;
-
-    // Here samples (= frames * CHANNELS)
-    src_data.data_in += src_data.input_frames_used * CHANNELS;
-    // Here frames
-    src_data.input_frames -= src_data.input_frames_used;
   }
-
-  // Create complex sample output from the real and imaginary part vectors.
-  for (unsigned int i = 0, j = 0; i < output_frame_length; i++, j += 2) {
-    samples_out[i] =
-        IQSample(samples_out_interleaved[j], samples_out_interleaved[j + 1]);
-  }
-
-  samples_out.resize(output_frame_length);
+  samples_out.resize(output_length_re);
 }
 
 // end

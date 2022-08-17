@@ -41,6 +41,8 @@ using SampleVector = std::vector<Sample>;
 using IQSampleCoeff = std::vector<IQSample::value_type>;
 using SampleCoeff = std::vector<SampleVector::value_type>;
 
+using DoubleVector = std::vector<double>;
+
 enum class FilterType { Default, Medium, Narrow, Wide };
 enum class DevType { Airspy, AirspyHF, RTLSDR, FileSource };
 enum class ModType { FM, NBFM, AM, DSB, USB, LSB, CW, WSPR };

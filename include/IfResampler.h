@@ -21,7 +21,7 @@
 
 #include "SoftFM.h"
 
-#include "samplerate.h"
+#include "CDSPResampler.h"
 
 // class IfResampler
 
@@ -37,7 +37,8 @@ public:
 
 private:
   const double m_ratio;
-  SRC_STATE *m_src;
+  r8b::CDSPResampler24 *m_cdspr_re;
+  r8b::CDSPResampler24 *m_cdspr_im;
 };
 
 #endif

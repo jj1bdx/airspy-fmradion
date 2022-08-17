@@ -51,13 +51,11 @@ void AudioResampler::process(const SampleVector &samples_in,
   // Copy CDSPReampler internal buffer to given system buffer
 
   if (output_length > 0) {
-     for (size_t i = 0; i < output_length; i++) {
-        samples_out[i] = output0[i];
-     }
-
+    for (size_t i = 0; i < output_length; i++) {
+      samples_out[i] = output0[i];
+    }
   }
   samples_out.resize(output_length);
-
 }
 
 // end
