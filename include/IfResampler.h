@@ -21,7 +21,7 @@
 
 #include "SoftFM.h"
 
-#include "soxr.h"
+#include "samplerate.h"
 
 // class IfResampler
 
@@ -36,10 +36,8 @@ public:
   void process(const IQSampleVector &samples_in, IQSampleVector &samples_out);
 
 private:
-  const double m_irate;
-  const double m_orate;
   const double m_ratio;
-  soxr_t m_soxr;
+  SRC_STATE *m_src;
 };
 
 #endif
