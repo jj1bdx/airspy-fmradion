@@ -25,8 +25,7 @@
 
 AudioResampler::AudioResampler(const double input_rate,
                                const double output_rate)
-    : m_irate(input_rate), m_orate(output_rate),
-      m_ratio(output_rate / input_rate),
+    : m_ratio(output_rate / input_rate),
       m_cdspr(new r8b::CDSPResampler(input_rate, output_rate, MAXINLEN)) {
   // do nothing
 }
@@ -43,16 +42,22 @@ void AudioResampler::process(const SampleVector &samples_in,
   samples_out.resize(output_size);
 
   size_t output_length;
+
   double *input0 = const_cast<double *>(samples_in.data());
   double *output0;
 
   output_length = m_cdspr->process(input0, input_size, output0);
 
-  for (int i = 0; i < output_length; i++) {
-    samples_out[i] = output0[i];
-  }
+  // Copy CDSPReampler internal buffer to given system buffer
 
+  if (output_length > 0) {
+     for(int i = 0; i < output_length; i++) {
+        samples_out[i] = output0[i];
+     }
+
+  }
   samples_out.resize(output_length);
+
 }
 
 // end
