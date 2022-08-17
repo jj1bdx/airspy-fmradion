@@ -19,7 +19,7 @@
 #include "AudioResampler.h"
 #include "CDSPResampler.h"
 
-#define MAXINLEN (131072)
+#define MAXINLEN (65536)
 
 // class AudioResampler
 
@@ -51,7 +51,7 @@ void AudioResampler::process(const SampleVector &samples_in,
   // Copy CDSPReampler internal buffer to given system buffer
 
   if (output_length > 0) {
-     for(int i = 0; i < output_length; i++) {
+     for (size_t i = 0; i < output_length; i++) {
         samples_out[i] = output0[i];
      }
 
