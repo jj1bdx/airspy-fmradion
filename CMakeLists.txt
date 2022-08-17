@@ -86,23 +86,6 @@ find_library(LIBUSB_LIBRARY ${LIBUSB_NAME}
     HINTS /usr /usr/local /opt /opt/homebrew ${PKG_LIBUSB_LIBRARY_DIRS})
 message(STATUS "libusb: ${LIBUSB_INCLUDE_DIR}, ${LIBUSB_LIBRARY}")
 
-# Find libsoxr
-pkg_check_modules(PKG_LIBSOXR libsoxr)
-if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-    find_path(LIBSOXR_INCLUDE_DIR soxr.h
-        HINTS /usr/local/include /opt/homebrew/include
-	    ${PKG_LIBSOXR_INCLUDE_DIRS})
-    find_library(LIBSOXR_LIBRARY libsoxr.dylib
-        HINTS /usr/local/lib /opt/homebrew/lib
-	    ${PKG_LIBSOXR_LIBRARY_DIRS})
-else()
-    find_path(LIBSOXR_INCLUDE_DIR soxr.h
-        HINTS ${PKG_LIBSOXR_INCLUDE_DIRS})
-    find_library(LIBSOXR_LIBRARY libsoxr.so
-        HINTS ${PKG_LIBSOXR_LIBRARY_DIRS})
-endif()
-message(STATUS "libsoxr: ${LIBSOXR_INCLUDE_DIR}, ${LIBSOXR_LIBRARY}")
-
 # Find sndfile library.
 FIND_LIBRARY(SNDFILE_LIBRARY sndfile)
 
@@ -296,7 +279,6 @@ target_link_libraries(airspy-fmradion
 )
 
 target_link_libraries(sfmbase
-    ${LIBSOXR_LIBRARY}
     ${SNDFILE_LIBRARY}
     ${SAMPLERATE_LIBRARY}
     ${AIRSPY_LIBRARIES}
