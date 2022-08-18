@@ -84,10 +84,10 @@ void LowPassFilterFirIQ::process(const IQSampleVector &samples_in,
 
   // Update m_state.
   if (n < order) {
-    copy(m_state.begin() + n, m_state.end(), m_state.begin());
-    copy(samples_in.begin(), samples_in.end(), m_state.end() - n);
+    std::copy(m_state.begin() + n, m_state.end(), m_state.begin());
+    std::copy(samples_in.begin(), samples_in.end(), m_state.end() - n);
   } else {
-    copy(samples_in.end() - order, samples_in.end(), m_state.begin());
+    std::copy(samples_in.end() - order, samples_in.end(), m_state.begin());
   }
 }
 
@@ -146,10 +146,10 @@ void LowPassFilterFirAudio::process(const SampleVector &samples_in,
 
   // Update m_state.
   if (n < order) {
-    copy(m_state.begin() + n, m_state.end(), m_state.begin());
-    copy(samples_in.begin(), samples_in.end(), m_state.end() - n);
+    std::copy(m_state.begin() + n, m_state.end(), m_state.begin());
+    std::copy(samples_in.begin(), samples_in.end(), m_state.end() - n);
   } else {
-    copy(samples_in.end() - order, samples_in.end(), m_state.begin());
+    std::copy(samples_in.end() - order, samples_in.end(), m_state.begin());
   }
 }
 
