@@ -2,15 +2,9 @@
 
 # changes and known issues of airspy-fmradion
 
-## libusb-1.0.25 glitch
+## git submodule
 
-* Note: This problem has been fixed by the latest implementation of Airspy HF+ driver after [this commit](https://github.com/airspy/airspyhf/commit/3b823ad8fa729358e0729e6c1ca60ac5dfcd656e).
-* The author has noticed [libusb-1.0.25 on macOS 12.2 causes segfault when stopping the code with SIGINT or SIGTERM with Airspy HF+ Discovery](https://github.com/jj1bdx/airspy-fmradion/issues/35). 
-* A proper fix of this is to [fix the Airspy HF+ driver](https://github.com/airspy/airspyhf/pull/31).
-* [A similar case of SDR++ with ArchLinux](https://github.com/libusb/libusb/issues/1059#issuecomment-1030638617) is also reported.
-* Since Version 20220205-0, a workaround is implemented to prevent data loss for this bug: the main() loop closes the audio output before calling the function which might cause this segmentation fault (SIGSEGV), which is the stopping function of the SDR source driver. 
-* Airspy R2 and Mini are not affected. Use the latest driver with [this fix](https://github.com/airspy/airspyone_host/commit/41c439f16818d931c4d0f8a620413ea5131c0bd6).
-* You can still use 20220205-1 if you need to; there is no functional difference between 20220205-1 and 20220206-0.
+* [r8brain-free-src](https://github.com/avaneev/r8brain-free-src) resampler is required as a git submodule of this repository.
 
 ## Platforms tested
 
@@ -31,6 +25,7 @@
 
 ## Changes (including requirement changes)
 
+* 20220818-1: Add r8brain-free-src options for gaining performance.
 * 20220818-0: Implemented r8brain-free-src also for IfResampler. libsamplerate is removed.
 * 20220817-1: Introduced r8brain-free-src for AudioResampler.
 * 20220817-0: Introduced libsamplerate aka Secret Rabbit Code for IfResampler.
@@ -70,4 +65,14 @@
 
 * Current version number scheme: YYYYMMDD-N (N: subnumber, starting from 0, unsigned integer)
 * The semantic versioning scheme of airspy-fmradion has utterly failed.
+
+## FYI: libusb-1.0.25 glitch
+
+* Note: This problem has been fixed by the latest implementation of Airspy HF+ driver after [this commit](https://github.com/airspy/airspyhf/commit/3b823ad8fa729358e0729e6c1ca60ac5dfcd656e).
+* The author has noticed [libusb-1.0.25 on macOS 12.2 causes segfault when stopping the code with SIGINT or SIGTERM with Airspy HF+ Discovery](https://github.com/jj1bdx/airspy-fmradion/issues/35). 
+* A proper fix of this is to [fix the Airspy HF+ driver](https://github.com/airspy/airspyhf/pull/31).
+* [A similar case of SDR++ with ArchLinux](https://github.com/libusb/libusb/issues/1059#issuecomment-1030638617) is also reported.
+* Since Version 20220205-0, a workaround is implemented to prevent data loss for this bug: the main() loop closes the audio output before calling the function which might cause this segmentation fault (SIGSEGV), which is the stopping function of the SDR source driver. 
+* Airspy R2 and Mini are not affected. Use the latest driver with [this fix](https://github.com/airspy/airspyone_host/commit/41c439f16818d931c4d0f8a620413ea5131c0bd6).
+* You can still use 20220205-1 if you need to; there is no functional difference between 20220205-1 and 20220206-0.
 
