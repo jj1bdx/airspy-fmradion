@@ -229,8 +229,9 @@ target_include_directories(r8b PUBLIC
 	r8brain-free-src
 )
 target_compile_definitions(r8b PUBLIC
-	R8B_PFFFT_DOUBLE=1
+	R8B_EXTFFT=1
 	R8B_FASTTIMING=1
+	R8B_PFFFT_DOUBLE=1
 )
 
 # Base sources
