@@ -51,7 +51,7 @@
 // define this for enabling coefficient monitor functions
 // #undef COEFF_MONITOR
 
-#define AIRSPY_FMRADION_VERSION "20220818-1"
+#define AIRSPY_FMRADION_VERSION "20220819-0"
 
 // Flag to set graceful termination
 // in process_signals()
@@ -702,9 +702,6 @@ int main(int argc, char **argv) {
 
   bool enable_fs_fourth_downconverter = !(srcsdr->is_low_if());
 
-  bool enable_predownsampling = false;
-  const unsigned int predownsample_ratio = 4;
-
   bool enable_downsampling = true;
   double if_decimation_ratio = 1.0;
   double fm_target_rate = FmDecoder::sample_rate_if;
@@ -731,16 +728,6 @@ int main(int argc, char **argv) {
   // IF rate compensation if requested.
   if (ifrate_offset_enable) {
     ifrate *= 1.0 + (ifrate_offset_ppm / 1000000.0);
-  }
-
-  if (ifrate >= 3100000.0) {
-    enable_predownsampling = true;
-    fprintf(stderr, "Original IF sample rate: %.9g [Hz]\n", ifrate);
-    fprintf(stderr, "Pre-downsampling by factor %d enabled\n",
-            predownsample_ratio);
-    ifrate /= (double)predownsample_ratio;
-    fprintf(stderr, "New IF sample rate after downsampling: %.9g [Hz]\n",
-            ifrate);
   }
 
   // Configure if_decimation_ratio.
@@ -808,9 +795,6 @@ int main(int argc, char **argv) {
 
   // Prepare Fs/4 downconverter.
   FourthConverterIQ fourth_downconverter(false);
-
-  LowPassFilterFirIQ predownsampling_filter(
-      FilterParameters::jj1bdx_div4_predownsampling, predownsample_ratio);
 
   IfResampler if_resampler(ifrate,          // input_rate
                            demodulator_rate // output_rate
@@ -894,17 +878,11 @@ int main(int argc, char **argv) {
 
   // Initialize moving average object for FM ppm monitoring.
   const unsigned int ppm_average_stages = 100;
-  MovingAverage<float> ppm_average(
-      enable_predownsampling ? ppm_average_stages * predownsample_ratio
-                             : ppm_average_stages,
-      0.0f);
+  MovingAverage<float> ppm_average(ppm_average_stages, 0.0f);
 
   // Initialize moving average object for FM AFC.
   const unsigned int fm_afc_average_stages = 1000;
-  MovingAverage<float> fm_afc_average(
-      enable_predownsampling ? fm_afc_average_stages * predownsample_ratio
-                             : fm_afc_average_stages,
-      0.0f);
+  MovingAverage<float> fm_afc_average(fm_afc_average_stages, 0.0f);
   const unsigned int fm_afc_hz_step = 10;
   FineTuner fm_afc_finetuner((unsigned int)fm_target_rate / fm_afc_hz_step);
   float fm_afc_offset_sum = 0.0;
@@ -941,9 +919,6 @@ int main(int argc, char **argv) {
   case ModType::WSPR:
     discarding_blocks = stat_rate * 2;
     break;
-  }
-  if (enable_predownsampling) {
-    stat_rate *= predownsample_ratio;
   }
 
   float if_level = 0;
@@ -999,19 +974,11 @@ int main(int argc, char **argv) {
       if_shifted_samples = std::move(if_afc_samples);
     }
 
-    // Downsample if pre-downsampling is enable_downsampling
-    if (enable_predownsampling) {
-      predownsampling_filter.process(if_shifted_samples,
-                                     if_downsampled_samples);
-    } else {
-      if_downsampled_samples = std::move(if_shifted_samples);
-    }
-
     // Downsample IF for the decoder.
     if (enable_downsampling) {
-      if_resampler.process(if_downsampled_samples, if_samples);
+      if_resampler.process(if_shifted_samples, if_samples);
     } else {
-      if_samples = std::move(if_downsampled_samples);
+      if_samples = std::move(if_shifted_samples);
     }
 
     // Downsample IF for the decoder.
