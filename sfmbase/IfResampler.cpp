@@ -26,6 +26,10 @@ IfResampler::IfResampler(const double input_rate, const double output_rate)
     : m_ratio(output_rate / input_rate),
       m_cdspr_re(new r8b::CDSPResampler24(input_rate, output_rate, MAXINLEN)),
       m_cdspr_im(new r8b::CDSPResampler24(input_rate, output_rate, MAXINLEN)) {
+#ifdef DEBUG_IFRESAMPLER
+  int latency = m_cdspr_re->getInLenBeforeOutStart();
+  fprintf(stderr, "m_ratio = %g, latency = %d\n", m_ratio, latency);
+#endif // DEBUG_IFRESAMPLER
   // do nothing
 }
 
