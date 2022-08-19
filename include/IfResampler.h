@@ -27,6 +27,8 @@
 
 class IfResampler {
 public:
+  // maximum input buffer size
+  static constexpr int max_input_length = 65536;
   // Construct IF IQ resampler.
   // input_rate : input sampling rate.
   // output_rate: input sampling rate.

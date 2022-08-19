@@ -27,6 +27,8 @@
 
 class AudioResampler {
 public:
+  // maximum input buffer size
+  static constexpr int max_input_length = 32768;
   // Construct audio resampler.
   // input_rate : input sampling rate.
   // output_rate: input sampling rate.

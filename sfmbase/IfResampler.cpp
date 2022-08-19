@@ -18,14 +18,14 @@
 
 #include "IfResampler.h"
 
-#define MAXINLEN (65536)
-
 // class IfResampler
 
 IfResampler::IfResampler(const double input_rate, const double output_rate)
     : m_ratio(output_rate / input_rate),
-      m_cdspr_re(new r8b::CDSPResampler24(input_rate, output_rate, MAXINLEN)),
-      m_cdspr_im(new r8b::CDSPResampler24(input_rate, output_rate, MAXINLEN)) {
+      m_cdspr_re(
+          new r8b::CDSPResampler24(input_rate, output_rate, max_input_length)),
+      m_cdspr_im(
+          new r8b::CDSPResampler24(input_rate, output_rate, max_input_length)) {
 #ifdef DEBUG_IFRESAMPLER
   int latency = m_cdspr_re->getInLenBeforeOutStart();
   fprintf(stderr, "m_ratio = %g, latency = %d\n", m_ratio, latency);
@@ -37,6 +37,9 @@ void IfResampler::process(const IQSampleVector &samples_in,
                           IQSampleVector &samples_out) {
   size_t input_size = samples_in.size();
   size_t output_size;
+
+  assert(input_size <= max_input_length);
+
   if (m_ratio > 1) {
     output_size = (size_t)lrint((input_size * m_ratio) + 1);
   } else {
@@ -73,6 +76,10 @@ void IfResampler::process(const IQSampleVector &samples_in,
     }
   }
   samples_out.resize(output_length_re);
+#ifdef DEBUG_IFRESAMPLER
+  fprintf(stderr, "IfResampler: input_size = %zu, output_length_re = %zu\n",
+          input_size, output_length_re);
+#endif // DEBUG_IFRESAMPLER
 }
 
 // end
