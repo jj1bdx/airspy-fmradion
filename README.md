@@ -2,7 +2,7 @@
 
 # airspy-fmradion
 
-* Version 20220819-0
+* Version 20220819-1
 * For MacOS (both Intel and Apple Silicon) and Linux
 
 ## Contributing
@@ -398,7 +398,7 @@ Compile and install
     - `<float>` gain in dB. Possible gains in dB are: `0.0, 0.9, 1.4, 2.7, 3.7,
 7.7, 8.7, 12.5, 14.4, 15.7, 16.6, 19.7, 20.7, 22.9, 25.4, 28.0, 29.7, 32.8, 33.8
 , 36.4, 37.2, 38.6, 40.2, 42.1, 43.4, 43.9, 44.5, 48.0, 49.6`
-  - `srate=<int>` Device sample rate. valid values in the [225001, 300000], [900001, 3200000] ranges. (default `1000000`)
+  - `srate=<int>` Device sample rate. valid values in the [900001, 3200000] range. (default `1152000`)
   - `blklen=<int>` Device block length in bytes (default RTL-SDR default i.e. 64k)
   - `agc` Activates device AGC (default off)
   - `antbias` Turn on the antenna bias for remote LNA (default off)

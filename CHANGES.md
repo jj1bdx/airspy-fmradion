@@ -25,8 +25,9 @@
 
 ## Changes (including requirement changes)
 
+* 20220819-1: Restricted RTL-SDR sampling rate to [900001, 3200000] [Hz]. Also the default IF sample rate of RTL-SDR is set to 1152000Hz. AudioResampler and IfResampler maximum input length check is implemented.
 * 20220819-0: /4 downsampling above 3.1MHz/3100kHz in 20210702-0 has been removed. The new IF resampler based on r8brain-free-src works well without preresampling.
-* 20220818-1: Add r8brain-free-src options for gaining performance.
+* 20220818-1: Added r8brain-free-src options for gaining performance.
 * 20220818-0: Implemented r8brain-free-src also for IfResampler. libsamplerate is removed.
 * 20220817-1: Introduced r8brain-free-src for AudioResampler.
 * 20220817-0: Introduced libsamplerate aka Secret Rabbit Code for IfResampler.

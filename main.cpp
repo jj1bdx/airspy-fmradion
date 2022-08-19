@@ -51,7 +51,7 @@
 // define this for enabling coefficient monitor functions
 // #undef COEFF_MONITOR
 
-#define AIRSPY_FMRADION_VERSION "20220819-0"
+#define AIRSPY_FMRADION_VERSION "20220819-1"
 
 // Flag to set graceful termination
 // in process_signals()
@@ -162,8 +162,8 @@ void usage() {
       "  freq=<int>     Frequency of radio station in Hz (default 100000000)\n"
       "                 valid values: 10M to 2.2G (working range depends on "
       "device)\n"
-      "  srate=<int>    IF sample rate in Hz (default 937500)\n"
-      "                 (valid ranges: [225001, 300000], [900001, 3200000]))\n"
+      "  srate=<int>    IF sample rate in Hz (default 1152000)\n"
+      "                 (valid ranges: [900001, 3200000]))\n"
       "  gain=<float>   Set LNA gain in dB, or 'auto',\n"
       "                 or 'list' to just get a list of valid values (default "
       "auto)\n"

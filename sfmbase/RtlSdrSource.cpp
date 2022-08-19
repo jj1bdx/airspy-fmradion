@@ -76,7 +76,7 @@ RtlSdrSource::~RtlSdrSource() {
 
 bool RtlSdrSource::configure(std::string configurationStr) {
 
-  uint32_t sample_rate = 1200000;
+  uint32_t sample_rate = 1152000;
   uint32_t frequency = 100000000;
   int tuner_gain = INT_MIN;
   int block_length = default_block_length;
@@ -91,9 +91,7 @@ bool RtlSdrSource::configure(std::string configurationStr) {
     std::cerr << "RtlSdrSource::configure: srate: " << m["srate"] << std::endl;
     sample_rate = atoi(m["srate"].c_str());
 
-    if ((sample_rate < 225001) ||
-        ((sample_rate > 300000) && (sample_rate < 900001)) ||
-        (sample_rate > 3200000)) {
+    if ((sample_rate < 900001) || (sample_rate > 3200000)) {
       m_error = "Invalid sample rate";
       return false;
     }
