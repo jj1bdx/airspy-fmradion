@@ -38,7 +38,6 @@ public:
   void process(const SampleVector &samples_in, SampleVector &samples_out);
 
 private:
-  const double m_ratio;
   r8b::CDSPResampler *m_cdspr;
 };
 

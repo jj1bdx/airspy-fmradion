@@ -23,8 +23,7 @@
 
 AudioResampler::AudioResampler(const double input_rate,
                                const double output_rate)
-    : m_ratio(output_rate / input_rate),
-      m_cdspr(
+    : m_cdspr(
           new r8b::CDSPResampler(input_rate, output_rate, max_input_length)) {
 #ifdef DEBUG_AUDIORESAMPLER
   int latency = m_cdspr->getInLenBeforeOutStart();
@@ -36,16 +35,8 @@ AudioResampler::AudioResampler(const double input_rate,
 void AudioResampler::process(const SampleVector &samples_in,
                              SampleVector &samples_out) {
   size_t input_size = samples_in.size();
-  size_t output_size;
 
   assert(input_size <= max_input_length);
-
-  if (m_ratio > 1) {
-    output_size = (size_t)lrint((input_size * m_ratio) + 1);
-  } else {
-    output_size = input_size;
-  }
-  samples_out.resize(output_size);
 
   size_t output_length;
 
@@ -56,10 +47,11 @@ void AudioResampler::process(const SampleVector &samples_in,
 
   // Copy CDSPReampler internal buffer to given system buffer
 
+  // Resize first to ensure the output data fits in samples_out
+  samples_out.resize(output_length);
   if (output_length > 0) {
     samples_out.assign(output0, output0 + output_length);
   }
-  samples_out.resize(output_length);
 #ifdef DEBUG_AUDIORESAMPLER
   fprintf(stderr, "AudioResampler: input_size = %zu, output_length = %zu\n",
           input_size, output_length);

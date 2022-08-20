@@ -38,7 +38,6 @@ public:
   void process(const IQSampleVector &samples_in, IQSampleVector &samples_out);
 
 private:
-  const double m_ratio;
   r8b::CDSPResampler24 *m_cdspr_re;
   r8b::CDSPResampler24 *m_cdspr_im;
 };

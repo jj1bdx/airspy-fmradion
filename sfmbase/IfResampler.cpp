@@ -21,8 +21,7 @@
 // class IfResampler
 
 IfResampler::IfResampler(const double input_rate, const double output_rate)
-    : m_ratio(output_rate / input_rate),
-      m_cdspr_re(
+    : m_cdspr_re(
           new r8b::CDSPResampler24(input_rate, output_rate, max_input_length)),
       m_cdspr_im(
           new r8b::CDSPResampler24(input_rate, output_rate, max_input_length)) {
@@ -36,16 +35,8 @@ IfResampler::IfResampler(const double input_rate, const double output_rate)
 void IfResampler::process(const IQSampleVector &samples_in,
                           IQSampleVector &samples_out) {
   size_t input_size = samples_in.size();
-  size_t output_size;
 
   assert(input_size <= max_input_length);
-
-  if (m_ratio > 1) {
-    output_size = (size_t)lrint((input_size * m_ratio) + 1);
-  } else {
-    output_size = input_size;
-  }
-  samples_out.resize(output_size);
 
   // Use two independent sample rate converters in sync.
   DoubleVector samples_in_re;
@@ -69,13 +60,15 @@ void IfResampler::process(const IQSampleVector &samples_in,
   // Copy CDSPReampler24 internal buffers to given output buffer
   // with type conversion.
 
+  // Resize first to ensure the output data fits in samples_out
+  samples_out.resize(output_length_re);
+
   if (output_length_re > 0) {
     for (size_t i = 0; i < output_length_re; i++) {
       samples_out[i] = IQSample(static_cast<float>(output0_re[i]),
                                 static_cast<float>(output0_im[i]));
     }
   }
-  samples_out.resize(output_length_re);
 #ifdef DEBUG_IFRESAMPLER
   fprintf(stderr, "IfResampler: input_size = %zu, output_length_re = %zu\n",
           input_size, output_length_re);
