@@ -163,7 +163,7 @@ PortAudioOutput::PortAudioOutput(const PaDeviceIndex device_index,
   m_outputparams.channelCount = m_nchannels;
   m_outputparams.sampleFormat = paFloat32;
   m_outputparams.suggestedLatency =
-      Pa_GetDeviceInfo(m_outputparams.device)->defaultHighOutputLatency;
+      Pa_GetDeviceInfo(m_outputparams.device)->defaultLowOutputLatency;
   m_outputparams.hostApiSpecificStreamInfo = NULL;
 
   m_paerror =
@@ -191,6 +191,11 @@ void PortAudioOutput::output_close() {
   m_paerror = Pa_StopStream(m_stream);
   if (m_paerror != paNoError) {
     add_paerror("Pa_StopStream()");
+    return;
+  }
+  m_paerror = Pa_CloseStream(m_stream);
+  if (m_paerror != paNoError) {
+    add_paerror("Pa_CloseStream()");
     return;
   }
   Pa_Terminate();
