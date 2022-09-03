@@ -55,8 +55,11 @@ public:
 
   /** Return number of samples in queue. */
   std::size_t queued_samples() {
-    std::lock_guard<std::mutex> lock(m_mutex);
-    return m_qlen;
+    {
+      std::lock_guard<std::mutex> lock(m_mutex);
+      return m_qlen;
+      // unlock m_mutex here by getting out of scope
+    }
   }
 
   /**
@@ -67,20 +70,26 @@ public:
    */
   std::vector<Element> pull() {
     std::vector<Element> ret;
-    std::unique_lock<std::mutex> lock(m_mutex);
-    m_cond.wait(lock, [&] { return !(m_queue.empty() && !m_end_marked); });
-    if (!m_queue.empty()) {
-      m_qlen -= m_queue.front().size();
-      std::swap(ret, m_queue.front());
-      m_queue.pop();
+    {
+      std::unique_lock<std::mutex> lock(m_mutex);
+      m_cond.wait(lock, [&] { return !(m_queue.empty() && !m_end_marked); });
+      if (!m_queue.empty()) {
+        m_qlen -= m_queue.front().size();
+        std::swap(ret, m_queue.front());
+        m_queue.pop();
+      }
+      return ret;
+      // unlock m_mutex here by getting out of scope
     }
-    return ret;
   }
 
   /** Return true if the end has been reached at the Pull side. */
   bool pull_end_reached() {
-    std::lock_guard<std::mutex> lock(m_mutex);
-    return m_qlen == 0 && m_end_marked;
+    {
+      std::lock_guard<std::mutex> lock(m_mutex);
+      return (m_qlen == 0 && m_end_marked);
+      // unlock m_mutex here by getting out of scope
+    }
   }
 
   /** Wait until the buffer contains minfill samples or an end marker. */
