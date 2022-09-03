@@ -24,13 +24,14 @@
 #include <mutex>
 #include <queue>
 
-/** Buffer to move sample data between threads. */
+// Buffer to move sample data between threads.
+
 template <class Element> class DataBuffer {
 public:
-  /** Constructor. */
+  // Constructor.
   DataBuffer() : m_qlen(0), m_end_marked(false) {}
 
-  /** Add samples to the queue. */
+  // Add samples to the queue.
   void push(std::vector<Element> &&samples) {
     if (!samples.empty()) {
       {
@@ -43,7 +44,7 @@ public:
     }
   }
 
-  /** Mark the end of the data stream. */
+  // Mark the end of the data stream.
   void push_end() {
     {
       std::scoped_lock<std::mutex> lock{m_mutex};
@@ -53,7 +54,7 @@ public:
     m_cond.notify_all();
   }
 
-  /** Return number of samples in queue. */
+  // Return number of samples in queue.
   std::size_t queued_samples() {
     {
       std::scoped_lock<std::mutex> lock{m_mutex};
@@ -62,12 +63,10 @@ public:
     }
   }
 
-  /**
-   * If the queue is non-empty, remove a block from the queue and
-   * return the samples. If the end marker has been reached, return
-   * an empty vector. If the queue is empty, wait until more data is pushed
-   * or until the end marker is pushed.
-   */
+  // If the queue is non-empty, remove a block from the queue and
+  // return the samples. If the end marker has been reached, return
+  // an empty vector. If the queue is empty, wait until more data is pushed
+  // or until the end marker is pushed.
   std::vector<Element> pull() {
     std::vector<Element> ret;
     {
@@ -83,7 +82,7 @@ public:
     }
   }
 
-  /** Return true if the end has been reached at the Pull side. */
+  // Return true if the end has been reached at the Pull side.
   bool pull_end_reached() {
     {
       std::scoped_lock<std::mutex> lock{m_mutex};
@@ -92,7 +91,7 @@ public:
     }
   }
 
-  /** Wait until the buffer contains minfill samples or an end marker. */
+  // Wait until the buffer contains minfill samples or an end marker.
   void wait_buffer_fill(std::size_t minfill) {
     {
       std::unique_lock<std::mutex> lock(m_mutex);
