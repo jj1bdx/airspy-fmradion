@@ -45,6 +45,7 @@
 
 #include <cstdlib>
 #include <ctime>
+#include <sys/time.h>
 
 #include "SoftFM.h"
 
@@ -53,6 +54,7 @@
 
 namespace Utility {
 
+// Parse floating numbers with unit suffixes.
 inline bool parse_dbl(const char *s, double &v) {
   char *endp;
 
@@ -74,6 +76,24 @@ inline bool parse_dbl(const char *s, double &v) {
   }
 
   return (*endp == '\0');
+}
+
+// Parse integet numbers with "k" suffix.
+inline bool parse_int(const char *s, int &v, bool allow_unit = false) {
+  char *endp;
+  long t = strtol(s, &endp, 10);
+  if (endp == s) {
+    return false;
+  }
+  if (allow_unit && *endp == 'k' && t > INT_MIN / 1000 && t < INT_MAX / 1000) {
+    t *= 1000;
+    endp++;
+  }
+  if (*endp != '\0' || t < INT_MIN || t > INT_MAX) {
+    return false;
+  }
+  v = t;
+  return true;
 }
 
 // Compute RMS over the specified IQSample vector.
@@ -270,6 +290,13 @@ inline void millisleep(unsigned int milliseconds) {
       .tv_sec = static_cast<time_t>(milliseconds / 1000),
       .tv_nsec = static_cast<long>((milliseconds % 1000) * 1000000L)};
   nanosleep(&ts_sleep, NULL);
+}
+
+// Return Unix time stamp in seconds.
+inline double get_time() {
+  struct timeval tv;
+  gettimeofday(&tv, nullptr);
+  return tv.tv_sec + (1.0e-6 * tv.tv_usec);
 }
 
 }; // namespace Utility

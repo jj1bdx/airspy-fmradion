@@ -90,7 +90,7 @@ void write_output_data(AudioOutput *output, DataBuffer<Sample> *buf,
   }
 }
 
-void usage() {
+static void usage() {
   fprintf(
       stderr,
       "Usage: airspy-fmradion [options]\n"
@@ -214,34 +214,10 @@ void usage() {
       "\n");
 }
 
-void badarg(const char *label) {
+static void badarg(const char *label) {
   usage();
   fprintf(stderr, "ERROR: Invalid argument for %s\n", label);
   exit(1);
-}
-
-bool parse_int(const char *s, int &v, bool allow_unit = false) {
-  char *endp;
-  long t = strtol(s, &endp, 10);
-  if (endp == s) {
-    return false;
-  }
-  if (allow_unit && *endp == 'k' && t > INT_MIN / 1000 && t < INT_MAX / 1000) {
-    t *= 1000;
-    endp++;
-  }
-  if (*endp != '\0' || t < INT_MIN || t > INT_MAX) {
-    return false;
-  }
-  v = t;
-  return true;
-}
-
-/** Return Unix time stamp in seconds. */
-double get_time() {
-  struct timeval tv;
-  gettimeofday(&tv, nullptr);
-  return tv.tv_sec + 1.0e-6 * tv.tv_usec;
 }
 
 static bool get_device(std::vector<std::string> &devnames, DevType devtype,
@@ -302,7 +278,7 @@ static sigset_t old_signalmask, signalmask;
 
 // Signal handling thread code, started from main().
 // See APUE 3rd Figure 12.16.
-void *process_signals(void *arg) {
+static void *process_signals(void *arg) {
   int err, signum;
   for (;;) {
     // wait for a signal
@@ -419,7 +395,7 @@ int main(int argc, char **argv) {
       config_str.assign(optarg);
       break;
     case 'd':
-      if (!parse_int(optarg, devidx)) {
+      if (!Utility::parse_int(optarg, devidx)) {
         devidx = -1;
       }
       break;
@@ -456,7 +432,8 @@ int main(int argc, char **argv) {
       outmode = OutputMode::PORTAUDIO;
       if (0 == strncmp(optarg, "-", 1)) {
         portaudiodev = -1;
-      } else if (!parse_int(optarg, portaudiodev) || portaudiodev < 0) {
+      } else if (!Utility::parse_int(optarg, portaudiodev) ||
+                 portaudiodev < 0) {
         badarg("-P");
       }
       break;
@@ -478,7 +455,7 @@ int main(int argc, char **argv) {
       deemphasis_na = true;
       break;
     case 'E':
-      if (!parse_int(optarg, multipathfilter_stages) ||
+      if (!Utility::parse_int(optarg, multipathfilter_stages) ||
           multipathfilter_stages < 1) {
         badarg("-E");
       }
@@ -900,7 +877,7 @@ int main(int argc, char **argv) {
   float audio_level = 0;
   bool got_stereo = false;
 
-  double block_time = get_time();
+  double block_time = Utility::get_time();
 
   // TODO: ~0.1sec / display (should be tuned)
   unsigned int stat_rate =
@@ -945,7 +922,7 @@ int main(int argc, char **argv) {
     }
 
     double prev_block_time = block_time;
-    block_time = get_time();
+    block_time = Utility::get_time();
 
     // Fine tuning is not needed
     // so long as the stability of the receiver device is
