@@ -57,13 +57,10 @@
 // in process_signals()
 static std::atomic_bool stop_flag(false);
 
-/**
- * Get data from output buffer and write to output stream.
- *
- * This code runs in a separate thread.
- */
-void write_output_data(AudioOutput *output, DataBuffer<Sample> *buf,
-                       unsigned int buf_minfill) {
+// Get data from output buffer and write to output stream.
+// This code runs in a separate thread.
+static void write_output_data(AudioOutput *output, DataBuffer<Sample> *buf,
+                              unsigned int buf_minfill) {
   while (!stop_flag.load()) {
 
     if (buf->queued_samples() == 0) {
