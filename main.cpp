@@ -1010,16 +1010,13 @@ int main(int argc, char **argv) {
 
     if (modtype == ModType::FM) {
       // the minus factor is to show the ppm correction
-      // to make and not the one made
+      // to make and not the one which has already been made
       ppm_average.feed((fm.get_tuning_offset() / tuner_freq) * -1.0e6);
     } else if (modtype == ModType::NBFM) {
       ppm_average.feed((nbfm.get_tuning_offset() / tuner_freq) * -1.0e6);
     }
 
     float if_level_db = 20 * log10(if_level);
-    float audio_level_db = 20 * log10(audio_level) + 3.01;
-    std::size_t buflen = output_buffer.queued_samples();
-    double buflen_sec = double(buflen) / double(nchannel) / double(pcmrate);
 
     // Show status messages for each block if not in quiet mode.
     bool stereo_change = false;
@@ -1038,12 +1035,16 @@ int main(int argc, char **argv) {
           }
         }
       }
-      switch (modtype) {
-      case ModType::FM:
-      case ModType::NBFM:
+      if (stereo_change ||
+          (((block % stat_rate) == 0) && (block > discarding_blocks))) {
         // Show per-block statistics.
-        if (stereo_change ||
-            (((block % stat_rate) == 0) && (block > discarding_blocks))) {
+        float audio_level_db = 20 * log10(audio_level) + 3.01;
+        std::size_t buflen = output_buffer.queued_samples();
+        double buflen_sec = double(buflen) / double(nchannel) / double(pcmrate);
+
+        switch (modtype) {
+        case ModType::FM:
+        case ModType::NBFM:
           fprintf(stderr,
 #ifdef COEFF_MONITOR
                   "blk=%11" PRIu64
@@ -1055,25 +1056,23 @@ int main(int argc, char **argv) {
                   block, ppm_average.average(), if_level_db, audio_level_db,
                   buflen_sec);
           fflush(stderr);
-        }
-        break;
-      case ModType::AM:
-      case ModType::DSB:
-      case ModType::USB:
-      case ModType::LSB:
-      case ModType::CW:
-      case ModType::WSPR:
-        // Show per-block statistics without ppm offset.
-        double if_agc_gain_db = 20 * log10(am.get_if_agc_current_gain());
-        if (((block % stat_rate) == 0) && (block > discarding_blocks)) {
+          break;
+        case ModType::AM:
+        case ModType::DSB:
+        case ModType::USB:
+        case ModType::LSB:
+        case ModType::CW:
+        case ModType::WSPR:
+          // Show statistics without ppm offset.
+          double if_agc_gain_db = 20 * log10(am.get_if_agc_current_gain());
           fprintf(stderr,
                   "\rblk=%11" PRIu64
                   ":IF=%+6.1fdB:AGC=%+6.1fdB:AF=%+6.1fdB:buf=%.2fs",
                   block, if_level_db, if_agc_gain_db, audio_level_db,
                   buflen_sec);
           fflush(stderr);
+          break;
         }
-        break;
       }
 
 #ifdef COEFF_MONITOR
