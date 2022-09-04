@@ -45,6 +45,7 @@
 
 #include <cstdlib>
 #include <ctime>
+#include <limits.h>
 #include <sys/time.h>
 
 #include "SoftFM.h"
