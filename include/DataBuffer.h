@@ -35,7 +35,7 @@ public:
   void push(std::vector<Element> &&samples) {
     if (!samples.empty()) {
       {
-        std::scoped_lock<std::mutex> lock{m_mutex};
+        std::scoped_lock<std::mutex> lock(m_mutex);
         m_qlen += samples.size();
         m_queue.push(std::move(samples));
         // unlock m_mutex here by getting out of scope
@@ -47,7 +47,7 @@ public:
   // Mark the end of the data stream.
   void push_end() {
     {
-      std::scoped_lock<std::mutex> lock{m_mutex};
+      std::scoped_lock<std::mutex> lock(m_mutex);
       m_end_marked = true;
       // unlock m_mutex here by getting out of scope
     }
@@ -57,7 +57,7 @@ public:
   // Return number of samples in queue.
   std::size_t queued_samples() {
     {
-      std::scoped_lock<std::mutex> lock{m_mutex};
+      std::scoped_lock<std::mutex> lock(m_mutex);
       return (m_qlen);
       // unlock m_mutex here by getting out of scope
     }
@@ -85,7 +85,7 @@ public:
   // Return true if the end has been reached at the Pull side.
   bool pull_end_reached() {
     {
-      std::scoped_lock<std::mutex> lock{m_mutex};
+      std::scoped_lock<std::mutex> lock(m_mutex);
       return ((m_qlen == 0) && (m_end_marked));
       // unlock m_mutex here by getting out of scope
     }
