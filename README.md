@@ -171,10 +171,18 @@ ln -s `pwd`/compile_commands.json ..
 cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON ..
 ```
 
-Compile and install
+### Compile and install
 
  - `make -j4` (for machines with 4 CPUs)
  - `make install`
+
+### Copying binary to another directory
+
+On M1 Mac, using cp causes a trouble. Use the following command to properly install the command to a local directory:
+
+```shell
+install -o user -m 0700 -c -s build/airspy-fmradion $(HOME)/bin
+```
 
 ## Basic command options
 

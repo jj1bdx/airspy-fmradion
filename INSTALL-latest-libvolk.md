@@ -2,13 +2,13 @@
 
 ## Required version
 
-Use libvolk 2.5.1.
+Use libvolk 2.5.2.
 
-Note: libvolk 2.1 to 2.5.0 will work without issues, but no guarantee.
+Note: libvolk 2.1 to 2.5.1 will work without issues, but no guarantee.
 
 ## For x86_64 and M1 macOS: use Homebrew
 
-For libvolk 2.5.1, the bottled binary of x86\_64 works OK with the SIMD acceleration, and the bottled M1 binary detects neon capability.
+For libvolk 2.5.2, the bottled binary of x86\_64 works OK with the SIMD acceleration, and the bottled M1 binary detects neon capability.
 
 ```sh
 brew install volk
@@ -28,5 +28,9 @@ cp ./volk_config ~/.volk/
 ```
 
 See `doc/volk_config_data` for the example `volk_config` files.
+
+## For your own build of libvolk
+
+See `jj1bdx-dev` branch of [jj1bdx fork of libvolk](https://github.com/jj1bdx/libvolk).
 
 [End of memorandum]
