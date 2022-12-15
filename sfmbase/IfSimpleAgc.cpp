@@ -29,7 +29,7 @@ IfSimpleAgc::IfSimpleAgc(const float initial_gain, const float max_gain,
   reset_gain();
 }
 
-// Reset AGC gain to the initial_gain
+// Reset AGC gain to the initial_gain.
 void IfSimpleAgc::reset_gain() { m_current_gain = m_initial_gain; }
 
 // IF AGC based on the Tisserand-Berviller algorithm

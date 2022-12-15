@@ -43,6 +43,9 @@ public:
   AfSimpleAgc(const double initial_gain, const double max_gain,
               const double reference, const double rate);
 
+  // Reset AGC gain to the initial_gain.
+  void reset_gain();
+
   // Process audio samples.
   void process(const SampleVector &samples_in, SampleVector &samples_out);
 
@@ -50,6 +53,7 @@ public:
   double get_current_gain() const { return m_current_gain; }
 
 private:
+  double m_initial_gain;
   double m_current_gain;
   double m_max_gain;
   double m_reference;

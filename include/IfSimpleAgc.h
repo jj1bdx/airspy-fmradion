@@ -43,7 +43,7 @@ public:
   // rate         :: rate factor for changing the gain value.
   IfSimpleAgc(const float initial_gain, const float max_gain, const float rate);
 
-  // Reset AGC gain to the initial_gain
+  // Reset AGC gain to the initial_gain.
   void reset_gain();
 
   // Process IQ samples.

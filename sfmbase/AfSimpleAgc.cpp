@@ -23,10 +23,13 @@
 AfSimpleAgc::AfSimpleAgc(const double initial_gain, const double max_gain,
                          const double reference, const double rate)
     // Initialize member fields
-    : m_current_gain(initial_gain), m_max_gain(max_gain),
+    : m_initial_gain(initial_gain), m_max_gain(max_gain),
       m_reference(reference), m_distortion_rate(rate) {
-  // Do nothing
+  reset_gain();
 }
+
+// Reset AGC gain to the initial_gain.
+void AfSimpleAgc::reset_gain() { m_current_gain = m_initial_gain; }
 
 // AF AGC based on the Tisserand-Berviller algorithm
 
@@ -41,8 +44,13 @@ void AfSimpleAgc::process(const SampleVector &samples_in,
     samples_out[i] = x2 * m_reference;
     double z = 1.0 + (m_distortion_rate * (1.0 - (x2 * x2)));
     m_current_gain *= z;
-    if (m_current_gain > m_max_gain) {
-      m_current_gain = m_max_gain;
+    // Check if m_current_gain is finite
+    if (!std::isfinite(m_current_gain)) {
+      reset_gain();
+    } else {
+      if (m_current_gain > m_max_gain) {
+        m_current_gain = m_max_gain;
+      }
     }
   }
 }
