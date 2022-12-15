@@ -24,10 +24,13 @@
 IfSimpleAgc::IfSimpleAgc(const float initial_gain, const float max_gain,
                          const float rate)
     // Initialize member fields
-    : m_current_gain(initial_gain), m_max_gain(max_gain),
+    : m_initial_gain(initial_gain), m_max_gain(max_gain),
       m_distortion_rate(rate) {
-  // Do nothing
+  reset_gain();
 }
+
+// Reset AGC gain to the initial_gain
+void IfSimpleAgc::reset_gain() { m_current_gain = m_initial_gain; }
 
 // IF AGC based on the Tisserand-Berviller algorithm
 // Target level = 1.0
@@ -43,8 +46,13 @@ void IfSimpleAgc::process(const IQSampleVector &samples_in,
     samples_out[i] = x2;
     float z = 1.0 + (m_distortion_rate * (1.0 - std::norm(x2)));
     m_current_gain *= z;
-    if (m_current_gain > m_max_gain) {
-      m_current_gain = m_max_gain;
+    // Check if m_current_gain is finite
+    if (!std::isfinite(m_current_gain)) {
+      reset_gain();
+    } else {
+      if (m_current_gain > m_max_gain) {
+        m_current_gain = m_max_gain;
+      }
     }
   }
 }

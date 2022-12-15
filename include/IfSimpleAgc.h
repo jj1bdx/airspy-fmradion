@@ -43,6 +43,9 @@ public:
   // rate         :: rate factor for changing the gain value.
   IfSimpleAgc(const float initial_gain, const float max_gain, const float rate);
 
+  // Reset AGC gain to the initial_gain
+  void reset_gain();
+
   // Process IQ samples.
   void process(const IQSampleVector &samples_in, IQSampleVector &samples_out);
 
@@ -50,6 +53,7 @@ public:
   float get_current_gain() const { return m_current_gain; }
 
 private:
+  float m_initial_gain;
   float m_current_gain;
   float m_max_gain;
   float m_distortion_rate;
