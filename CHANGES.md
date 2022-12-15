@@ -26,6 +26,7 @@
 
 ## Changes (including requirement changes)
 
+* 20221215-0: Fixed AF and IF AGC anomaly when the current gain becomes NaN/Inf. Set workaround by adding a small value (1e-9) for log10() calculation generating the output value.
 * 20220911-0: Refactored status message calculation, tested with libvolk 2.5.2.
 * 20220903-0: Refactored include/DataBuffer.h for streamlining handling locks and mutexes, using C++17 std::scoped\_lock.
 * 20220819-1: Restricted RTL-SDR sampling rate to [900001, 3200000] [Hz]. Also the default IF sample rate of RTL-SDR is set to 1152000Hz. AudioResampler and IfResampler maximum input length check is implemented.
