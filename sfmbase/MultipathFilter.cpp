@@ -136,9 +136,8 @@ inline void MultipathFilter::update_coeff(const IQSample result) {
   volk_32fc_x2_s32fc_multiply_conjugate_add_32fc(
       m_coeff.data(), m_coeff.data(), m_state.data(), factor_times_result,
       m_filter_order);
-  // Set the imaginary part of the middle (position 0) coefficient to zero
-  m_coeff[m_index_reference_point] =
-      MfCoeff(m_coeff[m_index_reference_point].real(), 0);
+  // Set the middle (position 0) coefficient to 1+0j (unity)
+  m_coeff[m_index_reference_point] = MfCoeff(1, 0);
   // Set the latest error value for monitoring
   m_error = error;
 }
