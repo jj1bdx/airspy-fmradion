@@ -2,7 +2,7 @@
 
 # airspy-fmradion
 
-* Version 20221215-1
+* Version 20230430-0
 * For MacOS (both Intel and Apple Silicon) and Linux
 
 ## Contributing
