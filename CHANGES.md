@@ -9,15 +9,15 @@
 ## Platforms tested
 
 * Mac mini 2018, macOS 13.4 x86\_64, Xcode 14.0 Command Line Tools
-* MacBook Air 13" Apple Silicon (M1) 2020, macOS 12.6 arm64, Xcode 14.0 Command Line Tools
-* Ubuntu 22.04.1 LTS x86\_64, gcc 11.2
+* MacBook Air 13" Apple Silicon (M1) 2020, macOS 13.4 arm64, Xcode 14.0 Command Line Tools
+* Ubuntu 22.04.2 LTS x86\_64, gcc 11.2
 * (Unofficial/experimental) Raspberry Pi OS
 
 ## Features under development
 
 * Since 20220818-0, [r8brain-free-src](https://github.com/avaneev/r8brain-free-src) resampler library is used instead of libsoxr. r8brain-free-src is a sample rate converter designed by Aleksey Vaneev of Voxengo.
 * Since 20220808-0, Tisserand-Berviller AGC algorithm is implemented to IF AGC.
-* Since 20210427-0, C++17 is required (instead of previous C++11). Modern compilers of Raspberry Pi OS, Ubuntu, and macOS do support C++17 extensions.
+* Since 20210427-0, C++17 is required (instead of previous C++11). Modern compilers of Raspberry Pi OS, Ubuntu, and macOS all do support C++17 extensions.
 * FM Pilot PLL is under revision and reconstruction. Initial analysis result is available at doc/fm-pll-filtereval.py (requires Python 3, SciPy, matplotlib, and NumPy).
 
 ## Known limitations
@@ -26,6 +26,7 @@
 
 ## Changes (including requirement changes)
 
+* 20230526-0: Explicitly skip IF Resampler in class FmDecoder to reduce CPU usage for typical settings (i.e., IF sample rate is set to 384 ksamples/sec for Airspy HF+).
 * 20230430-0: Forcefully set the coefficient of the reference point of FM multipath filter to 1 + 0j (unity). This may change how the filter behaves. Field testing since 20230214-test shows no notable anomalies.
 * 20221215-1: Updated r8brain-free-src to Version 6.2.
 * 20221215-0: Fixed AF and IF AGC anomaly when the current gain becomes NaN/Inf. Set workaround by adding a small value (1e-9) for log10() calculation generating the output value.
