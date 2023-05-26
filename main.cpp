@@ -51,7 +51,10 @@
 // define this for enabling coefficient monitor functions
 // #undef COEFF_MONITOR
 
-#define AIRSPY_FMRADION_VERSION "20230526-0"
+// define this for monitoring DataBuffer queue status
+// #undef DATABUFFER_QUEUE_MONITOR
+
+#define AIRSPY_FMRADION_VERSION "20230526-1-test"
 
 // Flag to set graceful termination
 // in process_signals()
@@ -59,17 +62,13 @@ static std::atomic_bool stop_flag(false);
 
 // Get data from output buffer and write to output stream.
 // This code runs in a separate thread.
-static void write_output_data(AudioOutput *output, DataBuffer<Sample> *buf,
-                              unsigned int buf_minfill) {
-  while (!stop_flag.load()) {
+static void write_output_data(AudioOutput *output, DataBuffer<Sample> *buf) {
 
-    if (buf->queued_samples() == 0) {
-      // The buffer is empty. Perhaps the output stream is consuming
-      // samples faster than we can produce them. Wait until the buffer
-      // is back at its nominal level to make sure this does not happen
-      // too often.
-      buf->wait_buffer_fill(buf_minfill);
-    }
+#ifdef DATABUFFER_QUEUE_MONITOR
+  unsigned int max_queue_length = 0;
+#endif // DATABUFFER_QUEUE_MONITOR
+
+  while (!stop_flag.load()) {
 
     if (buf->pull_end_reached()) {
       // Reached end of stream.
@@ -84,6 +83,14 @@ static void write_output_data(AudioOutput *output, DataBuffer<Sample> *buf,
       // Setting stop_flag to true, suggested by GitHub @montgomeryb
       stop_flag.store(true);
     }
+
+#ifdef DATABUFFER_QUEUE_MONITOR
+    unsigned int queue_size = (unsigned int)buf->queue_size();
+    if (queue_size > max_queue_length) {
+      max_queue_length = queue_size;
+      fprintf(stderr, "Max queue length: %u\n", max_queue_length);
+    }
+#endif // DATABUFFER_QUEUE_MONITOR
   }
 }
 
@@ -311,6 +318,7 @@ int main(int argc, char **argv) {
   bool quietmode = false;
   std::string ppsfilename;
   FILE *ppsfile = nullptr;
+  // bufsecs is ignored right now
   double bufsecs = -1;
   bool enable_squelch = false;
   double squelch_level_db = 150.0;
@@ -577,23 +585,6 @@ int main(int argc, char **argv) {
     }
     fflush(ppsfile);
   }
-
-  // Calculate number of samples in audio buffer.
-  // Set default buffer length to 1 second.
-  unsigned int outputbuf_samples = pcmrate;
-  // if bufsecs is explicitly set in the command line (not negative),
-  // set the calculate number of samples for configured buffer length.
-  if (bufsecs > 0) {
-    // Calculate numberr of samples for configured buffer length.
-    outputbuf_samples = (unsigned int)(bufsecs * pcmrate);
-  }
-  // Set minimum limit for the output buffer length
-  // to 1 msec (48 samples for 48000 samples/sec)
-  if (outputbuf_samples < 48) {
-    outputbuf_samples = 48;
-  }
-  fprintf(stderr, "output buffer length: %g [s]\n",
-          outputbuf_samples / double(pcmrate));
 
   // Prepare output writer.
   std::unique_ptr<AudioOutput> audio_output;
@@ -874,8 +865,8 @@ int main(int argc, char **argv) {
   DataBuffer<Sample> output_buffer;
   std::thread output_thread;
   // Always use output_thread for smooth output.
-  output_thread = std::thread(write_output_data, audio_output.get(),
-                              &output_buffer, outputbuf_samples * nchannel);
+  output_thread =
+      std::thread(write_output_data, audio_output.get(), &output_buffer);
   SampleVector audiosamples;
   bool inbuf_length_warning = false;
   float audio_level = 0;
@@ -904,6 +895,10 @@ int main(int argc, char **argv) {
 
   float if_level = 0;
 
+#ifdef DATABUFFER_QUEUE_MONITOR
+  unsigned int max_source_buffer_length = 0;
+#endif // DATABUFFER_QUEUE_MONITOR
+
   // Main loop.
   for (uint64_t block = 0; !stop_flag.load(); block++) {
 
@@ -924,6 +919,15 @@ int main(int argc, char **argv) {
     if (iqsamples.empty()) {
       break;
     }
+
+#ifdef DATABUFFER_QUEUE_MONITOR
+    unsigned int source_buffer_length = source_buffer.queue_size();
+    if (source_buffer_length > max_source_buffer_length) {
+      max_source_buffer_length = source_buffer_length;
+      fprintf(stderr, "Max source buffer length: %u\n",
+              max_source_buffer_length);
+    }
+#endif // DATABUFFER_QUEUE_MONITOR
 
     double prev_block_time = block_time;
     block_time = Utility::get_time();
