@@ -73,7 +73,6 @@ public:
   }
 
   // If the queue is non-empty, remove a block from the queue and
-  // If the queue is non-empty, remove a block from the queue and
   // return the samples. If the end marker has been reached, return
   // an empty vector. If the queue is empty, wait until more data is pushed
   // or until the end marker is pushed.
