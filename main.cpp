@@ -51,7 +51,7 @@
 // define this for enabling coefficient monitor functions
 // #undef COEFF_MONITOR
 
-#define AIRSPY_FMRADION_VERSION "20230430-0"
+#define AIRSPY_FMRADION_VERSION "20230526-0"
 
 // Flag to set graceful termination
 // in process_signals()
@@ -587,9 +587,10 @@ int main(int argc, char **argv) {
     // Calculate numberr of samples for configured buffer length.
     outputbuf_samples = (unsigned int)(bufsecs * pcmrate);
   }
-  // Set minimum limit for the output buffer length.
-  if (outputbuf_samples < 480) {
-    outputbuf_samples = 480;
+  // Set minimum limit for the output buffer length
+  // to 1 msec (48 samples for 48000 samples/sec)
+  if (outputbuf_samples < 48) {
+    outputbuf_samples = 48;
   }
   fprintf(stderr, "output buffer length: %g [s]\n",
           outputbuf_samples / double(pcmrate));
@@ -776,27 +777,32 @@ int main(int argc, char **argv) {
   enable_downsampling = (ifrate != demodulator_rate);
 
   IQSampleCoeff amfilter_coeff;
+  bool fmfilter_enable;
   IQSampleCoeff fmfilter_coeff;
   IQSampleCoeff nbfmfilter_coeff;
 
   switch (filtertype) {
   case FilterType::Default:
     amfilter_coeff = FilterParameters::jj1bdx_am_48khz_default;
+    fmfilter_enable = false;
     fmfilter_coeff = FilterParameters::delay_3taps_only_iq;
     nbfmfilter_coeff = FilterParameters::jj1bdx_nbfm_48khz_default;
     break;
   case FilterType::Medium:
     amfilter_coeff = FilterParameters::jj1bdx_am_48khz_medium;
+    fmfilter_enable = true;
     fmfilter_coeff = FilterParameters::jj1bdx_fm_384kHz_medium;
     nbfmfilter_coeff = FilterParameters::jj1bdx_nbfm_48khz_medium;
     break;
   case FilterType::Narrow:
     amfilter_coeff = FilterParameters::jj1bdx_am_48khz_narrow;
+    fmfilter_enable = true;
     fmfilter_coeff = FilterParameters::jj1bdx_fm_384kHz_narrow;
     nbfmfilter_coeff = FilterParameters::jj1bdx_nbfm_48khz_narrow;
     break;
   case FilterType::Wide:
     amfilter_coeff = FilterParameters::jj1bdx_am_48khz_wide;
+    fmfilter_enable = false;
     fmfilter_coeff = FilterParameters::delay_3taps_only_iq;
     nbfmfilter_coeff = FilterParameters::jj1bdx_nbfm_48khz_wide;
     break;
@@ -808,10 +814,11 @@ int main(int argc, char **argv) {
   );
 
   // Prepare FM decoder.
-  FmDecoder fm(fmfilter_coeff, // fmfilter_coeff
-               stereo,         // stereo
-               deemphasis,     // deemphasis,
-               pilot_shift,    // pilot_shift
+  FmDecoder fm(fmfilter_enable, // fmfilter_enable
+               fmfilter_coeff,  // fmfilter_coeff
+               stereo,          // stereo
+               deemphasis,      // deemphasis,
+               pilot_shift,     // pilot_shift
                static_cast<unsigned int>(multipathfilter_stages)
                // multipath_stages
   );
@@ -1036,7 +1043,7 @@ int main(int argc, char **argv) {
       if (stereo_change ||
           (((block % stat_rate) == 0) && (block > discarding_blocks))) {
         // Show per-block statistics.
-	// Add 1e-9 to log10() to prevent generating NaN
+        // Add 1e-9 to log10() to prevent generating NaN
         float audio_level_db = 20 * log10(audio_level + 1e-9) + 3.01;
         std::size_t buflen = output_buffer.queued_samples();
         double buflen_sec = double(buflen) / double(nchannel) / double(pcmrate);
@@ -1063,7 +1070,7 @@ int main(int argc, char **argv) {
         case ModType::CW:
         case ModType::WSPR:
           // Show statistics without ppm offset.
-	  // Add 1e-9 to log10() to prevent generating NaN
+          // Add 1e-9 to log10() to prevent generating NaN
           double if_agc_gain_db =
               20 * log10(am.get_if_agc_current_gain() + 1e-9);
           fprintf(stderr,
