@@ -172,11 +172,12 @@ void PilotPhaseLock::process(const SampleVector &samples_in,
 
 // class FmDecoder
 
-FmDecoder::FmDecoder(IQSampleCoeff &fmfilter_coeff, bool stereo,
-                     double deemphasis, bool pilot_shift,
+FmDecoder::FmDecoder(bool fmfilter_enable, IQSampleCoeff &fmfilter_coeff,
+                     bool stereo, double deemphasis, bool pilot_shift,
                      unsigned int multipath_stages)
     // Initialize member fields
-    : m_fmfilter_coeff(fmfilter_coeff), m_pilot_shift(pilot_shift),
+    : m_fmfilter_enable(fmfilter_enable), m_fmfilter_coeff(fmfilter_coeff),
+      m_pilot_shift(pilot_shift),
       m_enable_multipath_filter((multipath_stages > 0)),
       // Wait first 100 blocks to enable the multipath filter
       m_wait_multipath_blocks(100), m_multipath_stages(multipath_stages),
@@ -243,8 +244,12 @@ void FmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
   // Measure IF RMS level.
   m_if_rms = Utility::rms_level_sample(samples_in);
 
-  // Apply IF filter.
-  m_fmfilter.process(samples_in, m_samples_in_iffiltered);
+  // Apply IF filter if IF resampler is enabled
+  if (m_fmfilter_enable) {
+    m_fmfilter.process(samples_in, m_samples_in_iffiltered);
+  } else {
+    m_samples_in_iffiltered = std::move(samples_in);
+  }
 
   // Perform IF AGC.
   m_ifagc.process(m_samples_in_iffiltered, m_samples_in_after_agc);

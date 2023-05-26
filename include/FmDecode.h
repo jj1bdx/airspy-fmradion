@@ -116,6 +116,7 @@ public:
   /**
    * Construct FM decoder.
    *
+   * fmfilter_enable   :: True to enable IQSample filter frontend.
    * fmfilter_coeff    :: IQSample filter coefficients.
    * stereo            :: True to enable stereo decoding.
    * deemphasis        :: Time constant of de-emphasis filter in microseconds
@@ -126,8 +127,8 @@ public:
    * multipath_stages  :: Set >0 to enable multipath filter
    *                   :: (LMS adaptive filter stage number)
    */
-  FmDecoder(IQSampleCoeff &fmfilter_coeff, bool stereo, double deemphasis,
-            bool pilot_shift, unsigned int multipath_stages);
+  FmDecoder(bool fmfilter_enable, IQSampleCoeff &fmfilter_coeff, bool stereo,
+            double deemphasis, bool pilot_shift, unsigned int multipath_stages);
   /**
    * Process IQ samples and return audio samples.
    *
@@ -189,6 +190,7 @@ private:
                                  SampleVector &audio);
 
   // Data members.
+  const bool m_fmfilter_enable;
   const IQSampleCoeff &m_fmfilter_coeff;
   const bool m_pilot_shift;
   const bool m_enable_multipath_filter;
