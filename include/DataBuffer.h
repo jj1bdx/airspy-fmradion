@@ -63,6 +63,16 @@ public:
     }
   }
 
+  // Return size of std::queue structure (for debugging).
+  std::size_t queue_size() {
+    {
+      std::scoped_lock<std::mutex> lock(m_mutex);
+      return (m_queue.size());
+      // unlock m_mutex here by getting out of scope
+    }
+  }
+
+  // If the queue is non-empty, remove a block from the queue and
   // If the queue is non-empty, remove a block from the queue and
   // return the samples. If the end marker has been reached, return
   // an empty vector. If the queue is empty, wait until more data is pushed
