@@ -52,7 +52,7 @@
 // #undef COEFF_MONITOR
 
 // define this for monitoring DataBuffer queue status
-#define DATABUFFER_QUEUE_MONITOR
+// #undef DATABUFFER_QUEUE_MONITOR
 
 #define AIRSPY_FMRADION_VERSION "20230527-2-test"
 
