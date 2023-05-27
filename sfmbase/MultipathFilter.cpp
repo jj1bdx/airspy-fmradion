@@ -172,11 +172,6 @@ bool MultipathFilter::process(const IQSampleVector &samples_in,
       if (!std::isfinite(m_error)) {
         return false;
       }
-      // Check if real/imag of the reference point are finite
-      if (!std::isfinite(m_coeff[m_index_reference_point].real()) ||
-          !std::isfinite(m_coeff[m_index_reference_point].imag())) {
-        return false;
-      }
     }
   }
   assert(n == samples_out.size());
