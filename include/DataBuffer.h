@@ -22,14 +22,14 @@
 
 #include <condition_variable>
 #include <mutex>
-#include <queue>
+#include "readerwriterqueue.h"
 
 // Buffer to move sample data between threads.
 
 template <class Element> class DataBuffer {
 public:
   // Constructor.
-  DataBuffer() : m_qlen(0), m_end_marked(false) {}
+  DataBuffer() : m_rwqueue(128), m_qlen(0), m_end_marked(false) {}
 
   // Add samples to the queue.
   void push(std::vector<Element> &&samples) {
@@ -37,7 +37,7 @@ public:
       {
         std::scoped_lock<std::mutex> lock(m_mutex);
         m_qlen += samples.size();
-        m_queue.push(std::move(samples));
+        m_rwqueue.enqueue(std::move(samples));
         // unlock m_mutex here by getting out of scope
       }
       m_cond.notify_all();
@@ -67,7 +67,7 @@ public:
   std::size_t queue_size() {
     {
       std::scoped_lock<std::mutex> lock(m_mutex);
-      return (m_queue.size());
+      return (m_rwqueue.size_approx());
       // unlock m_mutex here by getting out of scope
     }
   }
@@ -80,11 +80,12 @@ public:
     std::vector<Element> ret;
     {
       std::unique_lock<std::mutex> lock(m_mutex);
-      m_cond.wait(lock, [&] { return !(m_queue.empty() && (!m_end_marked)); });
-      if (!m_queue.empty()) {
-        m_qlen -= m_queue.front().size();
-        std::swap(ret, m_queue.front());
-        m_queue.pop();
+      m_cond.wait(lock, [&] {
+        return !((m_rwqueue.peek() == nullptr) && (!m_end_marked)); });
+      if (!(m_rwqueue.peek() == nullptr)) {
+        m_qlen -= m_rwqueue.peek()->size();
+        std::swap(ret, *m_rwqueue.peek());
+        m_rwqueue.pop();
       }
       return (ret);
       // unlock m_mutex here by getting out of scope
@@ -111,9 +112,9 @@ public:
   }
 
 private:
+  moodycamel::ReaderWriterQueue<std::vector<Element>> m_rwqueue;
   std::size_t m_qlen;
   bool m_end_marked;
-  std::queue<std::vector<Element>> m_queue;
   std::mutex m_mutex;
   std::condition_variable m_cond;
 };
