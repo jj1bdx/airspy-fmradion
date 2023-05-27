@@ -54,7 +54,7 @@
 // define this for monitoring DataBuffer queue status
 // #undef DATABUFFER_QUEUE_MONITOR
 
-#define AIRSPY_FMRADION_VERSION "20230526-1-test"
+#define AIRSPY_FMRADION_VERSION "20230527-0-test"
 
 // Flag to set graceful termination
 // in process_signals()
@@ -859,8 +859,6 @@ int main(int argc, char **argv) {
   FineTuner fm_afc_finetuner((unsigned int)fm_target_rate / fm_afc_hz_step);
   float fm_afc_offset_sum = 0.0;
 
-  unsigned int nchannel = stereo ? 2 : 1;
-
   // If buffering enabled, start background output thread.
   DataBuffer<Sample> output_buffer;
   std::thread output_thread;
@@ -868,7 +866,6 @@ int main(int argc, char **argv) {
   output_thread =
       std::thread(write_output_data, audio_output.get(), &output_buffer);
   SampleVector audiosamples;
-  bool inbuf_length_warning = false;
   float audio_level = 0;
   bool got_stereo = false;
 
@@ -896,17 +893,21 @@ int main(int argc, char **argv) {
   float if_level = 0;
 
 #ifdef DATABUFFER_QUEUE_MONITOR
+  unsigned int nchannel = stereo ? 2 : 1;
+  bool inbuf_length_warning = false;
   unsigned int max_source_buffer_length = 0;
 #endif // DATABUFFER_QUEUE_MONITOR
 
   // Main loop.
   for (uint64_t block = 0; !stop_flag.load(); block++) {
 
+#ifdef DATABUFFER_QUEUE_MONITOR
     // Check for overflow of source buffer.
     if (!inbuf_length_warning && source_buffer.queued_samples() > 10 * ifrate) {
       fprintf(stderr, "\nWARNING: Input buffer is growing (system too slow)\n");
       inbuf_length_warning = true;
     }
+#endif // DATABUFFER_QUEUE_MONITOR
 
     // Pull next block from source buffer.
     IQSampleVector iqsamples = source_buffer.pull();
@@ -1049,22 +1050,33 @@ int main(int argc, char **argv) {
         // Show per-block statistics.
         // Add 1e-9 to log10() to prevent generating NaN
         float audio_level_db = 20 * log10(audio_level + 1e-9) + 3.01;
+#ifdef DATABUFFER_QUEUE_MONITOR
         std::size_t buflen = output_buffer.queued_samples();
         double buflen_sec = double(buflen) / double(nchannel) / double(pcmrate);
+#endif // DATABUFFER_QUEUE_MONITOR
 
         switch (modtype) {
         case ModType::FM:
         case ModType::NBFM:
+#ifdef DATABUFFER_QUEUE_MONITOR
           fprintf(stderr,
 #ifdef COEFF_MONITOR
+                  // DATABUFFER_QUEUE_MONITOR && COEFF_MONITOR
                   "blk=%11" PRIu64
                   ":ppm=%+7.3f:IF=%+6.1fdB:AF=%+6.1fdB:buf=%.2fs\n",
 #else
+                  // DATABUFFER_QUEUE_MONITOR && !(COEFF_MONITOR)
                   "\rblk=%11" PRIu64
                   ":ppm=%+7.3f:IF=%+6.1fdB:AF=%+6.1fdB:buf=%.2fs",
-#endif
+#endif // COEFF_MONITOR
                   block, ppm_average.average(), if_level_db, audio_level_db,
                   buflen_sec);
+#else
+          // !(DATABUFFER_QUEUE_MONITOR) && !(COEFF_MONITOR)
+          fprintf(stderr,
+                  "\rblk=%11" PRIu64 ":ppm=%+7.3f:IF=%+6.1fdB:AF=%+6.1fdB",
+                  block, ppm_average.average(), if_level_db, audio_level_db);
+#endif // DATABUFFER_QUEUE_MONITOR
           fflush(stderr);
           break;
         case ModType::AM:
@@ -1078,10 +1090,15 @@ int main(int argc, char **argv) {
           double if_agc_gain_db =
               20 * log10(am.get_if_agc_current_gain() + 1e-9);
           fprintf(stderr,
+#ifdef DATABUFFER_QUEUE_MONITOR
                   "\rblk=%11" PRIu64
                   ":IF=%+6.1fdB:AGC=%+6.1fdB:AF=%+6.1fdB:buf=%.2fs",
                   block, if_level_db, if_agc_gain_db, audio_level_db,
                   buflen_sec);
+#else
+                  "\rblk=%11" PRIu64 ":IF=%+6.1fdB:AGC=%+6.1fdB:AF=%+6.1fdB",
+                  block, if_level_db, if_agc_gain_db, audio_level_db);
+#endif // DATABUFFER_QUEUE_MONITOR
           fflush(stderr);
           break;
         }
