@@ -214,6 +214,8 @@ set(sfmbase_HEADERS
     include/Source.h
     include/SoftFM.h
     include/Utility.h
+    include/atomicops.h
+    include/readerwriterqueue.h
 )
 
 # For building r8brain-free-src
