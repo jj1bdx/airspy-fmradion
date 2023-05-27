@@ -50,12 +50,13 @@ public:
   // or until the end marker is pushed.
   std::vector<Element> pull() {
     std::vector<Element> ret;
+    std::vector<Element> *p;
     {
       if (!m_end_marked.load()) {
-        while (nullptr == m_rwqueue.peek()) {
+        while (nullptr == (p = m_rwqueue.peek())) {
           Utility::millisleep(1);
         }
-        std::swap(ret, *m_rwqueue.peek());
+        std::swap(ret, *p);
         m_rwqueue.pop();
       }
       return ret;
