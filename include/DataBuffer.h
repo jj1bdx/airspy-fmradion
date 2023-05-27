@@ -20,23 +20,23 @@
 #ifndef INCLUDE_DATABUFFER_H
 #define INCLUDE_DATABUFFER_H
 
-#include "readerwriterqueue.h"
 #include <condition_variable>
 #include <mutex>
+#include <queue>
 
 // Buffer to move sample data between threads.
 
 template <class Element> class DataBuffer {
 public:
   // Constructor.
-  DataBuffer() : m_rwqueue(128), m_end_marked(false) {}
+  DataBuffer() : m_end_marked(false) {}
 
   // Add samples to the queue.
   void push(std::vector<Element> &&samples) {
     if (!samples.empty()) {
       {
         std::scoped_lock<std::mutex> lock(m_mutex);
-        m_rwqueue.enqueue(std::move(samples));
+        m_queue.push(std::move(samples));
         // unlock m_mutex here by getting out of scope
       }
       m_cond.notify_all();
@@ -57,7 +57,7 @@ public:
   std::size_t queue_size() {
     {
       std::scoped_lock<std::mutex> lock(m_mutex);
-      return (m_rwqueue.size_approx());
+      return (m_queue.size());
       // unlock m_mutex here by getting out of scope
     }
   }
@@ -70,12 +70,10 @@ public:
     std::vector<Element> ret;
     {
       std::unique_lock<std::mutex> lock(m_mutex);
-      m_cond.wait(lock, [&] {
-        return !((m_rwqueue.peek() == nullptr) && (!m_end_marked));
-      });
-      if (!(m_rwqueue.peek() == nullptr)) {
-        std::swap(ret, *m_rwqueue.peek());
-        m_rwqueue.pop();
+      m_cond.wait(lock, [&] { return !(m_queue.empty() && (!m_end_marked)); });
+      if (!m_queue.empty()) {
+        std::swap(ret, m_queue.front());
+        m_queue.pop();
       }
       return (ret);
       // unlock m_mutex here by getting out of scope
@@ -86,14 +84,14 @@ public:
   bool pull_end_reached() {
     {
       std::scoped_lock<std::mutex> lock(m_mutex);
-      return ((m_rwqueue.peek() == nullptr) && (m_end_marked));
+      return (m_queue.empty() && (m_end_marked));
       // unlock m_mutex here by getting out of scope
     }
   }
 
 private:
-  moodycamel::ReaderWriterQueue<std::vector<Element>> m_rwqueue;
   bool m_end_marked;
+  std::queue<std::vector<Element>> m_queue;
   std::mutex m_mutex;
   std::condition_variable m_cond;
 };
