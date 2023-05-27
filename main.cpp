@@ -52,7 +52,7 @@
 // #undef COEFF_MONITOR
 
 // define this for monitoring DataBuffer queue status
-// #undef DATABUFFER_QUEUE_MONITOR
+#define DATABUFFER_QUEUE_MONITOR
 
 #define AIRSPY_FMRADION_VERSION "20230527-1-test-rwqueue"
 
@@ -893,7 +893,7 @@ int main(int argc, char **argv) {
   float if_level = 0;
 
 #ifdef DATABUFFER_QUEUE_MONITOR
-  unsigned int nchannel = stereo ? 2 : 1;
+  // unsigned int nchannel = stereo ? 2 : 1;
   bool inbuf_length_warning = false;
   unsigned int max_source_buffer_length = 0;
 #endif // DATABUFFER_QUEUE_MONITOR
@@ -903,8 +903,9 @@ int main(int argc, char **argv) {
 
 #ifdef DATABUFFER_QUEUE_MONITOR
     // Check for overflow of source buffer.
-    if (!inbuf_length_warning && source_buffer.queued_samples() > 10 * ifrate) {
-      fprintf(stderr, "\nWARNING: Input buffer is growing (system too slow)\n");
+    if (!inbuf_length_warning && source_buffer.queue_size() > 10 * ifrate) {
+      fprintf(stderr, "\nWARNING: source buffer queue sizes exceeds 10 (system "
+                      "too slow)\n");
       inbuf_length_warning = true;
     }
 #endif // DATABUFFER_QUEUE_MONITOR
@@ -995,7 +996,7 @@ int main(int argc, char **argv) {
         if_rms = am.get_if_rms();
         break;
       }
-      // Measure the average IF level.
+      // Measure (unsigned int)the average IF level.
       if_level = 0.75 * if_level + 0.25 * if_rms;
     }
 
@@ -1051,8 +1052,7 @@ int main(int argc, char **argv) {
         // Add 1e-9 to log10() to prevent generating NaN
         float audio_level_db = 20 * log10(audio_level + 1e-9) + 3.01;
 #ifdef DATABUFFER_QUEUE_MONITOR
-        std::size_t buflen = output_buffer.queued_samples();
-        double buflen_sec = double(buflen) / double(nchannel) / double(pcmrate);
+        uint32_t quelen = (uint32_t)output_buffer.queue_size();
 #endif // DATABUFFER_QUEUE_MONITOR
 
         switch (modtype) {
@@ -1063,14 +1063,14 @@ int main(int argc, char **argv) {
 #ifdef COEFF_MONITOR
                   // DATABUFFER_QUEUE_MONITOR && COEFF_MONITOR
                   "blk=%11" PRIu64
-                  ":ppm=%+7.3f:IF=%+6.1fdB:AF=%+6.1fdB:buf=%.2fs\n",
+                  ":ppm=%+7.3f:IF=%+6.1fdB:AF=%+6.1fdB:qlen=%" PRIu32 "\n",
 #else
                   // DATABUFFER_QUEUE_MONITOR && !(COEFF_MONITOR)
                   "\rblk=%11" PRIu64
-                  ":ppm=%+7.3f:IF=%+6.1fdB:AF=%+6.1fdB:buf=%.2fs",
+                  ":ppm=%+7.3f:IF=%+6.1fdB:AF=%+6.1fdB:qlen=%" PRIu32,
 #endif // COEFF_MONITOR
                   block, ppm_average.average(), if_level_db, audio_level_db,
-                  buflen_sec);
+                  quelen);
 #else
           // !(DATABUFFER_QUEUE_MONITOR) && !(COEFF_MONITOR)
           fprintf(stderr,
@@ -1092,9 +1092,8 @@ int main(int argc, char **argv) {
           fprintf(stderr,
 #ifdef DATABUFFER_QUEUE_MONITOR
                   "\rblk=%11" PRIu64
-                  ":IF=%+6.1fdB:AGC=%+6.1fdB:AF=%+6.1fdB:buf=%.2fs",
-                  block, if_level_db, if_agc_gain_db, audio_level_db,
-                  buflen_sec);
+                  ":IF=%+6.1fdB:AGC=%+6.1fdB:AF=%+6.1fdB:qlen=%" PRIu32,
+                  block, if_level_db, if_agc_gain_db, audio_level_db, quelen);
 #else
                   "\rblk=%11" PRIu64 ":IF=%+6.1fdB:AGC=%+6.1fdB:AF=%+6.1fdB",
                   block, if_level_db, if_agc_gain_db, audio_level_db);

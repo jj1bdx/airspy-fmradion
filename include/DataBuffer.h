@@ -20,23 +20,22 @@
 #ifndef INCLUDE_DATABUFFER_H
 #define INCLUDE_DATABUFFER_H
 
+#include "readerwriterqueue.h"
 #include <condition_variable>
 #include <mutex>
-#include "readerwriterqueue.h"
 
 // Buffer to move sample data between threads.
 
 template <class Element> class DataBuffer {
 public:
   // Constructor.
-  DataBuffer() : m_rwqueue(128), m_qlen(0), m_end_marked(false) {}
+  DataBuffer() : m_rwqueue(128), m_end_marked(false) {}
 
   // Add samples to the queue.
   void push(std::vector<Element> &&samples) {
     if (!samples.empty()) {
       {
         std::scoped_lock<std::mutex> lock(m_mutex);
-        m_qlen += samples.size();
         m_rwqueue.enqueue(std::move(samples));
         // unlock m_mutex here by getting out of scope
       }
@@ -52,15 +51,6 @@ public:
       // unlock m_mutex here by getting out of scope
     }
     m_cond.notify_all();
-  }
-
-  // Return number of samples in queue.
-  std::size_t queued_samples() {
-    {
-      std::scoped_lock<std::mutex> lock(m_mutex);
-      return (m_qlen);
-      // unlock m_mutex here by getting out of scope
-    }
   }
 
   // Return size of std::queue structure (for debugging).
@@ -81,9 +71,9 @@ public:
     {
       std::unique_lock<std::mutex> lock(m_mutex);
       m_cond.wait(lock, [&] {
-        return !((m_rwqueue.peek() == nullptr) && (!m_end_marked)); });
+        return !((m_rwqueue.peek() == nullptr) && (!m_end_marked));
+      });
       if (!(m_rwqueue.peek() == nullptr)) {
-        m_qlen -= m_rwqueue.peek()->size();
         std::swap(ret, *m_rwqueue.peek());
         m_rwqueue.pop();
       }
@@ -96,24 +86,13 @@ public:
   bool pull_end_reached() {
     {
       std::scoped_lock<std::mutex> lock(m_mutex);
-      return ((m_qlen == 0) && (m_end_marked));
-      // unlock m_mutex here by getting out of scope
-    }
-  }
-
-  // Wait until the buffer contains minfill samples or an end marker.
-  void wait_buffer_fill(std::size_t minfill) {
-    {
-      std::unique_lock<std::mutex> lock(m_mutex);
-      m_cond.wait(lock,
-                  [&] { return !((m_qlen < minfill) && (!m_end_marked)); });
+      return ((m_rwqueue.peek() == nullptr) && (m_end_marked));
       // unlock m_mutex here by getting out of scope
     }
   }
 
 private:
   moodycamel::ReaderWriterQueue<std::vector<Element>> m_rwqueue;
-  std::size_t m_qlen;
   bool m_end_marked;
   std::mutex m_mutex;
   std::condition_variable m_cond;
