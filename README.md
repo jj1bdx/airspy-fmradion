@@ -439,6 +439,7 @@ install -o user -m 0700 -c -s build/airspy-fmradion $(HOME)/bin
 * [Teruhiko Hayashi, JA2SVZ](http://fpga.world.coocan.jp/FM/), the creator of FM FPGA Tuner popular in Japan, for reviewing the measurement results of FM broadcast reception of airspy-fmradion, and various constructive suggestions
 * [Takehiro Sekine](https://github.com/bstalk), for suggesting using GNU Radio's [VOLK](http://libvolk.org/) for faster calculation, and implementing Filesource device driver
 * [Takeru Ohta](https://github.com/sile), for his [Rust implementation](https://github.com/sile/dagc) of [Tisserand-Berviller AGC algorithm](https://hal.univ-lorraine.fr/hal-01397371/document)
+* [Cameron Desrochers](https://github.com/cameron314), for his [readerwriterqueue](https://github.com/cameron314/readerwriterqueue) implementation of a single-producer-single-consumer lock-free queue for C++
 
 ## License
 
