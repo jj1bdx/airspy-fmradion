@@ -24,11 +24,19 @@
 #include "readerwriterqueue.h"
 #include <atomic>
 
-// Buffer to move sample data between threads.
+// A buffer implementation to move sample data between threads.
+// This implementation is based on the class moodycamel::readerwriterqueue,
+// which is a lock-free queue guaranteed only to work on
+// single-producer and single-consumer threads.
+// See <https://github.com/cameron314/readerwriterqueue>
+// for the implementation details.
+// (The readerwriterqueue code is licensed under Simplified BSD License.)
 
 template <class Element> class DataBuffer {
+
 public:
   // Constructor.
+  // Default queue size is 128, which should be enough for the application.
   DataBuffer() : m_rwqueue(128), m_end_marked(false) {}
 
   // Add samples to the queue.
@@ -41,26 +49,26 @@ public:
   // Mark the end of the data stream.
   void push_end() { m_end_marked.store(true); }
 
-  // Return size of std::queue structure (for debugging).
+  // Return an approximate size of std::queue structure (for debugging).
   std::size_t queue_size() { return (m_rwqueue.size_approx()); }
 
+  // If the end marker has been reached, return an empty vector.
   // If the queue is non-empty, remove a block from the queue and
-  // return the samples. If the end marker has been reached, return
-  // an empty vector. If the queue is empty, wait until more data is pushed
-  // or until the end marker is pushed.
+  // return the samples.
+  // If the queue is empty, busy-wait until more data is pushed
+  // or until the end marker is pushed, with 1 msec sleeping for
+  // each attempt.
   std::vector<Element> pull() {
     std::vector<Element> ret;
     std::vector<Element> *p;
-    {
-      if (!m_end_marked.load()) {
-        while (nullptr == (p = m_rwqueue.peek())) {
-          Utility::millisleep(1);
-        }
-        std::swap(ret, *p);
-        m_rwqueue.pop();
+    if (!m_end_marked.load()) {
+      while (nullptr == (p = m_rwqueue.peek())) {
+        Utility::millisleep(1);
       }
-      return ret;
+      std::swap(ret, *p);
+      m_rwqueue.pop();
     }
+    return ret;
   }
 
   // Return true if the end has been reached at the Pull side.
