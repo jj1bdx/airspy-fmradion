@@ -214,8 +214,8 @@ set(sfmbase_HEADERS
     include/Source.h
     include/SoftFM.h
     include/Utility.h
-    include/atomicops.h
-    include/readerwriterqueue.h
+    readerwriterqueue/atomicops.h
+    readerwriterqueue/readerwriterqueue.h
 )
 
 # For building r8brain-free-src
@@ -258,6 +258,7 @@ add_executable(airspy-fmradion
 include_directories(
     ${CMAKE_SOURCE_DIR}/include
     ${CMAKE_SOURCE_DIR}/r8brain-free-src
+    ${CMAKE_SOURCE_DIR}/readerwriterqueue
     ${AIRSPYHF_INCLUDE_DIRS}
     ${AIRSPY_INCLUDE_DIRS}
     ${RTLSDR_INCLUDE_DIRS}
