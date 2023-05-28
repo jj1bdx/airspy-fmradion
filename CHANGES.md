@@ -2,9 +2,12 @@
 
 # changes and known issues of airspy-fmradion
 
-## git submodule
+## Git submodules required
 
-* [r8brain-free-src](https://github.com/avaneev/r8brain-free-src) resampler is required as a git submodule of this repository.
+The following submodules are required:
+
+* [r8brain-free-src](https://github.com/avaneev/r8brain-free-src)
+* [readerwriterqueue](https://github.com/cameron314/readerwriterqueue)
 
 ## Platforms tested
 
@@ -15,9 +18,7 @@
 
 ## Features under development
 
-* Since 20220818-0, [r8brain-free-src](https://github.com/avaneev/r8brain-free-src) resampler library is used instead of libsoxr. r8brain-free-src is a sample rate converter designed by Aleksey Vaneev of Voxengo.
-* Since 20220808-0, Tisserand-Berviller AGC algorithm is implemented to IF AGC.
-* Since 20210427-0, C++17 is required (instead of previous C++11). Modern compilers of Raspberry Pi OS, Ubuntu, and macOS all do support C++17 extensions.
+* Since 20230528-1, the buffer length option `-b` is ignored. The audio sample data sent to AudioOutput base classes are no longer pre-buffered.
 * FM Pilot PLL is under revision and reconstruction. Initial analysis result is available at doc/fm-pll-filtereval.py (requires Python 3, SciPy, matplotlib, and NumPy).
 
 ## Known limitations
@@ -26,6 +27,8 @@
 
 ## Changes (including requirement changes)
 
+* 20230528-1: DataBuffer class is now implemented as a wrapper of [moodycamel::ReaderWriterQueue] class in <https://github.com/cameron314/readerwriterqueue>. All lock-based synchronization functions from DataBuffer class are removed because they are no longer necessary. The repository readerwriterqueue is added as a git submodule. Also, sample length count is removed from the DataBuffer class because of their rare usage. 
+* 20230528-1: All DataBuffer queue length measurement code in main.cpp are bundled under a compilation flag `DATABUFFER_QUEUE_MONITOR`, which is not necessary for the production code. The actual maximum queue length measured in Mac mini 2018 executions are less than 10, even when the output glitch occurs due to a higher-priority process invocation, such as a web browser. The new DataBuffer class sets the default allocated queue length to 128.
 * 20230526-0: Explicitly skip IF Resampler in class FmDecoder to reduce CPU usage for typical settings (i.e., IF sample rate is set to 384 ksamples/sec for Airspy HF+).
 * 20230430-0: Forcefully set the coefficient of the reference point of FM multipath filter to 1 + 0j (unity). This may change how the filter behaves. Field testing since 20230214-test shows no notable anomalies.
 * 20221215-1: Updated r8brain-free-src to Version 6.2.
@@ -35,7 +38,7 @@
 * 20220819-1: Restricted RTL-SDR sampling rate to [900001, 3200000] [Hz]. Also the default IF sample rate of RTL-SDR is set to 1152000Hz. AudioResampler and IfResampler maximum input length check is implemented.
 * 20220819-0: /4 downsampling above 3.1MHz/3100kHz in 20210702-0 has been removed. The new IF resampler based on r8brain-free-src works well without preresampling.
 * 20220818-1: Added r8brain-free-src options for gaining performance.
-* 20220818-0: Implemented r8brain-free-src also for IfResampler. libsamplerate is removed.
+* 20220818-0: Implemented r8brain-free-src also for IfResampler. libsamplerate is removed. [r8brain-free-src](https://github.com/avaneev/r8brain-free-src) is used instead of libsoxr. r8brain-free-src is a sample rate converter designed by Aleksey Vaneev of Voxengo.
 * 20220817-1: Introduced r8brain-free-src for AudioResampler.
 * 20220817-0: Introduced libsamplerate aka Secret Rabbit Code for IfResampler.
 * 20220810-1: IF AGC max gain for FM is raised to 10^5, AM/DSB/USB/LSB/WSPR/CW is raised to 10^6.
@@ -63,6 +66,7 @@
 * Since 20210702-0, halfband filter kernel for Airspy R2/Mini is no longer used.
 * FM Pilot PLL threshold level has been lowered from 0.01 to 0.001 since 20210607-0, for preventing unwanted unlocking.
 * The 2nd-order LPF of FM Pilot PLL had been applied twice since 20210116-0 to 20210427-0, but rolled back to once (as in original SoftFM) since 20210607-0.
+* Since 20210427-0, C++17 is required (instead of previous C++11). Modern compilers of Raspberry Pi OS, Ubuntu, and macOS all do support C++17 extensions.
 * FM ppm display shows ppb (0.001ppm) digits since 20210206-0.
 * Timestamp file format has been changed since 20201204-0.
 * PortAudio is required since Version 20201023-0. Use PortAudio v19. Former ALSA output driver is replaced by more versatile PortAudio driver, which is compatible both for Linux and macOS.

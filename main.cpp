@@ -133,7 +133,7 @@ static void usage() {
       "device\n"
       "  -T filename    Write pulse-per-second timestamps\n"
       "                 use filename '-' to write to stdout\n"
-      "  -b seconds     Set audio buffer size in seconds (default: 1 second)\n"
+      "  -b seconds     (ignored, remained for a compatibility reason)\n"
       "  -X             Shift pilot phase (for Quadrature Multipath Monitor)\n"
       "                 (-X is ignored under mono mode (-M))\n"
       "  -U             Set deemphasis to 75 microseconds (default: 50)\n"

@@ -2,7 +2,7 @@
 
 # airspy-fmradion
 
-* Version 20230526-0
+* Version 20230528-1
 * For MacOS (both Intel and Apple Silicon) and Linux
 
 ## Contributing
@@ -133,9 +133,9 @@ Use the latest HEAD version.
 * Working `airspy_open_devices()`, required by `airspy_open_sn()`. See [this commit](https://github.com/airspy/airspyone_host/commit/61fec20fbd710fc54d57dfec732d314d693b5a2f) for the details.
 * Proper transfer block size. `if_blocksize` for Airspy HF+ is reduced from 16384 to 2048, following [this commit](https://github.com/airspy/airspyhf/commit/a1f6f4a0537f53bede6e80c51826fc9d45061c28).
 
-#### r8brain-free-src
+#### git submodules
 
-r8brain-free-src is a submodule of this repository. Download the repository by the following git procedure:
+r8brain-free-src and readerwriterqueue are the submodules of this repository. Download the submodule repositories by the following git procedure:
 
 - `git submodule init`
 - `git submodule update`
@@ -198,7 +198,7 @@ install -o user -m 0700 -c -s build/airspy-fmradion $(HOME)/bin
  - `-G filename` Write audio data as RF64/WAV `FLOAT_LE` samples. Use filename `-` to write to stdout (*pipe is not supported*)
  - `-P device_num` Play audio via PortAudio device index number. Use string `-` to specify the default PortAudio device
  - `-T filename` Write pulse-per-second timestamps. Use filename '-' to write to stdout
- - `-b seconds` Set audio buffer size in seconds (default: 1 second)
+ - `-b seconds` (ignored, remained for a compatibility reason) 
  - `-X` Shift pilot phase (for Quadrature Multipath Monitor) (-X is ignored under mono mode (-M))
  - `-U` Set deemphasis to 75 microseconds (default: 50)
  - `-f` Set Filter type
