@@ -20,7 +20,6 @@
 #ifndef INCLUDE_DATABUFFER_H
 #define INCLUDE_DATABUFFER_H
 
-#include "Utility.h"
 #include "readerwriterqueue.h"
 #include <atomic>
 
@@ -60,13 +59,9 @@ public:
   // each attempt.
   std::vector<Element> pull() {
     std::vector<Element> ret;
-    std::vector<Element> *p;
     if (!m_end_marked.load()) {
-      while (nullptr == (p = m_rwqueue.peek())) {
-        Utility::millisleep(1);
-      }
-      std::swap(ret, *p);
-      m_rwqueue.pop();
+      m_rwqueue.wait_dequeue(ret);
+      return ret;
     }
     return ret;
   }
@@ -77,7 +72,7 @@ public:
   }
 
 private:
-  moodycamel::ReaderWriterQueue<std::vector<Element>> m_rwqueue;
+  moodycamel::BlockingReaderWriterQueue<std::vector<Element>> m_rwqueue;
   std::atomic_bool m_end_marked;
 };
 
