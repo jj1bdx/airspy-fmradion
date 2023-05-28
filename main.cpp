@@ -52,9 +52,9 @@
 // #undef COEFF_MONITOR
 
 // define this for monitoring DataBuffer queue status
-#define DATABUFFER_QUEUE_MONITOR
+// #undef DATABUFFER_QUEUE_MONITOR
 
-#define AIRSPY_FMRADION_VERSION "20230528-0-test"
+#define AIRSPY_FMRADION_VERSION "20230528-1"
 
 // Flag to set graceful termination
 // in process_signals()
