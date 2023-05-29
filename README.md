@@ -2,7 +2,7 @@
 
 # airspy-fmradion
 
-* Version 20230528-1
+* Version 20230529-0
 * For MacOS (both Intel and Apple Silicon) and Linux
 
 ## Contributing
@@ -53,6 +53,7 @@ airspy-fmradion -m am -t airspyhf -q \
  - [RTL-SDR library](http://sdr.osmocom.org/trac/wiki/rtl-sdr)
  - [sndfile](https://github.com/erikd/libsndfile)
  - [r8brain-free-src](https://github.com/avaneev/r8brain-free-src), a sample rate converter designed by Aleksey Vaneev of Voxengo 
+ - [readerwriterqueue](https://github.com/cameron314/readerwriterqueue)
  - [VOLK](http://libvolk.org/)
  - [PortAudio](http://www.portaudio.com)
  - Tested: Airspy R2, Airspy Mini, Airspy HF+ Dual Port, RTL-SDR V3
@@ -253,7 +254,7 @@ install -o user -m 0700 -c -s build/airspy-fmradion $(HOME)/bin
 * Audio sample rate is fixed to 48000Hz
 * `r8b::CDSPResampler24` is used for IF resampling
 
-### Phase discriminator uses GNU Radio fast_atan2f() 
+### Phase discriminator uses GNU Radio fast\_atan2f() 
 
 * From v0.7.8-pre0, GNU Radio `fast_atan2f()` which has ~20-bit accuracy, is used for PhaseDiscriminator class and the 19kHz pilot PLL.
 * The past `fastatan2()` used in v0.6.10 and before was removed due to low accuracy (of ~10 bits)
