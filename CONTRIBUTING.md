@@ -4,7 +4,7 @@ This document outlines how to contribute to airspy-fmradion.
 
 ## Use English language with American spelling
 
-All documents and source code in the repository should be written in English, with American spelling.
+All documents and source code comments in the repository should be written in English with American spelling.
 
 ## Feedback
 
@@ -36,7 +36,7 @@ Keep the first line terse and short. Describe the details after the third line.
 
 ## C++ coding style
 
-airspy-fmradion is based on C++11. If you propose a modification of a different version of C++, nofity so explicitly in the pull request.
+airspy-fmradion is based on C++17. If you propose a modification of a different version of C++, nofity so explicitly in the pull request.
 
 The coding style is defined in the file `.clang-format`. To follow this style, do the following:
 
