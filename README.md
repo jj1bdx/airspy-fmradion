@@ -31,17 +31,17 @@ Please read [CHANGES.md](CHANGES.md) before using the software.
 # Portaudio output
 airspy-fmradion -t airspy -q \
     -c freq=88100000,srate=10000000,lgain=2,mgain=0,vgain=10 \
-    -b 1.0 -P -
+    -P -
 
 # 16-bit signed integer WAV output (pipe is not supported)
 airspy-fmradion -t airspyhf -q \
     -c freq=88100000,srate=768000 \
-    -b 1.0 -W output_s16_le.wav
+    -W output_s16_le.wav
 
 # 32-bit float WAV output (pipe is not supported)
 airspy-fmradion -m am -t airspyhf -q \
     -c freq=666000 \
-    -b 0.5 -G output_f32_le.wav
+    -G output_f32_le.wav
 ```
 
 ### airspy-fmradion requirements
