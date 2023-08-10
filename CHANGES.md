@@ -9,6 +9,11 @@ The following submodules are required:
 * [r8brain-free-src](https://github.com/avaneev/r8brain-free-src)
 * [readerwriterqueue](https://github.com/cameron314/readerwriterqueue)
 
+## Intel Mac support will be dropped soon
+
+Due to the migration to Apple Silicon of Mac hardware by Apple,
+Intel Mac hardware will no longer be supported by airspy-fmradion.
+
 ## Platforms tested
 
 * Mac mini 2018, macOS 13.4 x86\_64, Xcode 14.0 Command Line Tools
