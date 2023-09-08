@@ -1,0 +1,176 @@
+Note well: this change did not work well on Linux using gstreamer RTP to 
+transfer audio data via ethernet/UDP/IP, so duly discarded and reverted.
+
+diff --git a/CHANGES.md b/CHANGES.md
+index dd9e51f..58809ca 100644
+--- a/CHANGES.md
++++ b/CHANGES.md
+@@ -32,6 +32,7 @@ Intel Mac hardware will no longer be supported by airspy-fmradion.
+ 
+ ## Changes (including requirement changes)
+ 
++* 20230908-1: PortAudio output function is reimplemented using callback functions and with `defaultLowOutputLatency` as the suggested latency. This will shorten the delay of output.
+ * 20230528-2: DataBuffer class is reimplemented as a wrapper of `moodycamel::BlockReaderWriterQueue`, which allows efficient blocking operation and removes the requirements of busy waiting by using `moodycamel::BlockReaderWriterQueue::wait_dequeue()`.
+ * 20230528-1: DataBuffer class is now implemented as a wrapper of `moodycamel::ReaderWriterQueue` class in <https://github.com/cameron314/readerwriterqueue>. All lock-based synchronization functions from DataBuffer class are removed because they are no longer necessary. The repository readerwriterqueue is added as a git submodule. Also, sample length count is removed from the DataBuffer class because of their rare usage. 
+ * 20230528-1: All DataBuffer queue length measurement code in main.cpp are bundled under a compilation flag `DATABUFFER_QUEUE_MONITOR`, which is not necessary for the production code. The actual maximum queue length measured in Mac mini 2018 executions are less than 10, even when the output glitch occurs due to a higher-priority process invocation, such as a web browser. The new DataBuffer class sets the default allocated queue length to 128.
+diff --git a/README.md b/README.md
+index b78e360..ca30134 100644
+--- a/README.md
++++ b/README.md
+@@ -2,8 +2,8 @@
+ 
+ # airspy-fmradion
+ 
+-* Version 20230529-0
+-* For MacOS (both Intel and Apple Silicon) and Linux
++* Version 20230908-1
++* For MacOS (supporting Apple Silicon only, untested on Intel) and Linux
+ 
+ ## Contributing
+ 
+diff --git a/include/AudioOutput.h b/include/AudioOutput.h
+index 5e147f6..efcc3d3 100644
+--- a/include/AudioOutput.h
++++ b/include/AudioOutput.h
+@@ -28,6 +28,9 @@
+ #include "portaudio.h"
+ #include <sndfile.h>
+ 
++#include "readerwritercircularbuffer.h"
++#include <atomic>
++
+ /** Base class for writing audio data to file or playback. */
+ class AudioOutput {
+ public:
+@@ -117,11 +120,18 @@ private:
+   // then add PortAudio error string to m_error and set m_zombie flag.
+   void add_paerror(const std::string &msg);
+ 
++  static int play_callback(const void *input, void *output,
++                           unsigned long frame_count,
++                           const PaStreamCallbackTimeInfo *time_info,
++                           PaStreamCallbackFlags status_flags, void *user_data);
++
+   unsigned int m_nchannels;
+   PaStreamParameters m_outputparams;
+   PaStream *m_stream;
+   PaError m_paerror;
+   volk::vector<float> m_floatbuf;
++
++  moodycamel::BlockingReaderWriterCircularBuffer<float> m_circbuf;
+ };
+ 
+ #endif
+diff --git a/main.cpp b/main.cpp
+index f345a30..d4e909d 100644
+--- a/main.cpp
++++ b/main.cpp
+@@ -54,7 +54,7 @@
+ // define this for monitoring DataBuffer queue status
+ // #undef DATABUFFER_QUEUE_MONITOR
+ 
+-#define AIRSPY_FMRADION_VERSION "20230908-0-test"
++#define AIRSPY_FMRADION_VERSION "20230908-1"
+ 
+ // Flag to set graceful termination
+ // in process_signals()
+diff --git a/sfmbase/AudioOutput.cpp b/sfmbase/AudioOutput.cpp
+index d41e0e7..6f4d35d 100644
+--- a/sfmbase/AudioOutput.cpp
++++ b/sfmbase/AudioOutput.cpp
+@@ -17,6 +17,7 @@
+ // You should have received a copy of the GNU General Public License
+ // along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ 
++#include "readerwritercircularbuffer.h"
+ #include "sndfile.h"
+ #define _FILE_OFFSET_BITS 64
+ 
+@@ -135,7 +136,8 @@ bool SndfileOutput::write(const SampleVector &samples) {
+ 
+ // Construct PortAudio output stream.
+ PortAudioOutput::PortAudioOutput(const PaDeviceIndex device_index,
+-                                 unsigned int samplerate, bool stereo) {
++                                 unsigned int samplerate, bool stereo)
++    : m_circbuf(samplerate * 4) {
+   m_nchannels = stereo ? 2 : 1;
+ 
+   m_paerror = Pa_Initialize();
+@@ -165,15 +167,14 @@ PortAudioOutput::PortAudioOutput(const PaDeviceIndex device_index,
+   m_outputparams.suggestedLatency =
+       Pa_GetDeviceInfo(m_outputparams.device)->defaultHighOutputLatency;
+   m_outputparams.hostApiSpecificStreamInfo = NULL;
+-
+-  m_paerror =
+-      Pa_OpenStream(&m_stream,
+-                    NULL, // no input
+-                    &m_outputparams, samplerate, paFramesPerBufferUnspecified,
+-                    paClipOff, // no clipping
+-                    NULL,      // no callback, blocking API
+-                    NULL       // no callback userData
+-      );
++  unsigned long frames = static_cast<unsigned long>(
++      ceil(samplerate * m_outputparams.suggestedLatency));
++
++  m_paerror = Pa_OpenStream(&m_stream,
++                            NULL, // no input
++                            &m_outputparams, samplerate, frames,
++                            paClipOff, // no clipping
++                            PortAudioOutput::play_callback, &m_circbuf);
+   if (m_paerror != paNoError) {
+     add_paerror("Pa_OpenStream()");
+     return;
+@@ -211,6 +212,29 @@ PortAudioOutput::~PortAudioOutput() {
+   }
+ }
+ 
++// Callback for audio playback.
++// Uses readerwriterqueue simple circular buffer for passing the data
++// between audio output thread and the PortAudio callback thread.
++
++int PortAudioOutput::play_callback(const void *input, void *output,
++                                   unsigned long frame_count,
++                                   const PaStreamCallbackTimeInfo *time_info,
++                                   PaStreamCallbackFlags status_flags,
++                                   void *user_data) {
++  // Passing data like this is dirty but necessary...
++  moodycamel::BlockingReaderWriterCircularBuffer<float> *circbuf =
++      (moodycamel::BlockingReaderWriterCircularBuffer<float> *)user_data;
++  float *out = (float *)output;
++  float v;
++
++  // frame_count is for STEREO (x2) so multiplication by two is required
++  for (unsigned long i = 0; i < frame_count * 2; i++) {
++    circbuf->wait_dequeue(v);
++    *out++ = v;
++  }
++  return 0;
++}
++
+ // Write audio data.
+ bool PortAudioOutput::write(const SampleVector &samples) {
+   if (m_zombie) {
+@@ -223,17 +247,12 @@ bool PortAudioOutput::write(const SampleVector &samples) {
+   // Convert double samples to float.
+   volk_64f_convert_32f(m_floatbuf.data(), samples.data(), sample_size);
+ 
+-  m_paerror =
+-      Pa_WriteStream(m_stream, m_floatbuf.data(), sample_size / m_nchannels);
+-  if (m_paerror == paNoError) {
+-    return true;
+-  } else if (m_paerror == paOutputUnderflowed) {
+-    // This error is benign
+-    // fprintf(stderr, "paOutputUnderflowed\n");
+-    return true;
+-  } else
+-    add_paerror("Pa_WriteStream()");
+-  return false;
++  // Put output data into queue for the callback function
++  for (unsigned long i = 0; i < sample_size; i++) {
++    float v = m_floatbuf[i];
++    m_circbuf.wait_enqueue(v);
++  }
++  return true;
+ }
+ 
+ // Terminate PortAudio
