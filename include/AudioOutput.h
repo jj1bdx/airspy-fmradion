@@ -28,6 +28,9 @@
 #include "portaudio.h"
 #include <sndfile.h>
 
+#include "readerwritercircularbuffer.h"
+#include <atomic>
+
 /** Base class for writing audio data to file or playback. */
 class AudioOutput {
 public:
@@ -117,11 +120,18 @@ private:
   // then add PortAudio error string to m_error and set m_zombie flag.
   void add_paerror(const std::string &msg);
 
+  static int play_callback(const void *input, void *output,
+                           unsigned long frame_count,
+                           const PaStreamCallbackTimeInfo *time_info,
+                           PaStreamCallbackFlags status_flags, void *user_data);
+
   unsigned int m_nchannels;
   PaStreamParameters m_outputparams;
   PaStream *m_stream;
   PaError m_paerror;
   volk::vector<float> m_floatbuf;
+
+  moodycamel::BlockingReaderWriterCircularBuffer<float> m_circbuf;
 };
 
 #endif

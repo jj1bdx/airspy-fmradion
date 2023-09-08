@@ -17,6 +17,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+#include "readerwritercircularbuffer.h"
 #include "sndfile.h"
 #define _FILE_OFFSET_BITS 64
 
@@ -135,7 +136,8 @@ bool SndfileOutput::write(const SampleVector &samples) {
 
 // Construct PortAudio output stream.
 PortAudioOutput::PortAudioOutput(const PaDeviceIndex device_index,
-                                 unsigned int samplerate, bool stereo) {
+                                 unsigned int samplerate, bool stereo)
+    : m_circbuf(samplerate * 4) {
   m_nchannels = stereo ? 2 : 1;
 
   m_paerror = Pa_Initialize();
@@ -163,17 +165,16 @@ PortAudioOutput::PortAudioOutput(const PaDeviceIndex device_index,
   m_outputparams.channelCount = m_nchannels;
   m_outputparams.sampleFormat = paFloat32;
   m_outputparams.suggestedLatency =
-      Pa_GetDeviceInfo(m_outputparams.device)->defaultHighOutputLatency;
+      Pa_GetDeviceInfo(m_outputparams.device)->defaultLowOutputLatency;
   m_outputparams.hostApiSpecificStreamInfo = NULL;
+  unsigned long frames = static_cast<unsigned long>(
+      ceil(samplerate * m_outputparams.suggestedLatency));
 
-  m_paerror =
-      Pa_OpenStream(&m_stream,
-                    NULL, // no input
-                    &m_outputparams, samplerate, paFramesPerBufferUnspecified,
-                    paClipOff, // no clipping
-                    NULL,      // no callback, blocking API
-                    NULL       // no callback userData
-      );
+  m_paerror = Pa_OpenStream(&m_stream,
+                            NULL, // no input
+                            &m_outputparams, samplerate, frames,
+                            paClipOff, // no clipping
+                            PortAudioOutput::play_callback, &m_circbuf);
   if (m_paerror != paNoError) {
     add_paerror("Pa_OpenStream()");
     return;
@@ -211,6 +212,29 @@ PortAudioOutput::~PortAudioOutput() {
   }
 }
 
+// Callback for audio playback.
+// Uses readerwriterqueue simple circular buffer for passing the data
+// between audio output thread and the PortAudio callback thread.
+
+int PortAudioOutput::play_callback(const void *input, void *output,
+                                   unsigned long frame_count,
+                                   const PaStreamCallbackTimeInfo *time_info,
+                                   PaStreamCallbackFlags status_flags,
+                                   void *user_data) {
+  // Passing data like this is dirty but necessary...
+  moodycamel::BlockingReaderWriterCircularBuffer<float> *circbuf =
+      (moodycamel::BlockingReaderWriterCircularBuffer<float> *)user_data;
+  float *out = (float *)output;
+  float v;
+
+  // frame_count is for STEREO (x2) so multiplication by two is required
+  for (unsigned long i = 0; i < frame_count * 2; i++) {
+    circbuf->wait_dequeue(v);
+    *out++ = v;
+  }
+  return 0;
+}
+
 // Write audio data.
 bool PortAudioOutput::write(const SampleVector &samples) {
   if (m_zombie) {
@@ -223,17 +247,12 @@ bool PortAudioOutput::write(const SampleVector &samples) {
   // Convert double samples to float.
   volk_64f_convert_32f(m_floatbuf.data(), samples.data(), sample_size);
 
-  m_paerror =
-      Pa_WriteStream(m_stream, m_floatbuf.data(), sample_size / m_nchannels);
-  if (m_paerror == paNoError) {
-    return true;
-  } else if (m_paerror == paOutputUnderflowed) {
-    // This error is benign
-    // fprintf(stderr, "paOutputUnderflowed\n");
-    return true;
-  } else
-    add_paerror("Pa_WriteStream()");
-  return false;
+  // Put output data into queue for the callback function
+  for (unsigned long i = 0; i < sample_size; i++) {
+    float v = m_floatbuf[i];
+    m_circbuf.wait_enqueue(v);
+  }
+  return true;
 }
 
 // Terminate PortAudio
