@@ -9,15 +9,14 @@ The following submodules are required:
 * [r8brain-free-src](https://github.com/avaneev/r8brain-free-src)
 * [readerwriterqueue](https://github.com/cameron314/readerwriterqueue)
 
-## Intel Mac support will be dropped soon
+## Intel Mac support is dropped
 
-Due to the migration to Apple Silicon of Mac hardware by Apple,
-Intel Mac hardware will no longer be supported by airspy-fmradion.
+Intel Mac hardware is no longer supported by airspy-fmradion.
 
 ## Platforms tested
 
-* Mac mini 2018, macOS 13.4 x86\_64, Xcode 14.0 Command Line Tools
-* MacBook Air 13" Apple Silicon (M1) 2020, macOS 13.4 arm64, Xcode 14.0 Command Line Tools
+* Mac mini 2023 Apple Silicon (M2 Pro), macOS 13.5.2, Xcode 14.0 Command Line Tools
+* MacBook Air 13" Apple Silicon (M1) 2020, macOS 13.5.2 arm64, Xcode 14.0 Command Line Tools
 * Ubuntu 22.04.2 LTS x86\_64, gcc 11.3.0
 * (Unofficial/experimental) Raspberry Pi OS
 
@@ -32,6 +31,7 @@ Intel Mac hardware will no longer be supported by airspy-fmradion.
 
 ## Changes (including requirement changes)
 
+* 20230910-0: Updated r8brain-free-src to Version 6.4.
 * 20230528-2: DataBuffer class is reimplemented as a wrapper of `moodycamel::BlockReaderWriterQueue`, which allows efficient blocking operation and removes the requirements of busy waiting by using `moodycamel::BlockReaderWriterQueue::wait_dequeue()`.
 * 20230528-1: DataBuffer class is now implemented as a wrapper of `moodycamel::ReaderWriterQueue` class in <https://github.com/cameron314/readerwriterqueue>. All lock-based synchronization functions from DataBuffer class are removed because they are no longer necessary. The repository readerwriterqueue is added as a git submodule. Also, sample length count is removed from the DataBuffer class because of their rare usage. 
 * 20230528-1: All DataBuffer queue length measurement code in main.cpp are bundled under a compilation flag `DATABUFFER_QUEUE_MONITOR`, which is not necessary for the production code. The actual maximum queue length measured in Mac mini 2018 executions are less than 10, even when the output glitch occurs due to a higher-priority process invocation, such as a web browser. The new DataBuffer class sets the default allocated queue length to 128.
