@@ -54,7 +54,7 @@
 // define this for monitoring DataBuffer queue status
 // #undef DATABUFFER_QUEUE_MONITOR
 
-#define AIRSPY_FMRADION_VERSION "20230910-1"
+#define AIRSPY_FMRADION_VERSION "20230910-2"
 
 // Flag to set graceful termination
 // in process_signals()
@@ -631,10 +631,11 @@ int main(int argc, char **argv) {
       fprintf(stderr, "playing audio to PortAudio default device: ");
     } else {
       fprintf(stderr, "playing audio to PortAudio device %d: ", portaudiodev);
-      if (output_low_latency) {
-        fprintf(stderr, "PortAudio low-latency settings enabled\n");
-      }
     }
+    if (output_low_latency) {
+      fprintf(stderr, "PortAudio low-latency settings enabled\n");
+    }
+
     fprintf(stderr, "name '%s'\n", audio_output->get_device_name().c_str());
     break;
   }
