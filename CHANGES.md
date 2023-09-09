@@ -31,6 +31,7 @@ Intel Mac hardware is no longer supported by airspy-fmradion.
 
 ## Changes (including requirement changes)
 
+* 20230910-1: Added experimental option `-L` to set PortAudio latency to `defaultLowOutputLatency`. This should be used only for direct sound device output and should *not* be used for streaming device.
 * 20230910-0: Updated r8brain-free-src to Version 6.4.
 * 20230528-2: DataBuffer class is reimplemented as a wrapper of `moodycamel::BlockReaderWriterQueue`, which allows efficient blocking operation and removes the requirements of busy waiting by using `moodycamel::BlockReaderWriterQueue::wait_dequeue()`.
 * 20230528-1: DataBuffer class is now implemented as a wrapper of `moodycamel::ReaderWriterQueue` class in <https://github.com/cameron314/readerwriterqueue>. All lock-based synchronization functions from DataBuffer class are removed because they are no longer necessary. The repository readerwriterqueue is added as a git submodule. Also, sample length count is removed from the DataBuffer class because of their rare usage. 

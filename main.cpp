@@ -54,7 +54,7 @@
 // define this for monitoring DataBuffer queue status
 // #undef DATABUFFER_QUEUE_MONITOR
 
-#define AIRSPY_FMRADION_VERSION "20230910-0"
+#define AIRSPY_FMRADION_VERSION "20230910-1"
 
 // Flag to set graceful termination
 // in process_signals()
@@ -68,12 +68,8 @@ static void write_output_data(AudioOutput *output, DataBuffer<Sample> *buf) {
   unsigned int max_queue_length = 0;
 #endif // DATABUFFER_QUEUE_MONITOR
 
-  while (!stop_flag.load()) {
-
-    if (buf->pull_end_reached()) {
-      // Reached end of stream.
-      break;
-    }
+  // Exit if signal is received or reached end of stream.
+  while (!stop_flag.load() || buf->pull_end_reached()) {
 
     // Get samples from buffer and write to output.
     SampleVector samples = buf->pull();
@@ -161,6 +157,8 @@ static void usage() {
       "                 (This option affects output pitch and timing:\n"
       "                  use for the output timing compensation only!)\n"
       "  -A             (FM only) experimental 10Hz-step IF AFC\n"
+      "  -L             (PortAudio only) low-latency output\n"
+      "                 (for direct audio device ONLY, not for streaming)\n"
       "\n"
       "Configuration options for RTL-SDR devices\n"
       "  freq=<int>     Frequency of radio station in Hz (default 100000000)\n"
@@ -328,6 +326,7 @@ int main(int argc, char **argv) {
   bool ifrate_offset_enable = false;
   double ifrate_offset_ppm = 0;
   bool enable_fm_afc = false;
+  bool output_low_latency = false;
   std::string config_str;
   std::string devtype_str;
   DevType devtype;
@@ -384,10 +383,11 @@ int main(int argc, char **argv) {
       {"multipathfilter", required_argument, nullptr, 'E'},
       {"ifrateppm", optional_argument, nullptr, 'r'},
       {"afc", optional_argument, nullptr, 'A'},
+      {"outputlowlatency", optional_argument, nullptr, 'L'},
       {nullptr, no_argument, nullptr, 0}};
 
   int c, longindex;
-  while ((c = getopt_long(argc, argv, "m:t:c:d:MR:F:W:G:f:l:P:T:b:qXUE:r:A",
+  while ((c = getopt_long(argc, argv, "m:t:c:d:MR:F:W:G:f:l:P:T:b:qXUE:r:AL",
                           longopts, &longindex)) >= 0) {
     switch (c) {
     case 'm':
@@ -474,6 +474,9 @@ int main(int argc, char **argv) {
       break;
     case 'A':
       enable_fm_afc = true;
+      break;
+    case 'L':
+      output_low_latency = true;
       break;
     default:
       usage();
@@ -622,11 +625,15 @@ int main(int argc, char **argv) {
             filename.c_str());
     break;
   case OutputMode::PORTAUDIO:
-    audio_output.reset(new PortAudioOutput(portaudiodev, pcmrate, stereo));
+    audio_output.reset(
+        new PortAudioOutput(portaudiodev, pcmrate, stereo, output_low_latency));
     if (portaudiodev == -1) {
       fprintf(stderr, "playing audio to PortAudio default device: ");
     } else {
       fprintf(stderr, "playing audio to PortAudio device %d: ", portaudiodev);
+      if (output_low_latency) {
+        fprintf(stderr, "PortAudio low-latency settings enabled\n");
+      }
     }
     fprintf(stderr, "name '%s'\n", audio_output->get_device_name().c_str());
     break;
@@ -1164,16 +1171,15 @@ int main(int argc, char **argv) {
   // End of main loop
   fprintf(stderr, "\n");
 
+  // TODO: review thread termination sequence
+
+  // Terminate receiver thread.
+  up_srcsdr->stop();
   // Terminate background audio output thread first.
   output_buffer.push_end();
   output_thread.join();
   // Close audio output.
   audio_output->output_close();
-
-  // Terminate receiver thread.
-  // Note: libusb-1.0.25 with Airspy HF+ driver
-  // may cause crashing of this function.
-  up_srcsdr->stop();
 
   fprintf(stderr, "airspy-fmradion terminated\n");
 

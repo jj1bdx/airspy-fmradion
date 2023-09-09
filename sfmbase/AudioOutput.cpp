@@ -135,7 +135,8 @@ bool SndfileOutput::write(const SampleVector &samples) {
 
 // Construct PortAudio output stream.
 PortAudioOutput::PortAudioOutput(const PaDeviceIndex device_index,
-                                 unsigned int samplerate, bool stereo) {
+                                 unsigned int samplerate, bool stereo,
+                                 bool low_latency) {
   m_nchannels = stereo ? 2 : 1;
 
   m_paerror = Pa_Initialize();
@@ -162,9 +163,14 @@ PortAudioOutput::PortAudioOutput(const PaDeviceIndex device_index,
 
   m_outputparams.channelCount = m_nchannels;
   m_outputparams.sampleFormat = paFloat32;
-  m_outputparams.suggestedLatency =
-      Pa_GetDeviceInfo(m_outputparams.device)->defaultHighOutputLatency;
   m_outputparams.hostApiSpecificStreamInfo = NULL;
+  if (low_latency) {
+    m_outputparams.suggestedLatency =
+        Pa_GetDeviceInfo(m_outputparams.device)->defaultLowOutputLatency;
+  } else {
+    m_outputparams.suggestedLatency =
+        Pa_GetDeviceInfo(m_outputparams.device)->defaultHighOutputLatency;
+  }
 
   m_paerror =
       Pa_OpenStream(&m_stream,

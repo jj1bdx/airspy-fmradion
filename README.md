@@ -2,7 +2,7 @@
 
 # airspy-fmradion
 
-* Version 20230910-0
+* Version 20230910-1
 * For MacOS (supporting Apple Silicon only, untested on Intel) and Linux
 
 ## Contributing
@@ -210,6 +210,7 @@ install -o user -m 0700 -c -s build/airspy-fmradion $(HOME)/bin
  - `-E stages` Enable multipath filter for FM (For stable reception only: turn off if reception becomes unstable)
  - `-r ppm` Set IF offset in ppm (range: +-1000000ppm) (Note: this option affects output pitch and timing: *use for the output timing compensation only!*
  - `-A` (For FM only) Experimental 10Hz-step IF AFC
+ - `-L` (PortAudio only) low-latency output (for direct audio device ONLY, not for streaming)
 
 ## Major changes
 

@@ -105,8 +105,10 @@ public:
   // device_index :: device index number
   // samplerate   :: audio sample rate in Hz
   // stereo       :: true if the output stream contains stereo data
+  // low_latency  :: true if using defaultLowOutputLatency
+  //                 (For real-time output only, not for streaming)
   PortAudioOutput(const PaDeviceIndex device_index, unsigned int samplerate,
-                  bool stereo);
+                  bool stereo, bool low_latency);
 
   virtual ~PortAudioOutput() override;
   virtual bool write(const SampleVector &samples) override;
