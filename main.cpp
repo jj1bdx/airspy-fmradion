@@ -632,11 +632,10 @@ int main(int argc, char **argv) {
     } else {
       fprintf(stderr, "playing audio to PortAudio device %d: ", portaudiodev);
     }
+    fprintf(stderr, "name '%s'\n", audio_output->get_device_name().c_str());
     if (output_low_latency) {
       fprintf(stderr, "PortAudio low-latency settings enabled\n");
     }
-
-    fprintf(stderr, "name '%s'\n", audio_output->get_device_name().c_str());
     break;
   }
 
