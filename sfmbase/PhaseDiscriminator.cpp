@@ -27,7 +27,8 @@
 PhaseDiscriminator::PhaseDiscriminator(double max_freq_dev)
     : m_normalize_factor(max_freq_dev * 2.0 * M_PI),
       // boundary = M_PI / m_normalize_factor;
-      m_boundary(1.0 / (max_freq_dev * 2.0)) {}
+      m_boundary(1.0 / (max_freq_dev * 2.0)),
+      m_save_value(0) {}
 
 // Process samples.
 void PhaseDiscriminator::process(const IQSampleVector &samples_in,
