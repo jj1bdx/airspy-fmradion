@@ -133,9 +133,17 @@ inline void MultipathFilter::update_coeff(const IQSample result) {
   // Note: always check if the result and the source vectors can overlap!
   // For volk_32fc_x2_s32fc_multiply_conjugate_add_32fc(),
   // the overlapping issue seems to be OK.
+  // Note 2: from VOLK 3.1.0 the API parameter type has been changed,
+  // handled in the following if-else-endif clause.
+#if VOLK_VERSION < 030100
   volk_32fc_x2_s32fc_multiply_conjugate_add_32fc(
       m_coeff.data(), m_coeff.data(), m_state.data(), factor_times_result,
       m_filter_order);
+#else
+  volk_32fc_x2_s32fc_multiply_conjugate_add2_32fc(
+      m_coeff.data(), m_coeff.data(), m_state.data(), &factor_times_result,
+      m_filter_order);
+#endif
   // Set the middle (position 0) coefficient to 1+0j (unity)
   m_coeff[m_index_reference_point] = MfCoeff(1, 0);
   // Set the latest error value for monitoring
