@@ -362,6 +362,7 @@ int main(int argc, char **argv) {
   fprintf(stderr, "airspy-fmradion " AIRSPY_FMRADION_VERSION "\n");
   fprintf(stderr, "Software FM/AM radio for ");
   fprintf(stderr, "Airspy R2, Airspy HF+, and RTL-SDR\n");
+  fprintf(stderr, "VOLK_VERSION = %.6o\n", VOLK_VERSION);
 
   const struct option longopts[] = {
       {"modtype", optional_argument, nullptr, 'm'},
