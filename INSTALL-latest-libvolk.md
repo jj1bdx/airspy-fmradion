@@ -16,8 +16,9 @@ brew install volk
 
 ## For Linux
 
-See [libvolk README.md](https://github.com/gnuradio/volk#readme).
-
+* For Ubuntu 22.04.3 LTS, *libvolk 3.1.0 does not work.* Use 3.0.0 or 2.5.1 in the apt repository.
+* See [libvolk README.md](https://github.com/gnuradio/volk#readme).
+ 
 ## After installation
 
 Do the full benchmark by `volk_profile -b -p .`. Use the result at `~/.volk/volk_config` for optimizing the execution.
