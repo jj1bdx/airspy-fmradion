@@ -9,14 +9,10 @@ The following submodules are required:
 * [r8brain-free-src](https://github.com/avaneev/r8brain-free-src)
 * [readerwriterqueue](https://github.com/cameron314/readerwriterqueue)
 
-## Intel Mac support is dropped
-
-Intel Mac hardware is no longer supported by airspy-fmradion.
-
 ## Platforms tested
 
-* Mac mini 2023 Apple Silicon (M2 Pro), macOS 13.6, Xcode 15.0 Command Line Tools
-* MacBook Air 13" Apple Silicon (M1) 2020, macOS 13.6 arm64, Xcode 15.0 Command Line Tools
+* Mac mini 2023 Apple Silicon (M2 Pro), macOS 14.2, Xcode 15.1 Command Line Tools
+* MacBook Air 13" Apple Silicon (M1) 2020, macOS 14.2, Xcode 15.1 Command Line Tools
 * Ubuntu 22.04.3 LTS x86\_64, gcc 11.4.0
 * (Unofficial/experimental) Raspberry Pi OS
 
@@ -29,8 +25,13 @@ Intel Mac hardware is no longer supported by airspy-fmradion.
 
 * For Raspberry Pi 3 and 4, Airspy R2 10Msps and Airspy Mini 6Msps sampling rates are *not supported* due to the hardware limitation. Use in 2.5Msps for R2, 3Msps for Mini.
 
+### Intel Mac support is dropped
+
+Intel Mac hardware is no longer supported by airspy-fmradion, although the author makes the best effort to prevent introducing anything against the compilation on the Intel Macs. Please open an issue on the GitHub repository if you find anything incompatible on Intel Macs.
+
 ## Changes (including requirement changes)
 
+* 20231212-0: Updated r8-brain-free-src to Version 6.5.
 * 20230923: failed changes: low latency setting for buffering-based PortAudio didn't work well. Discarded changes of 20230910-1 to 20230910-4 from the dev branch.
 * 20230910-0: Updated r8brain-free-src to Version 6.4.
 * 20230528-2: DataBuffer class is reimplemented as a wrapper of `moodycamel::BlockReaderWriterQueue`, which allows efficient blocking operation and removes the requirements of busy waiting by using `moodycamel::BlockReaderWriterQueue::wait_dequeue()`.
