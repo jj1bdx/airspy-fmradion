@@ -93,6 +93,11 @@ inline IQSample MultipathFilter::single_process(const IQSample filter_input) {
   // }
   volk_32fc_x2_dot_prod_32fc(&output, m_state.data(), m_coeff.data(),
                              m_filter_order);
+  // quick hack to prevent zero output
+  // to prevent output crash to NaN
+  if ((output.real() == 0) && (output.imag() == 0)) {
+    output = IQSample(1e-9f, 1e-9f);
+  }
   return output;
 }
 
@@ -119,7 +124,8 @@ inline void MultipathFilter::update_coeff(const IQSample result) {
   // fprintf(stderr, "state_mag_sq_sum = %.9g\n", state_mag_sq_sum);
 
   // Obtain the step size (dymanically computed)
-  m_mu = alpha / state_mag_sq_sum;
+  // Add offset to prevent division-by-zero error
+  m_mu = alpha / (state_mag_sq_sum + 1e-10);
 
   // Calculate correlation vector
   const float factor = error * m_mu;
