@@ -111,9 +111,9 @@ brew install airspyhf --HEAD
 brew install volk
 ```
 
-### Install the latest libvolk
+### Install the supported libvolk
 
-Install libvolk as described in [INSTALL-latest-libvolk.md](INSTALL-latest-libvolk.md).
+Install libvolk as described in [libvolk.md](INSTALL-latest-libvolk.md).
 
 ### Dependency installation details
 
