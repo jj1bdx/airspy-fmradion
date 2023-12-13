@@ -54,7 +54,7 @@ airspy-fmradion -m am -t airspyhf -q \
  - [sndfile](https://github.com/erikd/libsndfile)
  - [r8brain-free-src](https://github.com/avaneev/r8brain-free-src), a sample rate converter designed by Aleksey Vaneev of Voxengo 
  - [readerwriterqueue](https://github.com/cameron314/readerwriterqueue)
- - [VOLK](http://libvolk.org/)
+ - [VOLK](https://www.libvolk.org/)
  - [PortAudio](http://www.portaudio.com)
  - Tested: Airspy R2, Airspy Mini, Airspy HF+ Dual Port, RTL-SDR V3
  - Fast computer
@@ -113,7 +113,7 @@ brew install volk
 
 ### Install the supported libvolk
 
-Install libvolk as described in [libvolk.md](INSTALL-latest-libvolk.md).
+Install libvolk as described in [libvolk.md](libvolk.md).
 
 ### Dependency installation details
 
@@ -449,7 +449,7 @@ install -o user -m 0700 -c -s build/airspy-fmradion $(HOME)/bin
 * [Brian Beezley, K6STI](http://ham-radio.com/k6sti/), for his comprehensive Web site of FM broadcasting reception expertise and the idea of [Quadrature Multipath Monitor](http://ham-radio.com/k6sti/qmm.htm)
 * [Ryuji Suzuki](https://github.com/rsuzuki0), for reviewing the FM multipath filter coefficients and suggesting putting more weight on picking up more previous samples from the reference point than the samples after
 * [Teruhiko Hayashi, JA2SVZ](http://fpga.world.coocan.jp/FM/), the creator of FM FPGA Tuner popular in Japan, for reviewing the measurement results of FM broadcast reception of airspy-fmradion, and various constructive suggestions
-* [Takehiro Sekine](https://github.com/bstalk), for suggesting using GNU Radio's [VOLK](http://libvolk.org/) for faster calculation, and implementing Filesource device driver
+* [Takehiro Sekine](https://github.com/bstalk), for suggesting using GNU Radio's [VOLK](https://www.libvolk.org/) for faster calculation, and implementing Filesource device driver
 * [Takeru Ohta](https://github.com/sile), for his [Rust implementation](https://github.com/sile/dagc) of [Tisserand-Berviller AGC algorithm](https://hal.univ-lorraine.fr/hal-01397371/document)
 * [Cameron Desrochers](https://github.com/cameron314), for his [readerwriterqueue](https://github.com/cameron314/readerwriterqueue) implementation of a single-producer-single-consumer lock-free queue for C++
 * [Clayton Smith](https://github.com/argilo), for [a bugfix pull request to airspy-fmradion to find an uninitialized variable](https://github.com/jj1bdx/airspy-fmradion/pull/43) and his help during [bug tracking in VOLK](https://github.com/gnuradio/volk/pull/695).
