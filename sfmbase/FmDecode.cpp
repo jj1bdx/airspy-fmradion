@@ -27,32 +27,23 @@
 
 // Construct phase-locked loop.
 PilotPhaseLock::PilotPhaseLock(double freq)
-    : // approx 30Hz LPF by 2nd-order biquad IIR Butterworth filter
+    : // Set min/max locking frequencies.
+      m_minfreq((freq - bandwidth) * 2.0 * M_PI),
+      m_maxfreq((freq + bandwidth) * 2.0 * M_PI),
+      // Set valid signal threshold.
+      // Initialize frequency and phase.
+      m_freq(freq * 2.0 * M_PI), m_phase(0),
+      // Lock decision time: 0.5 second (for 30Hz bandwidth)
+      m_pilot_level(0), m_lock_delay(int(15.0 / bandwidth)), m_lock_cnt(0),
+      // Initialize PPS generator.
+      m_pilot_periods(0), m_pps_cnt(0), m_sample_cnt(0), m_pps_events(0),
+      // approx 30Hz LPF by 2nd-order biquad IIR Butterworth filter
       // Caution: use only once for stable PLL locking
       m_biquad_phasor_i1(1.46974784e-06, 0, 0, -1.99682419, 0.996825659),
       m_biquad_phasor_q1(1.46974784e-06, 0, 0, -1.99682419, 0.996825659),
       // differentiator-like 1st-order inverse LPF (not really an HPF)
-      m_first_phase_err(0.000304341788, -0.000304324564, 0) {
-
-  // Set min/max locking frequencies.
-  m_minfreq = (freq - bandwidth) * 2.0 * M_PI;
-  m_maxfreq = (freq + bandwidth) * 2.0 * M_PI;
-
-  // Set valid signal threshold.
-  // Lock decision time: 0.5 second (for 30Hz bandwidth)
-  m_lock_delay = int(15.0 / bandwidth);
-  m_lock_cnt = 0;
-  m_pilot_level = 0;
-
-  // Initialize frequency and phase.
-  m_freq = freq * 2.0 * M_PI;
-  m_phase = 0;
-  m_freq_err = 0;
-
-  // Initialize PPS generator.
-  m_pilot_periods = 0;
-  m_pps_cnt = 0;
-  m_sample_cnt = 0;
+      m_first_phase_err(0.000304341788, -0.000304324564, 0), m_freq_err(0) {
+  // do nothing
 }
 
 // Process samples and generate the 38kHz locked tone.
