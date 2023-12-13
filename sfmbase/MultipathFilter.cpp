@@ -125,25 +125,27 @@ inline void MultipathFilter::update_coeff(const IQSample result) {
   const float factor = error * m_mu;
   const MfCoeff factor_times_result =
       MfCoeff(factor * result.real(), factor * result.imag());
-  // Recalculate all coefficients
-  // VOLK calculation, equivalent to:
-  // for (unsigned int i = 0; i < m_filter_order; i++) {
-  //  m_coeff[i] += factor_times_result * std::conj(m_state[i]);
-  // }
-  // Note: always check if the result and the source vectors can overlap!
-  // For volk_32fc_x2_s32fc_multiply_conjugate_add_32fc(),
-  // the overlapping issue seems to be OK.
-  // TODO:
-  // volk_32fc_x2_s32fc_multiply_conjugate_add_32fc()
-  // should be updated by
-  // volk_32fc_x2_s32fc_multiply_conjugate_add2_32fc() (the new API),
-  // but on Ubuntu 22.04.3 with VOLK v3.1.0 this function
-  // does not correctly calculate.
-  // Users of Ubuntu 22.04.3 should fall back to
-  // VOLK 3.0.0 or VOLK 2.5.1 in the apt repository for 22.04.3.
+// Recalculate all coefficients
+// VOLK calculation, equivalent to:
+// for (unsigned int i = 0; i < m_filter_order; i++) {
+//  m_coeff[i] += factor_times_result * std::conj(m_state[i]);
+// }
+// Note: always check if the result and the source vectors can overlap!
+// For volk_32fc_x2_s32fc_multiply_conjugate_add_32fc(),
+// the overlapping issue seems to be OK.
+// Note 2: from VOLK 3.1.0 the API parameter type has been changed,
+// handled in the following if-else-endif clause.
+#if VOLK_VERSION < 030100
+  // Before 3.1.0
   volk_32fc_x2_s32fc_multiply_conjugate_add_32fc(
       m_coeff.data(), m_coeff.data(), m_state.data(), factor_times_result,
       m_filter_order);
+#else
+  // 3.1.0 and later (version inclusive)
+  volk_32fc_x2_s32fc_multiply_conjugate_add2_32fc(
+      m_coeff.data(), m_coeff.data(), m_state.data(), &factor_times_result,
+      m_filter_order);
+#endif // VOLK_VERSION
   // Set the middle (position 0) coefficient to 1+0j (unity)
   m_coeff[m_index_reference_point] = MfCoeff(1, 0);
   // Set the latest error value for monitoring
