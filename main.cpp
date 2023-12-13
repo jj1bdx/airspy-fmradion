@@ -919,6 +919,7 @@ int main(int argc, char **argv) {
     IQSampleVector if_downsampled_samples;
     IQSampleVector if_samples;
 
+    // If no sample, do nothing
     if (iqsamples.empty()) {
       break;
     }
@@ -969,37 +970,38 @@ int main(int argc, char **argv) {
       if_samples = std::move(if_shifted_samples);
     }
 
-    // Downsample IF for the decoder.
     bool if_exists = if_samples.size() > 0;
     double if_rms = 0.0;
-
-    if (if_exists) {
-      // Decode signal.
-      switch (modtype) {
-      case ModType::FM:
-        // Decode FM signal.
-        fm.process(if_samples, audiosamples);
-        if_rms = fm.get_if_rms();
-        break;
-      case ModType::NBFM:
-        // Decode narrow band FM signal.
-        nbfm.process(if_samples, audiosamples);
-        if_rms = nbfm.get_if_rms();
-        break;
-      case ModType::AM:
-      case ModType::DSB:
-      case ModType::USB:
-      case ModType::LSB:
-      case ModType::CW:
-      case ModType::WSPR:
-        // Decode AM/DSB/USB/LSB/CW signals.
-        am.process(if_samples, audiosamples);
-        if_rms = am.get_if_rms();
-        break;
-      }
-      // Measure (unsigned int)the average IF level.
-      if_level = 0.75 * if_level + 0.25 * if_rms;
+    // Do nothing if no output in the IF
+    if (!if_exists) {
+      break;
     }
+    // if_samples contains valid data
+    // Decode signal in if_samples
+    switch (modtype) {
+    case ModType::FM:
+      // Decode FM signal.
+      fm.process(if_samples, audiosamples);
+      if_rms = fm.get_if_rms();
+      break;
+    case ModType::NBFM:
+      // Decode narrow band FM signal.
+      nbfm.process(if_samples, audiosamples);
+      if_rms = nbfm.get_if_rms();
+      break;
+    case ModType::AM:
+    case ModType::DSB:
+    case ModType::USB:
+    case ModType::LSB:
+    case ModType::CW:
+    case ModType::WSPR:
+      // Decode AM/DSB/USB/LSB/CW signals.
+      am.process(if_samples, audiosamples);
+      if_rms = am.get_if_rms();
+      break;
+    }
+    // Measure (unsigned int)the average IF level.
+    if_level = 0.75 * if_level + 0.25 * if_rms;
 
     size_t audiosamples_size = audiosamples.size();
     bool audio_exists = audiosamples_size > 0;
@@ -1017,6 +1019,14 @@ int main(int argc, char **argv) {
       // Set nominal audio volume (-6dB) when IF squelch is open,
       // set to zero volume if the squelch is closed.
       Utility::adjust_gain(audiosamples, if_rms >= squelch_level ? 0.5 : 0.0);
+
+      // Throw away first blocks before stereo pilot locking is completed.
+      // They are noisy because IF filters are still starting up.
+      // (Increased from one to support high sampling rates)
+      if (block > discarding_blocks) {
+        // Write samples to output.
+        output_buffer.push(std::move(audiosamples));
+      }
     }
 
     if (modtype == ModType::FM) {
@@ -1150,18 +1160,10 @@ int main(int argc, char **argv) {
         break;
       }
     }
-
-    // Throw away first blocks before stereo pilot locking is completed.
-    // They are noisy because IF filters are still starting up.
-    // (Increased from one to support high sampling rates)
-    if ((block > discarding_blocks) && audio_exists) {
-      // Write samples to output.
-      // Always use buffered write.
-      output_buffer.push(std::move(audiosamples));
-    }
+    // End of main loop
   }
 
-  // End of main loop
+  // Exiting main loop
   fprintf(stderr, "\n");
 
   // Terminate background audio output thread first.
