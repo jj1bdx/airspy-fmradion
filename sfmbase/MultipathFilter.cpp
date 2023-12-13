@@ -93,11 +93,6 @@ inline IQSample MultipathFilter::single_process(const IQSample filter_input) {
   // }
   volk_32fc_x2_dot_prod_32fc(&output, m_state.data(), m_coeff.data(),
                              m_filter_order);
-  // quick hack to prevent zero output
-  // to prevent output crash to NaN
-  if ((output.real() == 0) && (output.imag() == 0)) {
-    output = IQSample(1e-9f, 1e-9f);
-  }
   return output;
 }
 
@@ -174,6 +169,12 @@ bool MultipathFilter::process(const IQSampleVector &samples_in,
   const unsigned int filter_interval = 0x03;
   for (unsigned int i = 0; i < n; i++) {
     IQSample output = single_process(samples_in[i]);
+    // quick hack to prevent zero output
+    // to prevent output crash to NaN
+    if ((output.real() == 0) && (output.imag() == 0)) {
+      // fprintf(stderr, "zero output detected, reboot multipath filter\n");
+      return false;
+    }
     // Note well: -ffast-math DISABLES NaN processing (-menable-no-nans)
     // so DO NOT specify -ffast-math!
     // Check if output real/imag are finite
