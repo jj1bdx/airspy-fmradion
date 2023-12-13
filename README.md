@@ -138,13 +138,24 @@ Use the latest HEAD version.
 
 r8brain-free-src and readerwriterqueue are the submodules of this repository. Download the submodule repositories by the following git procedure:
 
-- `git submodule init`
-- `git submodule update`
+- `git submodule update --init --recursive`
 
 ## Installing
 
-To install airspy-fmradion, download and unpack the source code (as well as the r8brain-free-src submodule) and go to the top level directory. Then do like this:
+### A quick way
 
+```shell
+/bin/rm -rf build
+git submodule update --init --recursive
+cmake -S . -B build # -DCMAKE_EXPORT_COMPILE_COMMANDS=ON (if needed)
+cmake --build build
+```
+
+### In details
+
+To install airspy-fmradion, download and unpack the source code and go to the top level directory. Then do like this:
+
+ - `git submodule update --init --recursive`
  - `mkdir build`
  - `cd build`
  - `cmake ..`
