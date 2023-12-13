@@ -54,7 +54,7 @@
 // define this for monitoring DataBuffer queue status
 // #undef DATABUFFER_QUEUE_MONITOR
 
-#define AIRSPY_FMRADION_VERSION "20231213-0"
+#define AIRSPY_FMRADION_VERSION "20231213-1"
 
 // Flag to set graceful termination
 // in process_signals()
