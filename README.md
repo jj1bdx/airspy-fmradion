@@ -2,7 +2,7 @@
 
 # airspy-fmradion
 
-* Version 20231212-1
+* Version 20231213-0
 * For MacOS (supporting Apple Silicon only, untested on Intel) and Linux
 
 ## Contributing
@@ -441,6 +441,7 @@ install -o user -m 0700 -c -s build/airspy-fmradion $(HOME)/bin
 * [Takehiro Sekine](https://github.com/bstalk), for suggesting using GNU Radio's [VOLK](http://libvolk.org/) for faster calculation, and implementing Filesource device driver
 * [Takeru Ohta](https://github.com/sile), for his [Rust implementation](https://github.com/sile/dagc) of [Tisserand-Berviller AGC algorithm](https://hal.univ-lorraine.fr/hal-01397371/document)
 * [Cameron Desrochers](https://github.com/cameron314), for his [readerwriterqueue](https://github.com/cameron314/readerwriterqueue) implementation of a single-producer-single-consumer lock-free queue for C++
+* [Clayton Smith](https://github.com/argilo), for [a bugfix pull request to airspy-fmradion to find an uninitialized variable](https://github.com/jj1bdx/airspy-fmradion/pull/43) and his help during [bug tracking in VOLK](https://github.com/gnuradio/volk/pull/695).
 
 ## License
 

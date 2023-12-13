@@ -13,7 +13,7 @@ The following submodules are required:
 
 * Mac mini 2023 Apple Silicon (M2 Pro), macOS 14.2, Xcode 15.1 Command Line Tools
 * MacBook Air 13" Apple Silicon (M1) 2020, macOS 14.2, Xcode 15.1 Command Line Tools
-* Ubuntu 22.04.3 LTS x86\_64, gcc 11.4.0 (with VOLK 2.5.1 or 3.0.0 only)
+* Ubuntu 22.04.3 LTS x86\_64, gcc 12.3.0
 * (Unofficial/experimental) Raspberry Pi OS
 
 ## Features under development
@@ -23,7 +23,7 @@ The following submodules are required:
 
 ## Known limitations
 
-* **Use VOLK v3.0.0 or v2.5.1 in apt repository for Ubuntu 22.04.3.**
+* For VOLK 3.1.0, use 20231213-0 or later.
 * For Raspberry Pi 3 and 4, Airspy R2 10Msps and Airspy Mini 6Msps sampling rates are *not supported* due to the hardware limitation. Use in 2.5Msps for R2, 3Msps for Mini.
 
 ### Intel Mac support is dropped
@@ -32,6 +32,7 @@ Intel Mac hardware is no longer supported by airspy-fmradion, although the autho
 
 ## Changes (including requirement changes)
 
+* 20231213-0: Fixed an uninitialized variable `m_save_phase` in PhaseDiscriminator as in [the pull request](https://github.com/jj1bdx/airspy-fmradion/pull/43) by Clayton Smith.
 * 20231212-1: FAILED: tried to make API compatible with [VOLK 3.1.0 change for s32fc functions](https://github.com/gnuradio/volk/pull/695), for `volk_32fc_x2_s32fc_multiply_conjugate_add_32fc()`, but this didn't work on Ubuntu 22.04.3.
 * 20231212-0: Updated r8-brain-free-src to Version 6.5.
 * 20230923: failed changes: low latency setting for buffering-based PortAudio didn't work well. Discarded changes of 20230910-1 to 20230910-4 from the dev branch.
