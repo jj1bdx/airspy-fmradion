@@ -879,7 +879,7 @@ int main(int argc, char **argv) {
   switch (modtype) {
   case ModType::FM:
   case ModType::NBFM:
-    discarding_blocks = stat_rate * 4;
+    discarding_blocks = stat_rate * 20;
     break;
   case ModType::AM:
   case ModType::DSB:
@@ -887,7 +887,7 @@ int main(int argc, char **argv) {
   case ModType::LSB:
   case ModType::CW:
   case ModType::WSPR:
-    discarding_blocks = stat_rate * 2;
+    discarding_blocks = stat_rate * 10;
     break;
   }
 
@@ -1033,22 +1033,21 @@ int main(int argc, char **argv) {
     // Show status messages for each block if not in quiet mode.
     bool stereo_change = false;
     if (!quietmode) {
-      // Stereo detection display
-      if (modtype == ModType::FM) {
-        stereo_change = (fm.stereo_detected() != got_stereo);
-        // Show stereo status.
-        if (stereo_change) {
-          got_stereo = fm.stereo_detected();
-          if (got_stereo) {
-            fprintf(stderr, "\ngot stereo signal, pilot level = %.7f\n",
-                    fm.get_pilot_level());
-          } else {
-            fprintf(stderr, "\nlost stereo signal\n");
+      if (((block % stat_rate) == 0) && (block > discarding_blocks)) {
+        // Stereo detection display
+        if (modtype == ModType::FM) {
+          stereo_change = (fm.stereo_detected() != got_stereo);
+          // Show stereo status.
+          if (stereo_change) {
+            got_stereo = fm.stereo_detected();
+            if (got_stereo) {
+              fprintf(stderr, "\ngot stereo signal, pilot level = %.7f\n",
+                      fm.get_pilot_level());
+            } else {
+              fprintf(stderr, "\nlost stereo signal\n");
+            }
           }
         }
-      }
-      if (stereo_change ||
-          (((block % stat_rate) == 0) && (block > discarding_blocks))) {
         // Show per-block statistics.
         // Add 1e-9 to log10() to prevent generating NaN
         float audio_level_db = 20 * log10(audio_level + 1e-9) + 3.01;
