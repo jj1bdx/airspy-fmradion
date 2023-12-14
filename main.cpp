@@ -976,6 +976,9 @@ int main(int argc, char **argv) {
       continue;
     }
 
+    // Valid data exists in if_samples
+    // from here in the for loop
+
     if (modtype == ModType::FM) {
       // the minus factor is to show the ppm correction
       // to make and not the one which has already been made
@@ -987,10 +990,7 @@ int main(int argc, char **argv) {
     // Add 1e-9 to log10() to prevent generating NaN
     float if_level_db = 20 * log10(if_level + 1e-9);
 
-    // Valid data exists in if_samples
-    // from here in the for loop
-
-    // Decode signal.
+    // Decode signal from if_samples.
     switch (modtype) {
     case ModType::FM:
       // Decode FM signal.
