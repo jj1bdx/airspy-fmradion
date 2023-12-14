@@ -1006,14 +1006,6 @@ int main(int argc, char **argv) {
     size_t audiosamples_size = audiosamples.size();
     bool audio_exists = audiosamples_size > 0;
 
-    // substitute nan in audiosamples to a very small value
-    for (size_t i = 0; i < audiosamples_size; i++) {
-      double v = audiosamples[i];
-      if (std::isnan(v) || !std::isfinite(v) || v == 0.0) {
-        v = 1e-9;
-      }
-    }
-
     // Measure audio level when audio exists
     if (audio_exists) {
       float audio_mean, audio_rms;
