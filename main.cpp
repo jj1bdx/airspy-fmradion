@@ -54,7 +54,7 @@
 // define this for monitoring DataBuffer queue status
 // #undef DATABUFFER_QUEUE_MONITOR
 
-#define AIRSPY_FMRADION_VERSION "20231213-1"
+#define AIRSPY_FMRADION_VERSION "20231215-0"
 
 // Flag to set graceful termination
 // in process_signals()
@@ -871,7 +871,6 @@ int main(int argc, char **argv) {
   // Always use output_thread for smooth output.
   output_thread =
       std::thread(write_output_data, audio_output.get(), &output_buffer);
-  SampleVector audiosamples;
   float audio_level = 0;
   bool got_stereo = false;
 
@@ -889,7 +888,9 @@ int main(int argc, char **argv) {
   unsigned int max_source_buffer_length = 0;
 #endif // DATABUFFER_QUEUE_MONITOR
 
-  // Main loop.
+  ///////////////////////////////////////
+  // NOTE: main processing loop from here
+  ///////////////////////////////////////
   for (uint64_t block = 0; !stop_flag.load(); block++) {
 
 #ifdef DATABUFFER_QUEUE_MONITOR
@@ -910,7 +911,7 @@ int main(int argc, char **argv) {
     IQSampleVector if_samples;
 
     // Initialize audio samples
-    audiosamples.resize(0);
+    SampleVector audiosamples(0);
 
     // If no IF data is sent,
     // go back and wait again
@@ -986,7 +987,8 @@ int main(int argc, char **argv) {
     // Add 1e-9 to log10() to prevent generating NaN
     float if_level_db = 20 * log10(if_level + 1e-9);
 
-    // Valid data exists in if_samples from here
+    // Valid data exists in if_samples
+    // from here in the for loop
 
     // Decode signal.
     switch (modtype) {
@@ -1022,7 +1024,8 @@ int main(int argc, char **argv) {
       continue;
     }
 
-    // Valid audio data exists in audiosamplesfrom here
+    // Valid audio data exists in audiosamples
+    // from here in the for loop
 
     // Measure audio level
     float audio_mean, audio_rms;
@@ -1159,18 +1162,27 @@ int main(int argc, char **argv) {
         break;
       }
     }
+    /////////////////////////////////////////
+    // NOTE: end of main processing loop here
+    /////////////////////////////////////////
   }
 
-  // End of main loop
+  // Exit and cleanup
   fprintf(stderr, "\n");
 
   // Terminate background audio output thread first.
   output_buffer.push_end();
   // Close audio output.
   audio_output->output_close();
+  // Stop output thread
   if (output_thread.joinable()) {
-    // detach output_thread if joinable
+    // Detach output_thread if joinable
     output_thread.detach();
+  } else {
+    // If output_thread is not joinable,
+    // the process will halt
+    fprintf(stderr, "output_thread is not joinable\n");
+    fprintf(stderr, "You may need to kill this program with SIGKILL\n");
   }
   // Terminate receiver thread.
   up_srcsdr->stop();
