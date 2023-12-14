@@ -371,9 +371,13 @@ inline void FmDecoder::demod_stereo(const SampleVector &samples_baseband,
   unsigned int n = samples_baseband.size();
   assert(n == samples_rawstereo.size());
 
-  for (unsigned int i = 0; i < n; i++) {
-    samples_rawstereo[i] *= 2.00 * samples_baseband[i];
-  }
+  // libvolk equivalent function of the following loop:
+  // for (unsigned int i = 0; i < n; i++) {
+  //  samples_rawstereo[i] *= 2.0 * samples_baseband[i];
+  // }
+  volk_64f_x2_multiply_64f(samples_rawstereo.data(), samples_rawstereo.data(),
+                           samples_baseband.data(), n);
+  Utility::adjust_gain(samples_rawstereo, 2.0);
 }
 
 // Duplicate mono signal in left/right channels.
