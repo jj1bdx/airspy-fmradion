@@ -65,6 +65,10 @@ void NbfmDecoder::process(const IQSampleVector &samples_in,
     audio.resize(0);
     return;
   }
+
+  // Remove possible NaNs and irregular values
+  Utility::remove_nans(m_buf_decoded);
+
   // Convert decoded data to baseband data
   m_buf_baseband.resize(decoded_size);
   volk_32f_convert_64f(m_buf_baseband.data(), m_buf_decoded.data(),
