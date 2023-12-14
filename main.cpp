@@ -880,21 +880,6 @@ int main(int argc, char **argv) {
   // TODO: ~0.1sec / display (should be tuned)
   unsigned int stat_rate =
       lrint(5120 / (if_blocksize / total_decimation_ratio));
-  unsigned int discarding_blocks;
-  switch (modtype) {
-  case ModType::FM:
-  case ModType::NBFM:
-    discarding_blocks = stat_rate * 20;
-    break;
-  case ModType::AM:
-  case ModType::DSB:
-  case ModType::USB:
-  case ModType::LSB:
-  case ModType::CW:
-  case ModType::WSPR:
-    discarding_blocks = stat_rate * 10;
-    break;
-  }
 
   float if_level = 0;
 
@@ -930,7 +915,7 @@ int main(int argc, char **argv) {
     // If no IF data is sent,
     // go back and wait again
     if (iqsamples.empty()) {
-      // go back to the top of the for loop
+      // go to the end of the for loop
       continue;
     }
 
@@ -981,13 +966,25 @@ int main(int argc, char **argv) {
     }
 
     // Downsample IF for the decoder.
-    bool if_exists = if_samples.size() > 0;
+    size_t if_samples_size = if_samples.size();
+    bool if_exists = if_samples_size > 0;
     double if_rms = 0.0;
 
     if (!if_exists) {
-      // go back to the top of the for loop
+      // go to the end of the for loop
       continue;
     }
+
+    if (modtype == ModType::FM) {
+      // the minus factor is to show the ppm correction
+      // to make and not the one which has already been made
+      ppm_average.feed((fm.get_tuning_offset() / tuner_freq) * -1.0e6);
+    } else if (modtype == ModType::NBFM) {
+      ppm_average.feed((nbfm.get_tuning_offset() / tuner_freq) * -1.0e6);
+    }
+
+    // Add 1e-9 to log10() to prevent generating NaN
+    float if_level_db = 20 * log10(if_level + 1e-9);
 
     // Valid data exists in if_samples from here
 
@@ -1020,36 +1017,32 @@ int main(int argc, char **argv) {
     size_t audiosamples_size = audiosamples.size();
     bool audio_exists = audiosamples_size > 0;
 
-    // Measure audio level when audio exists
-    if (audio_exists) {
-      float audio_mean, audio_rms;
-      IQSampleDecodedVector audiosamples_float;
-      audiosamples_float.resize(audiosamples_size);
-      volk_64f_convert_32f(audiosamples_float.data(), audiosamples.data(),
-                           audiosamples_size);
-      Utility::samples_mean_rms(audiosamples_float, audio_mean, audio_rms);
-      audio_level = 0.95 * audio_level + 0.05 * audio_rms;
-
-      // Set nominal audio volume (-6dB) when IF squelch is open,
-      // set to zero volume if the squelch is closed.
-      Utility::adjust_gain(audiosamples, if_rms >= squelch_level ? 0.5 : 0.0);
+    if (!audio_exists) {
+      // go to the end of the for loop
+      continue;
     }
 
-    if (modtype == ModType::FM) {
-      // the minus factor is to show the ppm correction
-      // to make and not the one which has already been made
-      ppm_average.feed((fm.get_tuning_offset() / tuner_freq) * -1.0e6);
-    } else if (modtype == ModType::NBFM) {
-      ppm_average.feed((nbfm.get_tuning_offset() / tuner_freq) * -1.0e6);
-    }
+    // Valid audio data exists in audiosamplesfrom here
 
-    // Add 1e-9 to log10() to prevent generating NaN
-    float if_level_db = 20 * log10(if_level + 1e-9);
+    // Measure audio level
+    float audio_mean, audio_rms;
+    IQSampleDecodedVector audiosamples_float;
+    audiosamples_float.resize(audiosamples_size);
+    volk_64f_convert_32f(audiosamples_float.data(), audiosamples.data(),
+                         audiosamples_size);
+    Utility::samples_mean_rms(audiosamples_float, audio_mean, audio_rms);
+    audio_level = 0.95 * audio_level + 0.05 * audio_rms;
+
+    // Set nominal audio volume (-6dB) when IF squelch is open,
+    // set to zero volume if the squelch is closed.
+    Utility::adjust_gain(audiosamples, if_rms >= squelch_level ? 0.5 : 0.0);
+    // Write samples to output.
+    output_buffer.push(std::move(audiosamples));
 
     // Show status messages for each block if not in quiet mode.
     bool stereo_change = false;
     if (!quietmode) {
-      if (((block % stat_rate) == 0) && (block > discarding_blocks)) {
+      if ((block % stat_rate) == 0) {
         // Stereo detection display
         if (modtype == ModType::FM) {
           stereo_change = (fm.stereo_detected() != got_stereo);
@@ -1121,7 +1114,7 @@ int main(int argc, char **argv) {
 
 #ifdef COEFF_MONITOR
       if ((modtype == ModType::FM) && (multipathfilter_stages > 0) &&
-          ((block % (stat_rate * 10)) == 0) && (block > discarding_blocks)) {
+          (block % (stat_rate * 10)) == 0) {
         double mf_error = fm.get_multipath_error();
         const MfCoeffVector &mf_coeff = fm.get_multipath_coefficients();
         fprintf(stderr, "block,%" PRIu64 ",mf_error,%.9f,mf_coeff,", block,
@@ -1165,12 +1158,6 @@ int main(int argc, char **argv) {
         }
         break;
       }
-    }
-
-    // Throw away unstable blocks during the startup.
-    if ((block > discarding_blocks) && audio_exists) {
-      // Write samples to output.
-      output_buffer.push(std::move(audiosamples));
     }
   }
 

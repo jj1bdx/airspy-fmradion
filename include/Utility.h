@@ -300,6 +300,17 @@ inline double get_time() {
   return tv.tv_sec + (1.0e-6 * tv.tv_usec);
 }
 
+// Remove NaNs and infinities from a SampleVector
+// by substituting them to zeros.
+inline void remove_nans(IQSampleDecodedVector &samples) {
+  for (size_t i = 0; i < samples.size(); i++) {
+    double v = samples[i];
+    if (std::isnan(v) || !std::isfinite(v)) {
+      samples[i] = 0;
+    }
+  }
+}
+
 }; // namespace Utility
 
 #endif /* INCLUDE_UTILITY_H_ */

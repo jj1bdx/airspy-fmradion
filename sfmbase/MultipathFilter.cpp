@@ -169,12 +169,6 @@ bool MultipathFilter::process(const IQSampleVector &samples_in,
   const unsigned int filter_interval = 0x03;
   for (unsigned int i = 0; i < n; i++) {
     IQSample output = single_process(samples_in[i]);
-    // Quick hack to prevent zero output
-    // so that it would not cause NaN
-    // in volk_32fc_s32f_atan2_32f() of PhaseDiscriminator
-    if ((output.real() == 0) && (output.imag() == 0)) {
-      return false;
-    }
     // Note well: -ffast-math DISABLES NaN processing (-menable-no-nans)
     // so DO NOT specify -ffast-math!
     // Check if output real/imag are finite
