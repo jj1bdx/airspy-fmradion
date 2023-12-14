@@ -919,6 +919,9 @@ int main(int argc, char **argv) {
     IQSampleVector if_downsampled_samples;
     IQSampleVector if_samples;
 
+    // Initialize audio samples
+    audiosamples.resize(0);
+
     if (iqsamples.empty()) {
       break;
     }
