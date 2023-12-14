@@ -77,11 +77,16 @@ static void write_output_data(AudioOutput *output, DataBuffer<Sample> *buf) {
 
     // Get samples from buffer and write to output.
     SampleVector samples = buf->pull();
-    output->write(samples);
-    if (!(*output)) {
-      fprintf(stderr, "ERROR: AudioOutput: %s\n", output->error().c_str());
-      // Setting stop_flag to true, suggested by GitHub @montgomeryb
-      stop_flag.store(true);
+    // The output device might be closed BEFORE
+    // buf->pull() is executed, so you need to
+    // check the flag here too
+    if (!stop_flag.load()) {
+      output->write(samples);
+      if (!(*output)) {
+        fprintf(stderr, "ERROR: AudioOutput: %s\n", output->error().c_str());
+        // Setting stop_flag to true, suggested by GitHub @montgomeryb
+        stop_flag.store(true);
+      }
     }
 
 #ifdef DATABUFFER_QUEUE_MONITOR
@@ -922,8 +927,11 @@ int main(int argc, char **argv) {
     // Initialize audio samples
     audiosamples.resize(0);
 
+    // If no IF data is sent,
+    // go back and wait again
     if (iqsamples.empty()) {
-      break;
+      // go back to the top of the for loop
+      continue;
     }
 
 #ifdef DATABUFFER_QUEUE_MONITOR
@@ -976,33 +984,38 @@ int main(int argc, char **argv) {
     bool if_exists = if_samples.size() > 0;
     double if_rms = 0.0;
 
-    if (if_exists) {
-      // Decode signal.
-      switch (modtype) {
-      case ModType::FM:
-        // Decode FM signal.
-        fm.process(if_samples, audiosamples);
-        if_rms = fm.get_if_rms();
-        break;
-      case ModType::NBFM:
-        // Decode narrow band FM signal.
-        nbfm.process(if_samples, audiosamples);
-        if_rms = nbfm.get_if_rms();
-        break;
-      case ModType::AM:
-      case ModType::DSB:
-      case ModType::USB:
-      case ModType::LSB:
-      case ModType::CW:
-      case ModType::WSPR:
-        // Decode AM/DSB/USB/LSB/CW signals.
-        am.process(if_samples, audiosamples);
-        if_rms = am.get_if_rms();
-        break;
-      }
-      // Measure (unsigned int)the average IF level.
-      if_level = 0.75 * if_level + 0.25 * if_rms;
+    if (!if_exists) {
+      // go back to the top of the for loop
+      continue;
     }
+
+    // Valid data exists in if_samples from here
+
+    // Decode signal.
+    switch (modtype) {
+    case ModType::FM:
+      // Decode FM signal.
+      fm.process(if_samples, audiosamples);
+      if_rms = fm.get_if_rms();
+      break;
+    case ModType::NBFM:
+      // Decode narrow band FM signal.
+      nbfm.process(if_samples, audiosamples);
+      if_rms = nbfm.get_if_rms();
+      break;
+    case ModType::AM:
+    case ModType::DSB:
+    case ModType::USB:
+    case ModType::LSB:
+    case ModType::CW:
+    case ModType::WSPR:
+      // Decode AM/DSB/USB/LSB/CW signals.
+      am.process(if_samples, audiosamples);
+      if_rms = am.get_if_rms();
+      break;
+    }
+    // Measure (unsigned int)the average IF level.
+    if_level = 0.75 * if_level + 0.25 * if_rms;
 
     size_t audiosamples_size = audiosamples.size();
     bool audio_exists = audiosamples_size > 0;
@@ -1154,12 +1167,9 @@ int main(int argc, char **argv) {
       }
     }
 
-    // Throw away first blocks before stereo pilot locking is completed.
-    // They are noisy because IF filters are still starting up.
-    // (Increased from one to support high sampling rates)
+    // Throw away unstable blocks during the startup.
     if ((block > discarding_blocks) && audio_exists) {
       // Write samples to output.
-      // Always use buffered write.
       output_buffer.push(std::move(audiosamples));
     }
   }
@@ -1169,13 +1179,13 @@ int main(int argc, char **argv) {
 
   // Terminate background audio output thread first.
   output_buffer.push_end();
-  output_thread.join();
   // Close audio output.
   audio_output->output_close();
-
+  if (output_thread.joinable()) {
+    // detach output_thread if joinable
+    output_thread.detach();
+  }
   // Terminate receiver thread.
-  // Note: libusb-1.0.25 with Airspy HF+ driver
-  // may cause crashing of this function.
   up_srcsdr->stop();
 
   fprintf(stderr, "airspy-fmradion terminated\n");
