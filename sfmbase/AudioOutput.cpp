@@ -229,7 +229,6 @@ bool PortAudioOutput::write(const SampleVector &samples) {
     return true;
   } else if (m_paerror == paOutputUnderflowed) {
     // This error is benign
-    // fprintf(stderr, "paOutputUnderflowed\n");
     return true;
   } else
     add_paerror("Pa_WriteStream()");
