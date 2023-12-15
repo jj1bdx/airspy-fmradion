@@ -57,7 +57,9 @@ MultipathFilter::MultipathFilter(unsigned int stages)
 
       // Initialize coefficient and state vectors with the size.
       ,
-      m_coeff(m_filter_order), m_state(m_filter_order) {
+      m_coeff(m_filter_order), m_state(m_filter_order),
+      // Initialize calculation error value.
+      m_error(0) {
 
   assert(stages > 0);
   for (unsigned int i = 0; i < m_filter_order; i++) {
