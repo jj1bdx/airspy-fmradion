@@ -51,53 +51,11 @@
 // define this for enabling coefficient monitor functions
 // #undef COEFF_MONITOR
 
-// define this for monitoring DataBuffer queue status
-// #undef DATABUFFER_QUEUE_MONITOR
-
 #define AIRSPY_FMRADION_VERSION "20231215-0"
 
 // Flag to set graceful termination
 // in process_signals()
 static std::atomic_bool stop_flag(false);
-
-// Get data from output buffer and write to output stream.
-// This code runs in a separate thread.
-static void write_output_data(AudioOutput *output, DataBuffer<Sample> *buf) {
-
-#ifdef DATABUFFER_QUEUE_MONITOR
-  unsigned int max_queue_length = 0;
-#endif // DATABUFFER_QUEUE_MONITOR
-
-  while (!stop_flag.load()) {
-
-    if (buf->pull_end_reached()) {
-      // Reached end of stream.
-      break;
-    }
-
-    // Get samples from buffer and write to output.
-    SampleVector samples = buf->pull();
-    // The output device might be closed BEFORE
-    // buf->pull() is executed, so you need to
-    // check the flag here too
-    if (!stop_flag.load()) {
-      output->write(samples);
-      if (!(*output)) {
-        fprintf(stderr, "ERROR: AudioOutput: %s\n", output->error().c_str());
-        // Setting stop_flag to true, suggested by GitHub @montgomeryb
-        stop_flag.store(true);
-      }
-    }
-
-#ifdef DATABUFFER_QUEUE_MONITOR
-    unsigned int queue_size = (unsigned int)buf->queue_size();
-    if (queue_size > max_queue_length) {
-      max_queue_length = queue_size;
-      fprintf(stderr, "Max queue length: %u\n", max_queue_length);
-    }
-#endif // DATABUFFER_QUEUE_MONITOR
-  }
-}
 
 static void usage() {
   fprintf(
@@ -865,12 +823,6 @@ int main(int argc, char **argv) {
   FineTuner fm_afc_finetuner((unsigned int)fm_target_rate / fm_afc_hz_step);
   float fm_afc_offset_sum = 0.0;
 
-  // If buffering enabled, start background output thread.
-  DataBuffer<Sample> output_buffer;
-  std::thread output_thread;
-  // Always use output_thread for smooth output.
-  output_thread =
-      std::thread(write_output_data, audio_output.get(), &output_buffer);
   float audio_level = 0;
   bool got_stereo = false;
 
@@ -882,25 +834,10 @@ int main(int argc, char **argv) {
 
   float if_level = 0;
 
-#ifdef DATABUFFER_QUEUE_MONITOR
-  // unsigned int nchannel = stereo ? 2 : 1;
-  bool inbuf_length_warning = false;
-  unsigned int max_source_buffer_length = 0;
-#endif // DATABUFFER_QUEUE_MONITOR
-
   ///////////////////////////////////////
   // NOTE: main processing loop from here
   ///////////////////////////////////////
   for (uint64_t block = 0; !stop_flag.load(); block++) {
-
-#ifdef DATABUFFER_QUEUE_MONITOR
-    // Check for overflow of source buffer.
-    if (!inbuf_length_warning && source_buffer.queue_size() > 10 * ifrate) {
-      fprintf(stderr, "\nWARNING: source buffer queue sizes exceeds 10 (system "
-                      "too slow)\n");
-      inbuf_length_warning = true;
-    }
-#endif // DATABUFFER_QUEUE_MONITOR
 
     // Pull next block from source buffer.
     IQSampleVector iqsamples = source_buffer.pull();
@@ -919,15 +856,6 @@ int main(int argc, char **argv) {
       // go to the end of the for loop
       continue;
     }
-
-#ifdef DATABUFFER_QUEUE_MONITOR
-    unsigned int source_buffer_length = source_buffer.queue_size();
-    if (source_buffer_length > max_source_buffer_length) {
-      max_source_buffer_length = source_buffer_length;
-      fprintf(stderr, "Max source buffer length: %u\n",
-              max_source_buffer_length);
-    }
-#endif // DATABUFFER_QUEUE_MONITOR
 
     double prev_block_time = block_time;
     block_time = Utility::get_time();
@@ -1040,7 +968,7 @@ int main(int argc, char **argv) {
     // set to zero volume if the squelch is closed.
     Utility::adjust_gain(audiosamples, if_rms >= squelch_level ? 0.5 : 0.0);
     // Write samples to output.
-    output_buffer.push(std::move(audiosamples));
+    audio_output->write(std::move(audiosamples));
 
     // Show status messages for each block if not in quiet mode.
     bool stereo_change = false;
@@ -1063,32 +991,13 @@ int main(int argc, char **argv) {
         // Show per-block statistics.
         // Add 1e-9 to log10() to prevent generating NaN
         float audio_level_db = 20 * log10(audio_level + 1e-9) + 3.01;
-#ifdef DATABUFFER_QUEUE_MONITOR
-        uint32_t quelen = (uint32_t)output_buffer.queue_size();
-#endif // DATABUFFER_QUEUE_MONITOR
 
         switch (modtype) {
         case ModType::FM:
         case ModType::NBFM:
-#ifdef DATABUFFER_QUEUE_MONITOR
-          fprintf(stderr,
-#ifdef COEFF_MONITOR
-                  // DATABUFFER_QUEUE_MONITOR && COEFF_MONITOR
-                  "blk=%11" PRIu64
-                  ":ppm=%+7.3f:IF=%+6.1fdB:AF=%+6.1fdB:qlen=%" PRIu32 "\n",
-#else
-                  // DATABUFFER_QUEUE_MONITOR && !(COEFF_MONITOR)
-                  "\rblk=%11" PRIu64
-                  ":ppm=%+7.3f:IF=%+6.1fdB:AF=%+6.1fdB:qlen=%" PRIu32,
-#endif // COEFF_MONITOR
-                  block, ppm_average.average(), if_level_db, audio_level_db,
-                  quelen);
-#else
-          // !(DATABUFFER_QUEUE_MONITOR) && !(COEFF_MONITOR)
           fprintf(stderr,
                   "\rblk=%11" PRIu64 ":ppm=%+7.3f:IF=%+6.1fdB:AF=%+6.1fdB",
                   block, ppm_average.average(), if_level_db, audio_level_db);
-#endif // DATABUFFER_QUEUE_MONITOR
           fflush(stderr);
           break;
         case ModType::AM:
@@ -1102,14 +1011,8 @@ int main(int argc, char **argv) {
           double if_agc_gain_db =
               20 * log10(am.get_if_agc_current_gain() + 1e-9);
           fprintf(stderr,
-#ifdef DATABUFFER_QUEUE_MONITOR
-                  "\rblk=%11" PRIu64
-                  ":IF=%+6.1fdB:AGC=%+6.1fdB:AF=%+6.1fdB:qlen=%" PRIu32,
-                  block, if_level_db, if_agc_gain_db, audio_level_db, quelen);
-#else
                   "\rblk=%11" PRIu64 ":IF=%+6.1fdB:AGC=%+6.1fdB:AF=%+6.1fdB",
                   block, if_level_db, if_agc_gain_db, audio_level_db);
-#endif // DATABUFFER_QUEUE_MONITOR
           fflush(stderr);
           break;
         }
@@ -1170,20 +1073,8 @@ int main(int argc, char **argv) {
   // Exit and cleanup
   fprintf(stderr, "\n");
 
-  // Terminate background audio output thread first.
-  output_buffer.push_end();
   // Close audio output.
   audio_output->output_close();
-  // Stop output thread
-  if (output_thread.joinable()) {
-    // Detach output_thread if joinable
-    output_thread.detach();
-  } else {
-    // If output_thread is not joinable,
-    // the process will halt
-    fprintf(stderr, "output_thread is not joinable\n");
-    fprintf(stderr, "You may need to kill this program with SIGKILL\n");
-  }
   // Terminate receiver thread.
   up_srcsdr->stop();
 
