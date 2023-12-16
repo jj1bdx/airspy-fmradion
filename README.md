@@ -2,8 +2,8 @@
 
 # airspy-fmradion
 
-* Version 20231215-0
-* For MacOS (supporting Apple Silicon only, untested on Intel) and Linux
+* Version 20231216-0
+* For macOS (Apple Silicon) and Linux
 
 ## Contributing
 
@@ -58,7 +58,7 @@ airspy-fmradion -m am -t airspyhf -q \
  - [PortAudio](http://www.portaudio.com)
  - Tested: Airspy R2, Airspy Mini, Airspy HF+ Dual Port, RTL-SDR V3
  - Fast computer
- - Medium-strong radio signals
+ - Medium-to-strong radio signals
 
 For the latest version, see https://github.com/jj1bdx/airspy-fmradion
 
@@ -148,7 +148,7 @@ r8brain-free-src and readerwriterqueue are the submodules of this repository. Do
 /bin/rm -rf build
 git submodule update --init --recursive
 cmake -S . -B build # -DCMAKE_EXPORT_COMPILE_COMMANDS=ON (if needed)
-cmake --build build
+cmake --build build --target all
 ```
 
 ### In details
