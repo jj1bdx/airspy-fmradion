@@ -190,7 +190,7 @@ void AirspySource::get_device_names(std::vector<std::string> &devices) {
                    << serials[i];
       devices.push_back(devname_ostr.str());
     }
-#ifdef DEBUG_AIRSPYHFSOURCE
+#ifdef DEBUG_AIRSPYSOURCE
     std::cerr << "AirspySource::get_device_names: enumerated " << ndev
               << "device(s)" << std::endl;
 #endif

@@ -57,7 +57,9 @@ MultipathFilter::MultipathFilter(unsigned int stages)
 
       // Initialize coefficient and state vectors with the size.
       ,
-      m_coeff(m_filter_order), m_state(m_filter_order) {
+      m_coeff(m_filter_order), m_state(m_filter_order),
+      // Initialize calculation error value.
+      m_error(0) {
 
   assert(stages > 0);
   for (unsigned int i = 0; i < m_filter_order; i++) {
@@ -116,7 +118,6 @@ inline void MultipathFilter::update_coeff(const IQSample result) {
                                   m_filter_order);
   volk_32f_accumulator_s32f(&state_mag_sq_sum, state_mag_sq.data(),
                             m_filter_order);
-  // fprintf(stderr, "state_mag_sq_sum = %.9g\n", state_mag_sq_sum);
 
   // Obtain the step size (dymanically computed)
   // Add offset to prevent division-by-zero error
