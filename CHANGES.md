@@ -31,6 +31,7 @@ Intel Mac hardware is no longer supported by airspy-fmradion, although the autho
 
 ## Changes (including requirement changes)
 
+* 20231216-0: Removed recording buffer thread. This will simplify the audio output operation. Also, lowered the output level of AM/CW/USB/LSB/WSPR decoder to prevent audio clipping, and changed the IF AGC constants for longer transition timing.
 * 20231215-0: Fix the following known bugs and refactor the code to streamline the functioning:
   - Bug: a hung process during the startup period before valid audio signals are coming out
   - Bug: displaying `-nan` in the output level meter in broadcast FM and NBFM
