@@ -30,11 +30,24 @@ PhaseDiscriminator::PhaseDiscriminator(double max_freq_dev)
       m_boundary(1.0 / (max_freq_dev * 2.0)), m_save_value(0) {}
 
 // Process samples.
-void PhaseDiscriminator::process(const IQSampleVector &samples_in,
+void PhaseDiscriminator::process(IQSampleVector &samples_in,
                                  IQSampleDecodedVector &samples_out) {
   unsigned int n = samples_in.size();
   samples_out.resize(n);
   m_phase.resize(n);
+
+  // If an input sample value is 0+0j,
+  // it will generate NaN after processed by
+  // volk_32fc_s32f_atan2_32f(), so
+  // the value is set not to generate NaN but zero.
+  // Scanning this here has the price to pay,
+  // but it's much easier than finding out NaNs.
+  for (size_t i = 0; i < n; i++) {
+    IQSample v = samples_in[i];
+    if ((v.real() == 0.0) && (v.imag() == 0.0)) {
+      samples_in[i] = IQSample(1e-10, 0.0);
+    }
+  }
 
   // libvolk parallelism
   volk_32fc_s32f_atan2_32f(m_phase.data(), samples_in.data(),
