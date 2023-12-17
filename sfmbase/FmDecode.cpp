@@ -90,10 +90,16 @@ void PilotPhaseLock::process(const SampleVector &samples_in,
     Sample new_phasor_i = m_biquad_phasor_i1.process(phasor_i);
     Sample new_phasor_q = m_biquad_phasor_q1.process(phasor_q);
 
-    // Convert I/Q ratio to estimate of phase error.
-    // Note: maximum phase error during the locked state is +- 0.02 radian.
-    // Sample phase_err = atan2(phasor_q, phasor_i);
+// Convert I/Q ratio to estimate of phase error.
+// Note: maximum phase error during the locked state is +- 0.02 radian.
+// Sample phase_err = atan2(new_phasor_q, new_phasor_i);
+#if VOLK_VERSION < 030100
+    // Before 3.1.0
     Sample phase_err = Utility::fast_atan2f(new_phasor_q, new_phasor_i);
+#else
+    // 3.1.0 and later (version inclusive)
+    Sample phase_err = volk_atan2(new_phasor_q, new_phasor_i);
+#endif // VOLK_VERSION
 
     // Detect pilot level (conservative).
     m_pilot_level = std::min(m_pilot_level, new_phasor_i);
