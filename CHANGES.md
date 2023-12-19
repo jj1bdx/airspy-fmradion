@@ -14,7 +14,7 @@ The following submodules are required:
 * Mac mini 2023 Apple Silicon (M2 Pro), macOS 14.2, Xcode 15.1 Command Line Tools
 * MacBook Air 13" Apple Silicon (M1) 2020, macOS 14.2, Xcode 15.1 Command Line Tools
 * Ubuntu 22.04.3 LTS x86\_64, gcc 12.3.0
-* (Unofficial/experimental) Raspberry Pi OS
+* (still experimental) Raspberry Pi 4, running Raspberry Pi OS aka Raspbian GNU/Linux 11 (bullseye)
 
 ## Features under development
 
