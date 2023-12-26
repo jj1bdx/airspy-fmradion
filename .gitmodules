@@ -1,6 +1,3 @@
 [submodule "r8brain-free-src"]
 	path = r8brain-free-src
 	url = https://github.com/avaneev/r8brain-free-src
-[submodule "readerwriterqueue"]
-	path = readerwriterqueue
-	url = https://github.com/cameron314/readerwriterqueue
