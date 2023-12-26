@@ -815,8 +815,6 @@ int main(int argc, char **argv) {
   float fm_afc_offset_sum = 0.0;
 
   float audio_level = 0;
-  bool got_stereo = false;
-
   double block_time = Utility::get_time();
 
   // TODO: ~0.1sec / display (should be tuned)
@@ -824,6 +822,10 @@ int main(int argc, char **argv) {
       lrint(5120 / (if_blocksize / total_decimation_ratio));
 
   float if_level = 0;
+
+  PilotState pilot_status = PilotState::NotDetected;
+  double previous_pilot_level = 0.0;
+  constexpr double pilot_level_threshold = 0.01;
 
   ///////////////////////////////////////
   // NOTE: main processing loop from here
@@ -962,22 +964,51 @@ int main(int argc, char **argv) {
     audio_output->write(std::move(audiosamples));
 
     // Show status messages for each block if not in quiet mode.
-    bool stereo_change = false;
     if (!quietmode) {
       if ((block % stat_rate) == 0) {
         // Stereo detection display
+        // Use a state machine here
         if (modtype == ModType::FM) {
-          stereo_change = (fm.stereo_detected() != got_stereo);
-          // Show stereo status.
-          if (stereo_change) {
-            got_stereo = fm.stereo_detected();
-            if (got_stereo) {
+          double pilot_level = fm.get_pilot_level();
+          double pilot_level_diff =
+              std::abs(pilot_level - previous_pilot_level);
+          bool stereo_status = fm.stereo_detected();
+          switch (pilot_status) {
+          case PilotState::NotDetected:
+            if (stereo_status) {
               fprintf(stderr, "\ngot stereo signal, pilot level = %.7f\n",
-                      fm.get_pilot_level());
-            } else {
-              fprintf(stderr, "\nlost stereo signal\n");
+                      pilot_level);
+              pilot_status = PilotState::Detected;
             }
+            break;
+          case PilotState::Detected:
+            if (!stereo_status) {
+              fprintf(stderr, "\nlost stereo signal\n");
+              previous_pilot_level = 0.0;
+              pilot_status = PilotState::NotDetected;
+            } else {
+              if (pilot_level_diff < pilot_level_threshold) {
+                fprintf(stderr, "\npilot level stabilized to %.7f\n",
+                        pilot_level);
+                pilot_status = PilotState::Stabilized;
+              }
+            }
+            break;
+          case PilotState::Stabilized:
+            if (!stereo_status) {
+              fprintf(stderr, "\nlost stereo signal\n");
+              previous_pilot_level = 0.0;
+              pilot_status = PilotState::NotDetected;
+            } else {
+              if (pilot_level_diff >= pilot_level_threshold) {
+                fprintf(stderr, "\npilot level destabilized to %.7f\n",
+                        pilot_level);
+                pilot_status = PilotState::Detected;
+              }
+            }
+            break;
           }
+          previous_pilot_level = pilot_level;
         }
         // Show per-block statistics.
         // Add 1e-9 to log10() to prevent generating NaN
