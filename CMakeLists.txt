@@ -186,6 +186,7 @@ set(sfmbase_SOURCES
     sfmbase/MultipathFilter.cpp
     sfmbase/NbfmDecode.cpp
     sfmbase/PhaseDiscriminator.cpp
+    sfmbase/PilotPhaseLock.cpp
     sfmbase/RtlSdrSource.cpp
 )
 
@@ -210,6 +211,7 @@ set(sfmbase_HEADERS
     include/MultipathFilter.h
     include/NbfmDecode.h
     include/PhaseDiscriminator.h
+    include/PilotPhaseLock.h
     include/RtlSdrSource.h
     include/Source.h
     include/SoftFM.h
