@@ -43,7 +43,6 @@ void PhaseDiscriminator::process(const IQSampleVector &samples_in,
                                   m_boundary, &m_save_value, n);
   // Remove NaNs from output
   Utility::remove_nans(samples_out);
-  
 }
 
 // end
