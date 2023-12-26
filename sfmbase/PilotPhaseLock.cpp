@@ -21,7 +21,11 @@
 #include "Utility.h"
 
 // Define this to print PLL filter messages
-// #define DEBUG_PLL_FILTER
+// #undef DEBUG_PLL_FILTER
+
+#ifdef DEBUG_PLL_FILTER
+#include "FmDecode.h"
+#endif // DEBUG_PLL_FILTER
 
 // class PilotPhaseLock
 
@@ -95,8 +99,9 @@ void PilotPhaseLock::process(const SampleVector &samples_in,
     // Sample phase_err = atan2(phasor_q, phasor_i);
     Sample phase_err = Utility::fast_atan2f(new_phasor_q, new_phasor_i);
 
-    // Detect pilot level (conservative).
-    m_pilot_level = std::min(m_pilot_level, new_phasor_i);
+    // Calculate pilot level (accurate).
+    m_pilot_level = std::sqrt((new_phasor_i * new_phasor_i) +
+                              (new_phasor_q * new_phasor_q));
 
     // Run phase error through loop filter and update frequency estimate.
     // After the loop filter, the phase error is integrated to produce
