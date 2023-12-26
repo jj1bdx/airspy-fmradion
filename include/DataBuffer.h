@@ -32,7 +32,7 @@ public:
   DataBuffer() : m_end_marked(false) {}
 
   // Add samples to the queue.
-  void push(std::vector<Element> &&samples) {
+  inline void push(std::vector<Element> &&samples) {
     if (!samples.empty()) {
       {
         std::scoped_lock<std::mutex> lock(m_mutex);
@@ -44,7 +44,7 @@ public:
   }
 
   // Mark the end of the data stream.
-  void push_end() {
+  inline void push_end() {
     {
       std::scoped_lock<std::mutex> lock(m_mutex);
       m_end_marked = true;
@@ -54,7 +54,7 @@ public:
   }
 
   // Return size of std::queue structure (for debugging).
-  std::size_t queue_size() {
+  inline std::size_t queue_size() {
     {
       std::scoped_lock<std::mutex> lock(m_mutex);
       return (m_queue.size());
@@ -66,7 +66,7 @@ public:
   // return the samples. If the end marker has been reached, return
   // an empty vector. If the queue is empty, wait until more data is pushed
   // or until the end marker is pushed.
-  std::vector<Element> pull() {
+  inline std::vector<Element> pull() {
     std::vector<Element> ret;
     {
       std::unique_lock<std::mutex> lock(m_mutex);
@@ -81,7 +81,7 @@ public:
   }
 
   // Return true if the end has been reached at the Pull side.
-  bool pull_end_reached() {
+  inline bool pull_end_reached() {
     {
       std::scoped_lock<std::mutex> lock(m_mutex);
       return (m_queue.empty() && (m_end_marked));
