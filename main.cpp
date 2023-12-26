@@ -96,7 +96,6 @@ static void usage() {
       "device\n"
       "  -T filename    Write pulse-per-second timestamps\n"
       "                 use filename '-' to write to stdout\n"
-      "  -b seconds     (ignored, remained for a compatibility reason)\n"
       "  -X             Shift pilot phase (for Quadrature Multipath Monitor)\n"
       "                 (-X is ignored under mono mode (-M))\n"
       "  -U             Set deemphasis to 75 microseconds (default: 50)\n"
@@ -281,8 +280,6 @@ int main(int argc, char **argv) {
   bool quietmode = false;
   std::string ppsfilename;
   FILE *ppsfile = nullptr;
-  // bufsecs is ignored right now
-  double bufsecs = -1;
   bool enable_squelch = false;
   double squelch_level_db = 150.0;
   bool pilot_shift = false;
@@ -340,7 +337,6 @@ int main(int argc, char **argv) {
       {"wavfloat", required_argument, nullptr, 'G'},
       {"play", optional_argument, nullptr, 'P'},
       {"pps", required_argument, nullptr, 'T'},
-      {"buffer", required_argument, nullptr, 'b'},
       {"pilotshift", no_argument, nullptr, 'X'},
       {"usa", no_argument, nullptr, 'U'},
       {"filtertype", optional_argument, nullptr, 'f'},
@@ -351,7 +347,7 @@ int main(int argc, char **argv) {
       {nullptr, no_argument, nullptr, 0}};
 
   int c, longindex;
-  while ((c = getopt_long(argc, argv, "m:t:c:d:MR:F:W:G:f:l:P:T:b:qXUE:r:A",
+  while ((c = getopt_long(argc, argv, "m:t:c:d:MR:F:W:G:f:l:P:T:qXUE:r:A",
                           longopts, &longindex)) >= 0) {
     switch (c) {
     case 'm':
@@ -408,11 +404,6 @@ int main(int argc, char **argv) {
       break;
     case 'T':
       ppsfilename = optarg;
-      break;
-    case 'b':
-      if (!Utility::parse_dbl(optarg, bufsecs) || bufsecs < 0) {
-        badarg("-b");
-      }
       break;
     case 'q':
       quietmode = true;
