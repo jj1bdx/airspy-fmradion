@@ -305,12 +305,12 @@ inline double get_time() {
 // NOTE: this function is for post-processing
 // PhaseDiscriminator::Process(), specifically
 // the output of volk_32fc_s32f_atan2_32f()
-// so that no NaNs or infinities are contained in
+// so that no NaNs are contained in
 // the returning vector elements.
 inline void remove_nans(IQSampleDecodedVector &samples) {
   for (size_t i = 0; i < samples.size(); i++) {
     double v = samples[i];
-    if (std::isnan(v) || !std::isfinite(v)) {
+    if (std::isnan(v)) {
       samples[i] = 0;
     }
   }

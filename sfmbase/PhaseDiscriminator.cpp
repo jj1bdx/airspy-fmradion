@@ -41,6 +41,9 @@ void PhaseDiscriminator::process(const IQSampleVector &samples_in,
                            m_normalize_factor, n);
   volk_32f_s32f_32f_fm_detect_32f(samples_out.data(), m_phase.data(),
                                   m_boundary, &m_save_value, n);
+  // Remove NaNs from output
+  Utility::remove_nans(samples_out);
+  
 }
 
 // end
