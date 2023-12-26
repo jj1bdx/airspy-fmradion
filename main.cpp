@@ -834,7 +834,7 @@ int main(int argc, char **argv) {
 
   PilotState pilot_status = PilotState::NotDetected;
   double previous_pilot_level = 0.0;
-  constexpr double pilot_level_threshold = 0.005;
+  constexpr double pilot_level_threshold = 0.01;
 
   ///////////////////////////////////////
   // NOTE: main processing loop from here
