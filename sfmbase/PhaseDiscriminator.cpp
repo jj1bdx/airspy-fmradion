@@ -2,7 +2,7 @@
 // Software decoder for FM broadcast radio with Airspy
 //
 // Copyright (C) 2015 Edouard Griffiths, F4EXB
-// Copyright (C) 2019-2022 Kenji Rikitake, JJ1BDX
+// Copyright (C) 2019-2024 Kenji Rikitake, JJ1BDX
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -41,6 +41,8 @@ void PhaseDiscriminator::process(const IQSampleVector &samples_in,
                            m_normalize_factor, n);
   volk_32f_s32f_32f_fm_detect_32f(samples_out.data(), m_phase.data(),
                                   m_boundary, &m_save_value, n);
+  // Remove NaNs from output
+  Utility::remove_nans(samples_out);
 }
 
 // end

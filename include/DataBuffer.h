@@ -2,7 +2,7 @@
 // Software decoder for FM broadcast radio with Airspy
 //
 // Copyright (C) 2015 Edouard Griffiths, F4EXB
-// Copyright (C) 2019-2022 Kenji Rikitake, JJ1BDX
+// Copyright (C) 2019-2024 Kenji Rikitake, JJ1BDX
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -20,60 +20,80 @@
 #ifndef INCLUDE_DATABUFFER_H
 #define INCLUDE_DATABUFFER_H
 
-#include "readerwriterqueue.h"
-#include <atomic>
+#include <condition_variable>
+#include <mutex>
+#include <queue>
 
-// A buffer implementation to move sample data between threads.
-// This implementation is based on the class moodycamel::readerwriterqueue,
-// which is a lock-free queue guaranteed only to work on
-// single-producer and single-consumer threads.
-// See <https://github.com/cameron314/readerwriterqueue>
-// for the implementation details.
-// (The readerwriterqueue code is licensed under Simplified BSD License.)
+// Buffer to move sample data between threads.
 
 template <class Element> class DataBuffer {
-
 public:
   // Constructor.
-  // Default queue size is 128, which should be enough for the application.
-  DataBuffer() : m_rwqueue(128), m_end_marked(false) {}
+  DataBuffer() : m_end_marked(false) {}
 
   // Add samples to the queue.
-  void push(std::vector<Element> &&samples) {
+  inline void push(std::vector<Element> &&samples) {
     if (!samples.empty()) {
-      m_rwqueue.enqueue(std::move(samples));
+      {
+        std::scoped_lock<std::mutex> lock(m_mutex);
+        m_queue.push(std::move(samples));
+        // unlock m_mutex here by getting out of scope
+      }
+      m_cond.notify_all();
     }
   }
 
   // Mark the end of the data stream.
-  void push_end() { m_end_marked.store(true); }
-
-  // Return an approximate size of std::queue structure (for debugging).
-  std::size_t queue_size() { return (m_rwqueue.size_approx()); }
-
-  // If the end marker has been reached, return an empty vector.
-  // If the queue is non-empty, remove a block from the queue and
-  // return the samples.
-  // If the queue is empty, busy-wait until more data is pushed
-  // or until the end marker is pushed, with 1 msec sleeping for
-  // each attempt.
-  std::vector<Element> pull() {
-    std::vector<Element> ret;
-    if (!m_end_marked.load()) {
-      m_rwqueue.wait_dequeue(ret);
-      return ret;
+  inline void push_end() {
+    {
+      std::scoped_lock<std::mutex> lock(m_mutex);
+      m_end_marked = true;
+      // unlock m_mutex here by getting out of scope
     }
-    return ret;
+    m_cond.notify_all();
+  }
+
+  // Return size of std::queue structure (for debugging).
+  inline std::size_t queue_size() {
+    {
+      std::scoped_lock<std::mutex> lock(m_mutex);
+      return (m_queue.size());
+      // unlock m_mutex here by getting out of scope
+    }
+  }
+
+  // If the queue is non-empty, remove a block from the queue and
+  // return the samples. If the end marker has been reached, return
+  // an empty vector. If the queue is empty, wait until more data is pushed
+  // or until the end marker is pushed.
+  inline std::vector<Element> pull() {
+    std::vector<Element> ret;
+    {
+      std::unique_lock<std::mutex> lock(m_mutex);
+      m_cond.wait(lock, [&] { return !(m_queue.empty() && (!m_end_marked)); });
+      if (!m_queue.empty()) {
+        std::swap(ret, m_queue.front());
+        m_queue.pop();
+      }
+      return (ret);
+      // unlock m_mutex here by getting out of scope
+    }
   }
 
   // Return true if the end has been reached at the Pull side.
-  bool pull_end_reached() {
-    return ((m_rwqueue.peek() == nullptr) && (m_end_marked.load()));
+  inline bool pull_end_reached() {
+    {
+      std::scoped_lock<std::mutex> lock(m_mutex);
+      return (m_queue.empty() && (m_end_marked));
+      // unlock m_mutex here by getting out of scope
+    }
   }
 
 private:
-  moodycamel::BlockingReaderWriterQueue<std::vector<Element>> m_rwqueue;
-  std::atomic_bool m_end_marked;
+  bool m_end_marked;
+  std::queue<std::vector<Element>> m_queue;
+  std::mutex m_mutex;
+  std::condition_variable m_cond;
 };
 
 #endif

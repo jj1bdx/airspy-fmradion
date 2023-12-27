@@ -2,7 +2,7 @@
 // Software decoder for FM broadcast radio with Airspy
 //
 // Copyright (C) 2015 Edouard Griffiths, F4EXB
-// Copyright (C) 2019-2022 Kenji Rikitake, JJ1BDX
+// Copyright (C) 2019-2024 Kenji Rikitake, JJ1BDX
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -305,12 +305,12 @@ inline double get_time() {
 // NOTE: this function is for post-processing
 // PhaseDiscriminator::Process(), specifically
 // the output of volk_32fc_s32f_atan2_32f()
-// so that no NaNs or infinities are contained in
+// so that no NaNs are contained in
 // the returning vector elements.
 inline void remove_nans(IQSampleDecodedVector &samples) {
   for (size_t i = 0; i < samples.size(); i++) {
     double v = samples[i];
-    if (std::isnan(v) || !std::isfinite(v)) {
+    if (std::isnan(v)) {
       samples[i] = 0;
     }
   }

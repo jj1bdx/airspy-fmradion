@@ -186,6 +186,7 @@ set(sfmbase_SOURCES
     sfmbase/MultipathFilter.cpp
     sfmbase/NbfmDecode.cpp
     sfmbase/PhaseDiscriminator.cpp
+    sfmbase/PilotPhaseLock.cpp
     sfmbase/RtlSdrSource.cpp
 )
 
@@ -210,12 +211,11 @@ set(sfmbase_HEADERS
     include/MultipathFilter.h
     include/NbfmDecode.h
     include/PhaseDiscriminator.h
+    include/PilotPhaseLock.h
     include/RtlSdrSource.h
     include/Source.h
     include/SoftFM.h
     include/Utility.h
-    readerwriterqueue/atomicops.h
-    readerwriterqueue/readerwriterqueue.h
 )
 
 # For building r8brain-free-src
@@ -258,7 +258,6 @@ add_executable(airspy-fmradion
 include_directories(
     ${CMAKE_SOURCE_DIR}/include
     ${CMAKE_SOURCE_DIR}/r8brain-free-src
-    ${CMAKE_SOURCE_DIR}/readerwriterqueue
     ${AIRSPYHF_INCLUDE_DIRS}
     ${AIRSPY_INCLUDE_DIRS}
     ${RTLSDR_INCLUDE_DIRS}

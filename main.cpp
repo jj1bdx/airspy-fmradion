@@ -2,7 +2,7 @@
 //
 // Copyright (C) 2013, Joris van Rantwijk.
 // Copyright (C) 2015 Edouard Griffiths, F4EXB
-// Copyright (C) 2018-2022 Kenji Rikitake, JJ1BDX
+// Copyright (C) 2018-2024 Kenji Rikitake, JJ1BDX
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -51,7 +51,7 @@
 // define this for enabling coefficient monitor functions
 // #undef COEFF_MONITOR
 
-#define AIRSPY_FMRADION_VERSION "20231216-0"
+#define AIRSPY_FMRADION_VERSION "20231227-0"
 
 // Flag to set graceful termination
 // in process_signals()
@@ -96,7 +96,6 @@ static void usage() {
       "device\n"
       "  -T filename    Write pulse-per-second timestamps\n"
       "                 use filename '-' to write to stdout\n"
-      "  -b seconds     (ignored, remained for a compatibility reason)\n"
       "  -X             Shift pilot phase (for Quadrature Multipath Monitor)\n"
       "                 (-X is ignored under mono mode (-M))\n"
       "  -U             Set deemphasis to 75 microseconds (default: 50)\n"
@@ -281,8 +280,6 @@ int main(int argc, char **argv) {
   bool quietmode = false;
   std::string ppsfilename;
   FILE *ppsfile = nullptr;
-  // bufsecs is ignored right now
-  double bufsecs = -1;
   bool enable_squelch = false;
   double squelch_level_db = 150.0;
   bool pilot_shift = false;
@@ -340,7 +337,6 @@ int main(int argc, char **argv) {
       {"wavfloat", required_argument, nullptr, 'G'},
       {"play", optional_argument, nullptr, 'P'},
       {"pps", required_argument, nullptr, 'T'},
-      {"buffer", required_argument, nullptr, 'b'},
       {"pilotshift", no_argument, nullptr, 'X'},
       {"usa", no_argument, nullptr, 'U'},
       {"filtertype", optional_argument, nullptr, 'f'},
@@ -351,7 +347,7 @@ int main(int argc, char **argv) {
       {nullptr, no_argument, nullptr, 0}};
 
   int c, longindex;
-  while ((c = getopt_long(argc, argv, "m:t:c:d:MR:F:W:G:f:l:P:T:b:qXUE:r:A",
+  while ((c = getopt_long(argc, argv, "m:t:c:d:MR:F:W:G:f:l:P:T:qXUE:r:A",
                           longopts, &longindex)) >= 0) {
     switch (c) {
     case 'm':
@@ -408,11 +404,6 @@ int main(int argc, char **argv) {
       break;
     case 'T':
       ppsfilename = optarg;
-      break;
-    case 'b':
-      if (!Utility::parse_dbl(optarg, bufsecs) || bufsecs < 0) {
-        badarg("-b");
-      }
       break;
     case 'q':
       quietmode = true;
@@ -824,8 +815,6 @@ int main(int argc, char **argv) {
   float fm_afc_offset_sum = 0.0;
 
   float audio_level = 0;
-  bool got_stereo = false;
-
   double block_time = Utility::get_time();
 
   // TODO: ~0.1sec / display (should be tuned)
@@ -833,6 +822,10 @@ int main(int argc, char **argv) {
       lrint(5120 / (if_blocksize / total_decimation_ratio));
 
   float if_level = 0;
+
+  PilotState pilot_status = PilotState::NotDetected;
+  double previous_pilot_level = 0.0;
+  constexpr double pilot_level_threshold = 0.01;
 
   ///////////////////////////////////////
   // NOTE: main processing loop from here
@@ -971,22 +964,51 @@ int main(int argc, char **argv) {
     audio_output->write(std::move(audiosamples));
 
     // Show status messages for each block if not in quiet mode.
-    bool stereo_change = false;
     if (!quietmode) {
       if ((block % stat_rate) == 0) {
         // Stereo detection display
+        // Use a state machine here
         if (modtype == ModType::FM) {
-          stereo_change = (fm.stereo_detected() != got_stereo);
-          // Show stereo status.
-          if (stereo_change) {
-            got_stereo = fm.stereo_detected();
-            if (got_stereo) {
+          double pilot_level = fm.get_pilot_level();
+          double pilot_level_diff =
+              std::abs(pilot_level - previous_pilot_level);
+          bool stereo_status = fm.stereo_detected();
+          switch (pilot_status) {
+          case PilotState::NotDetected:
+            if (stereo_status) {
               fprintf(stderr, "\ngot stereo signal, pilot level = %.7f\n",
-                      fm.get_pilot_level());
-            } else {
-              fprintf(stderr, "\nlost stereo signal\n");
+                      pilot_level);
+              pilot_status = PilotState::Detected;
             }
+            break;
+          case PilotState::Detected:
+            if (!stereo_status) {
+              fprintf(stderr, "\nlost stereo signal\n");
+              previous_pilot_level = 0.0;
+              pilot_status = PilotState::NotDetected;
+            } else {
+              if (pilot_level_diff < pilot_level_threshold) {
+                fprintf(stderr, "\npilot level stabilized to %.7f\n",
+                        pilot_level);
+                pilot_status = PilotState::Stabilized;
+              }
+            }
+            break;
+          case PilotState::Stabilized:
+            if (!stereo_status) {
+              fprintf(stderr, "\nlost stereo signal\n");
+              previous_pilot_level = 0.0;
+              pilot_status = PilotState::NotDetected;
+            } else {
+              if (pilot_level_diff >= pilot_level_threshold) {
+                fprintf(stderr, "\npilot level destabilized to %.7f\n",
+                        pilot_level);
+                pilot_status = PilotState::Detected;
+              }
+            }
+            break;
           }
+          previous_pilot_level = pilot_level;
         }
         // Show per-block statistics.
         // Add 1e-9 to log10() to prevent generating NaN

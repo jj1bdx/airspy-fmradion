@@ -2,7 +2,7 @@
 
 # airspy-fmradion
 
-* Version 20231216-0
+* Version 20231227-0
 * For macOS (Apple Silicon) and Linux
 
 ## Contributing
@@ -198,6 +198,8 @@ install -o user -m 0700 -c -s build/airspy-fmradion $(HOME)/bin
 
 ## Basic command options
 
+*Note well: `-b` option is removed and will cause an error.*
+
  - `-m devtype` is modulation type, one of `fm`, `nbfm`, `am`, `dsb`, `usb`, `lsb`, `cw`, `wspr` (default fm)
  - `-t devtype` is mandatory and must be `airspy` for Airspy R2 / Airspy Mini, `airspyhf` for Airspy HF+, `rtlsdr` for RTL-SDR, and `filesource` for the File Source driver.
  - `-q` Quiet mode.
@@ -210,7 +212,6 @@ install -o user -m 0700 -c -s build/airspy-fmradion $(HOME)/bin
  - `-G filename` Write audio data as RF64/WAV `FLOAT_LE` samples. Use filename `-` to write to stdout (*pipe is not supported*)
  - `-P device_num` Play audio via PortAudio device index number. Use string `-` to specify the default PortAudio device
  - `-T filename` Write pulse-per-second timestamps. Use filename '-' to write to stdout
- - `-b seconds` (ignored, remained for a compatibility reason) 
  - `-X` Shift pilot phase (for Quadrature Multipath Monitor) (-X is ignored under mono mode (-M))
  - `-U` Set deemphasis to 75 microseconds (default: 50)
  - `-f` Set Filter type
