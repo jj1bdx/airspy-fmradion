@@ -53,7 +53,6 @@ airspy-fmradion -m am -t airspyhf -q \
  - [RTL-SDR library](http://sdr.osmocom.org/trac/wiki/rtl-sdr)
  - [sndfile](https://github.com/erikd/libsndfile)
  - [r8brain-free-src](https://github.com/avaneev/r8brain-free-src), a sample rate converter designed by Aleksey Vaneev of Voxengo 
- - [readerwriterqueue](https://github.com/cameron314/readerwriterqueue)
  - [VOLK](https://www.libvolk.org/)
  - [PortAudio](http://www.portaudio.com)
  - Tested: Airspy R2, Airspy Mini, Airspy HF+ Dual Port, RTL-SDR V3
@@ -136,7 +135,7 @@ Use the latest HEAD version.
 
 #### git submodules
 
-r8brain-free-src and readerwriterqueue are the submodules of this repository. Download the submodule repositories by the following git procedure:
+r8brain-free-src is the submodule of this repository. Download the submodule repositories by the following git procedure:
 
 - `git submodule update --init --recursive`
 
