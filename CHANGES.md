@@ -4,26 +4,25 @@
 
 ## Git submodules required
 
-The following submodules are required:
+The following submodule is required:
 
 * [r8brain-free-src](https://github.com/avaneev/r8brain-free-src)
-* [readerwriterqueue](https://github.com/cameron314/readerwriterqueue)
 
 ## Platforms tested
 
-* Mac mini 2023 Apple Silicon (M2 Pro), macOS 14.2, Xcode 15.1 Command Line Tools
-* MacBook Air 13" Apple Silicon (M1) 2020, macOS 14.2, Xcode 15.1 Command Line Tools
+* Mac mini 2023 Apple Silicon (M2 Pro), macOS 14.2.1, Xcode 15.1 Command Line Tools
+* MacBook Air 13" Apple Silicon (M1) 2020, macOS 14.2.1, Xcode 15.1 Command Line Tools
 * Ubuntu 22.04.3 LTS x86\_64, gcc 12.3.0
 * (still experimental) Raspberry Pi 4, running Raspberry Pi OS aka Raspbian GNU/Linux 11 (bullseye)
 
 ## Features under development
 
-* Since 20230528-1, the buffer length option `-b` is ignored. The audio sample data sent to AudioOutput base classes are no longer pre-buffered.
 * FM Pilot PLL is under revision and reconstruction. Initial analysis result is available at doc/fm-pll-filtereval.py (requires Python 3, SciPy, matplotlib, and NumPy).
 
 ## Known limitations
 
 * For Raspberry Pi 3 and 4, Airspy R2 10Msps and Airspy Mini 6Msps sampling rates are *not supported* due to the hardware limitation. Use in 2.5Msps for R2, 3Msps for Mini.
+* Since 20231227-0, the buffer length option `-b` is no longer handled and will generate an error. The audio sample data sent to AudioOutput base classes are no longer pre-buffered.
 
 ### Intel Mac support is dropped
 
@@ -31,6 +30,14 @@ Intel Mac hardware is no longer supported by airspy-fmradion, although the autho
 
 ## Changes (including requirement changes)
 
+* 20231227-0: Made the following changes:
+  - Split class PilotPhaseLock from FmDecode.
+  - Removed submodule readerwriterqueue.
+  - Re-introduced DataBuffer from commit <https://github.com/jj1bdx/airspy-fmradion/commit/49faddbae1354bcb7bfcd2b24db458b770273cb5>.
+  - PhaseDiscriminator now contains NaN-removal code.
+  - Introduced accurate m_pilot_level computation for PilotPhaseLock.
+  - Introduced enum PilotState and the state machine for more precisely showing stereo pilot signal detection and the signal levels.
+  - Removed buffer option `-b` and `--buffer` finally.
 * 20231216-0: Removed recording buffer thread. This will simplify the audio output operation. Also, lowered the output level of AM/CW/USB/LSB/WSPR decoder to prevent audio clipping, and changed the IF AGC constants for longer transition timing.
 * 20231215-0: Fix the following known bugs and refactor the code to streamline the functioning:
   - Bug: a hung process during the startup period before valid audio signals are coming out
