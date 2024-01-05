@@ -812,6 +812,10 @@ int main(int argc, char **argv) {
   MovingAverage<float> fm_afc_average(fm_afc_average_stages, 0.0f);
   const unsigned int fm_afc_hz_step = 10;
   FineTuner fm_afc_finetuner((unsigned int)fm_target_rate / fm_afc_hz_step);
+  // Initialize moving average object for FM stereo pilot level monitoring.
+  const unsigned int pilot_level_average_stages = 10;
+  MovingAverage<float> pilot_level_average(pilot_level_average_stages, 0.0f);
+
   float fm_afc_offset_sum = 0.0;
 
   float audio_level = 0;
@@ -824,8 +828,7 @@ int main(int argc, char **argv) {
   float if_level = 0;
 
   PilotState pilot_status = PilotState::NotDetected;
-  double previous_pilot_level = 0.0;
-  constexpr double pilot_level_threshold = 0.01;
+  constexpr float pilot_level_threshold = 0.02;
 
   ///////////////////////////////////////
   // NOTE: main processing loop from here
@@ -969,9 +972,10 @@ int main(int argc, char **argv) {
         // Stereo detection display
         // Use a state machine here
         if (modtype == ModType::FM) {
-          double pilot_level = fm.get_pilot_level();
-          double pilot_level_diff =
-              std::abs(pilot_level - previous_pilot_level);
+          float pilot_level = fm.get_pilot_level();
+          float pilot_level_diff =
+              std::abs(pilot_level - pilot_level_average.average());
+          pilot_level_average.feed(pilot_level);
           bool stereo_status = fm.stereo_detected();
           switch (pilot_status) {
           case PilotState::NotDetected:
@@ -979,12 +983,12 @@ int main(int argc, char **argv) {
               fprintf(stderr, "\ngot stereo signal, pilot level = %.7f\n",
                       pilot_level);
               pilot_status = PilotState::Detected;
+              pilot_level_average.fill(0.0f);
             }
             break;
           case PilotState::Detected:
             if (!stereo_status) {
               fprintf(stderr, "\nlost stereo signal\n");
-              previous_pilot_level = 0.0;
               pilot_status = PilotState::NotDetected;
             } else {
               if (pilot_level_diff < pilot_level_threshold) {
@@ -997,7 +1001,6 @@ int main(int argc, char **argv) {
           case PilotState::Stabilized:
             if (!stereo_status) {
               fprintf(stderr, "\nlost stereo signal\n");
-              previous_pilot_level = 0.0;
               pilot_status = PilotState::NotDetected;
             } else {
               if (pilot_level_diff >= pilot_level_threshold) {
@@ -1008,7 +1011,6 @@ int main(int argc, char **argv) {
             }
             break;
           }
-          previous_pilot_level = pilot_level;
         }
         // Show per-block statistics.
         // Add 1e-9 to log10() to prevent generating NaN
@@ -1016,6 +1018,13 @@ int main(int argc, char **argv) {
 
         switch (modtype) {
         case ModType::FM:
+          fprintf(stderr,
+                  "\rblk=%11" PRIu64
+                  ":ppm=%+7.3f:IF=%+6.1fdB:AF=%+6.1fdB:Pilot= %8.6f",
+                  block, ppm_average.average(), if_level_db, audio_level_db,
+                  pilot_level_average.average());
+          fflush(stderr);
+          break;
         case ModType::NBFM:
           fprintf(stderr,
                   "\rblk=%11" PRIu64 ":ppm=%+7.3f:IF=%+6.1fdB:AF=%+6.1fdB",
