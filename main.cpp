@@ -47,6 +47,7 @@
 #include "RtlSdrSource.h"
 #include "SoftFM.h"
 #include "Utility.h"
+#include "git.h"
 
 // define this for enabling coefficient monitor functions
 // #undef COEFF_MONITOR
@@ -322,6 +323,19 @@ int main(int argc, char **argv) {
   fprintf(stderr, "airspy-fmradion " AIRSPY_FMRADION_VERSION "\n");
   fprintf(stderr, "Software FM/AM radio for ");
   fprintf(stderr, "Airspy R2, Airspy HF+, and RTL-SDR\n");
+  if (git::IsPopulated()) {
+    fprintf(stderr, "Git Commit SHA1: %.*s",
+            static_cast<int>(git::CommitSHA1().length()),
+            git::CommitSHA1().data());
+    if (git::AnyUncommittedChanges()) {
+      fprintf(stderr, " with uncommitted changes");
+    }
+    fprintf(stderr, "\n");
+    fprintf(stderr, "Git branch: %.*s\n",
+            static_cast<int>(git::Branch().length()), git::Branch().data());
+  } else {
+    fprintf(stderr, "Git commit unknown\n");
+  }
   fprintf(stderr, "VOLK_VERSION = %.6o\n", VOLK_VERSION);
 
   const struct option longopts[] = {
