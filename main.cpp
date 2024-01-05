@@ -987,15 +987,12 @@ int main(int argc, char **argv) {
         // Use a state machine here
         if (modtype == ModType::FM) {
           float pilot_level = fm.get_pilot_level();
-          float pilot_level_diff =
-              std::abs(pilot_level - pilot_level_average.average());
           pilot_level_average.feed(pilot_level);
           bool stereo_status = fm.stereo_detected();
           switch (pilot_status) {
           case PilotState::NotDetected:
             if (stereo_status) {
-              fprintf(stderr, "\ngot stereo signal, pilot level = %.7f\n",
-                      pilot_level);
+              fprintf(stderr, "\ngot stereo signal\n");
               pilot_status = PilotState::Detected;
               pilot_level_average.fill(0.0f);
             }
@@ -1004,24 +1001,6 @@ int main(int argc, char **argv) {
             if (!stereo_status) {
               fprintf(stderr, "\nlost stereo signal\n");
               pilot_status = PilotState::NotDetected;
-            } else {
-              if (pilot_level_diff < pilot_level_threshold) {
-                fprintf(stderr, "\npilot level stabilized to %.7f\n",
-                        pilot_level);
-                pilot_status = PilotState::Stabilized;
-              }
-            }
-            break;
-          case PilotState::Stabilized:
-            if (!stereo_status) {
-              fprintf(stderr, "\nlost stereo signal\n");
-              pilot_status = PilotState::NotDetected;
-            } else {
-              if (pilot_level_diff >= pilot_level_threshold) {
-                fprintf(stderr, "\npilot level destabilized to %.7f\n",
-                        pilot_level);
-                pilot_status = PilotState::Detected;
-              }
             }
             break;
           }

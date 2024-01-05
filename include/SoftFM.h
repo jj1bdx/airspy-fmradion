@@ -53,6 +53,6 @@ enum class OutputMode {
   WAV_FLOAT32,
   PORTAUDIO
 };
-enum class PilotState { NotDetected, Detected, Stabilized };
+enum class PilotState { NotDetected, Detected };
 
 #endif
