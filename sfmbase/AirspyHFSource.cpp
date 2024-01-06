@@ -297,7 +297,7 @@ bool AirspyHFSource::configure(std::string configurationStr) {
       return false;
     }
 
-    int samplerate;
+    int samplerate = 0;
     bool samplerate_ok =
         Utility::parse_int(m["srate"].c_str(), samplerate, true);
     m_sampleRate = static_cast<uint32_t>(samplerate);
@@ -314,7 +314,7 @@ bool AirspyHFSource::configure(std::string configurationStr) {
     std::cerr << "AirspyHFSource::configure: freq: " << m["freq"] << std::endl;
 #endif
 
-    int freq;
+    int freq = 0;
     bool freq_ok = Utility::parse_int(m["freq"].c_str(), freq, true);
     frequency = static_cast<uint32_t>(freq);
 
@@ -331,7 +331,7 @@ bool AirspyHFSource::configure(std::string configurationStr) {
               << std::endl;
 #endif
 
-    int attlevel;
+    int attlevel = 0;
     bool attlevel_ok = Utility::parse_int(m["hf_att"].c_str(), attlevel);
     hfAttLevel = static_cast<uint8_t>(attlevel);
     if (!attlevel_ok || (hfAttLevel > 8) || (hfAttLevel < 0)) {
