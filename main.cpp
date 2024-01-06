@@ -847,6 +847,7 @@ int main(int argc, char **argv) {
     // If the end has been reached at the source buffer,
     // exit the main processing loop.
     if (source_buffer.pull_end_reached()) {
+      stop_flag.store(true);
       break;
     }
 
