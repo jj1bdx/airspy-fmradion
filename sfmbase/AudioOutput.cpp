@@ -18,7 +18,6 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "sndfile.h"
-#define _FILE_OFFSET_BITS 64
 
 #include <cerrno>
 #include <cstdio>
