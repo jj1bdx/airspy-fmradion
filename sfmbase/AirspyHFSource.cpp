@@ -297,10 +297,12 @@ bool AirspyHFSource::configure(std::string configurationStr) {
       return false;
     }
 
-    m_sampleRate = atoi(m["srate"].c_str());
-
+    int samplerate;
+    bool samplerate_ok =
+        Utility::parse_int(m["srate"].c_str(), samplerate, true);
+    m_sampleRate = static_cast<uint32_t>(samplerate);
     sampleRateIndex = check_sampleRateIndex(m_sampleRate);
-    if (sampleRateIndex == -1) {
+    if (sampleRateIndex == -1 || !samplerate_ok) {
       m_error = "Invalid sample rate";
       m_sampleRate = 0;
       return false;
@@ -311,9 +313,12 @@ bool AirspyHFSource::configure(std::string configurationStr) {
 #ifdef DEBUG_AIRSPYHFSOURCE
     std::cerr << "AirspyHFSource::configure: freq: " << m["freq"] << std::endl;
 #endif
-    frequency = atoi(m["freq"].c_str());
 
-    if (((frequency > 31000000) && (frequency < 60000000)) ||
+    int freq;
+    bool freq_ok = Utility::parse_int(m["freq"].c_str(), freq, true);
+    frequency = static_cast<uint32_t>(freq);
+
+    if (!freq_ok || ((frequency > 31000000) && (frequency < 60000000)) ||
         (frequency > 260000000)) {
       m_error = "Invalid frequency";
       return false;
@@ -325,9 +330,11 @@ bool AirspyHFSource::configure(std::string configurationStr) {
     std::cerr << "AirspyHFSource::configure: hf_att: " << m["hf_att"]
               << std::endl;
 #endif
-    hfAttLevel = atoi(m["hf_att"].c_str());
 
-    if ((hfAttLevel > 8) || (hfAttLevel < 0)) {
+    int attlevel;
+    bool attlevel_ok = Utility::parse_int(m["hf_att"].c_str(), attlevel);
+    hfAttLevel = static_cast<uint8_t>(attlevel);
+    if (!attlevel_ok || (hfAttLevel > 8) || (hfAttLevel < 0)) {
       m_error = "Invalid HF att level";
       return false;
     }
