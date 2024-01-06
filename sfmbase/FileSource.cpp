@@ -25,6 +25,7 @@
 
 #include "ConfigParser.h"
 #include "FileSource.h"
+#include "Utility.h"
 
 FileSource *FileSource::m_this = 0;
 
@@ -73,20 +74,37 @@ bool FileSource::configure(std::string configurationStr) {
   // srate
   if (m.find("srate") != m.end()) {
     std::cerr << "FileSource::configure: srate: " << m["srate"] << std::endl;
-    sample_rate = atoi(m["srate"].c_str());
+    int samplerate = 0;
+    bool samplerate_ok =
+        Utility::parse_int(m["srate"].c_str(), samplerate, true);
+    sample_rate = static_cast<uint32_t>(samplerate);
     srate_specified = true;
+    if (!samplerate_ok) {
+      std::cerr << "FileSource::configure: invalid samplerate" << std::endl;
+      return false;
+    }
   }
 
   // freq
   if (m.find("freq") != m.end()) {
     std::cerr << "FileSource::configure: freq: " << m["freq"] << std::endl;
-    frequency = atoi(m["freq"].c_str());
+    int freq = 0;
+    bool freq_ok = Utility::parse_int(m["freq"].c_str(), freq, true);
+    frequency = static_cast<uint32_t>(freq);
+    if (!freq_ok) {
+      std::cerr << "FileSource::configure: invalid frequency" << std::endl;
+      return false;
+    }
   }
 
   // blklen
   if (m.find("blklen") != m.end()) {
     std::cerr << "FileSource::configure: blklen: " << m["blklen"] << std::endl;
-    block_length = atoi(m["blklen"].c_str());
+    bool blklen_ok = Utility::parse_int(m["blklen"].c_str(), block_length);
+    if (!blklen_ok) {
+      std::cerr << "FileSource::configure: invalid blklen" << std::endl;
+      return false;
+    }
   }
 
   // zero_offset
