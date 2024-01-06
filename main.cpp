@@ -844,6 +844,12 @@ int main(int argc, char **argv) {
   ///////////////////////////////////////
   for (uint64_t block = 0; !stop_flag.load(); block++) {
 
+    // If the end has been reached at the source buffer,
+    // exit the main processing loop.
+    if (source_buffer.pull_end_reached()) {
+      break;
+    }
+
     // Pull next block from source buffer.
     IQSampleVector iqsamples = source_buffer.pull();
 
