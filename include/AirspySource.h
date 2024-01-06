@@ -23,8 +23,8 @@
 #include "libairspy/airspy.h"
 #include <cstdint>
 #include <string>
-#include <vector>
 #include <thread>
+#include <vector>
 
 #include "Source.h"
 

@@ -94,7 +94,7 @@ bool FileSource::configure(std::string configurationStr) {
       std::cerr << "FileSource::configure: invalid frequency" << std::endl;
       return false;
     }
-    std::cerr << "FileSource::configure: freq: " << frequency  << std::endl;
+    std::cerr << "FileSource::configure: freq: " << frequency << std::endl;
   }
 
   // blklen
