@@ -19,9 +19,6 @@
 #ifndef INCLUDE_NBFMDECODE_H
 #define INCLUDE_NBFMDECODE_H
 
-#include <cstdint>
-
-#include "AudioResampler.h"
 #include "Filter.h"
 #include "FilterParameters.h"
 #include "IfSimpleAgc.h"

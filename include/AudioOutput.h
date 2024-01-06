@@ -20,7 +20,6 @@
 #ifndef INCLUDE_AUDIOOUTPUT_H
 #define INCLUDE_AUDIOOUTPUT_H
 
-#include <cstdio>
 #include <string>
 
 #include "SoftFM.h"

@@ -17,9 +17,7 @@
 // You should have received a copy of the GNU General Public License along
 // with this program; if not, see http://www.gnu.org/licenses/gpl-2.0.html
 
-#include <algorithm>
 #include <atomic>
-#include <climits>
 #include <csignal>
 #include <cstdio>
 #include <cstdlib>
@@ -28,7 +26,6 @@
 #include <memory>
 #include <signal.h>
 #include <sys/time.h>
-#include <thread>
 #include <unistd.h>
 
 #include "AirspyHFSource.h"
@@ -37,7 +34,6 @@
 #include "AudioOutput.h"
 #include "DataBuffer.h"
 #include "FileSource.h"
-#include "Filter.h"
 #include "FilterParameters.h"
 #include "FineTuner.h"
 #include "FmDecode.h"

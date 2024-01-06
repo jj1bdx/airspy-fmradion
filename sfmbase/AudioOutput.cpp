@@ -20,7 +20,6 @@
 #include "sndfile.h"
 #define _FILE_OFFSET_BITS 64
 
-#include <algorithm>
 #include <cerrno>
 #include <cstdio>
 #include <cstring>

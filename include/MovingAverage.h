@@ -20,7 +20,6 @@
 #ifndef INCLUDE_MOVINGAVERAGE_H
 #define INCLUDE_MOVINGAVERAGE_H
 
-#include <stdint.h>
 #include <vector>
 
 template <class Type> class MovingAverage {

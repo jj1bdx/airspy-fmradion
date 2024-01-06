@@ -25,7 +25,6 @@
 
 #include "ConfigParser.h"
 #include "FileSource.h"
-#include "Utility.h"
 
 FileSource *FileSource::m_this = 0;
 
