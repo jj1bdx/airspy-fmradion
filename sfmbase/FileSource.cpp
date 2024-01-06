@@ -73,7 +73,6 @@ bool FileSource::configure(std::string configurationStr) {
 
   // srate
   if (m.find("srate") != m.end()) {
-    std::cerr << "FileSource::configure: srate: " << m["srate"] << std::endl;
     int samplerate = 0;
     bool samplerate_ok =
         Utility::parse_int(m["srate"].c_str(), samplerate, true);
@@ -83,11 +82,11 @@ bool FileSource::configure(std::string configurationStr) {
       std::cerr << "FileSource::configure: invalid samplerate" << std::endl;
       return false;
     }
+    std::cerr << "FileSource::configure: srate: " << sample_rate << std::endl;
   }
 
   // freq
   if (m.find("freq") != m.end()) {
-    std::cerr << "FileSource::configure: freq: " << m["freq"] << std::endl;
     int freq = 0;
     bool freq_ok = Utility::parse_int(m["freq"].c_str(), freq, true);
     frequency = static_cast<uint32_t>(freq);
@@ -95,16 +94,17 @@ bool FileSource::configure(std::string configurationStr) {
       std::cerr << "FileSource::configure: invalid frequency" << std::endl;
       return false;
     }
+    std::cerr << "FileSource::configure: freq: " << frequency  << std::endl;
   }
 
   // blklen
   if (m.find("blklen") != m.end()) {
-    std::cerr << "FileSource::configure: blklen: " << m["blklen"] << std::endl;
     bool blklen_ok = Utility::parse_int(m["blklen"].c_str(), block_length);
     if (!blklen_ok) {
       std::cerr << "FileSource::configure: invalid blklen" << std::endl;
       return false;
     }
+    std::cerr << "FileSource::configure: blklen: " << block_length << std::endl;
   }
 
   // zero_offset
