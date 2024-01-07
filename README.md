@@ -55,7 +55,7 @@ airspy-fmradion -m am -t airspyhf -q \
  - [r8brain-free-src](https://github.com/avaneev/r8brain-free-src), a sample rate converter designed by Aleksey Vaneev of Voxengo 
  - [VOLK](https://www.libvolk.org/)
  - [PortAudio](http://www.portaudio.com)
- - [jj1bdx's fork of cmake-git-version-tracking](https://github.com/andrew-hardin/cmake-git-version-tracking)
+ - [jj1bdx's fork of cmake-git-version-tracking](https://github.com/jj1bdx/cmake-git-version-tracking)
  - Tested: Airspy R2, Airspy Mini, Airspy HF+ Dual Port, RTL-SDR V3
  - Fast computer
  - Medium-to-strong radio signals
@@ -72,7 +72,6 @@ For the latest version, see <https://github.com/jj1bdx/airspy-fmradion>
   - _main_ is the "production" branch with the most stable release (often ahead of the latest release though)
   - _dev_ is the development branch that contains current developments that will be eventually released in the main branch
   - Other branches are experimental (and presumably abandoned)
-  - The `master` branch is deprecated and to be deleted. Use _main_ branch.
 
 ## Prerequisites
 
