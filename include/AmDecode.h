@@ -21,11 +21,9 @@
 #define INCLUDE_AMDECODE_H
 
 #include "AfSimpleAgc.h"
-#include "AudioResampler.h"
 #include "Filter.h"
 #include "FilterParameters.h"
 #include "FineTuner.h"
-#include "FourthConverterIQ.h"
 #include "IfResampler.h"
 #include "IfSimpleAgc.h"
 #include "SoftFM.h"

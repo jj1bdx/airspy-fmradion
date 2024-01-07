@@ -21,7 +21,6 @@
 #define INCLUDE_SOURCE_H
 
 #include <atomic>
-#include <memory>
 #include <string>
 
 #include "DataBuffer.h"

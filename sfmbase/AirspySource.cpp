@@ -330,17 +330,19 @@ bool AirspySource::configure(std::string configurationStr) {
       return false;
     }
 
-    m_sampleRate = atoi(m["srate"].c_str());
-    uint32_t i;
+    int samplerate = 0;
+    bool samplerate_ok =
+        Utility::parse_int(m["srate"].c_str(), samplerate, true);
+    m_sampleRate = static_cast<uint32_t>(samplerate);
 
+    uint32_t i;
     for (i = 0; i < m_srates.size(); i++) {
       if (m_srates[i] == static_cast<int>(m_sampleRate)) {
         sampleRateIndex = i;
         break;
       }
     }
-
-    if (i == m_srates.size()) {
+    if (i == m_srates.size() || !samplerate_ok) {
       m_error = "Invalid sample rate";
       m_sampleRate = 0;
       return false;
@@ -351,9 +353,11 @@ bool AirspySource::configure(std::string configurationStr) {
 #ifdef DEBUG_AIRSPYSOURCE
     std::cerr << "AirspySource::configure: freq: " << m["freq"] << std::endl;
 #endif
-    frequency = atoi(m["freq"].c_str());
+    int freq = 0;
+    bool freq_ok = Utility::parse_int(m["freq"].c_str(), freq, true);
+    frequency = static_cast<uint32_t>(freq);
 
-    if ((frequency < 24000000) || (frequency > 1800000000)) {
+    if (!freq_ok || (frequency < 24000000) || (frequency > 1800000000)) {
       m_error = "Invalid frequency";
       return false;
     }
@@ -368,9 +372,9 @@ bool AirspySource::configure(std::string configurationStr) {
       return false;
     }
 
-    lnaGain = atoi(m["lgain"].c_str());
-
-    if (find(m_lgains.begin(), m_lgains.end(), lnaGain) == m_lgains.end()) {
+    bool lgain_ok = Utility::parse_int(m["lgain"].c_str(), lnaGain);
+    if (!lgain_ok ||
+        find(m_lgains.begin(), m_lgains.end(), lnaGain) == m_lgains.end()) {
       m_error = "LNA gain not supported. Available gains (dB): " + m_lgainsStr;
       return false;
     }
@@ -385,9 +389,9 @@ bool AirspySource::configure(std::string configurationStr) {
       return false;
     }
 
-    mixGain = atoi(m["mgain"].c_str());
-
-    if (find(m_mgains.begin(), m_mgains.end(), mixGain) == m_mgains.end()) {
+    bool mgain_ok = Utility::parse_int(m["mgain"].c_str(), mixGain);
+    if (!mgain_ok ||
+        find(m_mgains.begin(), m_mgains.end(), mixGain) == m_mgains.end()) {
       m_error =
           "Mixer gain not supported. Available gains (dB): " + m_mgainsStr;
       return false;
@@ -398,14 +402,14 @@ bool AirspySource::configure(std::string configurationStr) {
 #ifdef DEBUG_AIRSPYSOURCE
     std::cerr << "AirspySource::configure: vgain: " << m["vgain"] << std::endl;
 #endif
-    vgaGain = atoi(m["vgain"].c_str());
-
     if (strcasecmp(m["vgain"].c_str(), "list") == 0) {
       m_error = "Available VGA gains (dB): " + m_vgainsStr;
       return false;
     }
 
-    if (find(m_vgains.begin(), m_vgains.end(), vgaGain) == m_vgains.end()) {
+    bool vgain_ok = Utility::parse_int(m["vgain"].c_str(), vgaGain);
+    if (!vgain_ok ||
+        find(m_vgains.begin(), m_vgains.end(), vgaGain) == m_vgains.end()) {
       m_error = "VGA gain not supported. Available gains (dB): " + m_vgainsStr;
       return false;
     }
