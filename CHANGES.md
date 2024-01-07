@@ -8,6 +8,12 @@ The following submodule is required:
 
 * [r8brain-free-src](https://github.com/avaneev/r8brain-free-src)
 
+## External version control code required
+
+The following Git repository is required:
+
+* [jj1bdx's fork of cmake-git-version-tracking](https://github.com/jj1bdx/cmake-git-version-tracking)
+
 ## Platforms tested
 
 * Mac mini 2023 Apple Silicon (M2 Pro), macOS 14.2.1, Xcode 15.1 Command Line Tools
@@ -30,6 +36,21 @@ Intel Mac hardware is no longer supported by airspy-fmradion, although the autho
 
 ## Changes (including requirement changes)
 
+* 20240107-0: Made the following changes:
+  - For broadcasting FM, show stereo 19kHz pilot signal level when detected.
+  - Remove displaying whether FM stereo pilot signal level is stable or unstable.
+  - Add Git info into the binary program built, with [cmake-git-version-tracking](https://github.com/andrew-hardin/cmake-git-version-tracking.git) (using jj1bdx's fork).
+  - Add compile command database support on CMakeLists.txt.
+  - Cleaned up old documents.
+  - Fixed the following bugs detected by clang-tidy:
+    * [ERR34-C. Detect errors when converting a string to a number](https://wiki.sei.cmu.edu/confluence/display/c/ERR34-C.+Detect+errors+when+converting+a+string+to+a+number)
+      - Use `Utility::parse_int()` instead of raw `atoi()`
+    * [DCL51-CPP. Do not declare or define a reserved identifier](https://wiki.sei.cmu.edu/confluence/display/cplusplus/DCL51-CPP.+Do+not+declare+or+define+a+reserved+identifier)
+      - Remove unused `_FILE_OFFSET_BITS`
+  - Fixed the bug of FileSource playback: the code did not terminate after the end of playback.
+    - main.cpp: add checking pull_end_reached() in the main loop.
+  - Set RtlSdrSource's default_block_length from 65536 to 16384, to prevent popping cracking sound (observed on Mac mini 2023).
+  - stat_rate calculation is redesigned by observation of actual SDR units (:i.e., Airspy HF+, Airspy R2, and RTL-SDR).
 * 20231227-0: Made the following changes:
   - Split class PilotPhaseLock from FmDecode.
   - Removed submodule readerwriterqueue.

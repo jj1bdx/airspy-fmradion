@@ -17,9 +17,7 @@
 // You should have received a copy of the GNU General Public License along
 // with this program; if not, see http://www.gnu.org/licenses/gpl-2.0.html
 
-#include <algorithm>
 #include <atomic>
-#include <climits>
 #include <csignal>
 #include <cstdio>
 #include <cstdlib>
@@ -28,7 +26,6 @@
 #include <memory>
 #include <signal.h>
 #include <sys/time.h>
-#include <thread>
 #include <unistd.h>
 
 #include "AirspyHFSource.h"
@@ -37,7 +34,6 @@
 #include "AudioOutput.h"
 #include "DataBuffer.h"
 #include "FileSource.h"
-#include "Filter.h"
 #include "FilterParameters.h"
 #include "FineTuner.h"
 #include "FmDecode.h"
@@ -47,11 +43,12 @@
 #include "RtlSdrSource.h"
 #include "SoftFM.h"
 #include "Utility.h"
+#include "git.h"
 
 // define this for enabling coefficient monitor functions
 // #undef COEFF_MONITOR
 
-#define AIRSPY_FMRADION_VERSION "20231227-0"
+#define AIRSPY_FMRADION_VERSION "20240107-0"
 
 // Flag to set graceful termination
 // in process_signals()
@@ -322,6 +319,19 @@ int main(int argc, char **argv) {
   fprintf(stderr, "airspy-fmradion " AIRSPY_FMRADION_VERSION "\n");
   fprintf(stderr, "Software FM/AM radio for ");
   fprintf(stderr, "Airspy R2, Airspy HF+, and RTL-SDR\n");
+  if (git::IsPopulated()) {
+    fprintf(stderr, "Git Commit SHA1: %.*s",
+            static_cast<int>(git::CommitSHA1().length()),
+            git::CommitSHA1().data());
+    if (git::AnyUncommittedChanges()) {
+      fprintf(stderr, " with uncommitted changes");
+    }
+    fprintf(stderr, "\n");
+    fprintf(stderr, "Git branch: %.*s\n",
+            static_cast<int>(git::Branch().length()), git::Branch().data());
+  } else {
+    fprintf(stderr, "Git commit unknown\n");
+  }
   fprintf(stderr, "VOLK_VERSION = %.6o\n", VOLK_VERSION);
 
   const struct option longopts[] = {
@@ -639,12 +649,18 @@ int main(int argc, char **argv) {
     if_blocksize = 2048;
     break;
   case DevType::RTLSDR:
-    if_blocksize = 65536;
+    if_blocksize = 16384;
     break;
   case DevType::FileSource:
     if_blocksize = 2048;
     break;
   }
+
+  // Status refresh rate.
+  // TODO: ~0.1sec / display (should be tuned)
+  unsigned int stat_rate =
+      (unsigned int)((double)ifrate / (double)if_blocksize / 9.0);
+  fprintf(stderr, "stat_rate = %u\n", stat_rate);
 
   // IF rate compensation if requested.
   if (ifrate_offset_enable) {
@@ -812,25 +828,30 @@ int main(int argc, char **argv) {
   MovingAverage<float> fm_afc_average(fm_afc_average_stages, 0.0f);
   const unsigned int fm_afc_hz_step = 10;
   FineTuner fm_afc_finetuner((unsigned int)fm_target_rate / fm_afc_hz_step);
+  // Initialize moving average object for FM stereo pilot level monitoring.
+  const unsigned int pilot_level_average_stages = 10;
+  MovingAverage<float> pilot_level_average(pilot_level_average_stages, 0.0f);
+
   float fm_afc_offset_sum = 0.0;
 
   float audio_level = 0;
   double block_time = Utility::get_time();
 
-  // TODO: ~0.1sec / display (should be tuned)
-  unsigned int stat_rate =
-      lrint(5120 / (if_blocksize / total_decimation_ratio));
-
   float if_level = 0;
 
   PilotState pilot_status = PilotState::NotDetected;
-  double previous_pilot_level = 0.0;
-  constexpr double pilot_level_threshold = 0.01;
 
   ///////////////////////////////////////
   // NOTE: main processing loop from here
   ///////////////////////////////////////
   for (uint64_t block = 0; !stop_flag.load(); block++) {
+
+    // If the end has been reached at the source buffer,
+    // exit the main processing loop.
+    if (source_buffer.pull_end_reached()) {
+      stop_flag.store(true);
+      break;
+    }
 
     // Pull next block from source buffer.
     IQSampleVector iqsamples = source_buffer.pull();
@@ -969,46 +990,24 @@ int main(int argc, char **argv) {
         // Stereo detection display
         // Use a state machine here
         if (modtype == ModType::FM) {
-          double pilot_level = fm.get_pilot_level();
-          double pilot_level_diff =
-              std::abs(pilot_level - previous_pilot_level);
+          float pilot_level = fm.get_pilot_level();
+          pilot_level_average.feed(pilot_level);
           bool stereo_status = fm.stereo_detected();
           switch (pilot_status) {
           case PilotState::NotDetected:
             if (stereo_status) {
-              fprintf(stderr, "\ngot stereo signal, pilot level = %.7f\n",
-                      pilot_level);
+              fprintf(stderr, "\ngot stereo signal\n");
               pilot_status = PilotState::Detected;
+              pilot_level_average.fill(0.0f);
             }
             break;
           case PilotState::Detected:
             if (!stereo_status) {
               fprintf(stderr, "\nlost stereo signal\n");
-              previous_pilot_level = 0.0;
               pilot_status = PilotState::NotDetected;
-            } else {
-              if (pilot_level_diff < pilot_level_threshold) {
-                fprintf(stderr, "\npilot level stabilized to %.7f\n",
-                        pilot_level);
-                pilot_status = PilotState::Stabilized;
-              }
-            }
-            break;
-          case PilotState::Stabilized:
-            if (!stereo_status) {
-              fprintf(stderr, "\nlost stereo signal\n");
-              previous_pilot_level = 0.0;
-              pilot_status = PilotState::NotDetected;
-            } else {
-              if (pilot_level_diff >= pilot_level_threshold) {
-                fprintf(stderr, "\npilot level destabilized to %.7f\n",
-                        pilot_level);
-                pilot_status = PilotState::Detected;
-              }
             }
             break;
           }
-          previous_pilot_level = pilot_level;
         }
         // Show per-block statistics.
         // Add 1e-9 to log10() to prevent generating NaN
@@ -1016,6 +1015,13 @@ int main(int argc, char **argv) {
 
         switch (modtype) {
         case ModType::FM:
+          fprintf(stderr,
+                  "\rblk=%11" PRIu64
+                  ":ppm=%+7.3f:IF=%+6.1fdB:AF=%+6.1fdB:Pilot= %8.6f",
+                  block, ppm_average.average(), if_level_db, audio_level_db,
+                  pilot_level_average.average());
+          fflush(stderr);
+          break;
         case ModType::NBFM:
           fprintf(stderr,
                   "\rblk=%11" PRIu64 ":ppm=%+7.3f:IF=%+6.1fdB:AF=%+6.1fdB",

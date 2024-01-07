@@ -2,7 +2,7 @@
 
 # airspy-fmradion
 
-* Version 20231227-0
+* Version 20240107-0
 * For macOS (Apple Silicon) and Linux
 
 ## Contributing
@@ -53,14 +53,14 @@ airspy-fmradion -m am -t airspyhf -q \
  - [RTL-SDR library](http://sdr.osmocom.org/trac/wiki/rtl-sdr)
  - [sndfile](https://github.com/erikd/libsndfile)
  - [r8brain-free-src](https://github.com/avaneev/r8brain-free-src), a sample rate converter designed by Aleksey Vaneev of Voxengo 
- - [readerwriterqueue](https://github.com/cameron314/readerwriterqueue)
  - [VOLK](https://www.libvolk.org/)
  - [PortAudio](http://www.portaudio.com)
+ - [jj1bdx's fork of cmake-git-version-tracking](https://github.com/jj1bdx/cmake-git-version-tracking)
  - Tested: Airspy R2, Airspy Mini, Airspy HF+ Dual Port, RTL-SDR V3
  - Fast computer
  - Medium-to-strong radio signals
 
-For the latest version, see https://github.com/jj1bdx/airspy-fmradion
+For the latest version, see <https://github.com/jj1bdx/airspy-fmradion>
 
 ### Recommended utilities
 
@@ -72,7 +72,6 @@ For the latest version, see https://github.com/jj1bdx/airspy-fmradion
   - _main_ is the "production" branch with the most stable release (often ahead of the latest release though)
   - _dev_ is the development branch that contains current developments that will be eventually released in the main branch
   - Other branches are experimental (and presumably abandoned)
-  - The `master` branch is deprecated and to be deleted. Use _main_ branch.
 
 ## Prerequisites
 
@@ -136,7 +135,7 @@ Use the latest HEAD version.
 
 #### git submodules
 
-r8brain-free-src and readerwriterqueue are the submodules of this repository. Download the submodule repositories by the following git procedure:
+r8brain-free-src is the submodule of this repository. Download the submodule repositories by the following git procedure:
 
 - `git submodule update --init --recursive`
 
@@ -147,7 +146,7 @@ r8brain-free-src and readerwriterqueue are the submodules of this repository. Do
 ```shell
 /bin/rm -rf build
 git submodule update --init --recursive
-cmake -S . -B build # -DCMAKE_EXPORT_COMPILE_COMMANDS=ON (if needed)
+cmake -S . -B build
 cmake --build build --target all
 ```
 
@@ -175,13 +174,19 @@ cmake .. \
 PKG_CONFIG_PATH=/path/to/airspy/lib/pkgconfig cmake ..
 ```
 
-For using static analyzers such as [OCLint](https://oclint.org) and [Clangd](https://clangd.llvm.org), run the following commands:
+### Static analysis of the code
+
+For using static analyzers such as [OCLint](https://oclint.org) and [Clangd](https://clangd.llvm.org), use the `compile_commands.json` file built in `build/` directory, with the following commands:
 
 ```
 cd build
 ln -s `pwd`/compile_commands.json ..
-cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON ..
 ```
+
+The following limitation is applicable:
+
+* For *CMake 3.20 or later*, cmake-git-version-tracking code is intentionally removed from the compile command database. This is not applicable for the older CMake. 
+* Use [compdb](https://github.com/Sarcasm/compdb.git) for a more precise analysis including all the header files, with the following command: `compdb -p build/ list > compile_commands.json`
 
 ### Compile and install
 
@@ -454,13 +459,11 @@ install -o user -m 0700 -c -s build/airspy-fmradion $(HOME)/bin
 * [Takeru Ohta](https://github.com/sile), for his [Rust implementation](https://github.com/sile/dagc) of [Tisserand-Berviller AGC algorithm](https://hal.univ-lorraine.fr/hal-01397371/document)
 * [Cameron Desrochers](https://github.com/cameron314), for his [readerwriterqueue](https://github.com/cameron314/readerwriterqueue) implementation of a single-producer-single-consumer lock-free queue for C++
 * [Clayton Smith](https://github.com/argilo), for [a bugfix pull request to airspy-fmradion to find an uninitialized variable](https://github.com/jj1bdx/airspy-fmradion/pull/43) and his help during [bug tracking in VOLK](https://github.com/gnuradio/volk/pull/695).
+* [Andrew Hardin](https://github.com/andrew-hardin), for [cmake-git-version-tracking](https://github.com/andrew-hardin/cmake-git-version-tracking.git)
 
 ## License
 
 * As a whole package: GPLv3 (and later). See [LICENSE](LICENSE).
 * [csdr](https://github.com/simonyiszk/csdr) AGC code: BSD license.
-* Some source code files are stating GPL "v2 and later" license.
+* Some source code files are stating GPL "v2 and later" license, and the MIT License.
 
-## Repository history
-
-* This repository is forked from [ngsoftfm-jj1bdx](https://github.com/jj1bdx/ngsoftfm-jj1bdx) 0.1.14 and merged with [airspfhf-fmradion](https://github.com/jj1bdx/airspyhf-fmradion).

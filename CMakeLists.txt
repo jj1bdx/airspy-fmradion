@@ -1,6 +1,6 @@
 # CMake definitions for airspy-fmradion
 
-cmake_minimum_required(VERSION 3.0.2)
+cmake_minimum_required(VERSION 3.18)
 project(airspy-fmradion)
 
 # Workaround for the compilation warning
@@ -8,9 +8,29 @@ if(COMMAND cmake_policy)
   cmake_policy(SET CMP0003 NEW)
 endif(COMMAND cmake_policy)
 
+# Enable compile_commands.json as default
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+# Use cmake-git-version-tracking
+include(FetchContent)
+FetchContent_Declare(cmake_git_version_tracking
+  GIT_REPOSITORY https://github.com/jj1bdx/cmake-git-version-tracking.git
+  GIT_TAG 9b5fc5088b4089ff2adc20d607976b9923e3d737
+)
+FetchContent_MakeAvailable(cmake_git_version_tracking)
+# EXPORT_COMPILE_COMMANDS is supported for CMake version 3.20 or later only
+if (CMAKE_VERSION VERSION_LESS 3.20.0)
+    message(STATUS "No EXPORT_COMPILE_COMMANDS available")
+    message(STATUS "Use compdb for proper compile_commands.json handling")
+else()
+    set_target_properties(cmake_git_version_tracking
+      PROPERTIES EXPORT_COMPILE_COMMANDS OFF)
+endif()
+
 # Use pkg-config
 include(FindPkgConfig)
 
+# Find Threads package
 find_package(Threads)
 
 # Find Volk library.
@@ -205,6 +225,7 @@ set(sfmbase_HEADERS
     include/FineTuner.h
     include/FmDecode.h
     include/FourthConverterIQ.h
+    include/git.h
     include/IfResampler.h
     include/IfSimpleAgc.h
     include/MovingAverage.h
@@ -272,6 +293,7 @@ target_link_libraries(airspy-fmradion
     ${PORTAUDIO_LINK_LIBRARIES}
     ${VOLK_LIBRARY}
     ${EXTRA_LIBS}
+    cmake_git_version_tracking
 )
 
 target_link_libraries(sfmbase

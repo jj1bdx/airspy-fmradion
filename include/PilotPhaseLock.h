@@ -20,12 +20,7 @@
 #ifndef INCLUDE_PILOTPHASELOCK_H
 #define INCLUDE_PILOTPHASELOCK_H
 
-#include "AudioResampler.h"
 #include "Filter.h"
-#include "FilterParameters.h"
-#include "IfSimpleAgc.h"
-#include "MultipathFilter.h"
-#include "PhaseDiscriminator.h"
 #include "SoftFM.h"
 
 // Phase-locked loop for stereo pilot.

@@ -88,23 +88,26 @@ bool RtlSdrSource::configure(std::string configurationStr) {
 
   cp.parse_config_string(configurationStr, m);
   if (m.find("srate") != m.end()) {
-    std::cerr << "RtlSdrSource::configure: srate: " << m["srate"] << std::endl;
-    sample_rate = atoi(m["srate"].c_str());
-
-    if ((sample_rate < 900001) || (sample_rate > 3200000)) {
+    int samplerate = 0;
+    bool samplerate_ok =
+        Utility::parse_int(m["srate"].c_str(), samplerate, true);
+    sample_rate = static_cast<uint32_t>(samplerate);
+    if (!samplerate_ok || (sample_rate < 900001) || (sample_rate > 3200000)) {
       m_error = "Invalid sample rate";
       return false;
     }
+    std::cerr << "RtlSdrSource::configure: srate: " << sample_rate << std::endl;
   }
 
   if (m.find("freq") != m.end()) {
-    std::cerr << "RtlSdrSource::configure: freq: " << m["freq"] << std::endl;
-    frequency = atoi(m["freq"].c_str());
-
-    if ((frequency < 10000000) || (frequency > 2200000000)) {
+    int freq = 0;
+    bool freq_ok = Utility::parse_int(m["freq"].c_str(), freq, true);
+    frequency = static_cast<uint32_t>(freq);
+    if (!freq_ok || (frequency < 10000000) || (frequency > 2200000000)) {
       m_error = "Invalid frequency";
       return false;
     }
+    std::cerr << "RtlSdrSource::configure: freq: " << frequency << std::endl;
   }
 
   if (m.find("gain") != m.end()) {
@@ -142,9 +145,13 @@ bool RtlSdrSource::configure(std::string configurationStr) {
   } // gain
 
   if (m.find("blklen") != m.end()) {
-    std::cerr << "RtlSdrSource::configure: blklen: " << m["blklen"]
+    bool blklen_ok = Utility::parse_int(m["blklen"].c_str(), block_length);
+    if (!blklen_ok) {
+      std::cerr << "RtlSdrSource::configure: invalid blklen" << std::endl;
+      return false;
+    }
+    std::cerr << "RtlSdrSource::configure: blklen: " << block_length
               << std::endl;
-    block_length = atoi(m["blklen"].c_str());
   }
 
   if (m.find("agc") != m.end()) {
