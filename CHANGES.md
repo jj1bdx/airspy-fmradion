@@ -12,7 +12,7 @@ The following submodule is required:
 
 The following Git repository is required:
 
-* [jj1bdx's fork of cmake-git-version-tracking](https://github.com/andrew-hardin/cmake-git-version-tracking)
+* [jj1bdx's fork of cmake-git-version-tracking](https://github.com/jj1bdx/cmake-git-version-tracking)
 
 ## Platforms tested
 
