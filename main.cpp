@@ -649,12 +649,18 @@ int main(int argc, char **argv) {
     if_blocksize = 2048;
     break;
   case DevType::RTLSDR:
-    if_blocksize = 65536;
+    if_blocksize = 16384;
     break;
   case DevType::FileSource:
     if_blocksize = 2048;
     break;
   }
+
+  // Status refresh rate.
+  // TODO: ~0.1sec / display (should be tuned)
+  unsigned int stat_rate =
+      (unsigned int)((double)ifrate / (double)if_blocksize / 9.0);
+  fprintf(stderr, "stat_rate = %u\n", stat_rate);
 
   // IF rate compensation if requested.
   if (ifrate_offset_enable) {
@@ -830,10 +836,6 @@ int main(int argc, char **argv) {
 
   float audio_level = 0;
   double block_time = Utility::get_time();
-
-  // TODO: ~0.1sec / display (should be tuned)
-  unsigned int stat_rate =
-      lrint(5120 / (if_blocksize / total_decimation_ratio));
 
   float if_level = 0;
 
