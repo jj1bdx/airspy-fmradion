@@ -15,14 +15,16 @@ Please read [CHANGES.md](CHANGES.md) before using the software.
 
 ## What is airspy-fmradion?
 
-* **airspy-fmradion** is a software-defined radio receiver for FM and AM broadcast radio, and also NBFM/DSB/USB/LSB/CW/WSPR utility communications, specifically designed for Airspy R2, Airspy Mini, Airspy HF+, and RTL-SDR.
+* **airspy-fmradion** is software-defined radio receiver (SDR) software with command-line interface.
 
 ## What does airspy-fmradion provide?
 
+- Supported SDR frontends: Airspy R2/Mini, Airspy HF+, and RTL-SDR
+- I/Q WAV file frontend is also supported
 - Mono or stereo decoding of FM broadcasting stations
 - Mono decoding of AM stations
 - Decoding NBFM/DSB/USB/LSB/CW/WSPR stations
-- Buffered real-time playback to soundcard or dumping to file
+- Playback to soundcard through PortAudio or dumping to file
 - Command-line interface (*only*)
 
 ## Usage
@@ -56,7 +58,7 @@ airspy-fmradion -m am -t airspyhf -q \
  - [VOLK](https://www.libvolk.org/)
  - [PortAudio](http://www.portaudio.com)
  - [jj1bdx's fork of cmake-git-version-tracking](https://github.com/jj1bdx/cmake-git-version-tracking)
- - Tested: Airspy R2, Airspy Mini, Airspy HF+ Dual Port, RTL-SDR V3
+ - Supported SDR frontends: Airspy R2, Airspy Mini, Airspy HF+ Dual Port, Airspy HF+ Discovery, and RTL-SDR V3
  - Fast computer
  - Medium-to-strong radio signals
 
@@ -66,7 +68,7 @@ For the latest version, see <https://github.com/jj1bdx/airspy-fmradion>
 
  - [sox](http://sox.sourceforge.net/)
 
-### Branches and tags
+### Git branches and tags
 
   - Official releases are tagged
   - _main_ is the "production" branch with the most stable release (often ahead of the latest release though)
