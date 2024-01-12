@@ -19,7 +19,7 @@ The following Git repository is required:
 * Mac mini 2023 Apple Silicon (M2 Pro), macOS 14.2.1, Xcode 15.1 Command Line Tools
 * MacBook Air 13" Apple Silicon (M1) 2020, macOS 14.2.1, Xcode 15.1 Command Line Tools
 * Ubuntu 22.04.3 LTS x86\_64, gcc 12.3.0
-* (still experimental) Raspberry Pi 4, running Raspberry Pi OS aka Raspbian GNU/Linux 11 (bullseye)
+* Raspberry Pi 4 with Raspberry Pi OS 64bit Lite (Debian Bookworm)
 
 ## Features under development
 
@@ -29,6 +29,7 @@ The following Git repository is required:
 
 * For Raspberry Pi 3 and 4, Airspy R2 10Msps and Airspy Mini 6Msps sampling rates are *not supported* due to the hardware limitation. Use in 2.5Msps for R2, 3Msps for Mini.
 * Since 20231227-0, the buffer length option `-b` is no longer handled and will generate an error. The audio sample data sent to AudioOutput base classes are no longer pre-buffered.
+* The author observed anomalies of being unable to run PortAudio with the `snd_aloop` loopback device while testing on Raspberry Pi OS 32bit Debian *Bullseye*. Portaudio anomaly support is out of our development scope.
 
 ### Intel Mac support is dropped
 
