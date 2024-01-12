@@ -843,7 +843,6 @@ int main(int argc, char **argv) {
     // Pull next block from source buffer.
     IQSampleVector iqsamples = source_buffer.pull();
 
-    IQSampleVector if_afc_samples;
     IQSampleVector if_shifted_samples;
     IQSampleVector if_downsampled_samples;
     IQSampleVector if_samples;
