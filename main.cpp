@@ -119,7 +119,6 @@ static void usage() {
       "  -r ppm         Set IF offset in ppm (range: +-1000000ppm)\n"
       "                 (This option affects output pitch and timing:\n"
       "                  use for the output timing compensation only!)\n"
-      "  -A             (FM only) experimental 10Hz-step IF AFC\n"
       "\n"
       "Configuration options for RTL-SDR devices\n"
       "  freq=<int>     Frequency of radio station in Hz (default 100000000)\n"
@@ -284,7 +283,6 @@ int main(int argc, char **argv) {
   int multipathfilter_stages = 0;
   bool ifrate_offset_enable = false;
   double ifrate_offset_ppm = 0;
-  bool enable_fm_afc = false;
   std::string config_str;
   std::string devtype_str;
   DevType devtype;
@@ -353,11 +351,10 @@ int main(int argc, char **argv) {
       {"squelch", required_argument, nullptr, 'l'},
       {"multipathfilter", required_argument, nullptr, 'E'},
       {"ifrateppm", optional_argument, nullptr, 'r'},
-      {"afc", optional_argument, nullptr, 'A'},
       {nullptr, no_argument, nullptr, 0}};
 
   int c, longindex;
-  while ((c = getopt_long(argc, argv, "m:t:c:d:MR:F:W:G:f:l:P:T:qXUE:r:A",
+  while ((c = getopt_long(argc, argv, "m:t:c:d:MR:F:W:G:f:l:P:T:qXUE:r:",
                           longopts, &longindex)) >= 0) {
     switch (c) {
     case 'm':
@@ -436,9 +433,6 @@ int main(int argc, char **argv) {
           std::fabs(ifrate_offset_ppm) > 1000000.0) {
         badarg("-r");
       }
-      break;
-    case 'A':
-      enable_fm_afc = true;
       break;
     default:
       usage();
@@ -823,16 +817,9 @@ int main(int argc, char **argv) {
   const unsigned int ppm_average_stages = 100;
   MovingAverage<float> ppm_average(ppm_average_stages, 0.0f);
 
-  // Initialize moving average object for FM AFC.
-  const unsigned int fm_afc_average_stages = 1000;
-  MovingAverage<float> fm_afc_average(fm_afc_average_stages, 0.0f);
-  const unsigned int fm_afc_hz_step = 10;
-  FineTuner fm_afc_finetuner((unsigned int)fm_target_rate / fm_afc_hz_step);
   // Initialize moving average object for FM stereo pilot level monitoring.
   const unsigned int pilot_level_average_stages = 10;
   MovingAverage<float> pilot_level_average(pilot_level_average_stages, 0.0f);
-
-  float fm_afc_offset_sum = 0.0;
 
   float audio_level = 0;
   double block_time = Utility::get_time();
@@ -878,27 +865,13 @@ int main(int argc, char **argv) {
     // so long as the stability of the receiver device is
     // within the range of +- 1ppm (~100Hz or less).
 
-    // Experimental FM broadcast AFC code
-    if (modtype == ModType::FM && enable_fm_afc) {
-      // get the frequency offset
-      fm_afc_average.feed(fm.get_tuning_offset());
-      if ((block % fm_afc_average_stages) == 0) {
-        fm_afc_offset_sum += 0.7 * fm_afc_average.average();
-        fm_afc_finetuner.set_freq_shift(
-            -((unsigned int)std::round(fm_afc_offset_sum / fm_afc_hz_step)));
-      }
-      fm_afc_finetuner.process(iqsamples, if_afc_samples);
-    } else {
-      if_afc_samples = std::move(iqsamples);
-    }
-
     if (enable_fs_fourth_downconverter) {
       // Fs/4 downconvering is required
       // to avoid frequency zero offset
       // because Airspy HF+ and RTL-SDR are Zero IF receivers
-      fourth_downconverter.process(if_afc_samples, if_shifted_samples);
+      fourth_downconverter.process(iqsamples, if_shifted_samples);
     } else {
-      if_shifted_samples = std::move(if_afc_samples);
+      if_shifted_samples = std::move(iqsamples);
     }
 
     // Downsample IF for the decoder.
