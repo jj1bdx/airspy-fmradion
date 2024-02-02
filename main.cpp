@@ -330,7 +330,8 @@ int main(int argc, char **argv) {
   } else {
     fprintf(stderr, "Git commit unknown\n");
   }
-  fprintf(stderr, "VOLK_VERSION = %.6o\n", VOLK_VERSION);
+  fprintf(stderr, "VOLK Version = %u.%u.%u\n", VOLK_VERSION_MAJOR,
+          VOLK_VERSION_MINOR, VOLK_VERSION_MAINT);
 
   const struct option longopts[] = {
       {"modtype", optional_argument, nullptr, 'm'},
