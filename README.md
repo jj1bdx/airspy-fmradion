@@ -11,7 +11,8 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for the details.
 
 ## Known issues and changes
 
-Please read [CHANGES.md](CHANGES.md) before using the software.
+* Please read [CHANGES.md](CHANGES.md) before using the software.
+* Refer to [doc/old-README-until-2023.md](doc/old-README-until-2023.md) for the other miscellaneous technical details.
 
 ## What is airspy-fmradion?
 
@@ -20,12 +21,12 @@ Please read [CHANGES.md](CHANGES.md) before using the software.
 ## What does airspy-fmradion provide?
 
 - Supported SDR frontends: Airspy R2/Mini, Airspy HF+, and RTL-SDR
-- I/Q WAV file frontend is also supported
-- Mono or stereo decoding of FM broadcasting stations
-- Mono decoding of AM stations
-- Decoding NBFM/DSB/USB/LSB/CW/WSPR stations
-- Playback to soundcard through PortAudio or dumping to file
-- Command-line interface (*only*)
+- Playing back from I/Q WAV files
+- Monaural/stereo decoding of FM broadcasting stations
+- Monaural decoding of AM stations
+- Decoding NBFM/DSB/USB/LSB/CW/WSPR station audio
+- Playback to soundcard through PortAudio or saving to file through libsndfile
+- Command-line interface
 
 ## Usage
 
@@ -58,9 +59,6 @@ airspy-fmradion -m am -t airspyhf -q \
  - [VOLK](https://www.libvolk.org/)
  - [PortAudio](http://www.portaudio.com)
  - [jj1bdx's fork of cmake-git-version-tracking](https://github.com/jj1bdx/cmake-git-version-tracking)
- - Supported SDR frontends: Airspy R2, Airspy Mini, Airspy HF+ Dual Port, Airspy HF+ Discovery, and RTL-SDR V3
-
-For the latest version, see <https://github.com/jj1bdx/airspy-fmradion>
 
 ### Git branches and tags
 
@@ -70,17 +68,6 @@ For the latest version, see <https://github.com/jj1bdx/airspy-fmradion>
   - Other branches are experimental (and presumably abandoned)
 
 ## Prerequisites
-
-### Airspy HF+ firmware
-
-Use the latest version of Airspy HF+ firmware, available at [Airspy HF+ Dual Port](https://airspy.com/airspy-hf-plus/) and [Airspy HF+ Discovery](https://airspy.com/airspy-hf-discovery/) Web pages.
-
-airspy-fmradion sets the default sampling rates to 384kHz for FM broadcast, and 192kHz for the other modes.
-
-### Required libraries
-
-If you install from source in your own installation path, you have to specify the include path and library path.
-For example if you installed it in `/opt/install/libairspy` you have to add `-DAIRSPY_INCLUDE_DIR=/opt/install/libairspy/include -DAIRSPYHF_INCLUDE_DIR=/opt/install/libairspyhf/include` to the cmake options.
 
 ### Debian/Ubuntu Linux
 
@@ -104,33 +91,10 @@ brew install volk
 
 ### Install the supported libvolk
 
-Install libvolk as described in [libvolk.md](libvolk.md).
+* Install libvolk as described in [libvolk.md](libvolk.md).
+* Run `volk_profile` and save the configuration data for speed optimization.
 
-### Dependency installation details
-
-#### libvolk
-
-* See [GitHub gnuradio/volk repository](https://github.com/gnuradio/volk) for the details.
-
-#### libairspyhf
-
-Use the latest HEAD version.
-
-#### libairspy
-
-*Note: this is applicable for both macOS and Linux.*
-
-*Install and use the latest libairspy --HEAD version*.
-
-#### git submodules
-
-r8brain-free-src is the submodule of this repository. Download the submodule repositories by the following git procedure:
-
-- `git submodule update --init --recursive`
-
-## Installing
-
-### A quick way
+## Installation
 
 ```shell
 /bin/rm -rf build
@@ -139,52 +103,7 @@ cmake -S . -B build
 cmake --build build --target all
 ```
 
-### In details
-
-To install airspy-fmradion, download and unpack the source code and go to the top level directory. Then do like this:
-
- - `git submodule update --init --recursive`
- - `mkdir build`
- - `cd build`
- - `cmake ..`
-
-CMake tries to find librtlsdr. If this fails, you need to specify
-the location of the library in one the following ways:
-
-```shell
-cmake .. \
-  -DAIRSPY_INCLUDE_DIR=/path/airspy/include \
-  -DAIRSPY_LIBRARY_PATH=/path/airspy/lib/libairspy.a
-  -DAIRSPYHF_INCLUDE_DIR=/path/airspyhf/include \
-  -DAIRSPYHF_LIBRARY_PATH=/path/airspyhf/lib/libairspyhf.a \
-  -DRTLSDR_INCLUDE_DIR=/path/rtlsdr/include \
-  -DRTLSDR_LIBRARY_PATH=/path/rtlsdr/lib/librtlsdr.a
-
-PKG_CONFIG_PATH=/path/to/airspy/lib/pkgconfig cmake ..
-```
-
-### Static analysis of the code
-
-For using static analyzers such as [OCLint](https://oclint.org) and [Clangd](https://clangd.llvm.org), use the `compile_commands.json` file built in `build/` directory, with the following commands:
-
-```
-cd build
-ln -s `pwd`/compile_commands.json ..
-```
-
-The following limitation is applicable:
-
-* For *CMake 3.20 or later*, cmake-git-version-tracking code is intentionally removed from the compile command database. This is not applicable for the older CMake. 
-* Use [compdb](https://github.com/Sarcasm/compdb.git) for a more precise analysis including all the header files, with the following command: `compdb -p build/ list > compile_commands.json`
-
-### Compile and install
-
- - `make -j4` (for machines with 4 CPUs)
- - `make install`
-
 ## Basic command options
-
-*Note well: `-b` option is removed and will cause an error.*
 
  - `-m devtype` is modulation type, one of `fm`, `nbfm`, `am`, `dsb`, `usb`, `lsb`, `cw`, `wspr` (default fm)
  - `-t devtype` is mandatory and must be `airspy` for Airspy R2 / Airspy Mini, `airspyhf` for Airspy HF+, `rtlsdr` for RTL-SDR, and `filesource` for the File Source driver.
@@ -208,115 +127,23 @@ The following limitation is applicable:
  - `-E stages` Enable multipath filter for FM (For stable reception only: turn off if reception becomes unstable)
  - `-r ppm` Set IF offset in ppm (range: +-1000000ppm) (Note: this option affects output pitch and timing: *use for the output timing compensation only!*
 
-## Major changes
-
-### Timestamp file format
+## Timestamp file format
 
 * For FM: `pps_index sample_index unix_time if_level`
 * For the other modes: `block unix_time if_level`
 * if\_level is in dB
 
-### Rate compensation for adjusting audio device playback speed offset
+## Output audio specification
 
-* Background: some audio devices shows non-negligible offset of playback speed, which causes eventual audio output buffer overflow and significant delay in long-term playback.
-* How to fix: compensating the playback speed offset gives more accurate playback timing, by sacrificing output audio pitch accuracy. A proper compensation will eliminate the cause of increasing output buffer length, by sending less data (lower sampling rate) to the conversion process.
-* You can specify the compensation rate by ppm using `-r` option.
-* How to estimate the rate offset: when elapsed playback time is `Tp` [seconds] and output buffer length (`buf=` in the debug output) increases during the time is `Ts` [seconds], the compensation rate is `(Ts/Tp) * 1000000` [ppm].
-* For example, if the output buffer length increases for 1 second after playing back for 7 hours (25200 seconds), the offset rate is 1/25200 * 1000000 ~= 39.68ppm.
-* +- 100ppm offset is not uncommon among the consumer-grade audio devices.
-* +- 100ppm pitch change may not be recongizable by human.
-
-#### Caveats for the rate compensation
-
-* *Do not use this feature if the per-sample accuracy is essential.*
-* *Do not use this feature for non-realtime output (for example, to files).*
-* Output audio pitch increases as the offset increases.
-* Too much compensation will cause output underflow.
-* This feature causes fractional (non-integer) resampling by `IfResampler` class, which causes more CPU usage.
-
-### Audio gain adjustment
-
-* Output maximum level is back at -6dB (0.5) (See `adjust_gain()`)
-
-### Audio and IF downsampling is performed by r8brain-free-src
-
-* Output of the stereo decoder is downsampled to 48kHz
-* 19kHz cut LPF implemented for post-processing resampler output
+* Output maximum level is nominally -6dB (0.5) but may increase up to 0dB (1.0)
 * Output audio sample rate is fixed to 48000Hz
-* `r8b::CDSPResampler24` is used for IF resampling
-
-### Phase discriminator uses GNU Radio fast\_atan2f() 
-
-* GNU Radio `fast_atan2f()` which has ~20-bit accuracy, is used for PhaseDiscriminator class and the 19kHz pilot PLL.
 
 ### FM multipath filter
 
 * A Normalized LMS-based multipath filter can be enabled after IF AGC
-* IF sample stages can be defined by `-E` options
-* Reference amplitude level: 1.0
+* IF sample stages is defined by `-E` options
 * Practical upper limit of `-E` value: 200
-* This filter is not effective when the IF bandwidth is narrow (192kHz)
-* This filter recalculates the coefficients for every four (4) samples, to reduce the processing load
-* A configuration example of stages: `-E36 for 108 previous and 36 after stages (ratio 3:1).
-* The multipath filter order: (4 * stages) + 1
-
-### FM L-R signal boosted for the stereo separation improvement
-
-* Implemented: Teruhiko Hayashi suggested boosting L-R signal by 1.017 for a better stereo separation.
-
-### FM deemphasis error prevention
-
-* Implemented: Teruhiko Hayashi suggested applying deemphasis *before* the sampling rate conversion, at the demodulator rate, higher than the audio output rate.
-
-## Filter design documentation
-
-### For FM
-
-* FM Filter coefficients are listed under `doc/filter-design`
-
-### For NBFM
-
-* Deviation: normal +-8kHz, for wide +-17kHz
-* Output audio LPF: flat up to 4kHz
-* NBFM Filter coefficients are listed under `doc/filter-design`
-* `default` filter width: +-10kHz
-* Narrower filters by `-f` options: `middle` +-8kHz, `narrow` +-6.25kHz
-* Wider filters by `-f` options: `wide` +-20kHz (with wider deviation of +-17kHz)
-* Audio gain reduced by -3dB to prevent output clipping
-
-### For AM and DSB
-
-* AM Filter coefficients are listed under `doc/filter-design`
-* `default` filter width: +-6kHz
-* Narrower filters by `-f` options: `middle` +-4.5kHz, `narrow` +-3kHz
-* Wider filters by `-f` options: `wide` +-9kHz
-
-### For SSB (USB/LSB)
-
-* For USB: shift down 1.5kHz -> LPF -> shift up 1.5kHz
-* For USB: shift up 1.5kHz -> LPF -> shift down 1.5kHz
-* Rate conversion of 48kHz to 12kHz and vice versa for the input and output of LPF
-* 12kHz sampling rate LPF: flat till +-1200Hz, -3dB +-1320Hz, -10dB +-1370Hz, -58.64dB at +-1465Hz
-
-### For CW
-
-* Zeroed-in pitch: 500Hz
-* Filter width: +- 100Hz flat, +-250Hz for cutoff
-* Uses downsampling to 12kHz for applying a steep filter
-
-### For WSPR
-
-* Set USB TX carrier frequency for reception (as shown in [WSPRnet](https://wsprnet.org/))
-* Pitch: 1500Hz
-* Filter width: +- 100Hz flat, +-250Hz for cutoff
-* Uses downsampling to 12kHz for applying a steep filter
-
-## AGC algorithms
-
-### Simple AGC with Tisserand-Berviller Algorithm
-
-* Reference: Etienne Tisserand, Yves Berviller. Design and implementation of a new digital automatic gain control. Electronics Letters, IET, 2016, 52 (22), pp.1847 - 1849. ff10.1049/el.2016.1398ff. ffhal-01397371f
-* Implementation reference: <https://github.com/sile/dagc/>
+* Practical `-E` value: up to 50 for Raspberry Pi 4, approx. 100 for a modern computer
 
 ## Airspy R2 / Mini configuration options
 
@@ -329,23 +156,7 @@ The following limitation is applicable:
   - `lagc` Turn on the LNA AGC (default off)
   - `magc` Turn on the mixer AGC (default off)
 
-## Airspy HF+ modification 
-
-### Sample rates and IF modes
-
-* This version supports 768kHz zero-IF mode and 384/256/192kHz low-IF modes
-
-### Conversion process for 768kHz zero-IF mode
-
-* LPFIQ is single-stage
-* IF center frequency is down Fs/4 than the station frequency, i.e: when the station is 76.5MHz, the tuned frequency is 76.308MHz
-* Airspy HF+ allows only 660kHz alias-free BW, so the maximum alias-free BW for IF is (660/2)kHz - 192kHz = 138kHz
-
-### Conversion process for 384/256/192kHz low-IF mode
-
-* IF center frequency is not shifted
-
-### Airspy HF configuration options
+## Airspy HF+ configuration options
 
   - `freq=<int>` Desired tune frequency in Hz. Valid range from 0 to 31M, and from 60M to 240M. (default 100M: `100000000`)
   - `srate=<int>` Device sample rate. `list` lists valid values and exits. (default `384000`). Valid values depend on the Airspy HF firmware. Airspy HF firmware and library must support dynamic sample rate query.
@@ -353,14 +164,7 @@ The following limitation is applicable:
      - 0: enable AGC, no attenuation
      - 1 - 8: disable AGC, apply attenuation of value * 6dB
 
-## RTL-SDR
-
-### Sample rate
-
-* Valid sample rates are from 1000000 to 1250000 [Hz]
-* The default value is 1200000Hz
-
-### RTL-SDR configuration options
+## RTL-SDR configuration options
 
   - `freq=<int>` Desired tune frequency in Hz. Accepted range from 10M to 2.2G.
 (default 100M: `100000000`)
@@ -375,12 +179,7 @@ The following limitation is applicable:
   - `agc` Activates device AGC (default off)
   - `antbias` Turn on the antenna bias for remote LNA (default off)
 
-## File Source driver
-
-* Reads an IQ signal format file and decode the output.
-* *This device is still experimental.*
-
-### File Source configuration options
+## File Source driver configuration options
 
   - `freq=<int>` Frequency of radio station in Hz.
   - `srate=<int>` IF sample rate in Hz.
@@ -410,7 +209,6 @@ The following limitation is applicable:
 ## License
 
 * As a whole package: GPLv3 (and later). See [LICENSE](LICENSE).
-* [csdr](https://github.com/simonyiszk/csdr) AGC code: BSD license.
-* Some source code files are stating GPL "v2 and later" license, and the MIT License.
+* Each source code file might state a GPLv3-compatible license.
 
 [End of README.md]
