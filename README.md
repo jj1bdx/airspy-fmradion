@@ -32,17 +32,17 @@ Please read [CHANGES.md](CHANGES.md) before using the software.
 ```sh
 # Portaudio output
 airspy-fmradion -t airspy -q \
-    -c freq=88100000,srate=10000000,lgain=2,mgain=0,vgain=10 \
+    -c freq=82500k,srate=1000k,lgain=2,mgain=0,vgain=10 \
     -P -
 
 # 16-bit signed integer WAV output (pipe is not supported)
 airspy-fmradion -t airspyhf -q \
-    -c freq=88100000,srate=768000 \
+    -c freq=82500000,srate=384000 \
     -W output_s16_le.wav
 
 # 32-bit float WAV output (pipe is not supported)
 airspy-fmradion -m am -t airspyhf -q \
-    -c freq=666000 \
+    -c freq=666k \
     -G output_f32_le.wav
 ```
 
@@ -59,14 +59,8 @@ airspy-fmradion -m am -t airspyhf -q \
  - [PortAudio](http://www.portaudio.com)
  - [jj1bdx's fork of cmake-git-version-tracking](https://github.com/jj1bdx/cmake-git-version-tracking)
  - Supported SDR frontends: Airspy R2, Airspy Mini, Airspy HF+ Dual Port, Airspy HF+ Discovery, and RTL-SDR V3
- - Fast computer
- - Medium-to-strong radio signals
 
 For the latest version, see <https://github.com/jj1bdx/airspy-fmradion>
-
-### Recommended utilities
-
- - [sox](http://sox.sourceforge.net/)
 
 ### Git branches and tags
 
@@ -81,11 +75,9 @@ For the latest version, see <https://github.com/jj1bdx/airspy-fmradion>
 
 Use the latest version of Airspy HF+ firmware, available at [Airspy HF+ Dual Port](https://airspy.com/airspy-hf-plus/) and [Airspy HF+ Discovery](https://airspy.com/airspy-hf-discovery/) Web pages.
 
-airspy-fmradion sets the default sampling rates to 384kHz for FM broadcast, and 192kHz for the other modes. Old Airspy HF+ firmwares do not support the lower sampling rate other than 768kHz.
+airspy-fmradion sets the default sampling rates to 384kHz for FM broadcast, and 192kHz for the other modes.
 
 ### Required libraries
-
-Note: the main (formerly master) branch of libvolk is now required from v0.8.1.
 
 If you install from source in your own installation path, you have to specify the include path and library path.
 For example if you installed it in `/opt/install/libairspy` you have to add `-DAIRSPY_INCLUDE_DIR=/opt/install/libairspy/include -DAIRSPYHF_INCLUDE_DIR=/opt/install/libairspyhf/include` to the cmake options.
@@ -101,8 +93,6 @@ For example if you installed it in `/opt/install/libairspy` you have to add `-DA
 * Use HEAD for `airspy` and `airspyhf`
 
 ```shell
-brew tap pothosware/homebrew-pothos
-brew tap dholm/homebrew-sdr #other sdr apps
 brew update
 brew install portaudio
 brew install libsndfile
@@ -130,10 +120,7 @@ Use the latest HEAD version.
 
 *Note: this is applicable for both macOS and Linux.*
 
-*Install and use the latest libairspy --HEAD version* for:
-
-* Working `airspy_open_devices()`, required by `airspy_open_sn()`. See [this commit](https://github.com/airspy/airspyone_host/commit/61fec20fbd710fc54d57dfec732d314d693b5a2f) for the details.
-* Proper transfer block size. `if_blocksize` for Airspy HF+ is reduced from 16384 to 2048, following [this commit](https://github.com/airspy/airspyhf/commit/a1f6f4a0537f53bede6e80c51826fc9d45061c28).
+*Install and use the latest libairspy --HEAD version*.
 
 #### git submodules
 
@@ -195,14 +182,6 @@ The following limitation is applicable:
  - `make -j4` (for machines with 4 CPUs)
  - `make install`
 
-### Copying binary to another directory
-
-On M1 Mac, using cp causes a trouble. Use the following command to properly install the command to a local directory:
-
-```shell
-install -o user -m 0700 -c -s build/airspy-fmradion $(HOME)/bin
-```
-
 ## Basic command options
 
 *Note well: `-b` option is removed and will cause an error.*
@@ -255,67 +234,41 @@ install -o user -m 0700 -c -s build/airspy-fmradion $(HOME)/bin
 * Too much compensation will cause output underflow.
 * This feature causes fractional (non-integer) resampling by `IfResampler` class, which causes more CPU usage.
 
-### Smaller latency
-
-* v0.9.2 uses smaller latency algorithms for all modulation types and filters. The output frequency characteristics may be different from the previous versions.
-
 ### Audio gain adjustment
 
-* Since v0.4.2, output maximum level is back at -6dB (0.5) (`adjust_gain()` is reintroduced) again, as in pre-v0.2.7
-* During v0.2.7 to v0.4.1, output level was at unity (`adjust_gain()` is removed)
-* Before v0.2.7, output maximum level is at -6dB (0.5) 
+* Output maximum level is back at -6dB (0.5) (See `adjust_gain()`)
 
 ### Audio and IF downsampling is performed by r8brain-free-src
 
 * Output of the stereo decoder is downsampled to 48kHz
 * 19kHz cut LPF implemented for post-processing resampler output
-* Audio sample rate is fixed to 48000Hz
+* Output audio sample rate is fixed to 48000Hz
 * `r8b::CDSPResampler24` is used for IF resampling
 
 ### Phase discriminator uses GNU Radio fast\_atan2f() 
 
-* From v0.7.8-pre0, GNU Radio `fast_atan2f()` which has ~20-bit accuracy, is used for PhaseDiscriminator class and the 19kHz pilot PLL.
-* The past `fastatan2()` used in v0.6.10 and before was removed due to low accuracy (of ~10 bits)
-* Changing from the past `atan2()` to `fast_atan2f()` showed no noticeable difference of the THD+N (0.218%) and THD (0.018%). (Measured from JOBK-FM NHK Osaka FM 88.1MHz hourly time tone 880Hz, using airwaves after the multipath canceler filter of -E36)
-* [The past `fastatan2()` allowed +-0.005 radian max error](https://www.dsprelated.com/showarticle/1052.php)
-* libm `atan2()` allows only approx. 0.5 ULP as the max error for macOS 10.14.5, measured by using the code from ["Error analysis of system mathematical functions
-" by Gaston H. Gonnet](http://www-oldurls.inf.ethz.ch/personal/gonnet/FPAccuracy/Analysis.html) (1 ULP for macOS 64bit `double` = 2^(-53) = approx. 10^(15.95))
+* GNU Radio `fast_atan2f()` which has ~20-bit accuracy, is used for PhaseDiscriminator class and the 19kHz pilot PLL.
 
 ### FM multipath filter
 
 * A Normalized LMS-based multipath filter can be enabled after IF AGC
 * IF sample stages can be defined by `-E` options
 * Reference amplitude level: 1.0
-* For Mac mini 2018 with 3.2 GHz Intel Core i7, 288 stages consume 99% of one CPU core
+* Practical upper limit of `-E` value: 200
 * This filter is not effective when the IF bandwidth is narrow (192kHz)
-* The multipath filter starts after discarding the first 100 blocks. This change is to avoid the initial instability of Airspy R2.
-* Note: this filter recalculates the coefficients for every four (4) samples, to reduce the processing load.
-
-### Multipath filter configuration
-
-* v0.7.3 and later: -E36 for 108 previous and 36 after stages (ratio 3:1). The multipath filter order: (4 * stages) + 1
-* For reference only: v0.7.3-pre1 and before: -E72 for 72 previous and 72 after stages (ratio 1:1), summary: set the -E parameter to 1/2 of the previous value
-* Rule of thumb: -E36 is sufficient for a stable strong singal (albeit with considerable multipath distortion).
+* This filter recalculates the coefficients for every four (4) samples, to reduce the processing load
+* A configuration example of stages: `-E36 for 108 previous and 36 after stages (ratio 3:1).
+* The multipath filter order: (4 * stages) + 1
 
 ### FM L-R signal boosted for the stereo separation improvement
 
-* Teruhiko Hayashi suggested boosting L-R signal by 1.017 for a better stereo separation. Implemented since v0.7.6-pre3.
-* DiscriminatorEqualizer removed since v1.7.6-pre3 (needs more precise compensation, presumably with an FIR filter.
+* Implemented: Teruhiko Hayashi suggested boosting L-R signal by 1.017 for a better stereo separation.
 
 ### FM deemphasis error prevention
 
-* Teruhiko Hayashi suggested applying deemphasis *before* the sampling rate conversion, at the demodulator rate, higher than the audio output rate. Implemented since v0.7.6.
-
-## No-goals
-
-* CIC filters for the IF 1st stage (unable to explore parallelism, too complex to compensate)
-* Using lock-free threads (`boost::lockfree::spsc_queue` didn't make things faster, and consumed x2 CPU power)
+* Implemented: Teruhiko Hayashi suggested applying deemphasis *before* the sampling rate conversion, at the demodulator rate, higher than the audio output rate.
 
 ## Filter design documentation
-
-### General characteristics
-
-* If resampling converter affects the passband characteristics
 
 ### For FM
 
@@ -364,16 +317,8 @@ install -o user -m 0700 -c -s build/airspy-fmradion $(HOME)/bin
 
 * Reference: Etienne Tisserand, Yves Berviller. Design and implementation of a new digital automatic gain control. Electronics Letters, IET, 2016, 52 (22), pp.1847 - 1849. ff10.1049/el.2016.1398ff. ffhal-01397371f
 * Implementation reference: <https://github.com/sile/dagc/>
-* Implemented for IF AGC since 20220808-0
-* Implemented for AF AGC since 20220808-3
 
-## Airspy R2 / Mini modification from ngsoftfm-jj1bdx
-
-### Feature changes
-
-* Finetuner is removed (Not really needed for +-1ppm or less offset)
-
-### Airspy R2 / Mini configuration options
+## Airspy R2 / Mini configuration options
 
   - `freq=<int>` Desired tune frequency in Hz. Valid range from 1M to 1.8G. (default 100M: `100000000`)
   - `srate=<int>` Device sample rate. `list` lists valid values and exits. (default `10000000`). Valid values depend on the Airspy firmware. Airspy firmware and library must support dynamic sample rate query.
@@ -384,7 +329,7 @@ install -o user -m 0700 -c -s build/airspy-fmradion $(HOME)/bin
   - `lagc` Turn on the LNA AGC (default off)
   - `magc` Turn on the mixer AGC (default off)
 
-## Airspy HF+ modification from airspy-fmradion v0.2.7
+## Airspy HF+ modification 
 
 ### Sample rates and IF modes
 
@@ -468,3 +413,4 @@ install -o user -m 0700 -c -s build/airspy-fmradion $(HOME)/bin
 * [csdr](https://github.com/simonyiszk/csdr) AGC code: BSD license.
 * Some source code files are stating GPL "v2 and later" license, and the MIT License.
 
+[End of README.md]
