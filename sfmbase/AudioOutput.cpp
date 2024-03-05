@@ -177,6 +177,9 @@ PortAudioOutput::PortAudioOutput(const PaDeviceIndex device_index,
     return;
   }
 
+  fprintf(stderr, "suggestedLatency = %f\n", m_outputparams.suggestedLatency);
+
+  
   m_paerror = Pa_StartStream(m_stream);
   if (m_paerror != paNoError) {
     add_paerror("Pa_StartStream()");
