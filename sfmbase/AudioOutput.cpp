@@ -164,6 +164,13 @@ PortAudioOutput::PortAudioOutput(const PaDeviceIndex device_index,
       Pa_GetDeviceInfo(m_outputparams.device)->defaultHighOutputLatency;
   m_outputparams.hostApiSpecificStreamInfo = NULL;
 
+  // values of m_outputparams.suggestedLatency from PortAudio:
+  // Mac mini 2023 with macOS 14.3.1: 0.014717
+  // Ubuntu 22.04.4 on x86_64: 0.034830
+  if (m_outputparams.suggestedLatency < 0.04) {
+    m_outputparams.suggestedLatency = 0.04;
+  }
+
   m_paerror =
       Pa_OpenStream(&m_stream,
                     NULL, // no input
@@ -179,7 +186,6 @@ PortAudioOutput::PortAudioOutput(const PaDeviceIndex device_index,
 
   fprintf(stderr, "suggestedLatency = %f\n", m_outputparams.suggestedLatency);
 
-  
   m_paerror = Pa_StartStream(m_stream);
   if (m_paerror != paNoError) {
     add_paerror("Pa_StartStream()");
