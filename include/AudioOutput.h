@@ -98,6 +98,18 @@ private:
 
 class PortAudioOutput : public AudioOutput {
 public:
+  // Static variables.
+
+  // Minimum latency for audio output in seconds
+
+  // Values of m_outputparams.suggestedLatency from PortAudio:
+  // Mac mini 2023 with macOS 14.3.1: 0.014717
+  // Ubuntu 22.04.4 on x86_64: 0.034830
+  // Kenji's experiments show that
+  // 40ms (0.04) is sufficient for macOS, Ubuntu, and Raspberry Pi OS
+
+  static constexpr PaTime minimum_latency = 0.04;
+
   //
   // Construct PortAudio output stream.
   //
