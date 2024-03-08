@@ -164,6 +164,13 @@ PortAudioOutput::PortAudioOutput(const PaDeviceIndex device_index,
       Pa_GetDeviceInfo(m_outputparams.device)->defaultHighOutputLatency;
   m_outputparams.hostApiSpecificStreamInfo = NULL;
 
+  // Guarantee minimum latency.
+  if (m_outputparams.suggestedLatency < minimum_latency) {
+    m_outputparams.suggestedLatency = minimum_latency;
+  }
+
+  fprintf(stderr, "suggestedLatency = %f\n", m_outputparams.suggestedLatency);
+
   m_paerror =
       Pa_OpenStream(&m_stream,
                     NULL, // no input
