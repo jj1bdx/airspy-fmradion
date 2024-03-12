@@ -91,17 +91,11 @@ SndfileOutput::SndfileOutput(const std::string &filename,
   // Set MP3 parameters here
   if (filetype == SF_FORMAT_MPEG) {
     fprintf(stderr, "Set MP3 parameters\n");
-    // Set MP3 default format parameters
-    // Constant bitrate mode
-    // Bitrate: 192kbps, compression level = 0.4444444444444444
-    //
-    // For 48kHz sampling rate, compression level x is defined as
-    // CBR_target_rate = 320.0 - (x * (320.0 - 32.0)) (in kbps)
-    //
-    int constant_mode = SF_BITRATE_MODE_CONSTANT;
-    double compression_level = 0.444444444444444444;
-    // NOTE: for constant bitrate,
-    // you need to set SFC_SET_COMPRESSION_LEVEL *BEFORE*
+    // Set MP3 default format parameters to:
+    // Variable bitrate mode, compression level = 0.1
+    int constant_mode = SF_BITRATE_MODE_VARIABLE;
+    double compression_level = 0.1;
+    // NOTE: you need to set SFC_SET_COMPRESSION_LEVEL *BEFORE*
     // executing SFC_SET_BITRATE_MODE.
     if (SF_TRUE != sf_command(m_sndfile, SFC_SET_COMPRESSION_LEVEL,
                               &compression_level, sizeof(double))) {
