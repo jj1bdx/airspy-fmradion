@@ -72,7 +72,7 @@ SndfileOutput::SndfileOutput(const std::string &filename,
         sf_command(m_sndfile, SFC_RF64_AUTO_DOWNGRADE, NULL, SF_TRUE)) {
       m_error = "unable to set SFC_RF64_AUTO_DOWNGRADE to SF_TRUE on '" +
                 filename + "' (" + sf_strerror(m_sndfile) + ")";
-      m_zombie = true;
+      add_error_log_info(m_sndfile);
       return;
     }
   }
@@ -83,7 +83,7 @@ SndfileOutput::SndfileOutput(const std::string &filename,
         sf_command(m_sndfile, SFC_SET_UPDATE_HEADER_AUTO, NULL, SF_TRUE)) {
       m_error = "unable to set SFC_SET_UPDATE_HEADER_AUTO to SF_TRUE on '" +
                 filename + "' (" + sf_strerror(m_sndfile) + ")";
-      m_zombie = true;
+      add_error_log_info(m_sndfile);
       return;
     }
   }
@@ -94,6 +94,10 @@ SndfileOutput::SndfileOutput(const std::string &filename,
     // Set MP3 default format parameters
     // Constant bitrate mode
     // Bitrate: 192kbps, compression level = 0.4444444444444444
+    //
+    // For 48kHz sampling rate, compression level x is defined as
+    // CBR_target_rate = 320.0 - (x * (320.0 - 32.0)) (in kbps)
+    //
     int constant_mode = SF_BITRATE_MODE_CONSTANT;
     double compression_level = 0.444444444444444444;
     // NOTE: for constant bitrate,
@@ -103,14 +107,14 @@ SndfileOutput::SndfileOutput(const std::string &filename,
                               &compression_level, sizeof(double))) {
       m_error = "unable to set SFC_SET_COMPRESSION_LEVEL on '" + filename +
                 "' (" + sf_strerror(m_sndfile) + ")";
-      m_zombie = true;
+      add_error_log_info(m_sndfile);
       return;
     }
     if (SF_TRUE != sf_command(m_sndfile, SFC_SET_BITRATE_MODE, &constant_mode,
                               sizeof(int))) {
       m_error = "unable to set SFC_SET_BITRATE_MODE on '" + filename + "' (" +
                 sf_strerror(m_sndfile) + ")";
-      m_zombie = true;
+      add_error_log_info(m_sndfile);
       return;
     }
   }
@@ -156,6 +160,20 @@ bool SndfileOutput::write(const SampleVector &samples) {
   return true;
 }
 
+// Add sndfile log info to m_error and set m_zombie flag
+void SndfileOutput::add_error_log_info(SNDFILE *sf) {
+  const int max_length = 8192;
+  char buffer[max_length];
+  int length;
+
+  length = sf_command(sf, SFC_GET_LOG_INFO, buffer, max_length);
+  std::string logmsg(buffer, length);
+
+  m_error += "\n=== SFC_GET_LOG_INFO output:\n";
+  m_error += logmsg;
+  m_error += "\n=== End of SFC_GET_LOG_INFO output\n";
+  m_zombie = true;
+}
 // Class PortAudioOutput
 
 // Construct PortAudio output stream.
