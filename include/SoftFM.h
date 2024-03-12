@@ -51,7 +51,8 @@ enum class OutputMode {
   RAW_FLOAT32,
   WAV_INT16,
   WAV_FLOAT32,
-  PORTAUDIO
+  PORTAUDIO,
+  MP3_FMAUDIO
 };
 enum class PilotState { NotDetected, Detected };
 
