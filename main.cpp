@@ -88,6 +88,9 @@ static void usage() {
       "  -G filename    Write audio data to RF64/WAV FLOAT_LE file\n"
       "                 use filename '-' to write to stdout\n"
       "                 (Pipe is not supported)\n"
+      "  -C filename    Write audio data to MP3 file\n"
+      "                 of 192kbps CBR (EXPERIMENTAL)\n"
+      "                 use filename '-' to write to stdout\n"
       "  -P device_num  Play audio via PortAudio device index number\n"
       "                 use string '-' to specify the default PortAudio "
       "device\n"
@@ -352,10 +355,11 @@ int main(int argc, char **argv) {
       {"squelch", required_argument, nullptr, 'l'},
       {"multipathfilter", required_argument, nullptr, 'E'},
       {"ifrateppm", optional_argument, nullptr, 'r'},
+      {"mp3fmaudio", required_argument, nullptr, 'C'},
       {nullptr, no_argument, nullptr, 0}};
 
   int c, longindex;
-  while ((c = getopt_long(argc, argv, "m:t:c:d:MR:F:W:G:f:l:P:T:qXUE:r:",
+  while ((c = getopt_long(argc, argv, "m:t:c:d:MR:F:W:G:f:l:P:T:qXUE:r:C:",
                           longopts, &longindex)) >= 0) {
     switch (c) {
     case 'm':
@@ -434,6 +438,10 @@ int main(int argc, char **argv) {
           std::fabs(ifrate_offset_ppm) > 1000000.0) {
         badarg("-r");
       }
+      break;
+    case 'C':
+      outmode = OutputMode::MP3_FMAUDIO;
+      filename = optarg;
       break;
     default:
       usage();
@@ -589,6 +597,12 @@ int main(int argc, char **argv) {
       fprintf(stderr, "playing audio to PortAudio device %d: ", portaudiodev);
     }
     fprintf(stderr, "name '%s'\n", audio_output->get_device_name().c_str());
+    break;
+  case OutputMode::MP3_FMAUDIO:
+    audio_output.reset(new SndfileOutput(
+        filename, pcmrate, stereo, SF_FORMAT_MPEG | SF_FORMAT_MPEG_LAYER_III));
+    fprintf(stderr, "writing MP3 FM-broadcast audio samples to '%s'\n",
+            filename.c_str());
     break;
   }
 
