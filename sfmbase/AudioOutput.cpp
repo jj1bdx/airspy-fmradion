@@ -88,6 +88,33 @@ SndfileOutput::SndfileOutput(const std::string &filename,
     }
   }
 
+  // Set MP3 parameters here
+  if (filetype == SF_FORMAT_MPEG) {
+    fprintf(stderr, "Set MP3 parameters\n");
+    // Set MP3 default format parameters
+    // Constant bitrate mode
+    // Bitrate: 192kbps, compression level = 0.4444444444444444
+    int constant_mode = SF_BITRATE_MODE_CONSTANT;
+    double compression_level = 0.444444444444444444;
+    // NOTE: for constant bitrate,
+    // you need to set SFC_SET_COMPRESSION_LEVEL *BEFORE*
+    // executing SFC_SET_BITRATE_MODE.
+    if (SF_TRUE != sf_command(m_sndfile, SFC_SET_COMPRESSION_LEVEL,
+                              &compression_level, sizeof(double))) {
+      m_error = "unable to set SFC_SET_COMPRESSION_LEVEL on '" + filename +
+                "' (" + sf_strerror(m_sndfile) + ")";
+      m_zombie = true;
+      return;
+    }
+    if (SF_TRUE != sf_command(m_sndfile, SFC_SET_BITRATE_MODE, &constant_mode,
+                              sizeof(int))) {
+      m_error = "unable to set SFC_SET_BITRATE_MODE on '" + filename + "' (" +
+                sf_strerror(m_sndfile) + ")";
+      m_zombie = true;
+      return;
+    }
+  }
+
   m_device_name = "SndfileOutput";
 }
 
