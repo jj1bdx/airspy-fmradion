@@ -89,7 +89,7 @@ static void usage() {
       "                 use filename '-' to write to stdout\n"
       "                 (Pipe is not supported)\n"
       "  -C filename    Write audio data to MP3 file\n"
-      "                 of 192kbps CBR (EXPERIMENTAL)\n"
+      "                 of VBR -V 1 (experimental)\n"
       "                 use filename '-' to write to stdout\n"
       "  -P device_num  Play audio via PortAudio device index number\n"
       "                 use string '-' to specify the default PortAudio "
