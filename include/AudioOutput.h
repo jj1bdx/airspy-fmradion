@@ -89,6 +89,9 @@ public:
   virtual void output_close() override;
 
 private:
+  // Add sndfile log info to m_error and set m_zombie flag
+  void add_error_log_info(SNDFILE *sf);
+
   const unsigned numberOfChannels;
   const unsigned sampleRate;
   int m_fd;

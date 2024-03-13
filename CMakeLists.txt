@@ -43,7 +43,7 @@ else()
     find_library(VOLK_LIBRARY libvolk.so
 	HINTS ${PKG_VOLK_LIBRARY_DIRS})
 endif()
-message(STATUS "volk library: ${VOLK_LIBRARY}")
+message(STATUS "volk ${PKG_VOLK_VERSION}: ${VOLK_LIBRARY}")
 
 # Find Airspy library.
 pkg_check_modules(PKG_AIRSPY libairspy)
@@ -64,7 +64,7 @@ else()
 	    HINTS ${PKG_AIRSPY_LIBRARY_DIRS})
     set(AIRSPY_INCLUDE_OPTION "")
 endif()
-message(STATUS "libairspy: ${AIRSPY_INCLUDE_DIR}, ${AIRSPY_LIBRARY}")
+message(STATUS "libairspy ${PKG_AIRSPY_VERSION}: ${AIRSPY_INCLUDE_DIR}, ${AIRSPY_LIBRARY}")
 
 # Find Airspy HF library.
 pkg_check_modules(PKG_AIRSPYHF libairspyhf)
@@ -85,7 +85,7 @@ else()
              HINT ${PKG_AIRSPYHF_LIBRARY_DIRS})
     set(AIRSPYHF_INCLUDE_OPTION "")
 endif()
-message(STATUS "libairspyhf: ${AIRSPYHF_INCLUDE_DIR}, ${AIRSPYHF_LIBRARY}")
+message(STATUS "libairspyhf ${PKG_AIRSPYHF_VERSION}: ${AIRSPYHF_INCLUDE_DIR}, ${AIRSPYHF_LIBRARY}")
 
 # Find RTL-SDR library.
 pkg_check_modules(PKG_RTLSDR librtlsdr)
@@ -93,7 +93,7 @@ find_path(RTLSDR_INCLUDE_DIR rtl-sdr.h
 	HINTS ${PKG_RTLSDR_INCLUDE_DIRS})
 find_library(RTLSDR_LIBRARY librtlsdr.a
 	HINTS ${PKG_RTLSDR_LIBRARY_DIRS})
-message(STATUS "librtlsdr: ${RTLSDR_INCLUDE_DIR}, ${RTLSDR_LIBRARY}")
+message(STATUS "librtlsdr ${PKG_RTLSDR_VERSION}: ${RTLSDR_INCLUDE_DIR}, ${RTLSDR_LIBRARY}")
 
 # Find libusb
 # See https://github.com/texane/stlink/blob/master/cmake/modules/FindLibUSB.cmake
@@ -104,14 +104,19 @@ find_path(LIBUSB_INCLUDE_DIR libusb.h
 set(LIBUSB_NAME usb-1.0)
 find_library(LIBUSB_LIBRARY ${LIBUSB_NAME}
     HINTS /usr /usr/local /opt /opt/homebrew ${PKG_LIBUSB_LIBRARY_DIRS})
-message(STATUS "libusb: ${LIBUSB_INCLUDE_DIR}, ${LIBUSB_LIBRARY}")
+message(STATUS "libusb ${PKG_LIBUSB_VERSION}: ${LIBUSB_INCLUDE_DIR}, ${LIBUSB_LIBRARY}")
 
-# Find sndfile library.
-FIND_LIBRARY(SNDFILE_LIBRARY sndfile)
-
-FIND_PATH(SNDFILE_INCLUDE_DIR sndfile.h
+# Find sndfile library
+pkg_check_modules(PKG_SNDFILE sndfile)
+find_path(SNDFILE_INCLUDE_DIR sndfile.h
 	HINTS ${PKG_SNDFILE_INCLUDE_DIRS})
-MESSAGE(STATUS "Sndfile: ${SNDFILE_LIBRARY}, ${SNDFILE_INCLUDE_DIR}")
+find_library(SNDFILE_LIBRARY sndfile)
+message(STATUS "sndfile ${PKG_SNDFILE_VERSION}: ${SNDFILE_LIBRARY}, ${SNDFILE_INCLUDE_DIR}")
+# Determine MP3 support on sndfile
+if(PKG_SNDFILE_VERSION VERSION_GREATER_EQUAL "1.1")
+  SET(SNDFILE_INCLUDE_OPTION "-DLIBSNDFILE_MP3_ENABLED")
+  message(STATUS "sndfile MP3 support enabled")
+endif()
 
 # for PortAudio
 pkg_check_modules(PORTAUDIO2 portaudio-2.0)
@@ -136,21 +141,11 @@ if (PORTAUDIO2_FOUND)
 else (PORTAUDIO2_FOUND)
     message(FATAL_ERROR "Could not find Portaudio")
 endif (PORTAUDIO2_FOUND)
-message(STATUS "libportaudio: ${PORTAUDIO_INCLUDE_DIR}, ${PORTAUDIO_LIBRARY}")
+message(STATUS "libportaudio ${PORTAUDIO2_VERSION}: ${PORTAUDIO_INCLUDE_DIR}, ${PORTAUDIO_LIBRARY}")
 message(STATUS "PortAudio libs: ${PORTAUDIO_LINK_LIBRARIES}")
-
-if(RTLSDR_INCLUDE_DIR AND RTLSDR_LIBRARY)
-    message(STATUS "Found librtlsdr: ${RTLSDR_INCLUDE_DIR}, ${RTLSDR_LIBRARY}")
-else()
-    message(WARNING "Can not find Osmocom RTL-SDR library")
-    message("Try again with environment variable PKG_CONFIG_PATH")
-    message("or with -DRTLSDR_INCLUDE_DIR=/path/rtlsdr/include")
-    message("        -DRTLSDR_LIBRARY=/path/rtlsdr/lib/librtlsdr.a")
-endif()
 
 set(RTLSDR_INCLUDE_DIRS ${RTLSDR_INCLUDE_DIR} ${LIBUSB_INCLUDE_DIR})
 set(RTLSDR_LIBRARIES    ${RTLSDR_LIBRARY} ${LIBUSB_LIBRARY})
-
 set(AIRSPY_INCLUDE_DIRS ${AIRSPY_INCLUDE_DIR} ${LIBUSB_INCLUDE_DIR})
 set(AIRSPY_LIBRARIES    ${AIRSPY_LIBRARY} ${LIBUSB_LIBRARY})
 set(AIRSPYHF_INCLUDE_DIRS ${AIRSPYHF_INCLUDE_DIR} ${LIBUSB_INCLUDE_DIR})
@@ -184,7 +179,7 @@ set(OPTIMIZATION_FLAGS "-O3 -ftree-vectorize ")
 
 # Common compiler flags and options.
 ##
-set(CMAKE_CXX_FLAGS "-Wall -std=c++17 ${OPTIMIZATION_FLAGS} ${AIRSPY_INCLUDE_OPTION} ${AIRSPYHF_INCLUDE_OPTION} ${EXTRA_FLAGS}")
+set(CMAKE_CXX_FLAGS "-Wall -std=c++17 ${OPTIMIZATION_FLAGS} ${AIRSPY_INCLUDE_OPTION} ${AIRSPYHF_INCLUDE_OPTION} ${SNDFILE_INCLUDE_OPTION} ${EXTRA_FLAGS}")
 
 # For building airspy-fmradion sources
 
