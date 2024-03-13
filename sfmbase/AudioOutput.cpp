@@ -88,6 +88,7 @@ SndfileOutput::SndfileOutput(const std::string &filename,
     }
   }
 
+#if defined(LIBSNDFILE_MP3_ENABLED)
   // Set MP3 parameters here
   if (filetype == SF_FORMAT_MPEG) {
     fprintf(stderr, "Set MP3 parameters\n");
@@ -112,6 +113,7 @@ SndfileOutput::SndfileOutput(const std::string &filename,
       return;
     }
   }
+#endif // LIBSNDFILE_MP3_ENABLED
 
   m_device_name = "SndfileOutput";
 }
