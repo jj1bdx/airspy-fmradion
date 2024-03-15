@@ -17,7 +17,7 @@ FetchContent_Declare(
   cmake_git_version_tracking
   GIT_REPOSITORY
     https://github.com/jj1bdx/cmake-git-version-tracking.git
-  GIT_TAG 9b5fc5088b4089ff2adc20d607976b9923e3d737)
+  GIT_TAG 6c0cb87edd029ddfb403a8e24577c144a03605a6)
 FetchContent_MakeAvailable(cmake_git_version_tracking)
 # EXPORT_COMPILE_COMMANDS is supported for CMake version 3.20 or later
 # only
