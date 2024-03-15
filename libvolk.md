@@ -1,17 +1,17 @@
-# Installing the latest libvolk on macOS and Linux
+# Installing the latest libvolk
 
 ## Incompatible versions
 
 *Do not use the following versions*:
 
-* 3.1.0 (due to NaN problem, use 3.1.1)
+* 3.1.0 (due to NaN problem, use 3.1.1 and later)
 
-## Compatible versions
+## Suggested compatible versions
 
 Use the following versions of VOLK aka libvolk:
 
 * 2.5.2
-* 3.1.1
+* 3.1.2
 
 ## For x86_64 and M1 macOS: use Homebrew
 
@@ -22,7 +22,7 @@ brew install volk
 ## For Linux
 
 * See [libvolk README.md](https://github.com/gnuradio/volk#readme).
-* You need to install python3-mako as: `sudo apt install python3-mako`
+* You need to install python3-mako as: `sudo apt install python3-mako` or `pip3 install mako`
  
 ## After installation
 
