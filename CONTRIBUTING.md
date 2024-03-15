@@ -20,7 +20,7 @@ All documents and source code comments in the repository should be written in En
 * Create a topic branch from where you want to base your work. 
 * Use the tagged branches as the starting point.
 * Make commits separated by logical units.
-* Apply the proper C++ coding style.
+* Apply the suggested coding styles listed in this document.
 * Make sure your commit messages are in the proper format.
 * Push your changes to a topic branch in your fork of the repository.
 * Submit a pull request to jj1bdx/airspy-fmradion.
@@ -45,6 +45,19 @@ The coding style is defined in the file `.clang-format`. To follow this style, d
 
 ```
 clang-format -i main.cpp include/*.h sfmbase/*.cpp
+```
+
+## CMakeLists.txt coding style
+
+Use cmake-format, a part of [cmake language tools](https://cmake-format.readthedocs.io/en/latest/).
+The style is defined in the file `.cmake-format.py`.
+To follow this style, do the following:
+
+* Install cmake language tools.
+* Run the following command at the top directory of the repository:
+
+```
+cmake-format -i CMakeLists.txt
 ```
 
 ## License
