@@ -38,7 +38,7 @@ Intel Mac hardware is no longer supported by airspy-fmradion, although the autho
 
 ## Changes (including requirement changes)
 
-* 202403-to-be-released: Made the following changes:
+* 20240316-0: Made the following changes:
   * Raspberry Pi 4 with Raspberry Pi OS 64bit lite is now officially tested.
   * *Note well: Raspberry Pi OS 32bit is not supported*.
   * [`-A` AFC option is removed.](https://github.com/jj1bdx/airspy-fmradion/pull/70)
