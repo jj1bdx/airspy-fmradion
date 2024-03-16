@@ -51,7 +51,10 @@ enum class OutputMode {
   RAW_FLOAT32,
   WAV_INT16,
   WAV_FLOAT32,
-  PORTAUDIO
+  PORTAUDIO,
+#if defined(LIBSNDFILE_MP3_ENABLED)
+  MP3_FMAUDIO
+#endif // LIBSNDFILE_MP3_ENABLED
 };
 enum class PilotState { NotDetected, Detected };
 

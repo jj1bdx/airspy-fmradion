@@ -16,10 +16,10 @@ The following Git repository is required:
 
 ## Platforms tested
 
-* Mac mini 2023 Apple Silicon (M2 Pro), macOS 14.2.1, Xcode 15.1 Command Line Tools
-* MacBook Air 13" Apple Silicon (M1) 2020, macOS 14.2.1, Xcode 15.1 Command Line Tools
-* Ubuntu 22.04.3 LTS x86\_64, gcc 12.3.0
-* (still experimental) Raspberry Pi 4, running Raspberry Pi OS aka Raspbian GNU/Linux 11 (bullseye)
+* Mac mini 2023 Apple Silicon (M2 Pro), macOS 14.4, Xcode 15.3 Command Line Tools
+* MacBook Air 13" Apple Silicon (M1) 2020, macOS 14.4, Xcode 15.3 Command Line Tools
+* Ubuntu 22.04.4 LTS x86\_64, gcc 12.3.0
+* Raspberry Pi 4 with Raspberry Pi OS 64bit Lite (Debian Bookworm)
 
 ## Features under development
 
@@ -27,8 +27,10 @@ The following Git repository is required:
 
 ## Known limitations
 
+* libsndfile 1.1 or later must be installed to support MP3 file output.
 * For Raspberry Pi 3 and 4, Airspy R2 10Msps and Airspy Mini 6Msps sampling rates are *not supported* due to the hardware limitation. Use in 2.5Msps for R2, 3Msps for Mini.
 * Since 20231227-0, the buffer length option `-b` is no longer handled and will generate an error. The audio sample data sent to AudioOutput base classes are no longer pre-buffered.
+* The author observed anomalies of being unable to run PortAudio with the `snd_aloop` loopback device while testing on Raspberry Pi OS 32bit Debian *Bullseye*. Portaudio anomaly support is out of our development scope.
 
 ### Intel Mac support is dropped
 
@@ -36,38 +38,54 @@ Intel Mac hardware is no longer supported by airspy-fmradion, although the autho
 
 ## Changes (including requirement changes)
 
+* 20240316-0: Made the following changes:
+  * Raspberry Pi 4 with Raspberry Pi OS 64bit lite is now officially tested.
+  * *Note well: Raspberry Pi OS 32bit is not supported*.
+  * [`-A` AFC option is removed.](https://github.com/jj1bdx/airspy-fmradion/pull/70)
+  * [Change VOLK version display format.](https://github.com/jj1bdx/airspy-fmradion/pull/71)
+  * [Documentation update](https://github.com/jj1bdx/airspy-fmradion/pull/72):
+    * Reduce text length of README.md.
+    * Old README.md is now located at [`doc/old-README-until-2023.md`](doc/old-README-until-2023.md).
+  * [For PortAudio, the minimum output latency is explicitly set to 40 milliseconds.](https://github.com/jj1bdx/airspy-fmradion/pull/73)
+  * [Use libsndfile MP3 output capability to generate the MP3 file directly as the audio output, when supported.](https://github.com/jj1bdx/airspy-fmradion/pull/74)
+    * libsndfile 1.1 or later is required for the MP3 support.
+    * A conditional compilation flag `LIBSNDFILE_MP3_ENABLED`, set by cmake, is introduced.
+    * See [`libsndfile.md`](libsndfile.md) for how to installing the latest libsndfile, suggested for Ubuntu 22.04.4 LTS.
+    * [See also the related GitHub issue.](https://github.com/jj1bdx/airspy-fmradion/issues/47)
+  * Apply [cmake-format](https://github.com/cheshirekow/cmake_format) for `CMakeLists.txt`.
+    * Default style: `.cmake-format.py`
 * 20240107-0: Made the following changes:
-  - For broadcasting FM, show stereo 19kHz pilot signal level when detected.
-  - Remove displaying whether FM stereo pilot signal level is stable or unstable.
-  - Add Git info into the binary program built, with [cmake-git-version-tracking](https://github.com/andrew-hardin/cmake-git-version-tracking.git) (using jj1bdx's fork).
-  - Add compile command database support on CMakeLists.txt.
-  - Cleaned up old documents.
-  - Fixed the following bugs detected by clang-tidy:
+  * For broadcasting FM, show stereo 19kHz pilot signal level when detected.
+  * Remove displaying whether FM stereo pilot signal level is stable or unstable.
+  * Add Git info into the binary program built, with [cmake-git-version-tracking](https://github.com/andrew-hardin/cmake-git-version-tracking.git) (using jj1bdx's fork).
+  * Add compile command database support on CMakeLists.txt.
+  * Cleaned up old documents.
+  * Fixed the following bugs detected by clang-tidy:
     * [ERR34-C. Detect errors when converting a string to a number](https://wiki.sei.cmu.edu/confluence/display/c/ERR34-C.+Detect+errors+when+converting+a+string+to+a+number)
-      - Use `Utility::parse_int()` instead of raw `atoi()`
+      * Use `Utility::parse_int()` instead of raw `atoi()`
     * [DCL51-CPP. Do not declare or define a reserved identifier](https://wiki.sei.cmu.edu/confluence/display/cplusplus/DCL51-CPP.+Do+not+declare+or+define+a+reserved+identifier)
-      - Remove unused `_FILE_OFFSET_BITS`
-  - Fixed the bug of FileSource playback: the code did not terminate after the end of playback.
-    - main.cpp: add checking pull_end_reached() in the main loop.
-  - Set RtlSdrSource's default_block_length from 65536 to 16384, to prevent popping cracking sound (observed on Mac mini 2023).
-  - stat_rate calculation is redesigned by observation of actual SDR units (:i.e., Airspy HF+, Airspy R2, and RTL-SDR).
+      * Remove unused `_FILE_OFFSET_BITS`
+  * Fixed the bug of FileSource playback: the code did not terminate after the end of playback.
+    * main.cpp: add checking pull_end_reached() in the main loop.
+  * Set RtlSdrSource's default_block_length from 65536 to 16384, to prevent popping cracking sound (observed on Mac mini 2023).
+  * stat_rate calculation is redesigned by observation of actual SDR units (:i.e., Airspy HF+, Airspy R2, and RTL-SDR).
 * 20231227-0: Made the following changes:
-  - Split class PilotPhaseLock from FmDecode.
-  - Removed submodule readerwriterqueue.
-  - Re-introduced DataBuffer from commit <https://github.com/jj1bdx/airspy-fmradion/commit/49faddbae1354bcb7bfcd2b24db458b770273cb5>.
-  - PhaseDiscriminator now contains NaN-removal code.
-  - Introduced accurate m_pilot_level computation for PilotPhaseLock.
-  - Introduced enum PilotState and the state machine for more precisely showing stereo pilot signal detection and the signal levels.
-  - Removed buffer option `-b` and `--buffer` finally.
+  * Split class PilotPhaseLock from FmDecode.
+  * Removed submodule readerwriterqueue.
+  * Re-introduced DataBuffer from commit <https://github.com/jj1bdx/airspy-fmradion/commit/49faddbae1354bcb7bfcd2b24db458b770273cb5>.
+  * PhaseDiscriminator now contains NaN-removal code.
+  * Introduced accurate m_pilot_level computation for PilotPhaseLock.
+  * Introduced enum PilotState and the state machine for more precisely showing stereo pilot signal detection and the signal levels.
+  * Removed buffer option `-b` and `--buffer` finally.
 * 20231216-0: Removed recording buffer thread. This will simplify the audio output operation. Also, lowered the output level of AM/CW/USB/LSB/WSPR decoder to prevent audio clipping, and changed the IF AGC constants for longer transition timing.
 * 20231215-0: Fix the following known bugs and refactor the code to streamline the functioning:
-  - Bug: a hung process during the startup period before valid audio signals are coming out
-  - Bug: displaying `-nan` in the output level meter in broadcast FM and NBFM
-    - The NaN is presumably generated by volk_32fc_s32f_atan2_32f() in PhaseDiscriminator::process()
-    - This NaN issue was presumably the root cause of the multipath filter anomaly first fixed in 20231213-1
-  - Enhancement: streamlining processing flow in the main for loop of `main()`
-  - Enhancement: removing the initial waiting period for startup; the output is now activated from the block number 1
-  - Utility addition: adding `Utility::remove_nans()`, a function to check and substitute NaNs and infinity values in IQSamplesDecodedVector
+  * Bug: a hung process during the startup period before valid audio signals are coming out
+  * Bug: displaying `-nan` in the output level meter in broadcast FM and NBFM
+    * The NaN is presumably generated by volk_32fc_s32f_atan2_32f() in PhaseDiscriminator::process()
+    * This NaN issue was presumably the root cause of the multipath filter anomaly first fixed in 20231213-1
+  * Enhancement: streamlining processing flow in the main for loop of `main()`
+  * Enhancement: removing the initial waiting period for startup; the output is now activated from the block number 1
+  * Utility addition: adding `Utility::remove_nans()`, a function to check and substitute NaNs and infinity values in IQSamplesDecodedVector
 * 20231213-1: Fixed a NaN issue caused by 0+0j (true zero) output of the multipath filter; the true zero output now causes resetting the filter. This is presumably also one of the reasons that caused the audio disruption issue in 20231212-1 and 20231213-0.
 * 20231213-0: Fixed an uninitialized variable `m_save_phase` in PhaseDiscriminator as in [the pull request](https://github.com/jj1bdx/airspy-fmradion/pull/43) by Clayton Smith.
 * 20231212-1: FAILED: tried to make API compatible with [VOLK 3.1.0 change for s32fc functions](https://github.com/gnuradio/volk/pull/695), for `volk_32fc_x2_s32fc_multiply_conjugate_add_32fc()`, but this didn't work on Ubuntu 22.04.3.
@@ -75,7 +93,7 @@ Intel Mac hardware is no longer supported by airspy-fmradion, although the autho
 * 20230923: failed changes: low latency setting for buffering-based PortAudio didn't work well. Discarded changes of 20230910-1 to 20230910-4 from the dev branch.
 * 20230910-0: Updated r8brain-free-src to Version 6.4.
 * 20230528-2: DataBuffer class is reimplemented as a wrapper of `moodycamel::BlockReaderWriterQueue`, which allows efficient blocking operation and removes the requirements of busy waiting by using `moodycamel::BlockReaderWriterQueue::wait_dequeue()`.
-* 20230528-1: DataBuffer class is now implemented as a wrapper of `moodycamel::ReaderWriterQueue` class in <https://github.com/cameron314/readerwriterqueue>. All lock-based synchronization functions from DataBuffer class are removed because they are no longer necessary. The repository readerwriterqueue is added as a git submodule. Also, sample length count is removed from the DataBuffer class because of their rare usage. 
+* 20230528-1: DataBuffer class is now implemented as a wrapper of `moodycamel::ReaderWriterQueue` class in <https://github.com/cameron314/readerwriterqueue>. All lock-based synchronization functions from DataBuffer class are removed because they are no longer necessary. The repository readerwriterqueue is added as a git submodule. Also, sample length count is removed from the DataBuffer class because of their rare usage.
 * 20230528-1: All DataBuffer queue length measurement code in main.cpp are bundled under a compilation flag `DATABUFFER_QUEUE_MONITOR`, which is not necessary for the production code. The actual maximum queue length measured in Mac mini 2018 executions are less than 10, even when the output glitch occurs due to a higher-priority process invocation, such as a web browser. The new DataBuffer class sets the default allocated queue length to 128.
 * 20230526-0: Explicitly skip IF Resampler in class FmDecoder to reduce CPU usage for typical settings (i.e., IF sample rate is set to 384 ksamples/sec for Airspy HF+).
 * 20230430-0: Forcefully set the coefficient of the reference point of FM multipath filter to 1 + 0j (unity). This may change how the filter behaves. Field testing since 20230214-test shows no notable anomalies.
@@ -130,10 +148,11 @@ Intel Mac hardware is no longer supported by airspy-fmradion, although the autho
 ## FYI: libusb-1.0.25 glitch
 
 * Note: This problem has been fixed by the latest implementation of Airspy HF+ driver after [this commit](https://github.com/airspy/airspyhf/commit/3b823ad8fa729358e0729e6c1ca60ac5dfcd656e).
-* The author has noticed [libusb-1.0.25 on macOS 12.2 causes segfault when stopping the code with SIGINT or SIGTERM with Airspy HF+ Discovery](https://github.com/jj1bdx/airspy-fmradion/issues/35). 
+* The author has noticed [libusb-1.0.25 on macOS 12.2 causes segfault when stopping the code with SIGINT or SIGTERM with Airspy HF+ Discovery](https://github.com/jj1bdx/airspy-fmradion/issues/35).
 * A proper fix of this is to [fix the Airspy HF+ driver](https://github.com/airspy/airspyhf/pull/31).
 * [A similar case of SDR++ with ArchLinux](https://github.com/libusb/libusb/issues/1059#issuecomment-1030638617) is also reported.
-* Since Version 20220205-0, a workaround is implemented to prevent data loss for this bug: the main() loop closes the audio output before calling the function which might cause this segmentation fault (SIGSEGV), which is the stopping function of the SDR source driver. 
+* Since Version 20220205-0, a workaround is implemented to prevent data loss for this bug: the main() loop closes the audio output before calling the function which might cause this segmentation fault (SIGSEGV), which is the stopping function of the SDR source driver.
 * Airspy R2 and Mini are not affected. Use the latest driver with [this fix](https://github.com/airspy/airspyone_host/commit/41c439f16818d931c4d0f8a620413ea5131c0bd6).
 * You can still use 20220205-1 if you need to; there is no functional difference between 20220205-1 and 20220206-0.
 
+[End of CHANGES.md]
