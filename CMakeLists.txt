@@ -312,8 +312,9 @@ target_link_libraries(
   ${EXTRA_LIBS}
   cmake_git_version_tracking)
 
-target_link_libraries(sfmbase ${SNDFILE_LIBRARY} ${AIRSPY_LIBRARIES}
-                      ${AIRSPYHF_LIBRARIES} ${RTLSDR_LIBRARIES})
+target_link_libraries(
+  sfmbase ${SNDFILE_LIBRARY} ${AIRSPY_LIBRARY} ${AIRSPYHF_LIBRARY}
+  ${RTLSDR_LIBRARY} ${LIBUSB_LIBRARY})
 
 # Installation
 
