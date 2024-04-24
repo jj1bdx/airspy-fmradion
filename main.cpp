@@ -48,7 +48,7 @@
 // define this for enabling coefficient monitor functions
 // #undef COEFF_MONITOR
 
-#define AIRSPY_FMRADION_VERSION "20240316-0"
+#define AIRSPY_FMRADION_VERSION "20240424-0"
 
 // Flag to set graceful termination
 // in process_signals()
@@ -342,29 +342,28 @@ int main(int argc, char **argv) {
 #endif // LIBSNDFILE_MP3_ENABLED
 
   const struct option longopts[] = {
-    {"modtype", optional_argument, nullptr, 'm'},
-    {"devtype", optional_argument, nullptr, 't'},
-    {"quiet", required_argument, nullptr, 'q'},
-    {"config", optional_argument, nullptr, 'c'},
-    {"dev", required_argument, nullptr, 'd'},
-    {"mono", no_argument, nullptr, 'M'},
-    {"raw", required_argument, nullptr, 'R'},
-    {"float", required_argument, nullptr, 'F'},
-    {"wav", required_argument, nullptr, 'W'},
-    {"wavfloat", required_argument, nullptr, 'G'},
-    {"play", optional_argument, nullptr, 'P'},
-    {"pps", required_argument, nullptr, 'T'},
-    {"pilotshift", no_argument, nullptr, 'X'},
-    {"usa", no_argument, nullptr, 'U'},
-    {"filtertype", optional_argument, nullptr, 'f'},
-    {"squelch", required_argument, nullptr, 'l'},
-    {"multipathfilter", required_argument, nullptr, 'E'},
-    {"ifrateppm", optional_argument, nullptr, 'r'},
+      {"modtype", optional_argument, nullptr, 'm'},
+      {"devtype", optional_argument, nullptr, 't'},
+      {"quiet", required_argument, nullptr, 'q'},
+      {"config", optional_argument, nullptr, 'c'},
+      {"dev", required_argument, nullptr, 'd'},
+      {"mono", no_argument, nullptr, 'M'},
+      {"raw", required_argument, nullptr, 'R'},
+      {"float", required_argument, nullptr, 'F'},
+      {"wav", required_argument, nullptr, 'W'},
+      {"wavfloat", required_argument, nullptr, 'G'},
+      {"play", optional_argument, nullptr, 'P'},
+      {"pps", required_argument, nullptr, 'T'},
+      {"pilotshift", no_argument, nullptr, 'X'},
+      {"usa", no_argument, nullptr, 'U'},
+      {"filtertype", optional_argument, nullptr, 'f'},
+      {"squelch", required_argument, nullptr, 'l'},
+      {"multipathfilter", required_argument, nullptr, 'E'},
+      {"ifrateppm", optional_argument, nullptr, 'r'},
 #if defined(LIBSNDFILE_MP3_ENABLED)
-    {"mp3fmaudio", required_argument, nullptr, 'C'},
+      {"mp3fmaudio", required_argument, nullptr, 'C'},
 #endif // LIBSNDFILE_MP3_ENABLED
-    {nullptr, no_argument, nullptr, 0}
-  };
+      {nullptr, no_argument, nullptr, 0}};
 
   int c, longindex;
 

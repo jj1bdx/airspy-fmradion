@@ -54,14 +54,14 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     HINTS /usr/local/include/libairspy /opt/homebrew/include/libairspy
           ${PKG_AIRSPY_INCLUDE_DIRS})
   find_library(
-    AIRSPY_LIBRARY libairspy.a HINTS /usr/local/lib /opt/homebrew/lib
-                                     ${PKG_AIRSPY_LIBRARY_DIRS})
+    AIRSPY_LIBRARY libairspy.dylib
+    HINTS /usr/local/lib /opt/homebrew/lib ${PKG_AIRSPY_LIBRARY_DIRS})
   set(AIRSPY_INCLUDE_OPTION
       "-I/usr/local/include -I/opt/homebrew/include")
 else()
   find_path(AIRSPY_INCLUDE_DIR airspy.h
             HINTS ${PKG_AIRSPY_INCLUDE_DIRS})
-  find_library(AIRSPY_LIBRARY libairspy.a
+  find_library(AIRSPY_LIBRARY libairspy.so
                HINTS ${PKG_AIRSPY_LIBRARY_DIRS})
   set(AIRSPY_INCLUDE_OPTION "")
 endif()
@@ -79,15 +79,15 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
           /opt/homebrew/include/libairspyhf
           ${PKG_AIRSPYHF_INCLUDE_DIRS})
   find_library(
-    AIRSPYHF_LIBRARY libairspyhf.a
+    AIRSPYHF_LIBRARY libairspyhf.dylib
     HINTS /usr/local/lib /opt/homebrew/lib ${PKG_AIRSPYHF_LIBRARY_DIRS})
   set(AIRSPYHF_INCLUDE_OPTION
       "-I/usr/local/include -I/opt/homebrew/include")
 else()
-  find_path(AIRSPYHF_INCLUDE_DIR airspyhf.h HINT
-            ${PKG_AIRSPYHF_INCLUDE_DIRS})
-  find_library(AIRSPYHF_LIBRARY libairspyhf.a HINT
-               ${PKG_AIRSPYHF_LIBRARY_DIRS})
+  find_path(AIRSPYHF_INCLUDE_DIR airspyhf.h
+            HINTS ${PKG_AIRSPYHF_INCLUDE_DIRS})
+  find_library(AIRSPYHF_LIBRARY libairspyhf.so
+               HINTS ${PKG_AIRSPYHF_LIBRARY_DIRS})
   set(AIRSPYHF_INCLUDE_OPTION "")
 endif()
 message(
@@ -98,8 +98,13 @@ message(
 # Find RTL-SDR library.
 pkg_check_modules(PKG_RTLSDR librtlsdr)
 find_path(RTLSDR_INCLUDE_DIR rtl-sdr.h HINTS ${PKG_RTLSDR_INCLUDE_DIRS})
-find_library(RTLSDR_LIBRARY librtlsdr.a
-             HINTS ${PKG_RTLSDR_LIBRARY_DIRS})
+if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+  find_library(RTLSDR_LIBRARY librtlsdr.dylib
+               HINTS ${PKG_RTLSDR_LIBRARY_DIRS})
+else()
+  find_library(RTLSDR_LIBRARY librtlsdr.so
+               HINTS ${PKG_RTLSDR_LIBRARY_DIRS})
+endif()
 message(
   STATUS
     "librtlsdr ${PKG_RTLSDR_VERSION}: ${RTLSDR_INCLUDE_DIR}, ${RTLSDR_LIBRARY}"
@@ -312,8 +317,9 @@ target_link_libraries(
   ${EXTRA_LIBS}
   cmake_git_version_tracking)
 
-target_link_libraries(sfmbase ${SNDFILE_LIBRARY} ${AIRSPY_LIBRARIES}
-                      ${AIRSPYHF_LIBRARIES} ${RTLSDR_LIBRARIES})
+target_link_libraries(
+  sfmbase ${SNDFILE_LIBRARY} ${AIRSPY_LIBRARY} ${AIRSPYHF_LIBRARY}
+  ${RTLSDR_LIBRARY} ${LIBUSB_LIBRARY})
 
 # Installation
 

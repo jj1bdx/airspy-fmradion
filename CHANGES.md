@@ -16,9 +16,9 @@ The following Git repository is required:
 
 ## Platforms tested
 
-* Mac mini 2023 Apple Silicon (M2 Pro), macOS 14.4, Xcode 15.3 Command Line Tools
-* MacBook Air 13" Apple Silicon (M1) 2020, macOS 14.4, Xcode 15.3 Command Line Tools
-* Ubuntu 22.04.4 LTS x86\_64, gcc 12.3.0
+* Mac mini 2023 Apple Silicon (M2 Pro), macOS 14.4.1, Xcode 15.3 Command Line Tools
+* MacBook Air 13" Apple Silicon (M1) 2020, macOS 14.4.1, Xcode 15.3 Command Line Tools
+* Ubuntu 24.04 LTS x86\_64, gcc 13.2.0
 * Raspberry Pi 4 with Raspberry Pi OS 64bit Lite (Debian Bookworm)
 
 ## Features under development
@@ -38,6 +38,12 @@ Intel Mac hardware is no longer supported by airspy-fmradion, although the autho
 
 ## Changes (including requirement changes)
 
+* 20240424-0: Made the following changes:
+  * [Add libairspyhf latest version document.](https://github.com/jj1bdx/airspy-fmradion/pull/80)
+    * Airspy HF+ Firmware R3.0.7 and R4.0.8 both work OK on libairspyhf 1.6.8.
+    * For the Firmware R4.0.8, use libairspy 1.8 to have full compatibility.
+  * [Use shared libraries for airspy, airspyhf, and rtl-sdr.](https://github.com/jj1bdx/airspy-fmradion/pull/79)
+  * Tested `airspy_set_packing()` for Airspy R2, but this increased CPU usage on Apple Silicon M2 Pro, so the change was not incorporated.
 * 20240316-0: Made the following changes:
   * Raspberry Pi 4 with Raspberry Pi OS 64bit lite is now officially tested.
   * *Note well: Raspberry Pi OS 32bit is not supported*.
