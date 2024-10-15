@@ -8,6 +8,8 @@
 
 * R3.0.7 and R4.0.8 both work OK on libairspyhf 1.6.8.
 * For R4.0.8, use libairspy 1.8 to have full compatibility.
+* R5.0.0 on libairspyhf 1.6.8 is *not tested*.
+* For R5.0.0, use libairspy 1.8 to have full compatibility.
 
 ## For macOS Homebrew
 
