@@ -50,7 +50,7 @@ airspy-fmradion -m am -t airspyhf -q \
 ### airspy-fmradion requirements
 
 * Linux / macOS
-* C++17 (gcc, clang/llvm)
+* C++20 (gcc, clang/llvm)
 * [Airspy library](https://github.com/airspy/airspyone_host)
 * [Airspy HF library](https://github.com/airspy/airspyhf)
 * [RTL-SDR library](http://sdr.osmocom.org/trac/wiki/rtl-sdr)
