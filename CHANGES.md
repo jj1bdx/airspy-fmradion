@@ -16,9 +16,8 @@ The following Git repository is required:
 
 ## Platforms tested
 
-* Mac mini 2023 Apple Silicon (M2 Pro), macOS 14.4.1, Xcode 15.3 Command Line Tools
-* MacBook Air 13" Apple Silicon (M1) 2020, macOS 14.4.1, Xcode 15.3 Command Line Tools
-* Ubuntu 24.04 LTS x86\_64, gcc 13.2.0
+* Mac mini 2023 Apple Silicon (M2 Pro), macOS 14.7.1, Apple clang version 16.0.0 (clang-1600.0.26.4)
+* Ubuntu 24.04 LTS x86\_64, gcc 14.2.0
 * Raspberry Pi 4 with Raspberry Pi OS 64bit Lite (Debian Bookworm)
 
 ## Features under development
