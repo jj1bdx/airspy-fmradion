@@ -32,11 +32,24 @@ endif()
 # Use pkg-config
 include(FindPkgConfig)
 
-# Find Threads package
-find_package(Threads)
+# Find Threads package (Prefer pthreads)
+set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
+set(THREADS_PREFER_PTHREAD_FLAG TRUE)
+find_package(Threads REQUIRED)
+
+# Find fmt library.
+pkg_check_modules(PKG_FMT fmt)
+if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+  find_library(
+    FMT_LIBRARY libfmt.dylib HINTS /usr/local/lib /opt/homebrew/lib
+                                   ${PKG_FMT_LIBRARY_DIRS})
+else()
+  find_library(FMT_LIBRARY libfmt.so HINTS ${PKG_FMT_LIBRARY_DIRS})
+endif()
+message(STATUS "fmt ${PKG_FMT_VERSION}: ${FMT_LIBRARY}")
 
 # Find Volk library.
-pkg_check_modules(PKG_VOLK volk)
+pkg_check_modules(PKG_VOLK volk REQUIRED)
 if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
   find_library(
     VOLK_LIBRARY libvolk.dylib HINTS /usr/local/lib /opt/homebrew/lib
@@ -311,8 +324,9 @@ target_link_libraries(
   airspy-fmradion
   sfmbase
   r8b
-  ${CMAKE_THREAD_LIBS_INIT}
+  Threads::Threads
   ${PORTAUDIO_LINK_LIBRARIES}
+  ${FMT_LIBRARY}
   ${VOLK_LIBRARY}
   ${EXTRA_LIBS}
   cmake_git_version_tracking)
