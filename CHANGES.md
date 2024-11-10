@@ -18,7 +18,7 @@ The following Git repository is required:
 
 * Mac mini 2023 Apple Silicon (M2 Pro), macOS 14.7.1, Apple clang version 16.0.0 (clang-1600.0.26.4)
 * Ubuntu 24.04 LTS x86\_64, gcc 14.2.0
-* Raspberry Pi 4 with Raspberry Pi OS 64bit Lite (Debian Bookworm)
+* Raspberry Pi 5 with Raspberry Pi OS 64bit Lite (Debian Bookworm)
 
 ## Features under development
 
