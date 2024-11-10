@@ -219,7 +219,7 @@ set(OPTIMIZATION_FLAGS "-O3 -ftree-vectorize ")
 # Common compiler flags and options.
 #
 set(CMAKE_CXX_FLAGS
-    "-Wall -std=c++17 ${OPTIMIZATION_FLAGS} ${AIRSPY_INCLUDE_OPTION} ${AIRSPYHF_INCLUDE_OPTION} ${SNDFILE_INCLUDE_OPTION} ${EXTRA_FLAGS}"
+    "-Wall -std=c++20 ${OPTIMIZATION_FLAGS} ${AIRSPY_INCLUDE_OPTION} ${AIRSPYHF_INCLUDE_OPTION} ${SNDFILE_INCLUDE_OPTION} ${EXTRA_FLAGS}"
 )
 
 # For building airspy-fmradion sources
