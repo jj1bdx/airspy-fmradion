@@ -56,153 +56,131 @@
 static std::atomic_bool stop_flag(false);
 
 static void usage() {
-  std::string s = "";
-
-  s.append("Usage: airspy-fmradion [options]\n");
-  s.append("  -m modtype     Modulation type:\n");
-  s.append("                   - fm (default)\n");
-  s.append("                   - nbfm\n");
-  s.append("                   - am\n");
-  s.append("                   - dsb\n");
-  s.append("                   - usb\n");
-  s.append("                   - lsb\n");
-  s.append("                   - cw (zeroed-in pitch: 500Hz)\n");
-  s.append("                   - wspr (USB 1500Hz +- 100Hz)\n");
-  s.append("  -t devtype     Device type:\n");
-  s.append("                   - rtlsdr: RTL-SDR devices\n");
-  s.append("                   - airspy: Airspy R2\n");
-  s.append("                   - airspyhf: Airspy HF+\n");
-  s.append("                   - filesource: File Source\n");
-  s.append("  -q             Quiet mode\n");
-  s.append("  -c config      Comma separated key=value configuration pairs or "
-           "just ");
-  s.append("key for switches\n");
-  s.append("                 See below for valid values per device type\n");
-  s.append("  -d devidx      Device index, 'list' to show device list (default "
-           "0)\n");
-  s.append("  -M             Disable stereo decoding\n");
-  s.append("  -R filename    Write audio data as raw S16_LE samples\n");
-  s.append("                 use filename '-' to write to stdout\n");
-  s.append("  -F filename    Write audio data as raw FLOAT_LE samples\n");
-  s.append("                 use filename '-' to write to stdout\n");
-  s.append("  -W filename    Write audio data to RF64/WAV S16_LE file\n");
-  s.append("                 use filename '-' to write to stdout\n");
-  s.append("                 (Pipe is not supported)\n");
-  s.append("  -G filename    Write audio data to RF64/WAV FLOAT_LE file\n");
-  s.append("                 use filename '-' to write to stdout\n");
-  s.append("                 (Pipe is not supported)\n");
+  std::string usage_string =
+      "Usage: airspy-fmradion [options]\n"
+      "  -m modtype     Modulation type:\n"
+      "                   - fm (default)\n"
+      "                   - nbfm\n"
+      "                   - am\n"
+      "                   - dsb\n"
+      "                   - usb\n"
+      "                   - lsb\n"
+      "                   - cw (zeroed-in pitch: 500Hz)\n"
+      "                   - wspr (USB 1500Hz +- 100Hz)\n"
+      "  -t devtype     Device type:\n"
+      "                   - rtlsdr: RTL-SDR devices\n"
+      "                   - airspy: Airspy R2\n"
+      "                   - airspyhf: Airspy HF+\n"
+      "                   - filesource: File Source\n"
+      "  -q             Quiet mode\n"
+      "  -c config      Comma separated key=value configuration pairs or just "
+      "key for switches\n"
+      "                 See below for valid values per device type\n"
+      "  -d devidx      Device index, 'list' to show device list (default 0)\n"
+      "  -M             Disable stereo decoding\n"
+      "  -R filename    Write audio data as raw S16_LE samples\n"
+      "                 use filename '-' to write to stdout\n"
+      "  -F filename    Write audio data as raw FLOAT_LE samples\n"
+      "                 use filename '-' to write to stdout\n"
+      "  -W filename    Write audio data to RF64/WAV S16_LE file\n"
+      "                 use filename '-' to write to stdout\n"
+      "                 (Pipe is not supported)\n"
+      "  -G filename    Write audio data to RF64/WAV FLOAT_LE file\n"
+      "                 use filename '-' to write to stdout\n"
+      "                 (Pipe is not supported)\n"
 #if defined(LIBSNDFILE_MP3_ENABLED)
-  s.append("  -C filename    Write audio data to MP3 file\n");
-  s.append("                 of VBR -V 1 (experimental)\n");
-  s.append("                 use filename '-' to write to stdout\n");
+      "  -C filename    Write audio data to MP3 file\n"
+      "                 of VBR -V 1 (experimental)\n"
+      "                 use filename '-' to write to stdout\n"
 #endif // LIBSNDFILE_MP3_ENABLED
-  s.append("  -P device_num  Play audio via PortAudio device index number\n");
-  s.append("                 use string '-' to specify the default PortAudio ");
-  s.append("device\n");
-  s.append("  -T filename    Write pulse-per-second timestamps\n");
-  s.append("                 use filename '-' to write to stdout\n");
-  s.append("  -X             Shift pilot phase (for Quadrature Multipath "
-           "Monitor)\n");
-  s.append("                 (-X is ignored under mono mode (-M))\n");
-  s.append(
-      "  -U             Set deemphasis to 75 microseconds (default: 50)\n");
-  s.append("  -f filtername  Filter type:\n");
-  s.append("                 For FM:\n");
-  s.append("                   - wide: same as default\n");
-  s.append("                   - default: none after conversion\n");
-  s.append("                   - medium:  +-156kHz\n");
-  s.append("                   - narrow:  +-121kHz\n");
-  s.append("                 For AM:\n");
-  s.append("                   - wide: +-9kHz\n");
-  s.append("                   - default: +-6kHz\n");
-  s.append("                   - medium:  +-4.5kHz\n");
-  s.append("                   - narrow:  +-3kHz\n");
-  s.append("                 For NBFM:\n");
-  s.append("                   - wide: +-20kHz, with +-17kHz deviation\n");
-  s.append("                   - default: +-10kHz\n");
-  s.append("                   - medium:  +-8kHz\n");
-  s.append("                   - narrow:  +-6.25kHz\n");
-  s.append(
-      "  -l dB          Set IF squelch level to minus given value of dB\n");
-  s.append("  -E stages      Enable multipath filter for FM\n");
-  s.append("                 (For stable reception only:\n");
-  s.append("                  turn off if reception becomes unstable)\n");
-  s.append("  -r ppm         Set IF offset in ppm (range: +-1000000ppm)\n");
-  s.append("                 (This option affects output pitch and timing:\n");
-  s.append("                  use for the output timing compensation only!)\n");
-  s.append("\n");
-  s.append("Configuration options for RTL-SDR devices\n");
-  s.append("  freq=<int>     Frequency of radio station in Hz (default "
-           "100000000)\n");
-  s.append(
-      "                 valid values: 10M to 2.2G (working range depends on ");
-  s.append("device)\n");
-  s.append("  srate=<int>    IF sample rate in Hz (default 1152000)\n");
-  s.append("                 (valid ranges: [900001, 3200000]))\n");
-  s.append("  gain=<float>   Set LNA gain in dB, or 'auto',\n");
-  s.append("                 or 'list' to just get a list of valid values "
-           "(default ");
-  s.append("auto)\n");
-  s.append(
-      "  blklen=<int>   Set audio buffer size in seconds (default RTL-SDR ");
-  s.append("default)\n");
-  s.append("  agc            Enable RTL AGC mode (default disabled)\n");
-  s.append("  antbias        Enable antenna bias (default disabled)\n");
-  s.append("\n");
-  s.append("Configuration options for Airspy devices:\n");
-  s.append("  freq=<int>     Frequency of radio station in Hz (default "
-           "100000000)\n");
-  s.append("                 valid values: 24M to 1.8G\n");
-  s.append(
-      "  srate=<int>    IF sample rate in Hz. Depends on Airspy firmware and ");
-  s.append("libairspy support\n");
-  s.append(
-      "                 Airspy firmware and library must support dynamic ");
-  s.append("sample rate query. (default 10000000)\n");
-  s.append(
-      "  lgain=<int>    LNA gain in dB. 'list' to just get a list of valid ");
-  s.append("values: (default 8)\n");
-  s.append(
-      "  mgain=<int>    Mixer gain in dB. 'list' to just get a list of valid ");
-  s.append("values: (default 8)\n");
-  s.append(
-      "  vgain=<int>    VGA gain in dB. 'list' to just get a list of valid ");
-  s.append("values: (default 8)\n");
-  s.append("  antbias        Enable antenna bias (default disabled)\n");
-  s.append("  lagc           Enable LNA AGC (default disabled)\n");
-  s.append("  magc           Enable mixer AGC (default disabled)\n");
-  s.append("\n");
-  s.append("Configuration options for Airspy HF devices:\n");
-  s.append("  freq=<int>     Frequency of radio station in Hz (default "
-           "100000000)\n");
-  s.append("                 valid values: 192k to 31M, and 60M to 260M\n");
-  s.append("  srate=<int>    IF sample rate in Hz.\n");
-  s.append("                 Depends on Airspy HF firmware and libairspyhf "
-           "support\n");
-  s.append(
-      "                 Airspy HF firmware and library must support dynamic\n");
-  s.append("                 sample rate query. (default 384000)\n");
-  s.append("  hf_att=<int>   HF attenuation level and AGC control\n");
-  s.append("                 0: enable AGC, no attenuation\n");
-  s.append("                 1 ~ 8: disable AGC, apply attenuation of value * "
-           "6dB\n");
-  s.append("\n");
-  s.append("Configuration options for (experimental) FileSource devices:\n");
-  s.append("  freq=<int>        Frequency of radio station in Hz\n");
-  s.append("  srate=<int>       IF sample rate in Hz.\n");
-  s.append("  filename=<string> Source file name.\n");
-  s.append("                    Supported encodings: FLOAT, S24_LE, S16_LE\n");
-  s.append("  zero_offset       Set if the source file is in zero offset,\n");
-  s.append("                    which requires Fs/4 IF shifting.\n");
-  s.append("  blklen=<int>      Set block length in samples.\n");
-  s.append("  raw               Set if the file is raw binary.\n");
-  s.append(
-      "  format=<string>   Set the file format for the raw binary file.\n");
-  s.append(
-      "                    (formats: U8_LE, S8_LE, S16_LE, S24_LE, FLOAT)\n");
-  s.append("\n");
+      "  -P device_num  Play audio via PortAudio device index number\n"
+      "                 use string '-' to specify the default PortAudio "
+      "device\n"
+      "  -T filename    Write pulse-per-second timestamps\n"
+      "                 use filename '-' to write to stdout\n"
+      "  -X             Shift pilot phase (for Quadrature Multipath Monitor)\n"
+      "                 (-X is ignored under mono mode (-M))\n"
+      "  -U             Set deemphasis to 75 microseconds (default: 50)\n"
+      "  -f filtername  Filter type:\n"
+      "                 For FM:\n"
+      "                   - wide: same as default\n"
+      "                   - default: none after conversion\n"
+      "                   - medium:  +-156kHz\n"
+      "                   - narrow:  +-121kHz\n"
+      "                 For AM:\n"
+      "                   - wide: +-9kHz\n"
+      "                   - default: +-6kHz\n"
+      "                   - medium:  +-4.5kHz\n"
+      "                   - narrow:  +-3kHz\n"
+      "                 For NBFM:\n"
+      "                   - wide: +-20kHz, with +-17kHz deviation\n"
+      "                   - default: +-10kHz\n"
+      "                   - medium:  +-8kHz\n"
+      "                   - narrow:  +-6.25kHz\n"
+      "  -l dB          Set IF squelch level to minus given value of dB\n"
+      "  -E stages      Enable multipath filter for FM\n"
+      "                 (For stable reception only:\n"
+      "                  turn off if reception becomes unstable)\n"
+      "  -r ppm         Set IF offset in ppm (range: +-1000000ppm)\n"
+      "                 (This option affects output pitch and timing:\n"
+      "                  use for the output timing compensation only!)\n"
+      "\n"
+      "Configuration options for RTL-SDR devices\n"
+      "  freq=<int>     Frequency of radio station in Hz (default 100000000)\n"
+      "                 valid values: 10M to 2.2G (working range depends on "
+      "device)\n"
+      "  srate=<int>    IF sample rate in Hz (default 1152000)\n"
+      "                 (valid ranges: [900001, 3200000]))\n"
+      "  gain=<float>   Set LNA gain in dB, or 'auto',\n"
+      "                 or 'list' to just get a list of valid values (default "
+      "auto)\n"
+      "  blklen=<int>   Set audio buffer size in seconds (default RTL-SDR "
+      "default)\n"
+      "  agc            Enable RTL AGC mode (default disabled)\n"
+      "  antbias        Enable antenna bias (default disabled)\n"
+      "\n"
+      "Configuration options for Airspy devices:\n"
+      "  freq=<int>     Frequency of radio station in Hz (default 100000000)\n"
+      "                 valid values: 24M to 1.8G\n"
+      "  srate=<int>    IF sample rate in Hz. Depends on Airspy firmware and "
+      "libairspy support\n"
+      "                 Airspy firmware and library must support dynamic "
+      "sample rate query. (default 10000000)\n"
+      "  lgain=<int>    LNA gain in dB. 'list' to just get a list of valid "
+      "values: (default 8)\n"
+      "  mgain=<int>    Mixer gain in dB. 'list' to just get a list of valid "
+      "values: (default 8)\n"
+      "  vgain=<int>    VGA gain in dB. 'list' to just get a list of valid "
+      "values: (default 8)\n"
+      "  antbias        Enable antenna bias (default disabled)\n"
+      "  lagc           Enable LNA AGC (default disabled)\n"
+      "  magc           Enable mixer AGC (default disabled)\n"
+      "\n"
+      "Configuration options for Airspy HF devices:\n"
+      "  freq=<int>     Frequency of radio station in Hz (default 100000000)\n"
+      "                 valid values: 192k to 31M, and 60M to 260M\n"
+      "  srate=<int>    IF sample rate in Hz.\n"
+      "                 Depends on Airspy HF firmware and libairspyhf support\n"
+      "                 Airspy HF firmware and library must support dynamic\n"
+      "                 sample rate query. (default 384000)\n"
+      "  hf_att=<int>   HF attenuation level and AGC control\n"
+      "                 0: enable AGC, no attenuation\n"
+      "                 1 ~ 8: disable AGC, apply attenuation of value * 6dB\n"
+      "\n"
+      "Configuration options for (experimental) FileSource devices:\n"
+      "  freq=<int>        Frequency of radio station in Hz\n"
+      "  srate=<int>       IF sample rate in Hz.\n"
+      "  filename=<string> Source file name.\n"
+      "                    Supported encodings: FLOAT, S24_LE, S16_LE\n"
+      "  zero_offset       Set if the source file is in zero offset,\n"
+      "                    which requires Fs/4 IF shifting.\n"
+      "  blklen=<int>      Set block length in samples.\n"
+      "  raw               Set if the file is raw binary.\n"
+      "  format=<string>   Set the file format for the raw binary file.\n"
+      "                    (formats: U8_LE, S8_LE, S16_LE, S24_LE, FLOAT)\n"
+      "\n";
 
-  fmt::print(stderr, "{}", s);
+  fmt::print(stderr, "{}", usage_string);
 }
 
 static void badarg(const char *label) {
