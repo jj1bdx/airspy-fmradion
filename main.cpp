@@ -1079,9 +1079,8 @@ int main(int argc, char **argv) {
         for (const PilotPhaseLock::PpsEvent &ev : fm.get_pps_events()) {
           double ts = prev_block_time;
           ts += ev.block_position * (block_time - prev_block_time);
-          fmt::println(ppsfile, "{:>8} {:>14} {:18.6f} {:+9.3f}",
-                       std::to_string(ev.pps_index),
-                       std::to_string(ev.sample_index), ts, if_level_db);
+          fmt::println(ppsfile, "{:>8} {:>14} {:18.6f} {:+9.3f}", ev.pps_index,
+                       ev.sample_index, ts, if_level_db);
           fflush(ppsfile);
           // Erase the marked event.
           fm.erase_first_pps_event();
