@@ -52,8 +52,8 @@ AirspySource::AirspySource(int dev_index)
   // Get library version number first.
   airspy_lib_version(&m_libv);
 #ifdef DEBUG_AIRSPYSOURCE
-  fmt::println(stderr, "Airspy Library Version: {}.{}.{}",
-               m_libv.major_version, m_libv.minor_version, m_libv.revision);
+  fmt::println(stderr, "Airspy Library Version: {}.{}.{}", m_libv.major_version,
+               m_libv.minor_version, m_libv.revision);
 #endif
 
   // Scan all devices, return how many are attached.
@@ -68,7 +68,7 @@ AirspySource::AirspySource(int dev_index)
   // List all available devices.
   m_serials.resize(m_ndev);
   if (m_ndev != airspy_list_devices(m_serials.data(), m_ndev)) {
-    m_error =  "Failed to obtain Airspy device serial numbers";
+    m_error = "Failed to obtain Airspy device serial numbers";
     m_dev = 0;
     m_this = this;
     return;
@@ -121,22 +121,22 @@ AirspySource::AirspySource(int dev_index)
 
   std::string lgains_ostr;
   for (int g : m_lgains) {
-      lgains_ostr.append(std::to_string(g));
-      lgains_ostr.append(" ");
+    lgains_ostr.append(std::to_string(g));
+    lgains_ostr.append(" ");
   }
   m_lgainsStr = lgains_ostr;
 
   std::string mgains_ostr;
   for (int g : m_mgains) {
-      mgains_ostr.append(std::to_string(g));
-      mgains_ostr.append(" ");
+    mgains_ostr.append(std::to_string(g));
+    mgains_ostr.append(" ");
   }
   m_mgainsStr = mgains_ostr;
 
   std::string vgains_ostr;
   for (int g : m_vgains) {
-      vgains_ostr.append(std::to_string(g));
-      vgains_ostr.append(" ");
+    vgains_ostr.append(std::to_string(g));
+    vgains_ostr.append(" ");
   }
   m_mgainsStr = vgains_ostr;
 
@@ -164,8 +164,7 @@ void AirspySource::get_device_names(std::vector<std::string> &devices) {
                        "try to get available device numbers");
 #endif
   if (ndev <= 0) {
-    fmt::println(stderr,
-                 "AirspySource::get_device_names: no available device");
+    fmt::println(stderr, "AirspySource::get_device_names: no available device");
   }
   // List all available devices.
   serials.resize(ndev);
@@ -175,8 +174,7 @@ void AirspySource::get_device_names(std::vector<std::string> &devices) {
   } else {
     // Use obtained info during AirspySource object construction.
     for (int i = 0; i < ndev; i++) {
-      std::string devname_ostr = fmt::format("Serial {:08x}", serials[i
-]);
+      std::string devname_ostr = fmt::format("Serial {:08x}", serials[i]);
       devices.push_back(devname_ostr);
     }
 #ifdef DEBUG_AIRSPYSOURCE
@@ -232,9 +230,8 @@ bool AirspySource::configure(int sampleRateIndex, uint32_t frequency,
       m_dev, static_cast<airspy_samplerate_t>(sampleRateIndex));
 
   if (rc != AIRSPY_SUCCESS) {
-    m_error =
-        fmt::format("Could not set center sample rate to {} Hz",
-             m_srates[sampleRateIndex]);
+    m_error = fmt::format("Could not set center sample rate to {} Hz",
+                          m_srates[sampleRateIndex]);
     return false;
   } else {
     m_sampleRate = m_srates[sampleRateIndex];
@@ -300,8 +297,7 @@ bool AirspySource::configure(std::string configurationStr) {
   cp.parse_config_string(configurationStr, m);
   if (m.find("srate") != m.end()) {
 #ifdef DEBUG_AIRSPYSOURCE
-    fmt::println(stderr,
-                 "AirspySource::configure: srate: {}", m["srate"]);
+    fmt::println(stderr, "AirspySource::configure: srate: {}", m["srate"]);
 #endif
     if (strcasecmp(m["srate"].c_str(), "list") == 0) {
       m_error = "Available sample rates (Hz): " + m_sratesStr;
@@ -329,8 +325,7 @@ bool AirspySource::configure(std::string configurationStr) {
 
   if (m.find("freq") != m.end()) {
 #ifdef DEBUG_AIRSPYSOURCE
-    fmt::println(stderr,
-                 "AirspySource::configure: freq: {}", m["freq"]);
+    fmt::println(stderr, "AirspySource::configure: freq: {}", m["freq"]);
 #endif
     int freq = 0;
     bool freq_ok = Utility::parse_int(m["freq"].c_str(), freq, true);
@@ -344,8 +339,7 @@ bool AirspySource::configure(std::string configurationStr) {
 
   if (m.find("lgain") != m.end()) {
 #ifdef DEBUG_AIRSPYSOURCE
-    fmt::println(stderr,
-                 "AirspySource::configure: lgain: {}", m["lgain"]);
+    fmt::println(stderr, "AirspySource::configure: lgain: {}", m["lgain"]);
 #endif
     if (strcasecmp(m["lgain"].c_str(), "list") == 0) {
       m_error = "Available LNA gains (dB): " + m_lgainsStr;
@@ -362,8 +356,7 @@ bool AirspySource::configure(std::string configurationStr) {
 
   if (m.find("mgain") != m.end()) {
 #ifdef DEBUG_AIRSPYSOURCE
-    fmt::println(stderr,
-                 "AirspySource::configure: mgain: {}", m["mgain"]);
+    fmt::println(stderr, "AirspySource::configure: mgain: {}", m["mgain"]);
 #endif
     if (strcasecmp(m["mgain"].c_str(), "list") == 0) {
       m_error = "Available mixer gains (dB): " + m_mgainsStr;
@@ -381,8 +374,7 @@ bool AirspySource::configure(std::string configurationStr) {
 
   if (m.find("vgain") != m.end()) {
 #ifdef DEBUG_AIRSPYSOURCE
-    fmt::println(stderr,
-                 "AirspySource::configure: vgain: {}", m["vgain"]);
+    fmt::println(stderr, "AirspySource::configure: vgain: {}", m["vgain"]);
 #endif
     if (strcasecmp(m["vgain"].c_str(), "list") == 0) {
       m_error = "Available VGA gains (dB): " + m_vgainsStr;
@@ -399,24 +391,21 @@ bool AirspySource::configure(std::string configurationStr) {
 
   if (m.find("antbias") != m.end()) {
 #ifdef DEBUG_AIRSPYSOURCE
-    fmt::println(stderr, 
-                 "AirspySource::configure: antbias");
+    fmt::println(stderr, "AirspySource::configure: antbias");
 #endif
     antBias = true;
   }
 
   if (m.find("lagc") != m.end()) {
 #ifdef DEBUG_AIRSPYSOURCE
-    fmt::println(stderr, 
-                 "AirspySource::configure: lagc");
+    fmt::println(stderr, "AirspySource::configure: lagc");
 #endif
     lnaAGC = true;
   }
 
   if (m.find("magc") != m.end()) {
 #ifdef DEBUG_AIRSPYSOURCE
-    fmt::println(stderr, 
-                 "AirspySource::configure: magc");
+    fmt::println(stderr, "AirspySource::configure: magc");
 #endif
     mixAGC = true;
   }
@@ -449,7 +438,7 @@ bool AirspySource::start(DataBuffer<IQSample> *buf,
 
 void AirspySource::run(airspy_device *dev, std::atomic_bool *stop_flag) {
 #ifdef DEBUG_AIRSPYSOURCE
-    fmt::println(stderr, "AirspySource::run");
+  fmt::println(stderr, "AirspySource::run");
 #endif
   airspy_error rc = (airspy_error)airspy_start_rx(dev, rx_callback, 0);
 
@@ -461,10 +450,13 @@ void AirspySource::run(airspy_device *dev, std::atomic_bool *stop_flag) {
     rc = (airspy_error)airspy_stop_rx(dev);
 
     if (rc != AIRSPY_SUCCESS) {
-      fmt::println(stderr, "AirspySource::run: Cannot stop Airspy HF Rx: {}: {}", fmt::underlying(rc), airspy_error_name(rc));
+      fmt::println(stderr,
+                   "AirspySource::run: Cannot stop Airspy HF Rx: {}: {}",
+                   fmt::underlying(rc), airspy_error_name(rc));
     }
   } else {
-      fmt::println(stderr, "AirspySource::run: Cannot start Airspy HF Rx: {}: {}", fmt::underlying(rc), airspy_error_name(rc));
+    fmt::println(stderr, "AirspySource::run: Cannot start Airspy HF Rx: {}: {}",
+                 fmt::underlying(rc), airspy_error_name(rc));
   }
 }
 
