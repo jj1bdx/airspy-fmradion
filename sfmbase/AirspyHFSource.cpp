@@ -19,9 +19,7 @@
 
 #include <cstdlib>
 #include <cstring>
-#include <iomanip>
-#include <iostream>
-#include <sstream>
+#include <fmt/format.h>
 #include <thread>
 #include <unistd.h>
 
@@ -39,16 +37,14 @@ AirspyHFSource::AirspyHFSource(int dev_index)
   // Get library version number first.
   airspyhf_lib_version(&m_libv);
 #ifdef DEBUG_AIRSPYHFSOURCE
-  std::cerr << "AirspyHF Library Version: " << m_libv.major_version << "."
-            << m_libv.minor_version << "." << m_libv.revision << std::endl;
+  fmt::println(stderr, "AirspyHF Library Version: {}.{}.{}",
+               m_libv.major_version, m_libv.minor_version, m_libv.revision);
 #endif
 
   // Scan all devices, return how many are attached.
   m_ndev = airspyhf_list_devices(0, 0);
   if (m_ndev <= 0) {
-    std::ostringstream err_ostr;
-    err_ostr << "No Airspy HF device found";
-    m_error = err_ostr.str();
+    m_error = "No Airspy HF device found";
     m_dev = 0;
     m_this = this;
     return;
@@ -57,9 +53,7 @@ AirspyHFSource::AirspyHFSource(int dev_index)
   // List all available devices.
   m_serials.resize(m_ndev);
   if (m_ndev != airspyhf_list_devices(m_serials.data(), m_ndev)) {
-    std::ostringstream err_ostr;
-    err_ostr << "Failed to obtain Airspy HF device serial numbers";
-    m_error = err_ostr.str();
+    m_error = "Failed to obtain Airspy HF device serial numbers";
     m_dev = 0;
     m_this = this;
     return;
@@ -69,11 +63,9 @@ AirspyHFSource::AirspyHFSource(int dev_index)
   airspyhf_error rc =
       (airspyhf_error)airspyhf_open_sn(&m_dev, m_serials[dev_index]);
   if (rc != AIRSPYHF_SUCCESS) {
-    std::ostringstream err_ostr;
-    err_ostr
-        << "Failed to open Airspy HF device for the first time at device index "
-        << dev_index;
-    m_error = err_ostr.str();
+    m_error = fmt::format(
+        "Failed to open Airspy HF device for the first time at device index {}",
+        dev_index);
     m_dev = 0;
   }
 
@@ -85,8 +77,8 @@ AirspyHFSource::AirspyHFSource(int dev_index)
     sampleRates = new uint32_t[nbSampleRates];
     airspyhf_get_samplerates(m_dev, sampleRates, nbSampleRates);
 #ifdef DEBUG_AIRSPYHFSOURCE
-    std::cerr << "nbSampleRates = " << nbSampleRates << std::endl;
-    std::cerr << "nbSampleRates[0] = " << sampleRates[0] << std::endl;
+    fmt::println(stderr, "nbSampleRates = {}", nbSampleRates);
+    fmt::println(stderr, "sampleRates[0] = {}", sampleRates[0]);
 #endif
 
     if (nbSampleRates == 0) {
@@ -101,24 +93,20 @@ AirspyHFSource::AirspyHFSource(int dev_index)
 
     delete[] sampleRates;
 
-    std::ostringstream srates_ostr;
-
+    std::string ostr = "";
     for (int s : m_srates) {
-      srates_ostr << s << " ";
+      ostr.append(std::to_string(s));
+      ostr.append(" ");
     }
-
-    m_sratesStr = srates_ostr.str();
+    m_sratesStr = ostr;
   }
-
-  std::ostringstream bwfilt_ostr;
-  bwfilt_ostr << std::fixed << std::setprecision(2);
 
   m_this = this;
 }
 
 AirspyHFSource::~AirspyHFSource() {
 #ifdef DEBUG_AIRSPYHFSOURCE
-  std::cerr << "AirspyHFSource::~AirspyHFSource()" << std::endl;
+  fmt::println(stderr, "AirspyHFSource::~AirspyHFSource()");
 #endif
   if (m_dev) {
     airspyhf_close(m_dev);
@@ -133,29 +121,29 @@ void AirspyHFSource::get_device_names(std::vector<std::string> &devices) {
   // Scan all devices, return how many are attached.
   ndev = airspyhf_list_devices(0, 0);
 #ifdef DEBUG_AIRSPYHFSOURCE
-  std::cerr << "AirspyHFSource::get_device_names: "
-            << "try to get available device numbers" << std::endl;
+  fmt::println(stderr, "AirspyHFSource::get_device_names: "
+                       "try to get available device numbers");
 #endif
   if (ndev <= 0) {
-    std::cerr << "AirspyHFSource::get_device_names: no available device"
-              << std::endl;
+    fmt::println(stderr,
+                 "AirspyHFSource::get_device_names: no available device");
   }
   // List all available devices.
   serials.resize(ndev);
   if (ndev != airspyhf_list_devices(serials.data(), ndev)) {
-    std::cerr << "AirspyHFSource::get_device_names: "
-              << "unable to obtain device list" << std::endl;
+    fmt::println(stderr, "AirspyHFSource::get_device_names: "
+                         "unable to obtain device list");
   } else {
     // Use obtained info during AirspyHFSource object construction.
     for (int i = 0; i < ndev; i++) {
-      std::ostringstream devname_ostr;
-      devname_ostr << "Serial " << std::hex << std::setw(8) << std::setfill('0')
-                   << serials[i];
-      devices.push_back(devname_ostr.str());
+      std::string devname_ostr = fmt::format("Serial {:08x}", serials[i]);
+      devices.push_back(devname_ostr);
     }
 #ifdef DEBUG_AIRSPYHFSOURCE
-    std::cerr << "AirspyHFSource::get_device_names: enumerated " << ndev
-              << "device(s)" << std::endl;
+    fmt::println(stderr,
+                 "AirspyHFSource::get_device_names: "
+                 "enumerated {} device(s)",
+                 ndev);
 #endif
   }
 }
@@ -181,9 +169,8 @@ bool AirspyHFSource::configure(int sampleRateIndex, uint8_t hfAttLevel,
   rc = (airspyhf_error)airspyhf_set_samplerate(m_dev, sampleRate);
 
   if (rc != AIRSPYHF_SUCCESS) {
-    std::ostringstream err_ostr;
-    err_ostr << "Could not set center sample rate to " << sampleRate << " Hz";
-    m_error = err_ostr.str();
+    m_error =
+        fmt::format("Could not set center sample rate to {} Hz", sampleRate);
     return false;
   } else {
     m_sampleRate = sampleRate;
@@ -207,9 +194,8 @@ bool AirspyHFSource::configure(int sampleRateIndex, uint8_t hfAttLevel,
                                          static_cast<uint32_t>(m_frequency));
 
   if (rc != AIRSPYHF_SUCCESS) {
-    std::ostringstream err_ostr;
-    err_ostr << "Could not set center frequency to " << m_frequency << " Hz";
-    m_error = err_ostr.str();
+    m_error =
+        fmt::format("Could not set center frequency to {} Hz", m_frequency);
     return false;
   }
 
@@ -218,19 +204,15 @@ bool AirspyHFSource::configure(int sampleRateIndex, uint8_t hfAttLevel,
     rc = (airspyhf_error)airspyhf_set_hf_agc(m_dev, 0);
 
     if (rc != AIRSPYHF_SUCCESS) {
-      std::ostringstream err_ostr;
-      err_ostr << "Could not turn off HF AGC";
-      m_error = err_ostr.str();
+      m_error = "Could not turn off HF AGC";
       return false;
     }
 
     rc = (airspyhf_error)airspyhf_set_hf_att(m_dev, hfAttLevel);
 
     if (rc != AIRSPYHF_SUCCESS) {
-      std::ostringstream err_ostr;
-      err_ostr << "Could not set HF attenuation level to " << hfAttLevel
-               << " dB";
-      m_error = err_ostr.str();
+      m_error = fmt::format("Could not set HF attenuation level to {} dB",
+                            hfAttLevel);
       return false;
     }
 
@@ -239,18 +221,14 @@ bool AirspyHFSource::configure(int sampleRateIndex, uint8_t hfAttLevel,
     rc = (airspyhf_error)airspyhf_set_hf_agc(m_dev, 1);
 
     if (rc != AIRSPYHF_SUCCESS) {
-      std::ostringstream err_ostr;
-      err_ostr << "Could not turn on HF AGC";
-      m_error = err_ostr.str();
+      m_error = "Could not turn on HF AGC";
       return false;
     }
 
     rc = (airspyhf_error)airspyhf_set_hf_att(m_dev, 0);
 
     if (rc != AIRSPYHF_SUCCESS) {
-      std::ostringstream err_ostr;
-      err_ostr << "Could not set HF attenuation level to zero dB";
-      m_error = err_ostr.str();
+      m_error = "Could not set HF attenuation level to zero dB";
       return false;
     }
   }
@@ -289,8 +267,7 @@ bool AirspyHFSource::configure(std::string configurationStr) {
   cp.parse_config_string(configurationStr, m);
   if (m.find("srate") != m.end()) {
 #ifdef DEBUG_AIRSPYHFSOURCE
-    std::cerr << "AirspyHFSource::configure: srate: " << m["srate"]
-              << std::endl;
+    fmt::println(stderr, "AirspyHFSource::configure: srate: {}", m["srate"]);
 #endif
     if (strcasecmp(m["srate"].c_str(), "list") == 0) {
       m_error = "Available sample rates (Hz): " + m_sratesStr;
@@ -311,7 +288,7 @@ bool AirspyHFSource::configure(std::string configurationStr) {
 
   if (m.find("freq") != m.end()) {
 #ifdef DEBUG_AIRSPYHFSOURCE
-    std::cerr << "AirspyHFSource::configure: freq: " << m["freq"] << std::endl;
+    fmt::println(stderr, "AirspyHFSource::configure: freq: {}", m["freq"]);
 #endif
 
     int freq = 0;
@@ -327,8 +304,7 @@ bool AirspyHFSource::configure(std::string configurationStr) {
 
   if (m.find("hf_att") != m.end()) {
 #ifdef DEBUG_AIRSPYHFSOURCE
-    std::cerr << "AirspyHFSource::configure: hf_att: " << m["hf_att"]
-              << std::endl;
+    fmt::println(stderr, "AirspyHFSource::configure: hf_att: {}", m["hf_att"]);
 #endif
 
     int attlevel = 0;
@@ -351,13 +327,13 @@ bool AirspyHFSource::start(DataBuffer<IQSample> *buf,
 
   if (m_thread == 0) {
 #ifdef DEBUG_AIRSPYHFSOURCE
-    std::cerr << "AirspySource::start: starting" << std::endl;
+    fmt::println(stderr, "AirspyHFSource::start: starting");
 #endif
     m_running = true;
     m_thread = new std::thread(run, m_dev, m_stop_flag);
     return true;
   } else {
-    std::cerr << "AirspyHFSource::start: error" << std::endl;
+    fmt::println(stderr, "AirspyHFSource::start: error");
     m_error = "Source thread already started";
     return false;
   }
@@ -365,7 +341,7 @@ bool AirspyHFSource::start(DataBuffer<IQSample> *buf,
 
 void AirspyHFSource::run(airspyhf_device *dev, std::atomic_bool *stop_flag) {
 #ifdef DEBUG_AIRSPYHFSOURCE
-  std::cerr << "AirspyHFSource::run" << std::endl;
+  fmt::println(stderr, "AirspyHFSource::run");
 #endif
   airspyhf_error rc = (airspyhf_error)airspyhf_start(dev, rx_callback, nullptr);
 
@@ -374,19 +350,19 @@ void AirspyHFSource::run(airspyhf_device *dev, std::atomic_bool *stop_flag) {
       Utility::millisleep(100);
     }
   } else {
-    std::cerr << "AirspyHFSource::run: Cannot start Airspy HF Rx: " << rc
-              << std::endl;
+    fmt::println(stderr, "AirspyHFSource::run: Cannot start Airspy HF Rx: {}",
+                 fmt::underlying(rc));
   }
 }
 
 bool AirspyHFSource::stop() {
 #ifdef DEBUG_AIRSPYHFSOURCE
-  std::cerr << "AirspyHFSource::stop" << std::endl;
+  fmt::println(stderr, "AirspyHFSource::stop");
 #endif
   airspyhf_error rc = (airspyhf_error)airspyhf_stop(m_dev);
   if (rc != AIRSPYHF_SUCCESS) {
-    std::cerr << "AirspyHFSource::run: Cannot stop Airspy HF Rx: " << rc
-              << std::endl;
+    fmt::println(stderr, "AirspyHFSource::run: Cannot stop Airspy HF Rx: {}",
+                 fmt::underlying(rc));
   }
   m_thread->join();
   delete m_thread;
