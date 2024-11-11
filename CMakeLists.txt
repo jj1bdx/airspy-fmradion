@@ -19,6 +19,7 @@ FetchContent_Declare(
     https://github.com/jj1bdx/cmake-git-version-tracking.git
   GIT_TAG 6c0cb87edd029ddfb403a8e24577c144a03605a6)
 FetchContent_MakeAvailable(cmake_git_version_tracking)
+
 # EXPORT_COMPILE_COMMANDS is supported for CMake version 3.20 or later
 # only
 if(CMAKE_VERSION VERSION_LESS 3.20.0)
@@ -38,6 +39,14 @@ set(THREADS_PREFER_PTHREAD_FLAG TRUE)
 find_package(Threads REQUIRED)
 
 # Find fmt library.
+# NOTE: find_package() didn't work on macOS
+# due to compilation errors on Apple Clang 16, as:
+#/Users/kenji/src/airspy-fmradion/include/DataBuffer.h:49:12: error: no member named 'scoped_lock' in namespace 'std'
+#   49 |       std::scoped_lock<std::mutex> lock(m_mutex);
+#      |       ~~~~~^
+#/Users/kenji/src/airspy-fmradion/include/DataBuffer.h:49:34: error: expected '(' for function-style cast or type construction
+#   49 |       std::scoped_lock<std::mutex> lock(m_mutex);
+
 pkg_check_modules(PKG_FMT fmt)
 if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
   find_library(
