@@ -22,6 +22,7 @@
 #include <cstring>
 #include <iomanip>
 #include <iostream>
+#include <fmt/base.h>
 #include <rtl-sdr.h>
 #include <sstream>
 #include <thread>
@@ -260,12 +261,12 @@ void RtlSdrSource::print_specific_parms() {
   int lnagain = get_tuner_gain();
 
   if (lnagain == INT_MIN) {
-    fprintf(stderr, "LNA gain:          auto\n");
+    fmt::println(stderr, "LNA gain:          auto");
   } else {
-    fprintf(stderr, "LNA gain:          %.1f dB\n", 0.1 * lnagain);
+    fmt::println(stderr, "LNA gain:          {:.1f} dB", 0.1 * lnagain);
   }
 
-  fprintf(stderr, "RTL AGC mode:      %s\n",
+  fmt::println(stderr, "RTL AGC mode:      {}",
           m_confAgc ? "enabled" : "disabled");
 }
 

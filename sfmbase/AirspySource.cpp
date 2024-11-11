@@ -24,6 +24,7 @@
 #include <iostream>
 #include <sstream>
 #include <thread>
+#include <fmt/base.h>
 #include <unistd.h>
 
 #include "AirspySource.h"
@@ -205,11 +206,11 @@ std::uint32_t AirspySource::get_frequency() { return m_frequency; }
 bool AirspySource::is_low_if() { return true; }
 
 void AirspySource::print_specific_parms() {
-  fprintf(stderr, "LNA/Mix/VGA gain: %d, %d, %d dB\n", m_lnaGain, m_mixGain,
+  fmt::println(stderr, "LNA/Mix/VGA gain: {}, {}, {} dB", m_lnaGain, m_mixGain,
           m_vgaGain);
-  fprintf(stderr, "Antenna bias: %s", m_biasAnt ? "on" : "off");
-  fprintf(stderr, " / LNA AGC: %s", m_lnaAGC ? "on" : "off");
-  fprintf(stderr, " / Mixer AGC: %s\n", m_mixAGC ? "on" : "off");
+  fmt::print(stderr, "Antenna bias: {}", m_biasAnt ? "on" : "off");
+  fmt::print(stderr, " / LNA AGC: {}", m_lnaAGC ? "on" : "off");
+  fmt::println(stderr, " / Mixer AGC: {}", m_mixAGC ? "on" : "off");
 }
 
 bool AirspySource::configure(int sampleRateIndex, uint32_t frequency,

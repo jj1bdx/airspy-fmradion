@@ -23,6 +23,7 @@
 #include <cstdio>
 #include <cstring>
 #include <fcntl.h>
+#include <fmt/base.h>
 #include <unistd.h>
 
 #include "AudioOutput.h"
@@ -91,7 +92,7 @@ SndfileOutput::SndfileOutput(const std::string &filename,
 #if defined(LIBSNDFILE_MP3_ENABLED)
   // Set MP3 parameters here
   if (filetype == SF_FORMAT_MPEG) {
-    fprintf(stderr, "Set MP3 parameters\n");
+    fmt::println(stderr, "Set MP3 parameters");
     // Set MP3 default format parameters to:
     // Variable bitrate mode, compression level = 0.1
     int constant_mode = SF_BITRATE_MODE_VARIABLE;
@@ -210,7 +211,7 @@ PortAudioOutput::PortAudioOutput(const PaDeviceIndex device_index,
     m_outputparams.suggestedLatency = minimum_latency;
   }
 
-  fprintf(stderr, "suggestedLatency = %f\n", m_outputparams.suggestedLatency);
+  fmt::println(stderr, "suggestedLatency = {:f}", m_outputparams.suggestedLatency);
 
   m_paerror =
       Pa_OpenStream(&m_stream,

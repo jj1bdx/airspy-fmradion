@@ -22,6 +22,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <fmt/base.h>
 #include <getopt.h>
 #include <memory>
 #include <signal.h>
@@ -55,135 +56,158 @@
 static std::atomic_bool stop_flag(false);
 
 static void usage() {
-  fprintf(
-      stderr,
-      "Usage: airspy-fmradion [options]\n"
-      "  -m modtype     Modulation type:\n"
-      "                   - fm (default)\n"
-      "                   - nbfm\n"
-      "                   - am\n"
-      "                   - dsb\n"
-      "                   - usb\n"
-      "                   - lsb\n"
-      "                   - cw (zeroed-in pitch: 500Hz)\n"
-      "                   - wspr (USB 1500Hz +- 100Hz)\n"
-      "  -t devtype     Device type:\n"
-      "                   - rtlsdr: RTL-SDR devices\n"
-      "                   - airspy: Airspy R2\n"
-      "                   - airspyhf: Airspy HF+\n"
-      "                   - filesource: File Source\n"
-      "  -q             Quiet mode\n"
-      "  -c config      Comma separated key=value configuration pairs or just "
-      "key for switches\n"
-      "                 See below for valid values per device type\n"
-      "  -d devidx      Device index, 'list' to show device list (default 0)\n"
-      "  -M             Disable stereo decoding\n"
-      "  -R filename    Write audio data as raw S16_LE samples\n"
-      "                 use filename '-' to write to stdout\n"
-      "  -F filename    Write audio data as raw FLOAT_LE samples\n"
-      "                 use filename '-' to write to stdout\n"
-      "  -W filename    Write audio data to RF64/WAV S16_LE file\n"
-      "                 use filename '-' to write to stdout\n"
-      "                 (Pipe is not supported)\n"
-      "  -G filename    Write audio data to RF64/WAV FLOAT_LE file\n"
-      "                 use filename '-' to write to stdout\n"
-      "                 (Pipe is not supported)\n"
+  std::string s = "";
+
+  s.append("Usage: airspy-fmradion [options]\n");
+  s.append("  -m modtype     Modulation type:\n");
+  s.append("                   - fm (default)\n");
+  s.append("                   - nbfm\n");
+  s.append("                   - am\n");
+  s.append("                   - dsb\n");
+  s.append("                   - usb\n");
+  s.append("                   - lsb\n");
+  s.append("                   - cw (zeroed-in pitch: 500Hz)\n");
+  s.append("                   - wspr (USB 1500Hz +- 100Hz)\n");
+  s.append("  -t devtype     Device type:\n");
+  s.append("                   - rtlsdr: RTL-SDR devices\n");
+  s.append("                   - airspy: Airspy R2\n");
+  s.append("                   - airspyhf: Airspy HF+\n");
+  s.append("                   - filesource: File Source\n");
+  s.append("  -q             Quiet mode\n");
+  s.append("  -c config      Comma separated key=value configuration pairs or "
+           "just ");
+  s.append("key for switches\n");
+  s.append("                 See below for valid values per device type\n");
+  s.append("  -d devidx      Device index, 'list' to show device list (default "
+           "0)\n");
+  s.append("  -M             Disable stereo decoding\n");
+  s.append("  -R filename    Write audio data as raw S16_LE samples\n");
+  s.append("                 use filename '-' to write to stdout\n");
+  s.append("  -F filename    Write audio data as raw FLOAT_LE samples\n");
+  s.append("                 use filename '-' to write to stdout\n");
+  s.append("  -W filename    Write audio data to RF64/WAV S16_LE file\n");
+  s.append("                 use filename '-' to write to stdout\n");
+  s.append("                 (Pipe is not supported)\n");
+  s.append("  -G filename    Write audio data to RF64/WAV FLOAT_LE file\n");
+  s.append("                 use filename '-' to write to stdout\n");
+  s.append("                 (Pipe is not supported)\n");
 #if defined(LIBSNDFILE_MP3_ENABLED)
-      "  -C filename    Write audio data to MP3 file\n"
-      "                 of VBR -V 1 (experimental)\n"
-      "                 use filename '-' to write to stdout\n"
+  s.append("  -C filename    Write audio data to MP3 file\n");
+  s.append("                 of VBR -V 1 (experimental)\n");
+  s.append("                 use filename '-' to write to stdout\n");
 #endif // LIBSNDFILE_MP3_ENABLED
-      "  -P device_num  Play audio via PortAudio device index number\n"
-      "                 use string '-' to specify the default PortAudio "
-      "device\n"
-      "  -T filename    Write pulse-per-second timestamps\n"
-      "                 use filename '-' to write to stdout\n"
-      "  -X             Shift pilot phase (for Quadrature Multipath Monitor)\n"
-      "                 (-X is ignored under mono mode (-M))\n"
-      "  -U             Set deemphasis to 75 microseconds (default: 50)\n"
-      "  -f filtername  Filter type:\n"
-      "                 For FM:\n"
-      "                   - wide: same as default\n"
-      "                   - default: none after conversion\n"
-      "                   - medium:  +-156kHz\n"
-      "                   - narrow:  +-121kHz\n"
-      "                 For AM:\n"
-      "                   - wide: +-9kHz\n"
-      "                   - default: +-6kHz\n"
-      "                   - medium:  +-4.5kHz\n"
-      "                   - narrow:  +-3kHz\n"
-      "                 For NBFM:\n"
-      "                   - wide: +-20kHz, with +-17kHz deviation\n"
-      "                   - default: +-10kHz\n"
-      "                   - medium:  +-8kHz\n"
-      "                   - narrow:  +-6.25kHz\n"
-      "  -l dB          Set IF squelch level to minus given value of dB\n"
-      "  -E stages      Enable multipath filter for FM\n"
-      "                 (For stable reception only:\n"
-      "                  turn off if reception becomes unstable)\n"
-      "  -r ppm         Set IF offset in ppm (range: +-1000000ppm)\n"
-      "                 (This option affects output pitch and timing:\n"
-      "                  use for the output timing compensation only!)\n"
-      "\n"
-      "Configuration options for RTL-SDR devices\n"
-      "  freq=<int>     Frequency of radio station in Hz (default 100000000)\n"
-      "                 valid values: 10M to 2.2G (working range depends on "
-      "device)\n"
-      "  srate=<int>    IF sample rate in Hz (default 1152000)\n"
-      "                 (valid ranges: [900001, 3200000]))\n"
-      "  gain=<float>   Set LNA gain in dB, or 'auto',\n"
-      "                 or 'list' to just get a list of valid values (default "
-      "auto)\n"
-      "  blklen=<int>   Set audio buffer size in seconds (default RTL-SDR "
-      "default)\n"
-      "  agc            Enable RTL AGC mode (default disabled)\n"
-      "  antbias        Enable antenna bias (default disabled)\n"
-      "\n"
-      "Configuration options for Airspy devices:\n"
-      "  freq=<int>     Frequency of radio station in Hz (default 100000000)\n"
-      "                 valid values: 24M to 1.8G\n"
-      "  srate=<int>    IF sample rate in Hz. Depends on Airspy firmware and "
-      "libairspy support\n"
-      "                 Airspy firmware and library must support dynamic "
-      "sample rate query. (default 10000000)\n"
-      "  lgain=<int>    LNA gain in dB. 'list' to just get a list of valid "
-      "values: (default 8)\n"
-      "  mgain=<int>    Mixer gain in dB. 'list' to just get a list of valid "
-      "values: (default 8)\n"
-      "  vgain=<int>    VGA gain in dB. 'list' to just get a list of valid "
-      "values: (default 8)\n"
-      "  antbias        Enable antenna bias (default disabled)\n"
-      "  lagc           Enable LNA AGC (default disabled)\n"
-      "  magc           Enable mixer AGC (default disabled)\n"
-      "\n"
-      "Configuration options for Airspy HF devices:\n"
-      "  freq=<int>     Frequency of radio station in Hz (default 100000000)\n"
-      "                 valid values: 192k to 31M, and 60M to 260M\n"
-      "  srate=<int>    IF sample rate in Hz.\n"
-      "                 Depends on Airspy HF firmware and libairspyhf support\n"
-      "                 Airspy HF firmware and library must support dynamic\n"
-      "                 sample rate query. (default 384000)\n"
-      "  hf_att=<int>   HF attenuation level and AGC control\n"
-      "                 0: enable AGC, no attenuation\n"
-      "                 1 ~ 8: disable AGC, apply attenuation of value * 6dB\n"
-      "\n"
-      "Configuration options for (experimental) FileSource devices:\n"
-      "  freq=<int>        Frequency of radio station in Hz\n"
-      "  srate=<int>       IF sample rate in Hz.\n"
-      "  filename=<string> Source file name.\n"
-      "                    Supported encodings: FLOAT, S24_LE, S16_LE\n"
-      "  zero_offset       Set if the source file is in zero offset,\n"
-      "                    which requires Fs/4 IF shifting.\n"
-      "  blklen=<int>      Set block length in samples.\n"
-      "  raw               Set if the file is raw binary.\n"
-      "  format=<string>   Set the file format for the raw binary file.\n"
-      "                    (formats: U8_LE, S8_LE, S16_LE, S24_LE, FLOAT)\n"
-      "\n");
+  s.append("  -P device_num  Play audio via PortAudio device index number\n");
+  s.append("                 use string '-' to specify the default PortAudio ");
+  s.append("device\n");
+  s.append("  -T filename    Write pulse-per-second timestamps\n");
+  s.append("                 use filename '-' to write to stdout\n");
+  s.append("  -X             Shift pilot phase (for Quadrature Multipath "
+           "Monitor)\n");
+  s.append("                 (-X is ignored under mono mode (-M))\n");
+  s.append(
+      "  -U             Set deemphasis to 75 microseconds (default: 50)\n");
+  s.append("  -f filtername  Filter type:\n");
+  s.append("                 For FM:\n");
+  s.append("                   - wide: same as default\n");
+  s.append("                   - default: none after conversion\n");
+  s.append("                   - medium:  +-156kHz\n");
+  s.append("                   - narrow:  +-121kHz\n");
+  s.append("                 For AM:\n");
+  s.append("                   - wide: +-9kHz\n");
+  s.append("                   - default: +-6kHz\n");
+  s.append("                   - medium:  +-4.5kHz\n");
+  s.append("                   - narrow:  +-3kHz\n");
+  s.append("                 For NBFM:\n");
+  s.append("                   - wide: +-20kHz, with +-17kHz deviation\n");
+  s.append("                   - default: +-10kHz\n");
+  s.append("                   - medium:  +-8kHz\n");
+  s.append("                   - narrow:  +-6.25kHz\n");
+  s.append(
+      "  -l dB          Set IF squelch level to minus given value of dB\n");
+  s.append("  -E stages      Enable multipath filter for FM\n");
+  s.append("                 (For stable reception only:\n");
+  s.append("                  turn off if reception becomes unstable)\n");
+  s.append("  -r ppm         Set IF offset in ppm (range: +-1000000ppm)\n");
+  s.append("                 (This option affects output pitch and timing:\n");
+  s.append("                  use for the output timing compensation only!)\n");
+  s.append("\n");
+  s.append("Configuration options for RTL-SDR devices\n");
+  s.append("  freq=<int>     Frequency of radio station in Hz (default "
+           "100000000)\n");
+  s.append(
+      "                 valid values: 10M to 2.2G (working range depends on ");
+  s.append("device)\n");
+  s.append("  srate=<int>    IF sample rate in Hz (default 1152000)\n");
+  s.append("                 (valid ranges: [900001, 3200000]))\n");
+  s.append("  gain=<float>   Set LNA gain in dB, or 'auto',\n");
+  s.append("                 or 'list' to just get a list of valid values "
+           "(default ");
+  s.append("auto)\n");
+  s.append(
+      "  blklen=<int>   Set audio buffer size in seconds (default RTL-SDR ");
+  s.append("default)\n");
+  s.append("  agc            Enable RTL AGC mode (default disabled)\n");
+  s.append("  antbias        Enable antenna bias (default disabled)\n");
+  s.append("\n");
+  s.append("Configuration options for Airspy devices:\n");
+  s.append("  freq=<int>     Frequency of radio station in Hz (default "
+           "100000000)\n");
+  s.append("                 valid values: 24M to 1.8G\n");
+  s.append(
+      "  srate=<int>    IF sample rate in Hz. Depends on Airspy firmware and ");
+  s.append("libairspy support\n");
+  s.append(
+      "                 Airspy firmware and library must support dynamic ");
+  s.append("sample rate query. (default 10000000)\n");
+  s.append(
+      "  lgain=<int>    LNA gain in dB. 'list' to just get a list of valid ");
+  s.append("values: (default 8)\n");
+  s.append(
+      "  mgain=<int>    Mixer gain in dB. 'list' to just get a list of valid ");
+  s.append("values: (default 8)\n");
+  s.append(
+      "  vgain=<int>    VGA gain in dB. 'list' to just get a list of valid ");
+  s.append("values: (default 8)\n");
+  s.append("  antbias        Enable antenna bias (default disabled)\n");
+  s.append("  lagc           Enable LNA AGC (default disabled)\n");
+  s.append("  magc           Enable mixer AGC (default disabled)\n");
+  s.append("\n");
+  s.append("Configuration options for Airspy HF devices:\n");
+  s.append("  freq=<int>     Frequency of radio station in Hz (default "
+           "100000000)\n");
+  s.append("                 valid values: 192k to 31M, and 60M to 260M\n");
+  s.append("  srate=<int>    IF sample rate in Hz.\n");
+  s.append("                 Depends on Airspy HF firmware and libairspyhf "
+           "support\n");
+  s.append(
+      "                 Airspy HF firmware and library must support dynamic\n");
+  s.append("                 sample rate query. (default 384000)\n");
+  s.append("  hf_att=<int>   HF attenuation level and AGC control\n");
+  s.append("                 0: enable AGC, no attenuation\n");
+  s.append("                 1 ~ 8: disable AGC, apply attenuation of value * "
+           "6dB\n");
+  s.append("\n");
+  s.append("Configuration options for (experimental) FileSource devices:\n");
+  s.append("  freq=<int>        Frequency of radio station in Hz\n");
+  s.append("  srate=<int>       IF sample rate in Hz.\n");
+  s.append("  filename=<string> Source file name.\n");
+  s.append("                    Supported encodings: FLOAT, S24_LE, S16_LE\n");
+  s.append("  zero_offset       Set if the source file is in zero offset,\n");
+  s.append("                    which requires Fs/4 IF shifting.\n");
+  s.append("  blklen=<int>      Set block length in samples.\n");
+  s.append("  raw               Set if the file is raw binary.\n");
+  s.append(
+      "  format=<string>   Set the file format for the raw binary file.\n");
+  s.append(
+      "                    (formats: U8_LE, S8_LE, S16_LE, S24_LE, FLOAT)\n");
+  s.append("\n");
+
+  fmt::print(stderr, "{}", s);
 }
 
 static void badarg(const char *label) {
   usage();
-  fprintf(stderr, "ERROR: Invalid argument for %s\n", label);
+  fmt::println(stderr, "ERROR: Invalid argument for {}", label);
   exit(1);
 }
 
@@ -207,19 +231,19 @@ static bool get_device(std::vector<std::string> &devnames, DevType devtype,
 
   if (devidx < 0 || (unsigned int)devidx >= devnames.size()) {
     if (devidx != -1) {
-      fprintf(stderr, "ERROR: invalid device index %d\n", devidx);
+      fmt::println(stderr, "ERROR: invalid device index {}", devidx);
     }
 
-    fprintf(stderr, "Found %u devices:\n", (unsigned int)devnames.size());
+    fmt::println(stderr, "Found {} devices:", (unsigned int)devnames.size());
 
     for (unsigned int i = 0; i < devnames.size(); i++) {
-      fprintf(stderr, "%2u: %s\n", i, devnames[i].c_str());
+      fmt::println(stderr, "{:2}: {}", i, devnames[i]);
     }
 
     return false;
   }
 
-  fprintf(stderr, "using device %d: %s\n", devidx, devnames[devidx].c_str());
+  fmt::println(stderr, "using device {}: {}", devidx, devnames[devidx]);
 
   // Open receiver devices.
   switch (devtype) {
@@ -251,7 +275,7 @@ static void *process_signals(void *arg) {
     // wait for a signal
     err = sigwait(&signalmask, &signum);
     if (err != 0) {
-      fprintf(stderr, "ERROR: sigwait failed, (%s)\n", strerror(err));
+      fmt::println(stderr, "ERROR: sigwait failed, ({})", strerror(err));
       exit(1);
     }
     switch (signum) {
@@ -307,38 +331,38 @@ int main(int argc, char **argv) {
   sigaddset(&signalmask, SIGQUIT);
   sigaddset(&signalmask, SIGTERM);
   if ((err = pthread_sigmask(SIG_BLOCK, &signalmask, &old_signalmask)) != 0) {
-    fprintf(stderr, "ERROR: can not mask signals (%s)\n", strerror(err));
+    fmt::println(stderr, "ERROR: can not mask signals ({})", strerror(err));
     exit(1);
   }
   // Start thread to catch the masked signals.
   err = pthread_create(&sigmask_thread_id, NULL, process_signals, 0);
   if (err != 0) {
-    fprintf(stderr, "ERROR: unable to create pthread of process_signals(%s)\n",
-            strerror(err));
+    fmt::println(stderr,
+                 "ERROR: unable to create pthread of process_signals({})",
+                 strerror(err));
     exit(1);
   }
 
   // Print starting messages.
-  fprintf(stderr, "airspy-fmradion " AIRSPY_FMRADION_VERSION "\n");
-  fprintf(stderr, "Software FM/AM radio for ");
-  fprintf(stderr, "Airspy R2, Airspy HF+, and RTL-SDR\n");
+  fmt::println(stderr, "airspy-fmradion 20240424-0");
+  fmt::print(stderr, "Software FM/AM radio for ");
+  fmt::println(stderr, "Airspy R2, Airspy HF+, and RTL-SDR");
   if (git::IsPopulated()) {
-    fprintf(stderr, "Git Commit SHA1: %.*s",
-            static_cast<int>(git::CommitSHA1().length()),
-            git::CommitSHA1().data());
+    fmt::print(stderr, "Git Commit SHA1: {:.{}}", git::CommitSHA1().data(),
+               static_cast<int>(git::CommitSHA1().length()));
     if (git::AnyUncommittedChanges()) {
-      fprintf(stderr, " with uncommitted changes");
+      fmt::print(stderr, " with uncommitted changes");
     }
-    fprintf(stderr, "\n");
-    fprintf(stderr, "Git branch: %.*s\n",
-            static_cast<int>(git::Branch().length()), git::Branch().data());
+    fmt::println(stderr, "");
+    fmt::println(stderr, "Git branch: {:.{}}", git::Branch().data(),
+                 static_cast<int>(git::Branch().length()));
   } else {
-    fprintf(stderr, "Git commit unknown\n");
+    fmt::println(stderr, "Git commit unknown");
   }
-  fprintf(stderr, "VOLK Version = %u.%u.%u\n", VOLK_VERSION_MAJOR,
-          VOLK_VERSION_MINOR, VOLK_VERSION_MAINT);
+  fmt::println(stderr, "VOLK Version = {}.{}.{}", VOLK_VERSION_MAJOR,
+               VOLK_VERSION_MINOR, VOLK_VERSION_MAINT);
 #if defined(LIBSNDFILE_MP3_ENABLED)
-  fprintf(stderr, "libsndfile MP3 support enabled\n");
+  fmt::println(stderr, "libsndfile MP3 support enabled");
 #endif // LIBSNDFILE_MP3_ENABLED
 
   const struct option longopts[] = {
@@ -460,14 +484,14 @@ int main(int argc, char **argv) {
 #endif // LIBSNDFILE_MP3_ENABLED
     default:
       usage();
-      fprintf(stderr, "ERROR: Invalid command line options\n");
+      fmt::println(stderr, "ERROR: Invalid command line options");
       exit(1);
     }
   }
 
   if (optind < argc) {
     usage();
-    fprintf(stderr, "ERROR: Unexpected command line options\n");
+    fmt::println(stderr, "ERROR: Unexpected command line options");
     exit(1);
   }
 
@@ -487,10 +511,10 @@ int main(int argc, char **argv) {
   } else if (strcasecmp(devtype_str.c_str(), "filesource") == 0) {
     devtype = DevType::FileSource;
   } else {
-    fprintf(
+    fmt::println(
         stderr,
-        "ERROR: wrong device type (-t option) must be one of the following:\n");
-    fprintf(stderr, "        rtlsdr, airspy, airspyhf, filesource\n");
+        "ERROR: wrong device type (-t option) must be one of the following:");
+    fmt::println(stderr, "        rtlsdr, airspy, airspyhf, filesource");
     exit(1);
   }
 
@@ -518,7 +542,7 @@ int main(int argc, char **argv) {
     modtype = ModType::WSPR;
     stereo = false;
   } else {
-    fprintf(stderr, "Modulation type string unsuppored\n");
+    fmt::println(stderr, "Modulation type string unsuppored");
     exit(1);
   }
 
@@ -531,30 +555,30 @@ int main(int argc, char **argv) {
   } else if (strcasecmp(filtertype_str.c_str(), "wide") == 0) {
     filtertype = FilterType::Wide;
   } else {
-    fprintf(stderr, "Filter type string unsuppored\n");
+    fmt::println(stderr, "Filter type string unsuppored");
     exit(1);
   }
 
   // Open PPS file.
   if (!ppsfilename.empty()) {
     if (ppsfilename == "-") {
-      fprintf(stderr, "writing pulse-per-second markers to stdout\n");
+      fmt::println(stderr, "writing pulse-per-second markers to stdout");
       ppsfile = stdout;
     } else {
-      fprintf(stderr, "writing pulse-per-second markers to '%s'\n",
-              ppsfilename.c_str());
+      fmt::println(stderr, "writing pulse-per-second markers to '{}'",
+                   ppsfilename);
       ppsfile = fopen(ppsfilename.c_str(), "w");
 
       if (ppsfile == nullptr) {
-        fprintf(stderr, "ERROR: can not open '%s' (%s)\n", ppsfilename.c_str(),
-                strerror(errno));
+        fmt::println(stderr, "ERROR: can not open '{}' ({})", ppsfilename,
+                     strerror(errno));
         exit(1);
       }
     }
 
     switch (modtype) {
     case ModType::FM:
-      fprintf(ppsfile, "# pps_index sample_index unix_time if_level\n");
+      fmt::println(ppsfile, "# pps_index sample_index unix_time if_level");
       break;
     case ModType::NBFM:
     case ModType::AM:
@@ -563,7 +587,7 @@ int main(int argc, char **argv) {
     case ModType::LSB:
     case ModType::CW:
     case ModType::WSPR:
-      fprintf(ppsfile, "# block unix_time if_level\n");
+      fmt::println(ppsfile, "# block unix_time if_level");
       break;
     }
     fflush(ppsfile);
@@ -578,53 +602,55 @@ int main(int argc, char **argv) {
     audio_output.reset(
         new SndfileOutput(filename, pcmrate, stereo,
                           SF_FORMAT_RAW | SF_FORMAT_PCM_16 | SF_ENDIAN_LITTLE));
-    fprintf(stderr,
-            "writing raw 16-bit integer little-endian audio samples to '%s'\n",
-            filename.c_str());
+    fmt::println(
+        stderr,
+        "writing raw 16-bit integer little-endian audio samples to '{}'",
+        filename);
     break;
   case OutputMode::RAW_FLOAT32:
     audio_output.reset(
         new SndfileOutput(filename, pcmrate, stereo,
                           SF_FORMAT_RAW | SF_FORMAT_FLOAT | SF_ENDIAN_LITTLE));
-    fprintf(stderr,
-            "writing raw 32-bit float little-endian audio samples to '%s'\n",
-            filename.c_str());
+    fmt::println(stderr,
+                 "writing raw 32-bit float little-endian audio samples to '{}'",
+                 filename);
     break;
   case OutputMode::WAV_INT16:
     audio_output.reset(new SndfileOutput(filename, pcmrate, stereo,
                                          SF_FORMAT_RF64 | SF_FORMAT_PCM_16 |
                                              SF_ENDIAN_LITTLE));
-    fprintf(stderr, "writing RF64/WAV int16 audio samples to '%s'\n",
-            filename.c_str());
+    fmt::println(stderr, "writing RF64/WAV int16 audio samples to '{}'",
+                 filename);
     break;
   case OutputMode::WAV_FLOAT32:
     audio_output.reset(
         new SndfileOutput(filename, pcmrate, stereo,
                           SF_FORMAT_RF64 | SF_FORMAT_FLOAT | SF_ENDIAN_LITTLE));
-    fprintf(stderr, "writing RF64/WAV float32 audio samples to '%s'\n",
-            filename.c_str());
+    fmt::println(stderr, "writing RF64/WAV float32 audio samples to '{}'",
+                 filename);
     break;
   case OutputMode::PORTAUDIO:
     audio_output.reset(new PortAudioOutput(portaudiodev, pcmrate, stereo));
     if (portaudiodev == -1) {
-      fprintf(stderr, "playing audio to PortAudio default device: ");
+      fmt::print(stderr, "playing audio to PortAudio default device: ");
     } else {
-      fprintf(stderr, "playing audio to PortAudio device %d: ", portaudiodev);
+      fmt::print(stderr,
+                 "playing audio to PortAudio device {}: ", portaudiodev);
     }
-    fprintf(stderr, "name '%s'\n", audio_output->get_device_name().c_str());
+    fmt::println(stderr, "name '{}'", audio_output->get_device_name());
     break;
 #if defined(LIBSNDFILE_MP3_ENABLED)
   case OutputMode::MP3_FMAUDIO:
     audio_output.reset(new SndfileOutput(
         filename, pcmrate, stereo, SF_FORMAT_MPEG | SF_FORMAT_MPEG_LAYER_III));
-    fprintf(stderr, "writing MP3 FM-broadcast audio samples to '%s'\n",
-            filename.c_str());
+    fmt::println(stderr, "writing MP3 FM-broadcast audio samples to '{}'",
+                 filename);
     break;
 #endif // LIBSNDFILE_MP3_ENABLED
   }
 
   if (!(*audio_output)) {
-    fprintf(stderr, "ERROR: AudioOutput: %s\n", audio_output->error().c_str());
+    fmt::println(stderr, "ERROR: AudioOutput: {}", audio_output->error());
     exit(1);
   }
 
@@ -633,25 +659,25 @@ int main(int argc, char **argv) {
   }
 
   if (!(*srcsdr)) {
-    fprintf(stderr, "ERROR source: %s\n", srcsdr->error().c_str());
+    fmt::println(stderr, "ERROR source: {}", srcsdr->error());
     delete srcsdr;
     exit(1);
   }
 
   // Configure device and start streaming.
   if (!srcsdr->configure(config_str)) {
-    fprintf(stderr, "ERROR: configuration: %s\n", srcsdr->error().c_str());
+    fmt::println(stderr, "ERROR: configuration: {}", srcsdr->error());
     delete srcsdr;
     exit(1);
   }
 
   double freq = srcsdr->get_configured_frequency();
-  fprintf(stderr, "tuned for %.7g [MHz]", freq * 1.0e-6);
+  fmt::print(stderr, "tuned for {:.7g} [MHz]", freq * 1.0e-6);
   double tuner_freq = srcsdr->get_frequency();
   if (tuner_freq != freq) {
-    fprintf(stderr, ", device tuned for %.7g [MHz]", tuner_freq * 1.0e-6);
+    fmt::print(stderr, ", device tuned for {:.7g} [MHz]", tuner_freq * 1.0e-6);
   }
-  fprintf(stderr, "\n");
+  fmt::println(stderr, "");
 
   double ifrate = srcsdr->get_sample_rate();
 
@@ -686,7 +712,7 @@ int main(int argc, char **argv) {
   // TODO: ~0.1sec / display (should be tuned)
   unsigned int stat_rate =
       (unsigned int)((double)ifrate / (double)if_blocksize / 9.0);
-  fprintf(stderr, "stat_rate = %u\n", stat_rate);
+  fmt::println(stderr, "stat_rate = {}", stat_rate);
 
   // IF rate compensation if requested.
   if (ifrate_offset_enable) {
@@ -712,9 +738,10 @@ int main(int argc, char **argv) {
   }
 
   // Show decoding modulation type.
-  fprintf(stderr, "Decoding modulation type: %s\n", modtype_str.c_str());
+  fmt::println(stderr, "Decoding modulation type: {}", modtype_str);
   if (enable_squelch) {
-    fprintf(stderr, "IF Squelch level: %.9g [dB]\n", 20 * log10(squelch_level));
+    fmt::println(stderr, "IF Squelch level: {:.9g} [dB]",
+                 20 * log10(squelch_level));
   }
 
   double demodulator_rate = ifrate / if_decimation_ratio;
@@ -723,15 +750,15 @@ int main(int argc, char **argv) {
 
   // Display ifrate compensation if applicable.
   if (ifrate_offset_enable) {
-    fprintf(stderr, "IF sample rate shifted by: %.9g [ppm]\n",
-            ifrate_offset_ppm);
+    fmt::println(stderr, "IF sample rate shifted by: {:.9g} [ppm]",
+                 ifrate_offset_ppm);
   }
 
   // Display filter configuration.
-  fprintf(stderr, "IF sample rate: %.9g [Hz], ", ifrate);
-  fprintf(stderr, "IF decimation: / %.9g\n", if_decimation_ratio);
-  fprintf(stderr, "Demodulator rate: %.8g [Hz], ", demodulator_rate);
-  fprintf(stderr, "audio decimation: / %.9g\n", audio_decimation_ratio);
+  fmt::print(stderr, "IF sample rate: {:.9g} [Hz], ", ifrate);
+  fmt::println(stderr, "IF decimation: / {:.9g}", if_decimation_ratio);
+  fmt::print(stderr, "Demodulator rate: {:.8g} [Hz], ", demodulator_rate);
+  fmt::println(stderr, "audio decimation: / {:.9g}", audio_decimation_ratio);
 
   srcsdr->print_specific_parms();
 
@@ -748,7 +775,7 @@ int main(int argc, char **argv) {
 
   // Reported by GitHub @bstalk: (!up_srcadr) doesn't work for gcc of Debian.
   if (!(*up_srcsdr)) {
-    fprintf(stderr, "ERROR: source: %s\n", up_srcsdr->error().c_str());
+    fmt::println(stderr, "ERROR: source: {}", up_srcsdr->error());
     exit(1);
   }
 
@@ -820,11 +847,11 @@ int main(int argc, char **argv) {
   switch (modtype) {
   case ModType::FM:
   case ModType::NBFM:
-    fprintf(stderr, "audio sample rate: %u [Hz],", pcmrate);
-    fprintf(stderr, " audio bandwidth: %u [Hz]\n",
-            (unsigned int)FmDecoder::bandwidth_pcm);
-    fprintf(stderr, "audio totally decimated from IF by: %.9g\n",
-            total_decimation_ratio);
+    fmt::print(stderr, "audio sample rate: {} [Hz],", pcmrate);
+    fmt::println(stderr, " audio bandwidth: {} [Hz]",
+                 (unsigned int)FmDecoder::bandwidth_pcm);
+    fmt::println(stderr, "audio totally decimated from IF by: {:.9g}",
+                 total_decimation_ratio);
     break;
   case ModType::AM:
   case ModType::DSB:
@@ -832,18 +859,18 @@ int main(int argc, char **argv) {
   case ModType::LSB:
   case ModType::CW:
   case ModType::WSPR:
-    fprintf(stderr, "AM demodulator deemphasis: %.9g [µs]\n",
-            AmDecoder::deemphasis_time);
+    fmt::println(stderr, "AM demodulator deemphasis: {:.9g} [µs]",
+                 AmDecoder::deemphasis_time);
     break;
   }
   if (modtype == ModType::FM) {
-    fprintf(stderr, "FM demodulator deemphasis: %.9g [µs]\n", deemphasis);
+    fmt::println(stderr, "FM demodulator deemphasis: {:.9g} [µs]", deemphasis);
     if (multipathfilter_stages > 0) {
-      fprintf(stderr, "FM IF multipath filter enabled, stages: %d\n",
-              multipathfilter_stages);
+      fmt::println(stderr, "FM IF multipath filter enabled, stages: {}",
+                   multipathfilter_stages);
     }
   }
-  fprintf(stderr, "Filter type: %s\n", filtertype_str.c_str());
+  fmt::println(stderr, "Filter type: {}", filtertype_str);
 
   // Initialize moving average object for FM ppm monitoring.
   const unsigned int ppm_average_stages = 100;
@@ -1000,14 +1027,14 @@ int main(int argc, char **argv) {
           switch (pilot_status) {
           case PilotState::NotDetected:
             if (stereo_status) {
-              fprintf(stderr, "\ngot stereo signal\n");
+              fmt::println(stderr, "\ngot stereo signal");
               pilot_status = PilotState::Detected;
               pilot_level_average.fill(0.0f);
             }
             break;
           case PilotState::Detected:
             if (!stereo_status) {
-              fprintf(stderr, "\nlost stereo signal\n");
+              fmt::println(stderr, "\nlost stereo signal");
               pilot_status = PilotState::NotDetected;
             }
             break;
@@ -1019,17 +1046,17 @@ int main(int argc, char **argv) {
 
         switch (modtype) {
         case ModType::FM:
-          fprintf(stderr,
-                  "\rblk=%11" PRIu64
-                  ":ppm=%+7.3f:IF=%+6.1fdB:AF=%+6.1fdB:Pilot= %8.6f",
-                  block, ppm_average.average(), if_level_db, audio_level_db,
-                  pilot_level_average.average());
+          fmt::print(stderr,
+                     "\rblk={:11}:ppm={:+7.3f}:IF={:+6.1f}dB:AF={:+6.1f}dB:"
+                     "Pilot= {:8.6f}",
+                     block, ppm_average.average(), if_level_db, audio_level_db,
+                     pilot_level_average.average());
           fflush(stderr);
           break;
         case ModType::NBFM:
-          fprintf(stderr,
-                  "\rblk=%11" PRIu64 ":ppm=%+7.3f:IF=%+6.1fdB:AF=%+6.1fdB",
-                  block, ppm_average.average(), if_level_db, audio_level_db);
+          fmt::print(stderr,
+                     "\rblk={:11}:ppm={:+7.3f}:IF={:+6.1f}dB:AF={:+6.1f}dB",
+                     block, ppm_average.average(), if_level_db, audio_level_db);
           fflush(stderr);
           break;
         case ModType::AM:
@@ -1042,9 +1069,9 @@ int main(int argc, char **argv) {
           // Add 1e-9 to log10() to prevent generating NaN
           double if_agc_gain_db =
               20 * log10(am.get_if_agc_current_gain() + 1e-9);
-          fprintf(stderr,
-                  "\rblk=%11" PRIu64 ":IF=%+6.1fdB:AGC=%+6.1fdB:AF=%+6.1fdB",
-                  block, if_level_db, if_agc_gain_db, audio_level_db);
+          fmt::print(stderr,
+                     "\rblk={:11}:IF={:+6.1f}dB:AGC={:+6.1f}dB:AF={:+6.1f}dB",
+                     block, if_level_db, if_agc_gain_db, audio_level_db);
           fflush(stderr);
           break;
         }
@@ -1074,9 +1101,9 @@ int main(int argc, char **argv) {
         for (const PilotPhaseLock::PpsEvent &ev : fm.get_pps_events()) {
           double ts = prev_block_time;
           ts += ev.block_position * (block_time - prev_block_time);
-          fprintf(ppsfile, "%8s %14s %18.6f %+9.3f\n",
-                  std::to_string(ev.pps_index).c_str(),
-                  std::to_string(ev.sample_index).c_str(), ts, if_level_db);
+          fmt::println(ppsfile, "{:>8} {:>14} {:18.6f} {:+9.3f}",
+                       std::to_string(ev.pps_index),
+                       std::to_string(ev.sample_index), ts, if_level_db);
           fflush(ppsfile);
           // Erase the marked event.
           fm.erase_first_pps_event();
@@ -1090,8 +1117,8 @@ int main(int argc, char **argv) {
       case ModType::CW:
       case ModType::WSPR:
         if ((block % (stat_rate * 10)) == 0) {
-          fprintf(ppsfile, "%11" PRIu64 " %18.6f %+9.3f\n", block,
-                  prev_block_time, if_level_db);
+          fmt::println(ppsfile, "{:11} {:18.6f} {:+9.3f}", block,
+                       prev_block_time, if_level_db);
           fflush(ppsfile);
         }
         break;
@@ -1103,14 +1130,14 @@ int main(int argc, char **argv) {
   }
 
   // Exit and cleanup
-  fprintf(stderr, "\n");
+  fmt::println(stderr, "");
 
   // Close audio output.
   audio_output->output_close();
   // Terminate receiver thread.
   up_srcsdr->stop();
 
-  fprintf(stderr, "airspy-fmradion terminated\n");
+  fmt::println(stderr, "airspy-fmradion terminated");
 
   // Destructors of the source driver and other objects
   // will perform the proper cleanup.
