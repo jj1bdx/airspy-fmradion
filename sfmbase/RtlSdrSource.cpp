@@ -20,9 +20,9 @@
 #include <algorithm>
 #include <climits>
 #include <cstring>
+#include <fmt/base.h>
 #include <iomanip>
 #include <iostream>
-#include <fmt/base.h>
 #include <rtl-sdr.h>
 #include <sstream>
 #include <thread>
@@ -267,7 +267,7 @@ void RtlSdrSource::print_specific_parms() {
   }
 
   fmt::println(stderr, "RTL AGC mode:      {}",
-          m_confAgc ? "enabled" : "disabled");
+               m_confAgc ? "enabled" : "disabled");
 }
 
 // Return current tuner gain in units of 0.1 dB.

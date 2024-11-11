@@ -18,6 +18,7 @@
 
 #include "AudioResampler.h"
 #include "CDSPResampler.h"
+#include <fmt/base.h>
 
 // class AudioResampler
 
@@ -27,7 +28,7 @@ AudioResampler::AudioResampler(const double input_rate,
           new r8b::CDSPResampler(input_rate, output_rate, max_input_length)) {
 #ifdef DEBUG_AUDIORESAMPLER
   int latency = m_cdspr->getInLenBeforeOutStart();
-  fprintf(stderr, "AudioResampler latency = %d\n", latency);
+  fmt::println(stderr, "AudioResampler latency = {}", latency);
 #endif // DEBUG_AUDIORESAMPLER
   // do nothing
 }
@@ -53,8 +54,8 @@ void AudioResampler::process(const SampleVector &samples_in,
     samples_out.assign(output0, output0 + output_length);
   }
 #ifdef DEBUG_AUDIORESAMPLER
-  fprintf(stderr, "AudioResampler: input_size = %zu, output_length = %zu\n",
-          input_size, output_length);
+  fmt::println(stderr, "AudioResampler: input_size = {}, output_length = {}",
+               input_size, output_length);
 #endif // DEBUG_AUDIORESAMPLER
 }
 

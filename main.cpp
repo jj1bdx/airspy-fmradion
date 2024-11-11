@@ -1082,13 +1082,13 @@ int main(int argc, char **argv) {
           (block % (stat_rate * 10)) == 0) {
         double mf_error = fm.get_multipath_error();
         const MfCoeffVector &mf_coeff = fm.get_multipath_coefficients();
-        fprintf(stderr, "block,%" PRIu64 ",mf_error,%.9f,mf_coeff,", block,
-                mf_error);
+        fmt::print(stderr, "block,{},mf_error,{:.9f},mf_coeff,", block,
+                   mf_error);
         for (unsigned int i = 0; i < mf_coeff.size(); i++) {
           MfCoeff val = mf_coeff[i];
-          fprintf(stderr, "%d,%.9f,%.9f,", i, val.real(), val.imag());
+          fmt::print(stderr, "{},{:.9f},{:.9f},", i, val.real(), val.imag());
         }
-        fprintf(stderr, "\n");
+        fmt::print(stderr, "\n");
         fflush(stderr);
       }
 #endif

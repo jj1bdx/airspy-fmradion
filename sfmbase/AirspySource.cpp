@@ -20,11 +20,11 @@
 #include <algorithm>
 #include <cstdlib>
 #include <cstring>
+#include <fmt/base.h>
 #include <iomanip>
 #include <iostream>
 #include <sstream>
 #include <thread>
-#include <fmt/base.h>
 #include <unistd.h>
 
 #include "AirspySource.h"
@@ -207,7 +207,7 @@ bool AirspySource::is_low_if() { return true; }
 
 void AirspySource::print_specific_parms() {
   fmt::println(stderr, "LNA/Mix/VGA gain: {}, {}, {} dB", m_lnaGain, m_mixGain,
-          m_vgaGain);
+               m_vgaGain);
   fmt::print(stderr, "Antenna bias: {}", m_biasAnt ? "on" : "off");
   fmt::print(stderr, " / LNA AGC: {}", m_lnaAGC ? "on" : "off");
   fmt::println(stderr, " / Mixer AGC: {}", m_mixAGC ? "on" : "off");
