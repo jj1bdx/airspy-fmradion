@@ -13,20 +13,12 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Use cmake-git-version-tracking
 include(FetchContent)
-
 FetchContent_Declare(
   cmake_git_version_tracking
   GIT_REPOSITORY
     https://github.com/jj1bdx/cmake-git-version-tracking.git
   GIT_TAG 6c0cb87edd029ddfb403a8e24577c144a03605a6)
 FetchContent_MakeAvailable(cmake_git_version_tracking)
-
-FetchContent_Declare(
-  fmt
-  GIT_REPOSITORY https://github.com/fmtlib/fmt
-  GIT_TAG        0c9fce2ffefecfdce794e1859584e25877b7b592) # 11.0.2
-FetchContent_MakeAvailable(fmt)
- 
 # EXPORT_COMPILE_COMMANDS is supported for CMake version 3.20 or later
 # only
 if(CMAKE_VERSION VERSION_LESS 3.20.0)
@@ -44,6 +36,17 @@ include(FindPkgConfig)
 set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
 set(THREADS_PREFER_PTHREAD_FLAG TRUE)
 find_package(Threads REQUIRED)
+
+# Find fmt library.
+pkg_check_modules(PKG_FMT fmt)
+if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+  find_library(
+    FMT_LIBRARY libfmt.dylib HINTS /usr/local/lib /opt/homebrew/lib
+                                   ${PKG_FMT_LIBRARY_DIRS})
+else()
+  find_library(FMT_LIBRARY libfmt.so HINTS ${PKG_FMT_LIBRARY_DIRS})
+endif()
+message(STATUS "fmt ${PKG_FMT_VERSION}: ${FMT_LIBRARY}")
 
 # Find Volk library.
 pkg_check_modules(PKG_VOLK volk REQUIRED)
@@ -303,7 +306,6 @@ set(sfmbase_SOURCES ${sfmbase_SOURCES} ${sfmbase_HEADERS})
 # Libraries
 
 add_library(sfmbase STATIC ${sfmbase_SOURCES})
-target_link_libraries(sfmbase fmt)
 
 # Executable
 
@@ -324,6 +326,7 @@ target_link_libraries(
   r8b
   Threads::Threads
   ${PORTAUDIO_LINK_LIBRARIES}
+  ${FMT_LIBRARY}
   ${VOLK_LIBRARY}
   ${EXTRA_LIBS}
   cmake_git_version_tracking)
