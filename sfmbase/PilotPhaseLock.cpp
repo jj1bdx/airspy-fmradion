@@ -20,7 +20,7 @@
 #include "PilotPhaseLock.h"
 #include "Utility.h"
 
-#include <fmt/base.h>
+#include <fmt/format.h>
 
 // Define this to print PLL filter messages
 // #undef DEBUG_PLL_FILTER

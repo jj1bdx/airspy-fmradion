@@ -22,7 +22,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <fmt/base.h>
+#include <fmt/format.h>
 #include <getopt.h>
 #include <memory>
 #include <signal.h>

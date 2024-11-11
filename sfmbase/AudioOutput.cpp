@@ -23,7 +23,7 @@
 #include <cstdio>
 #include <cstring>
 #include <fcntl.h>
-#include <fmt/base.h>
+#include <fmt/format.h>
 #include <unistd.h>
 
 #include "AudioOutput.h"

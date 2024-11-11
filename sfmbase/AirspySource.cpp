@@ -20,7 +20,7 @@
 #include <algorithm>
 #include <cstdlib>
 #include <cstring>
-#include <fmt/base.h>
+#include <fmt/format.h>
 #include <iomanip>
 #include <iostream>
 #include <sstream>

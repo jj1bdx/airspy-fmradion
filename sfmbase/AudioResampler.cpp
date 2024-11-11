@@ -18,7 +18,8 @@
 
 #include "AudioResampler.h"
 #include "CDSPResampler.h"
-#include <fmt/base.h>
+
+#include <fmt/format.h>
 
 // class AudioResampler
 

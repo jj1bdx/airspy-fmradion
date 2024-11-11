@@ -18,7 +18,7 @@
 
 #include "IfResampler.h"
 
-#include <fmt/base.h>
+#include <fmt/format.h>
 
 // class IfResampler
 
