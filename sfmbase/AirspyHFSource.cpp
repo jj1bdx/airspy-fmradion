@@ -94,7 +94,7 @@ AirspyHFSource::AirspyHFSource(int dev_index)
 
     delete[] sampleRates;
 
-    m_sratesStr = fmt::format("{}", m_srates);
+    m_sratesStr = fmt::format("{}", fmt::join(m_srates, ", "));
   }
 
   m_this = this;

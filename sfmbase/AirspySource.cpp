@@ -106,7 +106,7 @@ AirspySource::AirspySource(int dev_index)
 
     delete[] sampleRates;
 
-    m_sratesStr = fmt::format("{}", m_srates);
+    m_sratesStr = fmt::format("{}", fmt::join(m_srates, ", "));
 
     rc = (airspy_error)airspy_set_sample_type(m_dev, AIRSPY_SAMPLE_FLOAT32_IQ);
 
@@ -115,9 +115,9 @@ AirspySource::AirspySource(int dev_index)
     }
   }
 
-  m_lgainsStr = fmt::format("{}", m_lgains);
-  m_mgainsStr = fmt::format("{}", m_mgains);
-  m_vgainsStr = fmt::format("{}", m_vgains);
+  m_lgainsStr = fmt::format("{}", fmt::join(m_lgains, ", "));
+  m_mgainsStr = fmt::format("{}", fmt::join(m_mgains, ", "));
+  m_vgainsStr = fmt::format("{}", fmt::join(m_vgains, ", "));
 
   m_this = this;
 }
