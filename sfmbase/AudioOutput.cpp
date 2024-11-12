@@ -17,8 +17,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#include "sndfile.h"
-
 #include <cerrno>
 #include <cstdio>
 #include <cstring>
@@ -287,12 +285,10 @@ bool PortAudioOutput::write(const SampleVector &samples) {
 // then add PortAudio error string to m_error and set m_zombie flag.
 void PortAudioOutput::add_paerror(const std::string &premsg) {
   Pa_Terminate();
-  m_error += premsg;
-  m_error += ": PortAudio error: (number: ";
-  m_error += std::to_string(m_paerror);
-  m_error += " message: ";
-  m_error += Pa_GetErrorText(m_paerror);
-  m_error += ")";
+  std::string addmsg = fmt::format(
+                      "{}: PortAudio error: (number: {} message: {})",
+                    premsg, m_paerror, Pa_GetErrorText(m_paerror));
+  m_error.append(addmsg);
   m_zombie = true;
 }
 
