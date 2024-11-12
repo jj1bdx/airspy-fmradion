@@ -322,7 +322,7 @@ int main(int argc, char **argv) {
   }
 
   // Print starting messages.
-  fmt::println(stderr, "airspy-fmradion 20240424-0");
+  fmt::println(stderr, "airspy-fmradion Version {}", AIRSPY_FMRADION_VERSION);
   fmt::print(stderr, "Software FM/AM radio for ");
   fmt::println(stderr, "Airspy R2, Airspy HF+, and RTL-SDR");
   if (git::IsPopulated()) {
