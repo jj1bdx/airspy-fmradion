@@ -40,7 +40,8 @@ SndfileOutput::SndfileOutput(const std::string &filename,
   } else {
     m_fd = open(filename.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0666);
     if (m_fd < 0) {
-      m_error = fmt::format("can not open '{}' ({})", filename, strerror(errno));
+      m_error =
+          fmt::format("can not open '{}' ({})", filename, strerror(errno));
       m_zombie = true;
       return;
     }
@@ -58,7 +59,8 @@ SndfileOutput::SndfileOutput(const std::string &filename,
 
   m_sndfile = sf_open_fd(m_fd, SFM_WRITE, &m_sndfile_sfinfo, SF_TRUE);
   if (m_sndfile == nullptr) {
-    m_error = fmt::format("can not open '{}' ({})", filename, sf_strerror(m_sndfile));
+    m_error =
+        fmt::format("can not open '{}' ({})", filename, sf_strerror(m_sndfile));
     m_zombie = true;
     return;
   }
@@ -69,7 +71,9 @@ SndfileOutput::SndfileOutput(const std::string &filename,
   if (filetype == SF_FORMAT_RF64) {
     if (SF_TRUE !=
         sf_command(m_sndfile, SFC_RF64_AUTO_DOWNGRADE, NULL, SF_TRUE)) {
-      m_error = fmt::format("unable to set SFC_RF64_AUTO_DOWNGRADE to SF_TRUE on '{}' ({})", filename, sf_strerror(m_sndfile));
+      m_error = fmt::format(
+          "unable to set SFC_RF64_AUTO_DOWNGRADE to SF_TRUE on '{}' ({})",
+          filename, sf_strerror(m_sndfile));
       add_error_log_info(m_sndfile);
       return;
     }
@@ -79,7 +83,9 @@ SndfileOutput::SndfileOutput(const std::string &filename,
   if ((filetype == SF_FORMAT_RF64) || (filetype == SF_FORMAT_WAV)) {
     if (SF_TRUE !=
         sf_command(m_sndfile, SFC_SET_UPDATE_HEADER_AUTO, NULL, SF_TRUE)) {
-      m_error = fmt::format("unable to set SFC_SET_UPDATE_HEADER_AUTO to SF_TRUE on '{}' ({})", filename, sf_strerror(m_sndfile));
+      m_error = fmt::format(
+          "unable to set SFC_SET_UPDATE_HEADER_AUTO to SF_TRUE on '{}' ({})",
+          filename, sf_strerror(m_sndfile));
       add_error_log_info(m_sndfile);
       return;
     }
@@ -97,13 +103,16 @@ SndfileOutput::SndfileOutput(const std::string &filename,
     // executing SFC_SET_BITRATE_MODE.
     if (SF_TRUE != sf_command(m_sndfile, SFC_SET_COMPRESSION_LEVEL,
                               &compression_level, sizeof(double))) {
-      m_error = fmt::format("unable to set SFC_SET_COMPRESSION_LEVEL on '{}' ({})", filename, sf_strerror(m_sndfile));
+      m_error =
+          fmt::format("unable to set SFC_SET_COMPRESSION_LEVEL on '{}' ({})",
+                      filename, sf_strerror(m_sndfile));
       add_error_log_info(m_sndfile);
       return;
     }
     if (SF_TRUE != sf_command(m_sndfile, SFC_SET_BITRATE_MODE, &constant_mode,
                               sizeof(int))) {
-      m_error = fmt::format("unable to set SFC_SET_BITRATE_MODE on '{}' ({})", filename, sf_strerror(m_sndfile));
+      m_error = fmt::format("unable to set SFC_SET_BITRATE_MODE on '{}' ({})",
+                            filename, sf_strerror(m_sndfile));
       add_error_log_info(m_sndfile);
       return;
     }
@@ -279,9 +288,9 @@ bool PortAudioOutput::write(const SampleVector &samples) {
 // then add PortAudio error string to m_error and set m_zombie flag.
 void PortAudioOutput::add_paerror(const std::string &premsg) {
   Pa_Terminate();
-  std::string addmsg = fmt::format(
-                      "{}: PortAudio error: (number: {} message: {})",
-                    premsg, m_paerror, Pa_GetErrorText(m_paerror));
+  std::string addmsg =
+      fmt::format("{}: PortAudio error: (number: {} message: {})", premsg,
+                  m_paerror, Pa_GetErrorText(m_paerror));
   m_error.append(addmsg);
   m_zombie = true;
 }

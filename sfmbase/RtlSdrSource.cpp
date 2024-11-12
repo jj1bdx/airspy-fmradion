@@ -55,7 +55,8 @@ RtlSdrSource::RtlSdrSource(int dev_index)
       return static_cast<double>(static_cast<double>(v) * 0.1);
     };
     m_gainsStr = fmt::format(
-        "{:.1f}", fmt::join(std::views::transform(m_gains, divide_by_ten), ", "));
+        "{:.1f}",
+        fmt::join(std::views::transform(m_gains, divide_by_ten), ", "));
   }
 
   m_this = this;
