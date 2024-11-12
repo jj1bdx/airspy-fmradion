@@ -21,6 +21,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <fmt/format.h>
+#include <fmt/ranges.h>
 #include <thread>
 #include <unistd.h>
 
@@ -105,12 +106,7 @@ AirspySource::AirspySource(int dev_index)
 
     delete[] sampleRates;
 
-    std::string ostr = "";
-    for (int s : m_srates) {
-      ostr.append(std::to_string(s));
-      ostr.append(" ");
-    }
-    m_sratesStr = ostr;
+    m_sratesStr = fmt::format("{}", m_srates);
 
     rc = (airspy_error)airspy_set_sample_type(m_dev, AIRSPY_SAMPLE_FLOAT32_IQ);
 
@@ -119,26 +115,9 @@ AirspySource::AirspySource(int dev_index)
     }
   }
 
-  std::string lgains_ostr;
-  for (int g : m_lgains) {
-    lgains_ostr.append(std::to_string(g));
-    lgains_ostr.append(" ");
-  }
-  m_lgainsStr = lgains_ostr;
-
-  std::string mgains_ostr;
-  for (int g : m_mgains) {
-    mgains_ostr.append(std::to_string(g));
-    mgains_ostr.append(" ");
-  }
-  m_mgainsStr = mgains_ostr;
-
-  std::string vgains_ostr;
-  for (int g : m_vgains) {
-    vgains_ostr.append(std::to_string(g));
-    vgains_ostr.append(" ");
-  }
-  m_mgainsStr = vgains_ostr;
+  m_lgainsStr = fmt::format("{}", m_lgains);
+  m_mgainsStr = fmt::format("{}", m_mgains);
+  m_vgainsStr = fmt::format("{}", m_vgains);
 
   m_this = this;
 }

@@ -20,6 +20,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <fmt/format.h>
+#include <fmt/ranges.h>
 #include <thread>
 #include <unistd.h>
 
@@ -93,12 +94,7 @@ AirspyHFSource::AirspyHFSource(int dev_index)
 
     delete[] sampleRates;
 
-    std::string ostr = "";
-    for (int s : m_srates) {
-      ostr.append(std::to_string(s));
-      ostr.append(" ");
-    }
-    m_sratesStr = ostr;
+    m_sratesStr = fmt::format("{}", m_srates);
   }
 
   m_this = this;
