@@ -26,6 +26,7 @@
 
 #include "AudioOutput.h"
 #include "SoftFM.h"
+#include "sndfile.h"
 
 // class SndfileOutput
 
@@ -39,7 +40,7 @@ SndfileOutput::SndfileOutput(const std::string &filename,
   } else {
     m_fd = open(filename.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0666);
     if (m_fd < 0) {
-      m_error = "can not open '" + filename + "' (" + strerror(errno) + ")";
+      m_error = fmt::format("can not open '{}' ({})", filename, strerror(errno));
       m_zombie = true;
       return;
     }
@@ -50,15 +51,14 @@ SndfileOutput::SndfileOutput(const std::string &filename,
   m_sndfile_sfinfo.channels = numberOfChannels;
 
   if (!sf_format_check(&m_sndfile_sfinfo)) {
-    m_error = "SF_INFO for file '" + filename + "' is invalid";
+    m_error = fmt::format("SF_INFO for file '{}' is invalid", filename);
     m_zombie = true;
     return;
   }
 
   m_sndfile = sf_open_fd(m_fd, SFM_WRITE, &m_sndfile_sfinfo, SF_TRUE);
   if (m_sndfile == nullptr) {
-    m_error =
-        "can not open '" + filename + "' (" + sf_strerror(m_sndfile) + ")";
+    m_error = fmt::format("can not open '{}' ({})", filename, sf_strerror(m_sndfile));
     m_zombie = true;
     return;
   }
@@ -69,8 +69,7 @@ SndfileOutput::SndfileOutput(const std::string &filename,
   if (filetype == SF_FORMAT_RF64) {
     if (SF_TRUE !=
         sf_command(m_sndfile, SFC_RF64_AUTO_DOWNGRADE, NULL, SF_TRUE)) {
-      m_error = "unable to set SFC_RF64_AUTO_DOWNGRADE to SF_TRUE on '" +
-                filename + "' (" + sf_strerror(m_sndfile) + ")";
+      m_error = fmt::format("unable to set SFC_RF64_AUTO_DOWNGRADE to SF_TRUE on '{}' ({})", filename, sf_strerror(m_sndfile));
       add_error_log_info(m_sndfile);
       return;
     }
@@ -80,8 +79,7 @@ SndfileOutput::SndfileOutput(const std::string &filename,
   if ((filetype == SF_FORMAT_RF64) || (filetype == SF_FORMAT_WAV)) {
     if (SF_TRUE !=
         sf_command(m_sndfile, SFC_SET_UPDATE_HEADER_AUTO, NULL, SF_TRUE)) {
-      m_error = "unable to set SFC_SET_UPDATE_HEADER_AUTO to SF_TRUE on '" +
-                filename + "' (" + sf_strerror(m_sndfile) + ")";
+      m_error = fmt::format("unable to set SFC_SET_UPDATE_HEADER_AUTO to SF_TRUE on '{}' ({})", filename, sf_strerror(m_sndfile));
       add_error_log_info(m_sndfile);
       return;
     }
@@ -99,15 +97,13 @@ SndfileOutput::SndfileOutput(const std::string &filename,
     // executing SFC_SET_BITRATE_MODE.
     if (SF_TRUE != sf_command(m_sndfile, SFC_SET_COMPRESSION_LEVEL,
                               &compression_level, sizeof(double))) {
-      m_error = "unable to set SFC_SET_COMPRESSION_LEVEL on '" + filename +
-                "' (" + sf_strerror(m_sndfile) + ")";
+      m_error = fmt::format("unable to set SFC_SET_COMPRESSION_LEVEL on '{}' ({})", filename, sf_strerror(m_sndfile));
       add_error_log_info(m_sndfile);
       return;
     }
     if (SF_TRUE != sf_command(m_sndfile, SFC_SET_BITRATE_MODE, &constant_mode,
                               sizeof(int))) {
-      m_error = "unable to set SFC_SET_BITRATE_MODE on '" + filename + "' (" +
-                sf_strerror(m_sndfile) + ")";
+      m_error = fmt::format("unable to set SFC_SET_BITRATE_MODE on '{}' ({})", filename, sf_strerror(m_sndfile));
       add_error_log_info(m_sndfile);
       return;
     }
@@ -147,9 +143,7 @@ bool SndfileOutput::write(const SampleVector &samples) {
   // Write samples to file with items.
   sf_count_t k = sf_write_double(m_sndfile, samples.data(), size);
   if (k != size) {
-    m_error = "write failed (";
-    m_error += sf_strerror(m_sndfile);
-    m_error += ")";
+    m_error = fmt::format("write failed ({})", sf_strerror(m_sndfile));
     return false;
   }
   return true;
@@ -164,9 +158,9 @@ void SndfileOutput::add_error_log_info(SNDFILE *sf) {
   length = sf_command(sf, SFC_GET_LOG_INFO, buffer, max_length);
   std::string logmsg(buffer, length);
 
-  m_error += "\n=== SFC_GET_LOG_INFO output:\n";
-  m_error += logmsg;
-  m_error += "\n=== End of SFC_GET_LOG_INFO output\n";
+  m_error.append("\n=== SFC_GET_LOG_INFO output:\n");
+  m_error.append(logmsg);
+  m_error.append("\n=== End of SFC_GET_LOG_INFO output\n");
   m_zombie = true;
 }
 // Class PortAudioOutput
