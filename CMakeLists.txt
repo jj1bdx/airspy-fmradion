@@ -19,6 +19,7 @@ FetchContent_Declare(
     https://github.com/jj1bdx/cmake-git-version-tracking.git
   GIT_TAG 6c0cb87edd029ddfb403a8e24577c144a03605a6)
 FetchContent_MakeAvailable(cmake_git_version_tracking)
+
 # EXPORT_COMPILE_COMMANDS is supported for CMake version 3.20 or later
 # only
 if(CMAKE_VERSION VERSION_LESS 3.20.0)
@@ -33,10 +34,32 @@ endif()
 include(FindPkgConfig)
 
 # Find Threads package
-find_package(Threads)
+find_package(Threads REQUIRED)
+
+# Find fmt library.
+
+# cmake-format: off
+# NOTE: find_package() for fmt didn't work on macOS
+# due to compilation errors on Apple Clang 16, as:
+#/Users/kenji/src/airspy-fmradion/include/DataBuffer.h:49:12: error: no member named 'scoped_lock' in namespace 'std'
+#   49 |       std::scoped_lock<std::mutex> lock(m_mutex);
+#      |       ~~~~~^
+#/Users/kenji/src/airspy-fmradion/include/DataBuffer.h:49:34: error: expected '(' for function-style cast or type construction
+#   49 |       std::scoped_lock<std::mutex> lock(m_mutex);
+# cmake-format: on
+
+pkg_check_modules(PKG_FMT fmt REQUIRED)
+if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+  find_library(
+    FMT_LIBRARY libfmt.dylib HINTS /usr/local/lib /opt/homebrew/lib
+                                   ${PKG_FMT_LIBRARY_DIRS})
+else()
+  find_library(FMT_LIBRARY libfmt.so HINTS ${PKG_FMT_LIBRARY_DIRS})
+endif()
+message(STATUS "fmt ${PKG_FMT_VERSION}: ${FMT_LIBRARY}")
 
 # Find Volk library.
-pkg_check_modules(PKG_VOLK volk)
+pkg_check_modules(PKG_VOLK volk REQUIRED)
 if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
   find_library(
     VOLK_LIBRARY libvolk.dylib HINTS /usr/local/lib /opt/homebrew/lib
@@ -47,7 +70,7 @@ endif()
 message(STATUS "volk ${PKG_VOLK_VERSION}: ${VOLK_LIBRARY}")
 
 # Find Airspy library.
-pkg_check_modules(PKG_AIRSPY libairspy)
+pkg_check_modules(PKG_AIRSPY libairspy REQUIRED)
 if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
   find_path(
     AIRSPY_INCLUDE_DIR airspy.h
@@ -71,7 +94,7 @@ message(
 )
 
 # Find Airspy HF library.
-pkg_check_modules(PKG_AIRSPYHF libairspyhf)
+pkg_check_modules(PKG_AIRSPYHF libairspyhf REQUIRED)
 if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
   find_path(
     AIRSPYHF_INCLUDE_DIR airspyhf.h
@@ -96,7 +119,7 @@ message(
 )
 
 # Find RTL-SDR library.
-pkg_check_modules(PKG_RTLSDR librtlsdr)
+pkg_check_modules(PKG_RTLSDR librtlsdr REQUIRED)
 find_path(RTLSDR_INCLUDE_DIR rtl-sdr.h HINTS ${PKG_RTLSDR_INCLUDE_DIRS})
 if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
   find_library(RTLSDR_LIBRARY librtlsdr.dylib
@@ -110,11 +133,9 @@ message(
     "librtlsdr ${PKG_RTLSDR_VERSION}: ${RTLSDR_INCLUDE_DIR}, ${RTLSDR_LIBRARY}"
 )
 
-# Find libusb
-#
-# See
+# Find libusb See
 # https://github.com/texane/stlink/blob/master/cmake/modules/FindLibUSB.cmake
-pkg_check_modules(PKG_LIBUSB libusb-1.0)
+pkg_check_modules(PKG_LIBUSB libusb-1.0 REQUIRED)
 find_path(
   LIBUSB_INCLUDE_DIR libusb.h
   HINTS /usr /usr/local /opt /opt/homebrew ${PKG_LIBUSB_INCLUDE_DIRS}
@@ -129,7 +150,7 @@ message(
 )
 
 # Find sndfile library
-pkg_check_modules(PKG_SNDFILE sndfile)
+pkg_check_modules(PKG_SNDFILE sndfile REQUIRED)
 find_path(SNDFILE_INCLUDE_DIR sndfile.h
           HINTS ${PKG_SNDFILE_INCLUDE_DIRS})
 find_library(SNDFILE_LIBRARY sndfile)
@@ -144,7 +165,7 @@ if(PKG_SNDFILE_VERSION VERSION_GREATER_EQUAL "1.1")
 endif()
 
 # for PortAudio
-pkg_check_modules(PORTAUDIO2 portaudio-2.0)
+pkg_check_modules(PORTAUDIO2 portaudio-2.0 REQUIRED)
 if(PORTAUDIO2_FOUND)
   set(PORTAUDIO_INCLUDE_DIRS ${PORTAUDIO2_INCLUDE_DIRS})
   set(PORTAUDIO_LIBRARY_DIRS ${PORTAUDIO2_LIBRARY_DIRS})
@@ -311,8 +332,9 @@ target_link_libraries(
   airspy-fmradion
   sfmbase
   r8b
-  ${CMAKE_THREAD_LIBS_INIT}
+  Threads::Threads
   ${PORTAUDIO_LINK_LIBRARIES}
+  ${FMT_LIBRARY}
   ${VOLK_LIBRARY}
   ${EXTRA_LIBS}
   cmake_git_version_tracking)

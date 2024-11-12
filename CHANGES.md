@@ -26,6 +26,8 @@ The following Git repository is required:
 
 ## Known limitations
 
+* `{fmt}` aka libfmt 11.0.2 or later must be installed for formatted text printing.
+  * This is required for the planned future C++23 `std::print()` functionality requirement.
 * libsndfile 1.1 or later must be installed to support MP3 file output.
 * For Raspberry Pi 3 and 4, Airspy R2 10Msps and Airspy Mini 6Msps sampling rates are *not supported* due to the hardware limitation. Use in 2.5Msps for R2, 3Msps for Mini.
 * Since 20231227-0, the buffer length option `-b` is no longer handled and will generate an error. The audio sample data sent to AudioOutput base classes are no longer pre-buffered.
