@@ -111,7 +111,7 @@ brew install fmt
 
 ### Install the supported libfmt
 
-* You may need to install libfmt as described in [libfmt.md](libfmt.md).
+* You need to install libfmt as described in [libfmt.md](libfmt.md).
 
 ## Installation
 
