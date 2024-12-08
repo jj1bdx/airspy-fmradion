@@ -16,7 +16,7 @@ The following Git repository is required:
 
 ## Platforms tested
 
-* Mac mini 2023 Apple Silicon (M2 Pro), macOS 14.7.1, Apple clang version 16.0.0 (clang-1600.0.26.4)
+* Mac mini 2023 Apple Silicon (M2 Pro), macOS 15.1.1, Apple clang version 16.0.0 (clang-1600.0.26.4)
 * Ubuntu 24.04 LTS x86\_64, gcc 14.2.0
 * Raspberry Pi 5 with Raspberry Pi OS 64bit Lite (Debian Bookworm)
 
@@ -26,6 +26,8 @@ The following Git repository is required:
 
 ## Known limitations
 
+* `{fmt}` aka libfmt 11.0.2 or later must be installed for formatted text printing.
+  * This is required for the planned future C++23 `std::print()` functionality requirement.
 * libsndfile 1.1 or later must be installed to support MP3 file output.
 * For Raspberry Pi 3 and 4, Airspy R2 10Msps and Airspy Mini 6Msps sampling rates are *not supported* due to the hardware limitation. Use in 2.5Msps for R2, 3Msps for Mini.
 * Since 20231227-0, the buffer length option `-b` is no longer handled and will generate an error. The audio sample data sent to AudioOutput base classes are no longer pre-buffered.
@@ -37,6 +39,8 @@ Intel Mac hardware is no longer supported by airspy-fmradion, although the autho
 
 ## Changes (including requirement changes)
 
+* 20241208-0: [Use {fmt} as the output library.](https://github.com/jj1bdx/airspy-fmradion/pull/83)
+  * {fmt} 11.0.2 or later is required.
 * 20240424-0: Made the following changes:
   * [Add libairspyhf latest version document.](https://github.com/jj1bdx/airspy-fmradion/pull/80)
     * Airspy HF+ Firmware R3.0.7 and R4.0.8 both work OK on libairspyhf 1.6.8.

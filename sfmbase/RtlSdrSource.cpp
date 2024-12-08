@@ -20,10 +20,10 @@
 #include <algorithm>
 #include <climits>
 #include <cstring>
-#include <iomanip>
-#include <iostream>
+#include <fmt/format.h>
+#include <fmt/ranges.h>
+#include <ranges>
 #include <rtl-sdr.h>
-#include <sstream>
 #include <thread>
 #include <unistd.h>
 
@@ -51,15 +51,12 @@ RtlSdrSource::RtlSdrSource(int dev_index)
     m_error += ")";
   } else {
     m_gains = get_tuner_gains();
-    std::ostringstream gains_ostr;
-
-    gains_ostr << std::fixed << std::setprecision(1);
-
-    for (int g : m_gains) {
-      gains_ostr << 0.1 * g << " ";
-    }
-
-    m_gainsStr = gains_ostr.str();
+    const auto divide_by_ten = [](int v) {
+      return static_cast<double>(static_cast<double>(v) * 0.1);
+    };
+    m_gainsStr = fmt::format(
+        "{:.1f}",
+        fmt::join(std::views::transform(m_gains, divide_by_ten), ", "));
   }
 
   m_this = this;
@@ -96,7 +93,7 @@ bool RtlSdrSource::configure(std::string configurationStr) {
       m_error = "Invalid sample rate";
       return false;
     }
-    std::cerr << "RtlSdrSource::configure: srate: " << sample_rate << std::endl;
+    fmt::println(stderr, "RtlSdrSource::configure: srate: {}", sample_rate);
   }
 
   if (m.find("freq") != m.end()) {
@@ -107,12 +104,12 @@ bool RtlSdrSource::configure(std::string configurationStr) {
       m_error = "Invalid frequency";
       return false;
     }
-    std::cerr << "RtlSdrSource::configure: freq: " << frequency << std::endl;
+    fmt::println(stderr, "RtlSdrSource::configure: freq: {}", frequency);
   }
 
   if (m.find("gain") != m.end()) {
     std::string gain_str = m["gain"];
-    std::cerr << "RtlSdrSource::configure: gain: " << gain_str << std::endl;
+    fmt::println(stderr, "RtlSdrSource::configure: gain: {}", gain_str);
 
     if (strcasecmp(gain_str.c_str(), "auto") == 0) {
       tuner_gain = INT_MIN;
@@ -147,20 +144,19 @@ bool RtlSdrSource::configure(std::string configurationStr) {
   if (m.find("blklen") != m.end()) {
     bool blklen_ok = Utility::parse_int(m["blklen"].c_str(), block_length);
     if (!blklen_ok) {
-      std::cerr << "RtlSdrSource::configure: invalid blklen" << std::endl;
+      fmt::println(stderr, "RtlSdrSource::configure: invalid blklen");
       return false;
     }
-    std::cerr << "RtlSdrSource::configure: blklen: " << block_length
-              << std::endl;
+    fmt::println(stderr, "RtlSdrSource::configure: blklen: {}", block_length);
   }
 
   if (m.find("agc") != m.end()) {
-    std::cerr << "RtlSdrSource::configure: agc" << std::endl;
+    fmt::println(stderr, "RtlSdrSource::configure: agc");
     agcmode = true;
   }
 
   if (m.find("antbias") != m.end()) {
-    std::cerr << "RtlSdrSource::configure: agc" << std::endl;
+    fmt::println(stderr, "RtlSdrSource::configure: antbias");
     antbias = true;
   }
 
@@ -260,13 +256,13 @@ void RtlSdrSource::print_specific_parms() {
   int lnagain = get_tuner_gain();
 
   if (lnagain == INT_MIN) {
-    fprintf(stderr, "LNA gain:          auto\n");
+    fmt::println(stderr, "LNA gain:          auto");
   } else {
-    fprintf(stderr, "LNA gain:          %.1f dB\n", 0.1 * lnagain);
+    fmt::println(stderr, "LNA gain:          {:.1f} dB", 0.1 * lnagain);
   }
 
-  fprintf(stderr, "RTL AGC mode:      %s\n",
-          m_confAgc ? "enabled" : "disabled");
+  fmt::println(stderr, "RTL AGC mode:      {}",
+               m_confAgc ? "enabled" : "disabled");
 }
 
 // Return current tuner gain in units of 0.1 dB.
@@ -371,9 +367,8 @@ void RtlSdrSource::get_device_names(std::vector<std::string> &devices) {
 
   for (int i = 0; i < device_count; i++) {
     if (!rtlsdr_get_device_usb_strings(i, manufacturer, product, serial)) {
-      std::ostringstream name_ostr;
-      name_ostr << manufacturer << " " << product << " " << serial;
-      devices.push_back(name_ostr.str());
+      std::string name = fmt::format("{} {} {}", manufacturer, product, serial);
+      devices.push_back(name);
     }
   }
 }

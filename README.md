@@ -2,7 +2,7 @@
 
 # airspy-fmradion
 
-* Version 20240424-0
+* Version 20241208-0
 * For macOS (Apple Silicon) and Linux
 
 ## Contributing
@@ -59,6 +59,7 @@ airspy-fmradion -m am -t airspyhf -q \
 * [VOLK](https://www.libvolk.org/)
 * [PortAudio](http://www.portaudio.com)
 * [jj1bdx's fork of cmake-git-version-tracking](https://github.com/jj1bdx/cmake-git-version-tracking)
+* [{fmt}](https://fmt.dev/)
 
 ### Git branches and tags
 
@@ -96,6 +97,7 @@ brew install rtl-sdr
 brew install airspy --HEAD
 brew install airspyhf --HEAD
 brew install volk
+brew install fmt
 ```
 
 ### Install the supported libvolk
@@ -106,6 +108,10 @@ brew install volk
 ### Install the supported libsndfile for MP3 capability
 
 * You may need to install libsndfile as described in [libsndfile.md](libsndfile.md).
+
+### Install the supported libfmt
+
+* You need to install libfmt as described in [libfmt.md](libfmt.md).
 
 ## Installation
 
