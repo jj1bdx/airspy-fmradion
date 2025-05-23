@@ -244,7 +244,7 @@ double BiquadIirFilter::process(double input) {
 // Construct 2nd order high-pass IIR filter.
 HighPassFilterIir::HighPassFilterIir(const double cutoff) {
 
-  typedef std::complex<double> CDbl;
+  using CDbl = std::complex<double>;
 
   // Angular cutoff frequency.
   double w = 2 * M_PI * cutoff;
