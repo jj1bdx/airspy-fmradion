@@ -12,9 +12,9 @@ You need to install [{fmt}](https://fmt.dev/) aka libfmt,for supporting C++23-co
 
 Use the following versions of libfmt:
 
-* [11.1.4](https://github.com/fmtlib/fmt/releases/tag/11.1.4)
+* [11.2.0](https://github.com/fmtlib/fmt/releases/tag/11.2.0)
 
-## For x86_64 and M1 macOS: use Homebrew
+## For macOS: use Homebrew
 
 ```sh
 brew install fmt
