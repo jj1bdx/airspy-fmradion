@@ -12,8 +12,9 @@ Use the following versions of VOLK aka libvolk:
 
 * 2.5.2
 * 3.1.2
+* 3.2.0
 
-## For x86_64 and M1 macOS: use Homebrew
+## For macOS: use Homebrew
 
 ```sh
 brew install volk
