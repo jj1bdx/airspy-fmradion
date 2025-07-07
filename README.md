@@ -218,7 +218,7 @@ cmake --build build --target all
 * András Retzler, HA7ILM, for the former AF/IF AGC code in [csdr](https://github.com/simonyiszk/csdr)
 * Youssef Touil, Airspy Founder, aka Twitter [@lambdaprog](https://twitter.com/lambdaprog/), for the intriguing exchange of Airspy product design details and the technical support
 * [Iowa Hills Software](http://iowahills.com), for their FIR and IIR filter design tools
-* [Brian Beezley, K6STI](http://ham-radio.com/k6sti/), for his comprehensive Web site of FM broadcasting reception expertise and the idea of [Quadrature Multipath Monitor](http://ham-radio.com/k6sti/qmm.htm)
+* [Brian Beezley, K6STI](https://k6sti.neocities.org/), for his comprehensive Web site of FM broadcasting reception expertise and the idea of [Quadrature Multipath Monitor](https://k6sti.neocities.org/qmm)
 * [Ryuji Suzuki](https://github.com/rsuzuki0), for reviewing the FM multipath filter coefficients and suggesting putting more weight on picking up more previous samples from the reference point than the samples after
 * [Teruhiko Hayashi, JA2SVZ](http://fpga.world.coocan.jp/FM/), the creator of FM FPGA Tuner popular in Japan, for reviewing the measurement results of FM broadcast reception of airspy-fmradion, and various constructive suggestions
 * [Takehiro Sekine](https://github.com/bstalk), for suggesting using GNU Radio's [VOLK](https://www.libvolk.org/) for faster calculation, and implementing Filesource device driver
