@@ -12,3 +12,4 @@
 ./generate-cxx-coeff-list.py jj1bdx_fm_384kHz_narrow 384kHz-242kHz-127taps-coeff.txt
 ./generate-cxx-coeff-list.py jj1bdx_fm_384kHz_medium 384kHz-312kHz-127taps-coeff.txt
 ./generate-cxx-coeff-list.py jj1bdx_div4_predownsampling div4-400kHz-for-3100kHz-64taps-coeff.txt
+./generate-cxx-coeff-list.py jj1bdx_mpx_384khz_60khz 384kHz-60kHz-255taps-coeff.txt

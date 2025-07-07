@@ -47,6 +47,8 @@ public:
   static const IQSampleCoeff jj1bdx_fm_384kHz_narrow;
   static const IQSampleCoeff jj1bdx_fm_384kHz_medium;
 
+  static const SampleCoeff jj1bdx_mpx_384khz_60khz;
+
   // TODO: Hilbert filter coefficients are ASYMMETRIC,
   // so they should not be treated the same as
   // LPF/BPF with symmetric coefficients
