@@ -139,6 +139,7 @@ private:
   IQSampleVector m_samples_in_multipathfiltered;
   IQSampleDecodedVector m_buf_decoded;
   SampleVector m_buf_baseband;
+  SampleVector m_buf_baseband_filtered;
   SampleVector m_buf_baseband_raw;
   SampleVector m_buf_mono_firstout;
   SampleVector m_buf_mono;
@@ -159,6 +160,7 @@ private:
   LowPassFilterRC m_deemph_stereo;
   IfSimpleAgc m_ifagc;
   MultipathFilter m_multipathfilter;
+  LowPassFilterFirAudio m_mpxfilter;
 };
 
 #endif

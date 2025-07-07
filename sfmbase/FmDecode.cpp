@@ -78,7 +78,9 @@ FmDecoder::FmDecoder(bool fmfilter_enable, IQSampleCoeff &fmfilter_coeff,
       ,
       m_multipathfilter(m_enable_multipath_filter ? m_multipath_stages : 1)
 
-{
+      // MPX filter to cut 53kHz and above (actually 60kHz) for 384kHz audio
+      ,
+      m_mpxfilter(FilterParameters::jj1bdx_mpx_384khz_60khz) {
   // Do nothing
 }
 
@@ -149,12 +151,15 @@ void FmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
   m_baseband_mean = 0.95 * m_baseband_mean + 0.05 * baseband_mean;
   m_baseband_level = 0.95 * m_baseband_level + 0.05 * baseband_rms;
 
+  // Apply MPX filter.
+  m_mpxfilter.process(m_buf_baseband, m_buf_baseband_filtered);
+
   // The following function must be executed anyway
   // even if the mono audio resampler output does not come out.
   if (m_stereo_enabled) {
     // Lock on stereo pilot,
     // and remove locked 19kHz tone from the composite signal.
-    m_pilotpll.process(m_buf_baseband, m_buf_rawstereo, m_pilot_shift);
+    m_pilotpll.process(m_buf_baseband_filtered, m_buf_rawstereo, m_pilot_shift);
 
     // Force-set this flag to true to measure stereo PLL phase noise
     // m_stereo_detected = true;
@@ -162,7 +167,7 @@ void FmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
     m_stereo_detected = m_pilotpll.locked();
 
     // Demodulate stereo signal.
-    demod_stereo(m_buf_baseband, m_buf_rawstereo);
+    demod_stereo(m_buf_baseband_filtered, m_buf_rawstereo);
 
     // Deemphasize the stereo (L-R) signal if not for QMM.
     if (!m_pilot_shift) {
@@ -177,10 +182,10 @@ void FmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
   }
 
   // Deemphasize the mono audio signal.
-  m_deemph_mono.process_inplace(m_buf_baseband);
+  m_deemph_mono.process_inplace(m_buf_baseband_filtered);
 
   // Extract mono audio signal.
-  m_audioresampler_mono.process(m_buf_baseband, m_buf_mono_firstout);
+  m_audioresampler_mono.process(m_buf_baseband_filtered, m_buf_mono_firstout);
   // If no mono audio signal comes out, terminate and wait for next block,
   if (m_buf_mono_firstout.size() == 0) {
     audio.resize(0);
