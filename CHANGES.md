@@ -16,7 +16,7 @@ The following Git repository is required:
 
 ## Platforms tested
 
-* Mac mini 2023 Apple Silicon (M2 Pro), macOS 15.1.1, Apple clang version 16.0.0 (clang-1600.0.26.4)
+* Mac mini 2023 Apple Silicon (M2 Pro), macOS 15.5, Apple clang version 17.0.0 (clang-1700.0.13.5)
 * Ubuntu 24.04 LTS x86\_64, gcc 14.2.0
 * Raspberry Pi 5 with Raspberry Pi OS 64bit Lite (Debian Bookworm)
 
@@ -39,6 +39,7 @@ Intel Mac hardware is no longer supported by airspy-fmradion, although the autho
 
 ## Changes (including requirement changes)
 
+* 20250714-0: no major functionality changes from 20241208-0.
 * 20241208-0: [Use {fmt} as the output library.](https://github.com/jj1bdx/airspy-fmradion/pull/83)
   * {fmt} 11.0.2 or later is required.
 * 20240424-0: Made the following changes:
