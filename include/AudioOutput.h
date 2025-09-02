@@ -136,6 +136,14 @@ public:
   virtual bool write(const SampleVector &samples) override;
   virtual void output_close() override;
 
+  // Static C-style callback function for PortAudio.
+  int pa_callback(const void *input, void *output, unsigned long frame_count,
+                  const PaStreamCallbackTimeInfo *time_info,
+                  PaStreamCallbackFlags status_flags, void *user_data);
+
+  // C++ callback code called from pa_callback().
+  int stream_callback(float *output, unsigned long frame_count);
+
 private:
   // Terminate PortAudio
   // then add PortAudio error string to m_error and set m_zombie flag.

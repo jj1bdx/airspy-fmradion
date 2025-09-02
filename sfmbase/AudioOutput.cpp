@@ -265,6 +265,22 @@ PortAudioOutput::~PortAudioOutput() {
   }
 }
 
+// Static C-style callback function for PortAudio stream.
+// user_data has the pointer to the PortAudio object itself ('this').
+int pa_callback(const void *input, void *output, unsigned long frame_count,
+                const PaStreamCallbackTimeInfo *time_info,
+                PaStreamCallbackFlags status_flags, void *user_data) {
+  PortAudioOutput *portaudio_object = static_cast<PortAudioOutput *>(user_data);
+  return portaudio_object->stream_callback(static_cast<float *>(output),
+                                           frame_count);
+}
+
+// Actual C++ callback code for PortAudio stream.
+int stream_callback(float *output, unsigned long frame_count) {
+  // TODO: Dummy code
+  return 0;
+}
+
 // Write audio data.
 bool PortAudioOutput::write(const SampleVector &samples) {
   if (m_zombie) {
