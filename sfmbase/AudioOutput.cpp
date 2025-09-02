@@ -26,10 +26,12 @@
 
 #include "AudioOutput.h"
 #include "SoftFM.h"
-#include "Utility.h"
-#include "pa_ringbuffer.h"
 #include "portaudio.h"
 #include "sndfile.h"
+
+extern "C" {
+#include "pa_ringbuffer.h"
+}
 
 // class SndfileOutput
 
