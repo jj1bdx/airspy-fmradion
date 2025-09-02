@@ -123,6 +123,8 @@ public:
   // 131072 is for 65536/48000 ~= 1.3653 seconds
   // (Stereo playback needs *two* samples for a frame)
   static constexpr ring_buffer_size_t ringbuffer_length = 131072;
+  static constexpr ring_buffer_size_t ringbuffer_frame_size =
+      ringbuffer_length / 4;
 
   // Construct PortAudio output stream.
   //
@@ -148,6 +150,11 @@ private:
   // Terminate PortAudio
   // then add PortAudio error string to m_error and set m_zombie flag.
   void add_paerror(const std::string &msg);
+
+  inline static ring_buffer_size_t rbs_min(ring_buffer_size_t a,
+                                           ring_buffer_size_t b) {
+    return (a < b) ? a : b;
+  }
 
   unsigned int m_nchannels;
   PaStreamParameters m_outputparams;
