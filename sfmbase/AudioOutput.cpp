@@ -26,6 +26,8 @@
 
 #include "AudioOutput.h"
 #include "SoftFM.h"
+#include "Utility.h"
+#include "pa_ringbuffer.h"
 #include "portaudio.h"
 #include "sndfile.h"
 
@@ -209,8 +211,8 @@ PortAudioOutput::PortAudioOutput(const PaDeviceIndex device_index,
 
   m_outputparams.channelCount = m_nchannels;
   m_outputparams.sampleFormat = paFloat32;
-  m_outputparams.suggestedLatency =
-      Pa_GetDeviceInfo(m_outputparams.device)->defaultHighOutputLatency;
+  m_outputparams.suggestedLatency = 0.2;
+  // Pa_GetDeviceInfo(m_outputparams.device)->defaultLowOutputLatency;
   m_outputparams.hostApiSpecificStreamInfo = NULL;
 
   // Guarantee minimum latency.
@@ -225,9 +227,9 @@ PortAudioOutput::PortAudioOutput(const PaDeviceIndex device_index,
       Pa_OpenStream(&m_stream,
                     NULL, // no input
                     &m_outputparams, samplerate, paFramesPerBufferUnspecified,
-                    paClipOff, // no clipping
-                    NULL,      // no callback, blocking API
-                    NULL       // no callback userData
+                    paClipOff,    // no clipping
+                    &pa_callback, // Use callback
+                    this          // Pass the object itself to callback
       );
   if (m_paerror != paNoError) {
     add_paerror("Pa_OpenStream()");
@@ -266,20 +268,8 @@ PortAudioOutput::~PortAudioOutput() {
   }
 }
 
-// Static C-style callback function for PortAudio stream.
-// user_data has the pointer to the PortAudio object itself ('this').
-inline int pa_callback(const void *input, void *output,
-                       unsigned long frame_count,
-                       const PaStreamCallbackTimeInfo *time_info,
-                       PaStreamCallbackFlags status_flags, void *user_data) {
-  PortAudioOutput *portaudio_object = static_cast<PortAudioOutput *>(user_data);
-  return portaudio_object->stream_callback(static_cast<float *>(output),
-                                           frame_count);
-}
-
 // Actual C++ callback code for PortAudio stream.
-inline int PortAudioOutput::stream_callback(float *output,
-                                            unsigned long frame_count) {
+int PortAudioOutput::stream_callback(float *output, unsigned long frame_count) {
   ring_buffer_size_t available_elements =
       PaUtil_GetRingBufferReadAvailable(&m_ringbuffer);
   ring_buffer_size_t read_size =
@@ -301,17 +291,14 @@ bool PortAudioOutput::write(const SampleVector &samples) {
   // Convert double samples to float.
   volk_64f_convert_32f(m_floatbuf.data(), samples.data(), sample_size);
 
-  m_paerror =
-      Pa_WriteStream(m_stream, m_floatbuf.data(), sample_size / m_nchannels);
-  if (m_paerror == paNoError) {
-    return true;
-  } else if (m_paerror == paOutputUnderflowed) {
-    // This error is benign
+  ring_buffer_size_t avail_size =
+      PaUtil_GetRingBufferWriteAvailable(&m_ringbuffer);
+  if (avail_size >= sample_size) {
+    PaUtil_WriteRingBuffer(&m_ringbuffer, m_floatbuf.data(), sample_size);
     return true;
   } else {
-    add_paerror("Pa_WriteStream()");
+    return false;
   }
-  return false;
 }
 
 // Terminate PortAudio
