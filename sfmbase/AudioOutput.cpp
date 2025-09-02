@@ -33,6 +33,9 @@ extern "C" {
 #include "pa_ringbuffer.h"
 }
 
+// Uncomment this to set shorter default latency
+// #define PA_LOW_LATENCY 1
+
 // class SndfileOutput
 
 // Constructor
@@ -213,8 +216,13 @@ PortAudioOutput::PortAudioOutput(const PaDeviceIndex device_index,
 
   m_outputparams.channelCount = m_nchannels;
   m_outputparams.sampleFormat = paFloat32;
+#ifdef PA_LOW_LATENCY
   m_outputparams.suggestedLatency =
       Pa_GetDeviceInfo(m_outputparams.device)->defaultLowOutputLatency;
+#else  // !PA_LOW_LATENCY
+  m_outputparams.suggestedLatency =
+      Pa_GetDeviceInfo(m_outputparams.device)->defaultHighOutputLatency;
+#endif // PA_LOW_LATENCY
   m_outputparams.hostApiSpecificStreamInfo = NULL;
 
   fmt::println(stderr, "suggestedLatency = {:f}",
