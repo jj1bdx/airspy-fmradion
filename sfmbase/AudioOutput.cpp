@@ -214,25 +214,19 @@ PortAudioOutput::PortAudioOutput(const PaDeviceIndex device_index,
   m_outputparams.channelCount = m_nchannels;
   m_outputparams.sampleFormat = paFloat32;
   m_outputparams.suggestedLatency =
-      Pa_GetDeviceInfo(m_outputparams.device)->defaultHighOutputLatency;
+      Pa_GetDeviceInfo(m_outputparams.device)->defaultLowOutputLatency;
   m_outputparams.hostApiSpecificStreamInfo = NULL;
-
-  // Guarantee minimum latency.
-  if (m_outputparams.suggestedLatency < minimum_latency) {
-    m_outputparams.suggestedLatency = minimum_latency;
-  }
 
   fmt::println(stderr, "suggestedLatency = {:f}",
                m_outputparams.suggestedLatency);
 
-  m_paerror =
-      Pa_OpenStream(&m_stream,
-                    NULL, // no input
-                    &m_outputparams, samplerate, paFramesPerBufferUnspecified,
-                    paClipOff,    // no clipping
-                    &pa_callback, // Use callback
-                    this          // Pass the object itself to callback
-      );
+  m_paerror = Pa_OpenStream(&m_stream,
+                            NULL, // no input
+                            &m_outputparams, samplerate, 64,
+                            paClipOff,    // no clipping
+                            &pa_callback, // Use callback
+                            this          // Pass the object itself to callback
+  );
   if (m_paerror != paNoError) {
     add_paerror("Pa_OpenStream()");
     return;
@@ -272,11 +266,21 @@ PortAudioOutput::~PortAudioOutput() {
 
 // Actual C++ callback code for PortAudio stream.
 int PortAudioOutput::stream_callback(float *output, unsigned long frame_count) {
-  ring_buffer_size_t available_elements =
+  ring_buffer_size_t frames_to_send;
+  ring_buffer_size_t available =
       PaUtil_GetRingBufferReadAvailable(&m_ringbuffer);
-  ring_buffer_size_t read_size =
-      rbs_min(available_elements, ringbuffer_frame_size);
-  (void)PaUtil_ReadRingBuffer(&m_ringbuffer, output, read_size);
+  if (available < frame_count) {
+    // Clear the undefined buffer content to zero
+    frames_to_send = available;
+    for (size_t i = available * m_nchannels; i < frame_count * m_nchannels;
+         i++) {
+      m_ringbuffer_data[i] = 0.0f;
+    }
+  } else {
+    frames_to_send = static_cast<ring_buffer_size_t>(frame_count);
+  }
+  (void)PaUtil_ReadRingBuffer(&m_ringbuffer, output,
+                              frames_to_send * m_nchannels);
   // TODO: return paComplete if playback ends
   return paContinue;
 }

@@ -107,19 +107,11 @@ class PortAudioOutput : public AudioOutput {
 public:
   // Static variables.
 
-  // Minimum latency for audio output in seconds
-  // Note:
-  // on macOS, less than 0.1sec won't work
-
-  static constexpr PaTime minimum_latency = 0.1;
-
   // Ring buffer size
   // *must be* a power of 2
   // 262144 is for 131072/48000 ~= 2.73 seconds
   // (Stereo playback needs *two* samples for a frame)
   static constexpr ring_buffer_size_t ringbuffer_length = 262144;
-  static constexpr ring_buffer_size_t ringbuffer_frame_size =
-      ringbuffer_length / 4;
 
   // Construct PortAudio output stream.
   //
@@ -140,11 +132,6 @@ private:
   // Terminate PortAudio
   // then add PortAudio error string to m_error and set m_zombie flag.
   void add_paerror(const std::string &msg);
-
-  inline static ring_buffer_size_t rbs_min(ring_buffer_size_t a,
-                                           ring_buffer_size_t b) {
-    return (a < b) ? a : b;
-  }
 
   // Static C-style callback function for PortAudio stream.
   // user_data has the pointer to the PortAudio object itself ('this').
