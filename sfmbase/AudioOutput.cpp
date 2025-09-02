@@ -26,7 +26,6 @@
 
 #include "AudioOutput.h"
 #include "SoftFM.h"
-#include "Utility.h"
 #include "portaudio.h"
 #include "sndfile.h"
 
@@ -190,9 +189,13 @@ PortAudioOutput::PortAudioOutput(const PaDeviceIndex device_index,
 
   // Initialize ring buffer
   m_ringbuffer_data.resize(ringbuffer_frame_length * m_nchannels);
-  PaUtil_InitializeRingBuffer(&m_ringbuffer, sizeof(float),
-                              ringbuffer_frame_length * m_nchannels,
-                              m_ringbuffer_data.data());
+  m_paerror = PaUtil_InitializeRingBuffer(&m_ringbuffer, sizeof(float),
+                                          ringbuffer_frame_length * m_nchannels,
+                                          m_ringbuffer_data.data());
+  if (m_paerror != paNoError) {
+    add_paerror("PaUtil_InitializeRingBuffer()");
+    return;
+  }
 
   m_paerror = Pa_Initialize();
   if (m_paerror != paNoError) {
@@ -254,7 +257,7 @@ PortAudioOutput::PortAudioOutput(const PaDeviceIndex device_index,
 void PortAudioOutput::output_close() {
   // Set closed flag to prevent multiple closing
   m_closed = true;
-  Utility::millisleep(2000);
+  m_zombie = true;
   m_paerror = Pa_StopStream(m_stream);
   if (m_paerror != paNoError) {
     add_paerror("Pa_StopStream()");
@@ -278,22 +281,23 @@ PortAudioOutput::~PortAudioOutput() {
 
 // Actual C++ callback code for PortAudio stream.
 int PortAudioOutput::stream_callback(float *output, unsigned long frame_count) {
-  ring_buffer_size_t frames_to_send;
+  if (m_closed) {
+    return paComplete;
+  }
   ring_buffer_size_t available =
       PaUtil_GetRingBufferReadAvailable(&m_ringbuffer);
-  if (available < static_cast<ring_buffer_size_t>(frame_count)) {
-    // Clear the undefined buffer content to zero
-    frames_to_send = available;
-    for (size_t i = available * m_nchannels; i < frame_count * m_nchannels;
-         i++) {
-      m_ringbuffer_data[i] = 0.0f;
+  ring_buffer_size_t sample_size =
+      static_cast<ring_buffer_size_t>(frame_count * m_nchannels);
+  ring_buffer_size_t frames_to_send = rbs_min(available, sample_size);
+  (void)PaUtil_ReadRingBuffer(&m_ringbuffer, output, frames_to_send);
+  if (frames_to_send < sample_size) {
+    // Ensure remaining output is zero
+    // (Without doing this buzzing will occur!)
+    for (size_t i = frames_to_send; i < sample_size; i++) {
+      output[i] = 0.0f;
     }
-  } else {
-    frames_to_send = static_cast<ring_buffer_size_t>(frame_count);
   }
-  (void)PaUtil_ReadRingBuffer(&m_ringbuffer, output,
-                              frames_to_send * m_nchannels);
-  return m_closed ? paComplete : paContinue;
+  return paContinue;
 }
 
 // Write audio data.

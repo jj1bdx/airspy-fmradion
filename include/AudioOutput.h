@@ -112,6 +112,8 @@ public:
   // 65536 frames for 48000 frames/sec ~= 2.73 seconds
   // (Stereo playback needs *two* samples for a frame)
   static constexpr ring_buffer_size_t ringbuffer_frame_length = 65536;
+  // This value should be large to prevent unwanted noise
+  static constexpr unsigned long frames_per_buffer = 2048;
 
   // Construct PortAudio output stream.
   //
@@ -143,6 +145,11 @@ private:
         static_cast<PortAudioOutput *>(user_data);
     return portaudio_object->stream_callback(static_cast<float *>(output),
                                              frame_count);
+  }
+
+  static ring_buffer_size_t rbs_min(ring_buffer_size_t a,
+                                    ring_buffer_size_t b) {
+    return (a < b) ? a : b;
   }
 
   unsigned int m_nchannels;
