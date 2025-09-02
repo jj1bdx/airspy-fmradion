@@ -220,12 +220,13 @@ PortAudioOutput::PortAudioOutput(const PaDeviceIndex device_index,
   fmt::println(stderr, "suggestedLatency = {:f}",
                m_outputparams.suggestedLatency);
 
-  m_paerror = Pa_OpenStream(&m_stream,
-                            NULL, // no input
-                            &m_outputparams, samplerate, 64,
-                            paClipOff,    // no clipping
-                            &pa_callback, // Use callback
-                            this          // Pass the object itself to callback
+  m_paerror = Pa_OpenStream(
+      &m_stream,
+      NULL, // no input
+      &m_outputparams, samplerate, paFramesPerBufferUnspecified,
+      paClipOff,    // no clipping
+      &pa_callback, // Use callback (static C++ code in include/AudioOutput.h)
+      this          // Pass the pointer to object itself to callback
   );
   if (m_paerror != paNoError) {
     add_paerror("Pa_OpenStream()");
@@ -281,7 +282,6 @@ int PortAudioOutput::stream_callback(float *output, unsigned long frame_count) {
   }
   (void)PaUtil_ReadRingBuffer(&m_ringbuffer, output,
                               frames_to_send * m_nchannels);
-  // TODO: return paComplete if playback ends
   return paContinue;
 }
 
@@ -303,6 +303,7 @@ bool PortAudioOutput::write(const SampleVector &samples) {
     PaUtil_WriteRingBuffer(&m_ringbuffer, m_floatbuf.data(), sample_size);
     return true;
   } else {
+    add_paerror("PaUtil_WriteRingBuffer() overflow");
     return false;
   }
 }
