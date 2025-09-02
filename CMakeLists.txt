@@ -292,6 +292,11 @@ set(sfmbase_HEADERS
     include/SoftFM.h
     include/Utility.h)
 
+# PortAudio pa_ringbuffer library
+
+add_library(pa_ringbuffer pa_ringbuffer/pa_ringbuffer.c)
+target_include_directories(pa_ringbuffer PUBLIC pa_ringbuffer)
+ 
 # cmake-format: off
 # For building r8brain-free-src
 # See https://github.com/baconpaul/SampleRateComparison for the details
@@ -319,6 +324,7 @@ add_executable(airspy-fmradion main.cpp)
 
 include_directories(
   ${CMAKE_SOURCE_DIR}/include
+  ${CMAKE_SOURCE_DIR}/pa_ringbuffer
   ${CMAKE_SOURCE_DIR}/r8brain-free-src
   ${AIRSPYHF_INCLUDE_DIRS}
   ${AIRSPY_INCLUDE_DIRS}
@@ -338,8 +344,13 @@ target_link_libraries(
   cmake_git_version_tracking)
 
 target_link_libraries(
-  sfmbase ${SNDFILE_LIBRARY} ${AIRSPY_LIBRARY} ${AIRSPYHF_LIBRARY}
-  ${RTLSDR_LIBRARY} ${LIBUSB_LIBRARY})
+  sfmbase
+  pa_ringbuffer
+  ${SNDFILE_LIBRARY}
+  ${AIRSPY_LIBRARY}
+  ${AIRSPYHF_LIBRARY}
+  ${RTLSDR_LIBRARY}
+  ${LIBUSB_LIBRARY})
 
 # Installation
 
