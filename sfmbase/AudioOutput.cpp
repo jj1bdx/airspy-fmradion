@@ -293,7 +293,7 @@ int PortAudioOutput::stream_callback(float *output, unsigned long frame_count) {
   if (frames_to_send < sample_size) {
     // Ensure remaining output is zero
     // (Without doing this buzzing will occur!)
-    for (size_t i = frames_to_send; i < sample_size; i++) {
+    for (size_t i = frames_to_send; i < static_cast<size_t>(sample_size); i++) {
       output[i] = 0.0f;
     }
   }
