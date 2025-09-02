@@ -1,6 +1,6 @@
 # CMake definitions for airspy-fmradion
 
-cmake_minimum_required(VERSION 3.18)
+cmake_minimum_required(VERSION 3.25)
 project(airspy-fmradion)
 
 # Workaround for the compilation warning
@@ -20,15 +20,13 @@ FetchContent_Declare(
   GIT_TAG 6c0cb87edd029ddfb403a8e24577c144a03605a6)
 FetchContent_MakeAvailable(cmake_git_version_tracking)
 
-# EXPORT_COMPILE_COMMANDS is supported for CMake version 3.20 or later
-# only
-if(CMAKE_VERSION VERSION_LESS 3.20.0)
-  message(STATUS "No EXPORT_COMPILE_COMMANDS available")
-  message(STATUS "Use compdb for proper compile_commands.json handling")
-else()
-  set_target_properties(cmake_git_version_tracking
-                        PROPERTIES EXPORT_COMPILE_COMMANDS OFF)
-endif()
+# cmake-format: off
+# EXPORT_COMPILE_COMMANDS is supported for
+# CMake version 3.20 or later only
+# If necessary, use compdb for proper compile_commands.json handling
+# cmake-format: on
+set_target_properties(cmake_git_version_tracking
+                      PROPERTIES EXPORT_COMPILE_COMMANDS OFF)
 
 # Use pkg-config
 include(FindPkgConfig)
