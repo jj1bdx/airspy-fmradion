@@ -108,21 +108,16 @@ public:
   // Static variables.
 
   // Minimum latency for audio output in seconds
+  // Note:
+  // on macOS, less than 0.1sec won't work
 
-  // Values of m_outputparams.suggestedLatency from PortAudio:
-  // Mac mini 2023 with macOS 14.3.1: 0.014717
-  // Ubuntu 22.04.4 on x86_64: 0.034830
-  // Kenji's experiments show that
-  // 40ms (0.04) is sufficient for macOS, Ubuntu, and Raspberry Pi OS
-
-  static constexpr PaTime minimum_latency = 0.04;
+  static constexpr PaTime minimum_latency = 0.1;
 
   // Ring buffer size
   // *must be* a power of 2
-  // 65536 looks practical, but maybe should extend to 131072
-  // 131072 is for 65536/48000 ~= 1.3653 seconds
+  // 262144 is for 131072/48000 ~= 2.73 seconds
   // (Stereo playback needs *two* samples for a frame)
-  static constexpr ring_buffer_size_t ringbuffer_length = 131072;
+  static constexpr ring_buffer_size_t ringbuffer_length = 262144;
   static constexpr ring_buffer_size_t ringbuffer_frame_size =
       ringbuffer_length / 4;
 
