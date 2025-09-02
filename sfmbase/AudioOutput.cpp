@@ -179,6 +179,11 @@ PortAudioOutput::PortAudioOutput(const PaDeviceIndex device_index,
                                  unsigned int samplerate, bool stereo) {
   m_nchannels = stereo ? 2 : 1;
 
+  // Initialize ring buffer
+  m_ringbuffer_data.resize(ringbuffer_length);
+  PaUtil_InitializeRingBuffer(&m_ringbuffer, sizeof(float), ringbuffer_length,
+                              m_ringbuffer_data.data());
+
   m_paerror = Pa_Initialize();
   if (m_paerror != paNoError) {
     add_paerror("Pa_Initialize()");

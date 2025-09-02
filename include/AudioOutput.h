@@ -27,6 +27,10 @@
 #include "portaudio.h"
 #include <sndfile.h>
 
+extern "C" {
+#include "pa_ringbuffer.h"
+}
+
 /** Base class for writing audio data to file or playback. */
 class AudioOutput {
 public:
@@ -113,7 +117,13 @@ public:
 
   static constexpr PaTime minimum_latency = 0.04;
 
-  //
+  // Ring buffer size
+  // *must be* a power of 2
+  // 65536 looks practical, but maybe should extend to 131072
+  // 131072 is for 65536/48000 ~= 1.3653 seconds
+  // (Stereo playback needs *two* samples for a frame)
+  static constexpr ring_buffer_size_t ringbuffer_length = 131072;
+
   // Construct PortAudio output stream.
   //
   // device_index :: device index number
@@ -136,6 +146,8 @@ private:
   PaStream *m_stream;
   PaError m_paerror;
   volk::vector<float> m_floatbuf;
+  PaUtilRingBuffer m_ringbuffer;
+  volk::vector<float> m_ringbuffer_data;
 };
 
 #endif
