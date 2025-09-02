@@ -211,8 +211,8 @@ PortAudioOutput::PortAudioOutput(const PaDeviceIndex device_index,
 
   m_outputparams.channelCount = m_nchannels;
   m_outputparams.sampleFormat = paFloat32;
-  m_outputparams.suggestedLatency = 0.2;
-  // Pa_GetDeviceInfo(m_outputparams.device)->defaultLowOutputLatency;
+  m_outputparams.suggestedLatency =
+      Pa_GetDeviceInfo(m_outputparams.device)->defaultHighOutputLatency;
   m_outputparams.hostApiSpecificStreamInfo = NULL;
 
   // Guarantee minimum latency.
