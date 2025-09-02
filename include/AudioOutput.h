@@ -109,9 +109,9 @@ public:
 
   // Ring buffer size
   // *must be* a power of 2
-  // 262144 is for 131072/48000 ~= 2.73 seconds
+  // 65536 frames for 48000 frames/sec ~= 2.73 seconds
   // (Stereo playback needs *two* samples for a frame)
-  static constexpr ring_buffer_size_t ringbuffer_length = 262144;
+  static constexpr ring_buffer_size_t ringbuffer_frame_length = 65536;
 
   // Construct PortAudio output stream.
   //

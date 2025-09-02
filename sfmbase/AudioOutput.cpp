@@ -26,6 +26,7 @@
 
 #include "AudioOutput.h"
 #include "SoftFM.h"
+#include "Utility.h"
 #include "portaudio.h"
 #include "sndfile.h"
 
@@ -188,8 +189,9 @@ PortAudioOutput::PortAudioOutput(const PaDeviceIndex device_index,
   m_nchannels = stereo ? 2 : 1;
 
   // Initialize ring buffer
-  m_ringbuffer_data.resize(ringbuffer_length);
-  PaUtil_InitializeRingBuffer(&m_ringbuffer, sizeof(float), ringbuffer_length,
+  m_ringbuffer_data.resize(ringbuffer_frame_length * m_nchannels);
+  PaUtil_InitializeRingBuffer(&m_ringbuffer, sizeof(float),
+                              ringbuffer_frame_length * m_nchannels,
                               m_ringbuffer_data.data());
 
   m_paerror = Pa_Initialize();
@@ -250,6 +252,9 @@ PortAudioOutput::PortAudioOutput(const PaDeviceIndex device_index,
 
 // Output closing method.
 void PortAudioOutput::output_close() {
+  // Set closed flag to prevent multiple closing
+  m_closed = true;
+  Utility::millisleep(2000);
   m_paerror = Pa_StopStream(m_stream);
   if (m_paerror != paNoError) {
     add_paerror("Pa_StopStream()");
@@ -261,8 +266,6 @@ void PortAudioOutput::output_close() {
     return;
   }
   Pa_Terminate();
-  // Set closed flag to prevent multiple closing
-  m_closed = true;
 }
 
 // Destructor.
@@ -290,7 +293,7 @@ int PortAudioOutput::stream_callback(float *output, unsigned long frame_count) {
   }
   (void)PaUtil_ReadRingBuffer(&m_ringbuffer, output,
                               frames_to_send * m_nchannels);
-  return paContinue;
+  return m_closed ? paComplete : paContinue;
 }
 
 // Write audio data.
