@@ -270,7 +270,7 @@ int PortAudioOutput::stream_callback(float *output, unsigned long frame_count) {
   ring_buffer_size_t frames_to_send;
   ring_buffer_size_t available =
       PaUtil_GetRingBufferReadAvailable(&m_ringbuffer);
-  if (available < frame_count) {
+  if (available < static_cast<ring_buffer_size_t>(frame_count)) {
     // Clear the undefined buffer content to zero
     frames_to_send = available;
     for (size_t i = available * m_nchannels; i < frame_count * m_nchannels;
@@ -299,7 +299,7 @@ bool PortAudioOutput::write(const SampleVector &samples) {
 
   ring_buffer_size_t avail_size =
       PaUtil_GetRingBufferWriteAvailable(&m_ringbuffer);
-  if (avail_size >= sample_size) {
+  if (avail_size >= static_cast<ring_buffer_size_t>(sample_size)) {
     PaUtil_WriteRingBuffer(&m_ringbuffer, m_floatbuf.data(), sample_size);
     return true;
   } else {
