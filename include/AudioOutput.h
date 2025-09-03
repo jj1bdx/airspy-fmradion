@@ -109,7 +109,7 @@ public:
 
   // Ring buffer size
   // *must be* a power of 2
-  // 65536 frames for 48000 frames/sec ~= 2.73 seconds
+  // 65536 frames for 48000 frames/sec ~= 1.365 seconds
   // (Stereo playback needs *two* samples for a frame)
   static constexpr ring_buffer_size_t ringbuffer_frame_length = 65536;
 
@@ -124,9 +124,6 @@ public:
   virtual ~PortAudioOutput() override;
   virtual bool write(const SampleVector &samples) override;
   virtual void output_close() override;
-
-  // C++ callback code called from pa_callback().
-  int stream_callback(float *output, unsigned long frame_count);
 
 private:
   // Terminate PortAudio
@@ -145,8 +142,11 @@ private:
                                              frame_count);
   }
 
-  static ring_buffer_size_t rbs_min(ring_buffer_size_t a,
-                                    ring_buffer_size_t b) {
+  // C++ callback code called from pa_callback().
+  int stream_callback(float *output, unsigned long frame_count);
+
+  inline static ring_buffer_size_t rbs_min(ring_buffer_size_t a,
+                                           ring_buffer_size_t b) {
     return (a < b) ? a : b;
   }
 
