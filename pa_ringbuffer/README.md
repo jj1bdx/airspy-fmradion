@@ -2,9 +2,9 @@
 
 Code in this directory is duplicated from [PortAudio](https://github.com/PortAudio/portaudio), under [PortAudio V19 License](https://www.portaudio.com/license.html).
 
-The original directory of the code is located at `src/common`. 
+The original directory of the code is located at `src/common` in the PortAudio repository. The files included here are for building the Ring Buffer utility only.
 
-The files here are for building the Ring Buffer utility only. 
+While building airspy-fmradion, a static library solely containing pa_ringbuffer.c is built and linked the code to the executable.
 
 ## Last commit message headers in PortAudio
 
@@ -28,5 +28,5 @@ commit b94c49ee21a24a12d4fb35f184f89b5ee24cc494
 Author: Phil Burk <philburk@mobileer.com>
 Date:   Wed Dec 1 18:25:04 2021 -0700
 ```
-  
+
 [End of document]
