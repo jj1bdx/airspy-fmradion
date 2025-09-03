@@ -22,6 +22,7 @@
 #include <cstring>
 #include <fcntl.h>
 #include <fmt/format.h>
+#include <strings.h>
 #include <unistd.h>
 
 #include "AudioOutput.h"
@@ -293,9 +294,11 @@ int PortAudioOutput::stream_callback(float *output, unsigned long frame_count) {
   if (frames_to_send < sample_size) {
     // Ensure remaining output is zero
     // (Without doing this buzzing will occur!)
-    for (size_t i = frames_to_send; i < static_cast<size_t>(sample_size); i++) {
-      output[i] = 0.0f;
-    }
+    // Equivalent C++ code:
+    // for (size_t i = frames_to_send; i < static_cast<size_t>(sample_size);
+    // i++) { output[i] = 0.0f; }
+    (void)memset(&output[frames_to_send], 0,
+                 sizeof(float) * (sample_size - frames_to_send));
   }
   return paContinue;
 }
@@ -315,7 +318,7 @@ bool PortAudioOutput::write(const SampleVector &samples) {
   ring_buffer_size_t avail_size =
       PaUtil_GetRingBufferWriteAvailable(&m_ringbuffer);
   if (avail_size >= static_cast<ring_buffer_size_t>(sample_size)) {
-    PaUtil_WriteRingBuffer(&m_ringbuffer, m_floatbuf.data(), sample_size);
+    (void)PaUtil_WriteRingBuffer(&m_ringbuffer, m_floatbuf.data(), sample_size);
     return true;
   } else {
     add_paerror("PaUtil_WriteRingBuffer() overflow");
