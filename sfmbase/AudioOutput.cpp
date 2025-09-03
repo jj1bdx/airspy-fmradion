@@ -256,9 +256,6 @@ PortAudioOutput::PortAudioOutput(const PaDeviceIndex device_index,
 
 // Output closing method.
 void PortAudioOutput::output_close() {
-  // Set closed flag to prevent multiple closing
-  m_closed = true;
-  m_zombie = true;
   m_paerror = Pa_StopStream(m_stream);
   if (m_paerror != paNoError) {
     add_paerror("Pa_StopStream()");
@@ -270,6 +267,8 @@ void PortAudioOutput::output_close() {
     return;
   }
   Pa_Terminate();
+  m_closed = true;
+  // Set closed flag to prevent multiple closing
 }
 
 // Destructor.
