@@ -27,6 +27,10 @@
 #include "portaudio.h"
 #include <sndfile.h>
 
+extern "C" {
+#include "pa_ringbuffer.h"
+}
+
 /** Base class for writing audio data to file or playback. */
 class AudioOutput {
 public:
@@ -103,17 +107,12 @@ class PortAudioOutput : public AudioOutput {
 public:
   // Static variables.
 
-  // Minimum latency for audio output in seconds
+  // Ring buffer size
+  // *must be* a power of 2
+  // 65536 frames for 48000 frames/sec ~= 1.365 seconds
+  // (Stereo playback needs *two* samples for a frame)
+  static constexpr ring_buffer_size_t ringbuffer_frame_length = 65536;
 
-  // Values of m_outputparams.suggestedLatency from PortAudio:
-  // Mac mini 2023 with macOS 14.3.1: 0.014717
-  // Ubuntu 22.04.4 on x86_64: 0.034830
-  // Kenji's experiments show that
-  // 40ms (0.04) is sufficient for macOS, Ubuntu, and Raspberry Pi OS
-
-  static constexpr PaTime minimum_latency = 0.04;
-
-  //
   // Construct PortAudio output stream.
   //
   // device_index :: device index number
@@ -131,11 +130,33 @@ private:
   // then add PortAudio error string to m_error and set m_zombie flag.
   void add_paerror(const std::string &msg);
 
+  // Static C-style callback function for PortAudio stream.
+  // user_data has the pointer to the PortAudio object itself ('this').
+  static int pa_callback(const void *input, void *output,
+                         unsigned long frame_count,
+                         const PaStreamCallbackTimeInfo *time_info,
+                         PaStreamCallbackFlags status_flags, void *user_data) {
+    PortAudioOutput *portaudio_object =
+        static_cast<PortAudioOutput *>(user_data);
+    return portaudio_object->stream_callback(static_cast<float *>(output),
+                                             frame_count);
+  }
+
+  // C++ callback code called from pa_callback().
+  int stream_callback(float *output, unsigned long frame_count);
+
+  inline static ring_buffer_size_t rbs_min(ring_buffer_size_t a,
+                                           ring_buffer_size_t b) {
+    return (a < b) ? a : b;
+  }
+
   unsigned int m_nchannels;
   PaStreamParameters m_outputparams;
   PaStream *m_stream;
   PaError m_paerror;
   volk::vector<float> m_floatbuf;
+  PaUtilRingBuffer m_ringbuffer;
+  volk::vector<float> m_ringbuffer_data;
 };
 
 #endif
