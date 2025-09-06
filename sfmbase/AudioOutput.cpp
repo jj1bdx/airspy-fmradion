@@ -22,20 +22,11 @@
 #include <cstring>
 #include <fcntl.h>
 #include <fmt/format.h>
-#include <strings.h>
 #include <unistd.h>
 
 #include "AudioOutput.h"
 #include "SoftFM.h"
-#include "portaudio.h"
 #include "sndfile.h"
-
-extern "C" {
-#include "pa_ringbuffer.h"
-}
-
-// Uncomment this to set shorter default latency
-// #define PA_LOW_LATENCY 1
 
 // class SndfileOutput
 
@@ -188,16 +179,6 @@ PortAudioOutput::PortAudioOutput(const PaDeviceIndex device_index,
                                  unsigned int samplerate, bool stereo) {
   m_nchannels = stereo ? 2 : 1;
 
-  // Initialize ring buffer
-  m_ringbuffer_data.resize(ringbuffer_frame_length * m_nchannels);
-  m_paerror = PaUtil_InitializeRingBuffer(&m_ringbuffer, sizeof(float),
-                                          ringbuffer_frame_length * m_nchannels,
-                                          m_ringbuffer_data.data());
-  if (m_paerror != paNoError) {
-    add_paerror("PaUtil_InitializeRingBuffer()");
-    return;
-  }
-
   m_paerror = Pa_Initialize();
   if (m_paerror != paNoError) {
     add_paerror("Pa_Initialize()");
@@ -222,26 +203,26 @@ PortAudioOutput::PortAudioOutput(const PaDeviceIndex device_index,
 
   m_outputparams.channelCount = m_nchannels;
   m_outputparams.sampleFormat = paFloat32;
-#ifdef PA_LOW_LATENCY
-  m_outputparams.suggestedLatency =
-      Pa_GetDeviceInfo(m_outputparams.device)->defaultLowOutputLatency;
-#else  // !PA_LOW_LATENCY
   m_outputparams.suggestedLatency =
       Pa_GetDeviceInfo(m_outputparams.device)->defaultHighOutputLatency;
-#endif // PA_LOW_LATENCY
   m_outputparams.hostApiSpecificStreamInfo = NULL;
+
+  // Guarantee minimum latency.
+  if (m_outputparams.suggestedLatency < minimum_latency) {
+    m_outputparams.suggestedLatency = minimum_latency;
+  }
 
   fmt::println(stderr, "suggestedLatency = {:f}",
                m_outputparams.suggestedLatency);
 
-  m_paerror = Pa_OpenStream(
-      &m_stream,
-      NULL, // no input
-      &m_outputparams, samplerate, paFramesPerBufferUnspecified,
-      paClipOff,    // no clipping
-      &pa_callback, // Use callback (static C++ code in include/AudioOutput.h)
-      this          // Pass the pointer to object itself to callback
-  );
+  m_paerror =
+      Pa_OpenStream(&m_stream,
+                    NULL, // no input
+                    &m_outputparams, samplerate, paFramesPerBufferUnspecified,
+                    paClipOff, // no clipping
+                    NULL,      // no callback, blocking API
+                    NULL       // no callback userData
+      );
   if (m_paerror != paNoError) {
     add_paerror("Pa_OpenStream()");
     return;
@@ -267,8 +248,8 @@ void PortAudioOutput::output_close() {
     return;
   }
   Pa_Terminate();
-  m_closed = true;
   // Set closed flag to prevent multiple closing
+  m_closed = true;
 }
 
 // Destructor.
@@ -277,29 +258,6 @@ PortAudioOutput::~PortAudioOutput() {
   if (!m_closed) {
     PortAudioOutput::output_close();
   }
-}
-
-// Actual C++ callback code for PortAudio stream.
-int PortAudioOutput::stream_callback(float *output, unsigned long frame_count) {
-  if (m_closed) {
-    return paComplete;
-  }
-  ring_buffer_size_t available =
-      PaUtil_GetRingBufferReadAvailable(&m_ringbuffer);
-  ring_buffer_size_t sample_size =
-      static_cast<ring_buffer_size_t>(frame_count * m_nchannels);
-  ring_buffer_size_t frames_to_send = rbs_min(available, sample_size);
-  (void)PaUtil_ReadRingBuffer(&m_ringbuffer, output, frames_to_send);
-  if (frames_to_send < sample_size) {
-    // Ensure remaining output is zero
-    // (Without doing this buzzing will occur!)
-    // Equivalent C++ code:
-    // for (size_t i = frames_to_send; i < static_cast<size_t>(sample_size);
-    // i++) { output[i] = 0.0f; }
-    (void)memset(&output[frames_to_send], 0,
-                 sizeof(float) * (sample_size - frames_to_send));
-  }
-  return paContinue;
 }
 
 // Write audio data.
@@ -314,15 +272,17 @@ bool PortAudioOutput::write(const SampleVector &samples) {
   // Convert double samples to float.
   volk_64f_convert_32f(m_floatbuf.data(), samples.data(), sample_size);
 
-  ring_buffer_size_t avail_size =
-      PaUtil_GetRingBufferWriteAvailable(&m_ringbuffer);
-  if (avail_size >= static_cast<ring_buffer_size_t>(sample_size)) {
-    (void)PaUtil_WriteRingBuffer(&m_ringbuffer, m_floatbuf.data(), sample_size);
+  m_paerror =
+      Pa_WriteStream(m_stream, m_floatbuf.data(), sample_size / m_nchannels);
+  if (m_paerror == paNoError) {
+    return true;
+  } else if (m_paerror == paOutputUnderflowed) {
+    // This error is benign
     return true;
   } else {
-    add_paerror("PaUtil_WriteRingBuffer() overflow");
-    return false;
+    add_paerror("Pa_WriteStream()");
   }
+  return false;
 }
 
 // Terminate PortAudio

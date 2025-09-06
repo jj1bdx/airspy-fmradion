@@ -1,6 +1,6 @@
 # CMake definitions for airspy-fmradion
 
-cmake_minimum_required(VERSION 3.25)
+cmake_minimum_required(VERSION 3.18)
 project(airspy-fmradion)
 
 # Workaround for the compilation warning
@@ -20,13 +20,15 @@ FetchContent_Declare(
   GIT_TAG 6c0cb87edd029ddfb403a8e24577c144a03605a6)
 FetchContent_MakeAvailable(cmake_git_version_tracking)
 
-# cmake-format: off
-# EXPORT_COMPILE_COMMANDS is supported for
-# CMake version 3.20 or later only
-# If necessary, use compdb for proper compile_commands.json handling
-# cmake-format: on
-set_target_properties(cmake_git_version_tracking
-                      PROPERTIES EXPORT_COMPILE_COMMANDS OFF)
+# EXPORT_COMPILE_COMMANDS is supported for CMake version 3.20 or later
+# only
+if(CMAKE_VERSION VERSION_LESS 3.20.0)
+  message(STATUS "No EXPORT_COMPILE_COMMANDS available")
+  message(STATUS "Use compdb for proper compile_commands.json handling")
+else()
+  set_target_properties(cmake_git_version_tracking
+                        PROPERTIES EXPORT_COMPILE_COMMANDS OFF)
+endif()
 
 # Use pkg-config
 include(FindPkgConfig)
@@ -292,11 +294,6 @@ set(sfmbase_HEADERS
     include/SoftFM.h
     include/Utility.h)
 
-# PortAudio pa_ringbuffer library
-
-add_library(pa_ringbuffer pa_ringbuffer/pa_ringbuffer.c)
-target_include_directories(pa_ringbuffer PUBLIC pa_ringbuffer)
- 
 # cmake-format: off
 # For building r8brain-free-src
 # See https://github.com/baconpaul/SampleRateComparison for the details
@@ -324,7 +321,6 @@ add_executable(airspy-fmradion main.cpp)
 
 include_directories(
   ${CMAKE_SOURCE_DIR}/include
-  ${CMAKE_SOURCE_DIR}/pa_ringbuffer
   ${CMAKE_SOURCE_DIR}/r8brain-free-src
   ${AIRSPYHF_INCLUDE_DIRS}
   ${AIRSPY_INCLUDE_DIRS}
@@ -344,13 +340,8 @@ target_link_libraries(
   cmake_git_version_tracking)
 
 target_link_libraries(
-  sfmbase
-  pa_ringbuffer
-  ${SNDFILE_LIBRARY}
-  ${AIRSPY_LIBRARY}
-  ${AIRSPYHF_LIBRARY}
-  ${RTLSDR_LIBRARY}
-  ${LIBUSB_LIBRARY})
+  sfmbase ${SNDFILE_LIBRARY} ${AIRSPY_LIBRARY} ${AIRSPYHF_LIBRARY}
+  ${RTLSDR_LIBRARY} ${LIBUSB_LIBRARY})
 
 # Installation
 
