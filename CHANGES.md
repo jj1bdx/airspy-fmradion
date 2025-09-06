@@ -17,7 +17,7 @@ The following Git repository is required:
 ## Platforms tested
 
 * Mac mini 2023 Apple Silicon (M2 Pro), macOS 15.6.1, Apple clang version 17.0.0 (clang-1700.0.13.5)
-* Ubuntu 24.04 LTS x86\_64, gcc 14.2.0
+* Ubuntu 24.04.3 LTS x86\_64, gcc 14.2.0
 * Raspberry Pi 5 with Raspberry Pi OS 64bit Lite (Debian Bookworm)
 
 ## Features under development
@@ -39,7 +39,11 @@ Intel Mac hardware is no longer supported by airspy-fmradion, although the autho
 
 ## Changes (including requirement changes)
 
-* xxx-0: changed PortAudioOutput to use the own callback code instead of the stock blocking stream. Minimal `pa_ringbuffer` library code was duplicated from PortAudio under PortAudio V19 License. Note the ringbuffer code is *not* a Git submodule.
+* xxx-0: Made the following changes:
+  * Changed PortAudioOutput to use the own callback code instead of the stock blocking stream, for shorter output latency. See 20230923 in this changelog.
+  * PortAudio minimum latency is no longer explicitly set, and is now set to defaultHighOutputLatency. Note: this behavior can be changed by setting compilation flag `PA_LOW_LATENCY` to defaultLowOutputLatency. Practically in many cases the low output latency setting works fine, but is not the default value, for safety.
+  * Minimal `pa_ringbuffer` library code for handling the PortAudio callback was duplicated and included from PortAudio under PortAudio V19 License. Note: the ringbuffer code is *not* a Git submodule.
+  * CMake minimum version is now 3.25.
 * 20250714-0: no major functionality changes from 20241208-0.
 * 20241208-0: [Use {fmt} as the output library.](https://github.com/jj1bdx/airspy-fmradion/pull/83)
   * {fmt} 11.0.2 or later is required.
