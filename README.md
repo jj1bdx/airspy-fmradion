@@ -113,10 +113,6 @@ brew install fmt
 
 * You need to install libfmt as described in [libfmt.md](libfmt.md).
 
-### pa\_ringbuffer
-
-Minimal code of PortAudio ring buffer `pa_ringbuffer`, included under the directory `pa_ringbuffer`, is built as a static library to link to the executable. This code is necessary for writing PortAudio callback code.
-
 ## Installation
 
 ```sh
@@ -126,8 +122,6 @@ git submodule update --init --recursive
 cmake -S . -B build
 cmake --build build --target all
 ```
-
-The executable built is located at `build/airspy-fmradion`.
 
 ## Basic command options
 
