@@ -19,11 +19,10 @@
 
 #include <cstdlib>
 #include <cstring>
-#include <format>
-#include <print>
+#include <fmt/format.h>
+#include <fmt/ranges.h>
 #include <thread>
 #include <unistd.h>
-#include <utility>
 
 #include "AirspyHFSource.h"
 #include "ConfigParser.h"
@@ -39,7 +38,7 @@ AirspyHFSource::AirspyHFSource(int dev_index)
   // Get library version number first.
   airspyhf_lib_version(&m_libv);
 #ifdef DEBUG_AIRSPYHFSOURCE
-  std::println(stderr, "AirspyHF Library Version: {}.{}.{}",
+  fmt::println(stderr, "AirspyHF Library Version: {}.{}.{}",
                m_libv.major_version, m_libv.minor_version, m_libv.revision);
 #endif
 
@@ -65,7 +64,7 @@ AirspyHFSource::AirspyHFSource(int dev_index)
   airspyhf_error rc =
       (airspyhf_error)airspyhf_open_sn(&m_dev, m_serials[dev_index]);
   if (rc != AIRSPYHF_SUCCESS) {
-    m_error = std::format(
+    m_error = fmt::format(
         "Failed to open Airspy HF device for the first time at device index {}",
         dev_index);
     m_dev = 0;
@@ -79,8 +78,8 @@ AirspyHFSource::AirspyHFSource(int dev_index)
     sampleRates = new uint32_t[nbSampleRates];
     airspyhf_get_samplerates(m_dev, sampleRates, nbSampleRates);
 #ifdef DEBUG_AIRSPYHFSOURCE
-    std::println(stderr, "nbSampleRates = {}", nbSampleRates);
-    std::println(stderr, "sampleRates[0] = {}", sampleRates[0]);
+    fmt::println(stderr, "nbSampleRates = {}", nbSampleRates);
+    fmt::println(stderr, "sampleRates[0] = {}", sampleRates[0]);
 #endif
 
     if (nbSampleRates == 0) {
@@ -95,7 +94,7 @@ AirspyHFSource::AirspyHFSource(int dev_index)
 
     delete[] sampleRates;
 
-    m_sratesStr = std::format("{:n}", m_srates);
+    m_sratesStr = fmt::format("{}", fmt::join(m_srates, ", "));
   }
 
   m_this = this;
@@ -103,7 +102,7 @@ AirspyHFSource::AirspyHFSource(int dev_index)
 
 AirspyHFSource::~AirspyHFSource() {
 #ifdef DEBUG_AIRSPYHFSOURCE
-  std::println(stderr, "AirspyHFSource::~AirspyHFSource()");
+  fmt::println(stderr, "AirspyHFSource::~AirspyHFSource()");
 #endif
   if (m_dev) {
     airspyhf_close(m_dev);
@@ -118,26 +117,26 @@ void AirspyHFSource::get_device_names(std::vector<std::string> &devices) {
   // Scan all devices, return how many are attached.
   ndev = airspyhf_list_devices(0, 0);
 #ifdef DEBUG_AIRSPYHFSOURCE
-  std::println(stderr, "AirspyHFSource::get_device_names: "
+  fmt::println(stderr, "AirspyHFSource::get_device_names: "
                        "try to get available device numbers");
 #endif
   if (ndev <= 0) {
-    std::println(stderr,
+    fmt::println(stderr,
                  "AirspyHFSource::get_device_names: no available device");
   }
   // List all available devices.
   serials.resize(ndev);
   if (ndev != airspyhf_list_devices(serials.data(), ndev)) {
-    std::println(stderr, "AirspyHFSource::get_device_names: "
+    fmt::println(stderr, "AirspyHFSource::get_device_names: "
                          "unable to obtain device list");
   } else {
     // Use obtained info during AirspyHFSource object construction.
     for (int i = 0; i < ndev; i++) {
-      std::string devname_ostr = std::format("Serial {:08x}", serials[i]);
+      std::string devname_ostr = fmt::format("Serial {:08x}", serials[i]);
       devices.push_back(devname_ostr);
     }
 #ifdef DEBUG_AIRSPYHFSOURCE
-    std::println(stderr,
+    fmt::println(stderr,
                  "AirspyHFSource::get_device_names: "
                  "enumerated {} device(s)",
                  ndev);
@@ -167,7 +166,7 @@ bool AirspyHFSource::configure(int sampleRateIndex, uint8_t hfAttLevel,
 
   if (rc != AIRSPYHF_SUCCESS) {
     m_error =
-        std::format("Could not set center sample rate to {} Hz", sampleRate);
+        fmt::format("Could not set center sample rate to {} Hz", sampleRate);
     return false;
   } else {
     m_sampleRate = sampleRate;
@@ -192,7 +191,7 @@ bool AirspyHFSource::configure(int sampleRateIndex, uint8_t hfAttLevel,
 
   if (rc != AIRSPYHF_SUCCESS) {
     m_error =
-        std::format("Could not set center frequency to {} Hz", m_frequency);
+        fmt::format("Could not set center frequency to {} Hz", m_frequency);
     return false;
   }
 
@@ -208,7 +207,7 @@ bool AirspyHFSource::configure(int sampleRateIndex, uint8_t hfAttLevel,
     rc = (airspyhf_error)airspyhf_set_hf_att(m_dev, hfAttLevel);
 
     if (rc != AIRSPYHF_SUCCESS) {
-      m_error = std::format("Could not set HF attenuation level to {} dB",
+      m_error = fmt::format("Could not set HF attenuation level to {} dB",
                             hfAttLevel);
       return false;
     }
@@ -264,7 +263,7 @@ bool AirspyHFSource::configure(std::string configurationStr) {
   cp.parse_config_string(configurationStr, m);
   if (m.find("srate") != m.end()) {
 #ifdef DEBUG_AIRSPYHFSOURCE
-    std::println(stderr, "AirspyHFSource::configure: srate: {}", m["srate"]);
+    fmt::println(stderr, "AirspyHFSource::configure: srate: {}", m["srate"]);
 #endif
     if (strcasecmp(m["srate"].c_str(), "list") == 0) {
       m_error = "Available sample rates (Hz): " + m_sratesStr;
@@ -285,7 +284,7 @@ bool AirspyHFSource::configure(std::string configurationStr) {
 
   if (m.find("freq") != m.end()) {
 #ifdef DEBUG_AIRSPYHFSOURCE
-    std::println(stderr, "AirspyHFSource::configure: freq: {}", m["freq"]);
+    fmt::println(stderr, "AirspyHFSource::configure: freq: {}", m["freq"]);
 #endif
 
     int freq = 0;
@@ -301,7 +300,7 @@ bool AirspyHFSource::configure(std::string configurationStr) {
 
   if (m.find("hf_att") != m.end()) {
 #ifdef DEBUG_AIRSPYHFSOURCE
-    std::println(stderr, "AirspyHFSource::configure: hf_att: {}", m["hf_att"]);
+    fmt::println(stderr, "AirspyHFSource::configure: hf_att: {}", m["hf_att"]);
 #endif
 
     int attlevel = 0;
@@ -324,13 +323,13 @@ bool AirspyHFSource::start(DataBuffer<IQSample> *buf,
 
   if (m_thread == 0) {
 #ifdef DEBUG_AIRSPYHFSOURCE
-    std::println(stderr, "AirspyHFSource::start: starting");
+    fmt::println(stderr, "AirspyHFSource::start: starting");
 #endif
     m_running = true;
     m_thread = new std::thread(run, m_dev, m_stop_flag);
     return true;
   } else {
-    std::println(stderr, "AirspyHFSource::start: error");
+    fmt::println(stderr, "AirspyHFSource::start: error");
     m_error = "Source thread already started";
     return false;
   }
@@ -338,7 +337,7 @@ bool AirspyHFSource::start(DataBuffer<IQSample> *buf,
 
 void AirspyHFSource::run(airspyhf_device *dev, std::atomic_bool *stop_flag) {
 #ifdef DEBUG_AIRSPYHFSOURCE
-  std::println(stderr, "AirspyHFSource::run");
+  fmt::println(stderr, "AirspyHFSource::run");
 #endif
   airspyhf_error rc = (airspyhf_error)airspyhf_start(dev, rx_callback, nullptr);
 
@@ -347,19 +346,19 @@ void AirspyHFSource::run(airspyhf_device *dev, std::atomic_bool *stop_flag) {
       Utility::millisleep(100);
     }
   } else {
-    std::println(stderr, "AirspyHFSource::run: Cannot start Airspy HF Rx: {}",
-                 std::to_underlying(rc));
+    fmt::println(stderr, "AirspyHFSource::run: Cannot start Airspy HF Rx: {}",
+                 fmt::underlying(rc));
   }
 }
 
 bool AirspyHFSource::stop() {
 #ifdef DEBUG_AIRSPYHFSOURCE
-  std::println(stderr, "AirspyHFSource::stop");
+  fmt::println(stderr, "AirspyHFSource::stop");
 #endif
   airspyhf_error rc = (airspyhf_error)airspyhf_stop(m_dev);
   if (rc != AIRSPYHF_SUCCESS) {
-    std::println(stderr, "AirspyHFSource::run: Cannot stop Airspy HF Rx: {}",
-                 std::to_underlying(rc));
+    fmt::println(stderr, "AirspyHFSource::run: Cannot stop Airspy HF Rx: {}",
+                 fmt::underlying(rc));
   }
   m_thread->join();
   delete m_thread;

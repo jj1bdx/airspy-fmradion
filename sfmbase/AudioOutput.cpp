@@ -21,8 +21,7 @@
 #include <cstdio>
 #include <cstring>
 #include <fcntl.h>
-#include <format>
-#include <print>
+#include <fmt/format.h>
 #include <unistd.h>
 
 #include "AudioOutput.h"
@@ -42,7 +41,7 @@ SndfileOutput::SndfileOutput(const std::string &filename,
     m_fd = open(filename.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0666);
     if (m_fd < 0) {
       m_error =
-          std::format("can not open '{}' ({})", filename, strerror(errno));
+          fmt::format("can not open '{}' ({})", filename, strerror(errno));
       m_zombie = true;
       return;
     }
@@ -53,7 +52,7 @@ SndfileOutput::SndfileOutput(const std::string &filename,
   m_sndfile_sfinfo.channels = numberOfChannels;
 
   if (!sf_format_check(&m_sndfile_sfinfo)) {
-    m_error = std::format("SF_INFO for file '{}' is invalid", filename);
+    m_error = fmt::format("SF_INFO for file '{}' is invalid", filename);
     m_zombie = true;
     return;
   }
@@ -61,7 +60,7 @@ SndfileOutput::SndfileOutput(const std::string &filename,
   m_sndfile = sf_open_fd(m_fd, SFM_WRITE, &m_sndfile_sfinfo, SF_TRUE);
   if (m_sndfile == nullptr) {
     m_error =
-        std::format("can not open '{}' ({})", filename, sf_strerror(m_sndfile));
+        fmt::format("can not open '{}' ({})", filename, sf_strerror(m_sndfile));
     m_zombie = true;
     return;
   }
@@ -72,7 +71,7 @@ SndfileOutput::SndfileOutput(const std::string &filename,
   if (filetype == SF_FORMAT_RF64) {
     if (SF_TRUE !=
         sf_command(m_sndfile, SFC_RF64_AUTO_DOWNGRADE, NULL, SF_TRUE)) {
-      m_error = std::format(
+      m_error = fmt::format(
           "unable to set SFC_RF64_AUTO_DOWNGRADE to SF_TRUE on '{}' ({})",
           filename, sf_strerror(m_sndfile));
       add_error_log_info(m_sndfile);
@@ -84,7 +83,7 @@ SndfileOutput::SndfileOutput(const std::string &filename,
   if ((filetype == SF_FORMAT_RF64) || (filetype == SF_FORMAT_WAV)) {
     if (SF_TRUE !=
         sf_command(m_sndfile, SFC_SET_UPDATE_HEADER_AUTO, NULL, SF_TRUE)) {
-      m_error = std::format(
+      m_error = fmt::format(
           "unable to set SFC_SET_UPDATE_HEADER_AUTO to SF_TRUE on '{}' ({})",
           filename, sf_strerror(m_sndfile));
       add_error_log_info(m_sndfile);
@@ -95,7 +94,7 @@ SndfileOutput::SndfileOutput(const std::string &filename,
 #if defined(LIBSNDFILE_MP3_ENABLED)
   // Set MP3 parameters here
   if (filetype == SF_FORMAT_MPEG) {
-    std::println(stderr, "Set MP3 parameters");
+    fmt::println(stderr, "Set MP3 parameters");
     // Set MP3 default format parameters to:
     // Variable bitrate mode, compression level = 0.1
     int constant_mode = SF_BITRATE_MODE_VARIABLE;
@@ -105,14 +104,14 @@ SndfileOutput::SndfileOutput(const std::string &filename,
     if (SF_TRUE != sf_command(m_sndfile, SFC_SET_COMPRESSION_LEVEL,
                               &compression_level, sizeof(double))) {
       m_error =
-          std::format("unable to set SFC_SET_COMPRESSION_LEVEL on '{}' ({})",
+          fmt::format("unable to set SFC_SET_COMPRESSION_LEVEL on '{}' ({})",
                       filename, sf_strerror(m_sndfile));
       add_error_log_info(m_sndfile);
       return;
     }
     if (SF_TRUE != sf_command(m_sndfile, SFC_SET_BITRATE_MODE, &constant_mode,
                               sizeof(int))) {
-      m_error = std::format("unable to set SFC_SET_BITRATE_MODE on '{}' ({})",
+      m_error = fmt::format("unable to set SFC_SET_BITRATE_MODE on '{}' ({})",
                             filename, sf_strerror(m_sndfile));
       add_error_log_info(m_sndfile);
       return;
@@ -153,7 +152,7 @@ bool SndfileOutput::write(const SampleVector &samples) {
   // Write samples to file with items.
   sf_count_t k = sf_write_double(m_sndfile, samples.data(), size);
   if (k != size) {
-    m_error = std::format("write failed ({})", sf_strerror(m_sndfile));
+    m_error = fmt::format("write failed ({})", sf_strerror(m_sndfile));
     return false;
   }
   return true;
@@ -213,7 +212,7 @@ PortAudioOutput::PortAudioOutput(const PaDeviceIndex device_index,
     m_outputparams.suggestedLatency = minimum_latency;
   }
 
-  std::println(stderr, "suggestedLatency = {:f}",
+  fmt::println(stderr, "suggestedLatency = {:f}",
                m_outputparams.suggestedLatency);
 
   m_paerror =
@@ -291,7 +290,7 @@ bool PortAudioOutput::write(const SampleVector &samples) {
 void PortAudioOutput::add_paerror(const std::string &premsg) {
   Pa_Terminate();
   std::string addmsg =
-      std::format("{}: PortAudio error: (number: {} message: {})", premsg,
+      fmt::format("{}: PortAudio error: (number: {} message: {})", premsg,
                   m_paerror, Pa_GetErrorText(m_paerror));
   m_error.append(addmsg);
   m_zombie = true;

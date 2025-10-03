@@ -36,6 +36,28 @@ include(FindPkgConfig)
 # Find Threads package
 find_package(Threads REQUIRED)
 
+# Find fmt library.
+
+# cmake-format: off
+# NOTE: find_package() for fmt didn't work on macOS
+# due to compilation errors on Apple Clang 16, as:
+#/Users/kenji/src/airspy-fmradion/include/DataBuffer.h:49:12: error: no member named 'scoped_lock' in namespace 'std'
+#   49 |       std::scoped_lock<std::mutex> lock(m_mutex);
+#      |       ~~~~~^
+#/Users/kenji/src/airspy-fmradion/include/DataBuffer.h:49:34: error: expected '(' for function-style cast or type construction
+#   49 |       std::scoped_lock<std::mutex> lock(m_mutex);
+# cmake-format: on
+
+pkg_check_modules(PKG_FMT fmt REQUIRED)
+if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+  find_library(
+    FMT_LIBRARY libfmt.dylib HINTS /usr/local/lib /opt/homebrew/lib
+                                   ${PKG_FMT_LIBRARY_DIRS})
+else()
+  find_library(FMT_LIBRARY libfmt.so HINTS ${PKG_FMT_LIBRARY_DIRS})
+endif()
+message(STATUS "fmt ${PKG_FMT_VERSION}: ${FMT_LIBRARY}")
+
 # Find Volk library.
 pkg_check_modules(PKG_VOLK volk REQUIRED)
 if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
@@ -218,7 +240,7 @@ set(OPTIMIZATION_FLAGS "-O3 -ftree-vectorize ")
 # Common compiler flags and options.
 #
 set(CMAKE_CXX_FLAGS
-    "-Wall -std=c++23 ${OPTIMIZATION_FLAGS} ${AIRSPY_INCLUDE_OPTION} ${AIRSPYHF_INCLUDE_OPTION} ${SNDFILE_INCLUDE_OPTION} ${EXTRA_FLAGS}"
+    "-Wall -std=c++20 ${OPTIMIZATION_FLAGS} ${AIRSPY_INCLUDE_OPTION} ${AIRSPYHF_INCLUDE_OPTION} ${SNDFILE_INCLUDE_OPTION} ${EXTRA_FLAGS}"
 )
 
 # For building airspy-fmradion sources
@@ -312,6 +334,7 @@ target_link_libraries(
   r8b
   Threads::Threads
   ${PORTAUDIO_LINK_LIBRARIES}
+  ${FMT_LIBRARY}
   ${VOLK_LIBRARY}
   ${EXTRA_LIBS}
   cmake_git_version_tracking)

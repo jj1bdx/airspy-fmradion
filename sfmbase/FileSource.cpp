@@ -19,8 +19,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <chrono>
-#include <format>
-#include <print>
+#include <fmt/format.h>
 #include <thread>
 
 #include "ConfigParser.h"
@@ -66,7 +65,7 @@ bool FileSource::configure(std::string configurationStr) {
   // filename
   cp.parse_config_string(configurationStr, m);
   if (m.find("filename") != m.end()) {
-    std::println(stderr, "FileSource::configure: filename: {}", m["filename"]);
+    fmt::println(stderr, "FileSource::configure: filename: {}", m["filename"]);
     filename = m["filename"];
   }
 
@@ -78,10 +77,10 @@ bool FileSource::configure(std::string configurationStr) {
     sample_rate = static_cast<uint32_t>(samplerate);
     srate_specified = true;
     if (!samplerate_ok) {
-      std::println(stderr, "FileSource::configure: invalid samplerate");
+      fmt::println(stderr, "FileSource::configure: invalid samplerate");
       return false;
     }
-    std::println(stderr, "FileSource::configure: srate: {}", sample_rate);
+    fmt::println(stderr, "FileSource::configure: srate: {}", sample_rate);
   }
 
   // freq
@@ -90,25 +89,25 @@ bool FileSource::configure(std::string configurationStr) {
     bool freq_ok = Utility::parse_int(m["freq"].c_str(), freq, true);
     frequency = static_cast<uint32_t>(freq);
     if (!freq_ok) {
-      std::println(stderr, "FileSource::configure: invalid frequency");
+      fmt::println(stderr, "FileSource::configure: invalid frequency");
       return false;
     }
-    std::println(stderr, "FileSource::configure: freq: {}", frequency);
+    fmt::println(stderr, "FileSource::configure: freq: {}", frequency);
   }
 
   // blklen
   if (m.find("blklen") != m.end()) {
     bool blklen_ok = Utility::parse_int(m["blklen"].c_str(), block_length);
     if (!blklen_ok) {
-      std::println(stderr, "FileSource::configure: invalid blklen");
+      fmt::println(stderr, "FileSource::configure: invalid blklen");
       return false;
     }
-    std::println(stderr, "FileSource::configure: blklen: {}", block_length);
+    fmt::println(stderr, "FileSource::configure: blklen: {}", block_length);
   }
 
   // zero_offset
   if (m.find("zero_offset") != m.end()) {
-    std::println(stderr, "FileSource::configure: zero_offset");
+    fmt::println(stderr, "FileSource::configure: zero_offset");
     zero_offset = true;
   }
 
@@ -125,28 +124,28 @@ bool FileSource::configure(std::string configurationStr) {
     } else if (m["format"] == "FLOAT") {
       format_type = FormatType::Float;
     } else {
-      std::println(stderr,
+      fmt::println(stderr,
                    "FileSource::configure: format: {} is not supported.",
                    m["format"]);
-      std::println(stderr, "FileSource::configure: supported format is S8_LE, "
+      fmt::println(stderr, "FileSource::configure: supported format is S8_LE, "
                            "S16_LE, S24_LE, U8_LE, FLOAT.");
       return false;
     }
-    std::println(stderr, "FileSource::configure: format: {}", m["format"]);
+    fmt::println(stderr, "FileSource::configure: format: {}", m["format"]);
   }
 
   // raw
   if (m.find("raw") != m.end()) {
-    std::println(stderr, "FileSource::configure: raw");
+    fmt::println(stderr, "FileSource::configure: raw");
     // Check format_type. Try to apply S16_LE when no format specified.
     if (format_type == FormatType::Unknown) {
-      std::println(stderr, "FileSource::configure: raw warn: no format "
+      fmt::println(stderr, "FileSource::configure: raw warn: no format "
                            "specified. Apply S16_LE.");
       format_type = FormatType::S16_LE;
     }
     // Check samplerate. Try to apply 384000Hz when no samplerate specified.
     if (!srate_specified) {
-      std::println(stderr, "FileSource::configure: raw warn: no samplerate "
+      fmt::println(stderr, "FileSource::configure: raw warn: no samplerate "
                            "specified. Apply 384000.");
     }
     raw = true;
@@ -185,7 +184,7 @@ bool FileSource::configure(std::string fname, bool raw, FormatType format_type,
   // Overwrite sample rate.
   if (((int)m_sample_rate) != m_sfinfo.samplerate) {
     m_sample_rate = m_sfinfo.samplerate;
-    std::println(stderr, "FileSource::sf_open: overwrite sample rate: {}",
+    fmt::println(stderr, "FileSource::sf_open: overwrite sample rate: {}",
                  m_sample_rate);
   }
 
@@ -193,7 +192,7 @@ bool FileSource::configure(std::string fname, bool raw, FormatType format_type,
   int major_format = m_sfinfo.format & SF_FORMAT_TYPEMASK;
   std::string major_str;
   if (!get_major_format(major_format, major_str)) {
-    m_error = std::format("Unsupported major format {} : {:#x}", m_devname,
+    m_error = fmt::format("Unsupported major format {} : {:#x}", m_devname,
                           major_format);
     return false;
   }
@@ -203,12 +202,12 @@ bool FileSource::configure(std::string fname, bool raw, FormatType format_type,
   std::string sub_type_str;
   if (!get_sub_type(sub_type, sub_type_str)) {
     m_error =
-        std::format("Unsupported sub type {} : {:#x}", m_devname, sub_type);
+        fmt::format("Unsupported sub type {} : {:#x}", m_devname, sub_type);
     return false;
   }
 
   // Print format.
-  std::println(stderr, "FileSource::format: {}, {}", major_str, sub_type_str);
+  fmt::println(stderr, "FileSource::format: {}, {}", major_str, sub_type_str);
 
   // Set fmt_fn.
   switch (sub_type) {
@@ -232,7 +231,7 @@ bool FileSource::configure(std::string fname, bool raw, FormatType format_type,
   if (d_expected_us > max_expected_us) {
     std::uint32_t tmp_blklen =
         round_power((int)(max_expected_us * m_sample_rate_per_us));
-    std::println(stderr,
+    fmt::println(stderr,
                  "FileSource::configure: large blklen, round blklen {} to {}",
                  m_block_length, tmp_blklen);
     m_block_length = tmp_blklen;
@@ -395,7 +394,7 @@ void FileSource::run() {
 
   // integer part of expected microseconds per block reading
   auto expected = std::chrono::microseconds(long(int_part));
-  // std::println(stderr, "{}", expected.count());
+  // fmt::println(stderr, "{}", expected.count());
 
   // 1 microsecond
   auto one_us = std::chrono::microseconds(1);
