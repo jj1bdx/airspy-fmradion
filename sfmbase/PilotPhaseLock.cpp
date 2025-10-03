@@ -20,7 +20,7 @@
 #include "PilotPhaseLock.h"
 #include "Utility.h"
 
-#include <fmt/format.h>
+#include <print>
 
 // Define this to print PLL filter messages
 // #undef DEBUG_PLL_FILTER
@@ -119,7 +119,7 @@ void PilotPhaseLock::process(const SampleVector &samples_in,
 
 #ifdef DEBUG_PLL_FILTER
     if (i == 0) {
-      fmt::println(stderr,
+      std::println(stderr,
                    "m_freq = {:.9g}, m_freq_err = {:.9g}, "
                    "m_pilot_level = {:.9g}",
                    m_freq * FmDecoder::sample_rate_if / 2 / M_PI,

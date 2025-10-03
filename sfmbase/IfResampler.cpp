@@ -18,7 +18,7 @@
 
 #include "IfResampler.h"
 
-#include <fmt/format.h>
+#include <print>
 
 // class IfResampler
 
@@ -29,7 +29,7 @@ IfResampler::IfResampler(const double input_rate, const double output_rate)
           new r8b::CDSPResampler24(input_rate, output_rate, max_input_length)) {
 #ifdef DEBUG_IFRESAMPLER
   int latency = m_cdspr_re->getInLenBeforeOutStart();
-  fmt::println(stderr, "IfResampler latency = {}", latency);
+  std::println(stderr, "IfResampler latency = {}", latency);
 #endif // DEBUG_IFRESAMPLER
   // do nothing
 }
@@ -72,7 +72,7 @@ void IfResampler::process(const IQSampleVector &samples_in,
     }
   }
 #ifdef DEBUG_IFRESAMPLER
-  fmt::println(stderr, "IfResampler: input_size = {}, output_length_re = {}",
+  std::println(stderr, "IfResampler: input_size = {}, output_length_re = {}",
                input_size, output_length_re);
 #endif // DEBUG_IFRESAMPLER
 }
