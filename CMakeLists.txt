@@ -20,10 +20,10 @@ FetchContent_Declare(
   GIT_TAG 6c0cb87edd029ddfb403a8e24577c144a03605a6)
 FetchContent_MakeAvailable(cmake_git_version_tracking)
 
-# Use local {fmt} 12.0.0: force fmt to build the static library
-set(FMT_SHARED
-    OFF
-    CACHE BOOL "Build shared libraries in fmt" FORCE)
+# cmake-format: off
+# Use local {fmt} 12.0.0
+# By default, fmt builds the static library only
+# cmake-format: on
 FetchContent_Declare(
   fmt
   GIT_REPOSITORY https://github.com/fmtlib/fmt
