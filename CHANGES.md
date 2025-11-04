@@ -17,7 +17,7 @@ The following Git repositories are required:
 
 ## Platforms tested
 
-* Mac mini 2023 Apple Silicon (M2 Pro), macOS 26.0.1, Apple clang version 17.0.0 (clang-1700.3.19.1)
+* Mac mini 2023 Apple Silicon (M2 Pro), macOS 26.1, Apple clang version 17.0.0 (clang-1700.4.4.1)
 * Ubuntu 24.04.3 LTS x86\_64, gcc 14.2.0
 * Raspberry Pi 5 with Raspberry Pi OS 64bit Lite (Debian Trixie 13.1), gcc 14.2.0
 
