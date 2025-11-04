@@ -21,13 +21,13 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(cmake_git_version_tracking)
 
 # cmake-format: off
-# Use local {fmt} 12.0.0
+# Use local {fmt} 12.1.0
 # By default, fmt builds the static library only
 # cmake-format: on
 FetchContent_Declare(
   fmt
   GIT_REPOSITORY https://github.com/fmtlib/fmt
-  GIT_TAG e424e3f2e607da02742f73db84873b8084fc714c)
+  GIT_TAG 407c905e45ad75fc29bf0f9bb7c5c2fd3475976f)
 FetchContent_MakeAvailable(fmt)
 
 # EXPORT_COMPILE_COMMANDS is supported for CMake version 3.20 or later
