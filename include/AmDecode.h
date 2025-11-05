@@ -34,7 +34,6 @@ public:
   // Static constants.
   static constexpr double sample_rate_pcm = 48000;
   static constexpr double internal_rate_pcm = 48000;
-  static constexpr double low_rate_pcm = 12000;
   // Half bandwidth of audio signal in Hz (4.5kHz for AM)
   static constexpr double bandwidth_pcm = 4500;
   // Deemphasis constant in microseconds.
@@ -103,8 +102,6 @@ private:
   FineTuner m_cw_finetuner;
   FineTuner m_wspr_ssb_up_finetuner;
   FineTuner m_wspr_ssb_down_finetuner;
-  IfResampler m_rate_downsampler;
-  IfResampler m_rate_upsampler;
 };
 
 #endif

@@ -89,11 +89,6 @@ AmDecoder::AmDecoder(IQSampleCoeff &amfilter_coeff, const ModType mode)
       m_wspr_ssb_up_finetuner(internal_rate_pcm / 100, 1500 / 100),
       m_wspr_ssb_down_finetuner(internal_rate_pcm / 100, -1500 / 100)
 
-      // CW downsampler and upsampler
-      ,
-      m_rate_downsampler(internal_rate_pcm, low_rate_pcm),
-      m_rate_upsampler(low_rate_pcm, internal_rate_pcm)
-
 {
   // Do nothing
 }
