@@ -98,23 +98,16 @@ void AmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
   case ModType::AM:
   case ModType::DSB:
     // Apply narrower filters
-    m_amfilter.process(samples_in, m_buf_filtered3);
+    m_amfilter.process(samples_in, m_buf_filtered2);
     break;
   case ModType::USB:
   case ModType::LSB:
   case ModType::CW:
   case ModType::WSPR:
-    // Do nothing, just move
-    m_buf_filtered1 = std::move(samples_in);
-    // If no downsampled signal comes out, terminate and wait for next block.
-    if (m_buf_filtered1.size() == 0) {
-      audio.resize(0);
-      return;
-    }
     switch (m_mode) {
     case ModType::USB:
       // Shift down 1500Hz first to filter
-      m_wspr_ssb_down_finetuner.process(m_buf_filtered1, m_buf_filtered1a);
+      m_wspr_ssb_down_finetuner.process(samples_in, m_buf_filtered1a);
       // Apply SSB filter
       m_ssbfilter.process(m_buf_filtered1a, m_buf_filtered1b);
       // Shift up 1500Hz to make center frequency to 1500Hz
@@ -122,7 +115,7 @@ void AmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
       break;
     case ModType::LSB:
       // Shift up 1500Hz first to filter
-      m_wspr_ssb_up_finetuner.process(m_buf_filtered1, m_buf_filtered1a);
+      m_wspr_ssb_up_finetuner.process(samples_in, m_buf_filtered1a);
       // Apply SSB filter
       m_ssbfilter.process(m_buf_filtered1a, m_buf_filtered1b);
       // Shift down 1500Hz to make center frequency to 1500Hz
@@ -130,40 +123,38 @@ void AmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
       break;
     case ModType::CW:
       // Apply CW LPF here
-      m_cwfilter.process(m_buf_filtered1, m_buf_filtered1a);
+      m_cwfilter.process(samples_in, m_buf_filtered1a);
       // Shift up to an audio frequency (500Hz)
       m_cw_finetuner.process(m_buf_filtered1a, m_buf_filtered2);
       break;
     case ModType::WSPR:
       // Shift down 1500Hz first to filter
-      m_wspr_ssb_down_finetuner.process(m_buf_filtered1, m_buf_filtered1a);
+      m_wspr_ssb_down_finetuner.process(samples_in, m_buf_filtered1a);
       // Apply CW LPF here
       m_cwfilter.process(m_buf_filtered1a, m_buf_filtered1b);
       // Shift up 1500Hz to make center frequency to 1500Hz
       m_wspr_ssb_up_finetuner.process(m_buf_filtered1b, m_buf_filtered2);
       break;
     default:
-      m_buf_filtered2 = std::move(m_buf_filtered1);
+      m_buf_filtered2 = std::move(samples_in);
       break;
     }
-    // Do nothing, just move
-    m_buf_filtered3 = std::move(m_buf_filtered2);
     // If no upsampled signal comes out, terminate and wait for next block.
-    if (m_buf_filtered3.size() == 0) {
+    if (m_buf_filtered2.size() == 0) {
       audio.resize(0);
       return;
     }
     break;
   default:
-    m_buf_filtered3 = std::move(m_buf_filtered);
+    m_buf_filtered2 = std::move(samples_in);
     break;
   }
 
   // Measure IF RMS level.
-  m_if_rms = Utility::rms_level_sample(m_buf_filtered3);
+  m_if_rms = Utility::rms_level_sample(m_buf_filtered2);
 
   // If AGC
-  m_ifagc.process(m_buf_filtered3, m_buf_filtered4);
+  m_ifagc.process(m_buf_filtered2, m_buf_filtered3);
 
   // Demodulate AM/DSB signal.
   switch (m_mode) {
@@ -176,14 +167,14 @@ void AmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
     assert(m_mode != ModType::NBFM);
     break;
   case ModType::AM:
-    demodulate_am(m_buf_filtered4, m_buf_decoded);
+    demodulate_am(m_buf_filtered3, m_buf_decoded);
     break;
   case ModType::DSB:
   case ModType::USB:
   case ModType::LSB:
   case ModType::CW:
   case ModType::WSPR:
-    demodulate_dsb(m_buf_filtered4, m_buf_decoded);
+    demodulate_dsb(m_buf_filtered3, m_buf_decoded);
     break;
   }
 
