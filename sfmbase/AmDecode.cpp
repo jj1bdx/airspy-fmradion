@@ -208,8 +208,10 @@ void AmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
   m_baseband_mean = 0.95 * m_baseband_mean + 0.05 * baseband_mean;
   m_baseband_level = 0.95 * m_baseband_level + 0.05 * baseband_rms;
 
-  // Deemphasis
-  m_deemph.process_inplace(m_buf_baseband);
+  // Apply deemphasis for AM mode only.
+  if (m_mode == ModType::AM) {
+    m_deemph.process_inplace(m_buf_baseband);
+  }
 
   // Return mono channel.
   audio = std::move(m_buf_baseband);
