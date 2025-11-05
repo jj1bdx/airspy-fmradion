@@ -78,14 +78,10 @@ private:
   float m_if_rms;
 
   IQSampleVector m_buf_filtered;
-  IQSampleVector m_buf_filtered1;
   IQSampleVector m_buf_filtered1a;
   IQSampleVector m_buf_filtered1b;
   IQSampleVector m_buf_filtered2;
-  IQSampleVector m_buf_filtered2a;
-  IQSampleVector m_buf_filtered2b;
   IQSampleVector m_buf_filtered3;
-  IQSampleVector m_buf_filtered4;
   IQSampleDecodedVector m_buf_decoded;
   SampleVector m_buf_baseband_demod;
   SampleVector m_buf_baseband_preagc;
