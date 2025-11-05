@@ -33,11 +33,11 @@ AmDecoder::AmDecoder(IQSampleCoeff &amfilter_coeff, const ModType mode)
 
       // Construct CW narrow filter (in sample rate 12kHz)
       ,
-      m_cwfilter(FilterParameters::jj1bdx_cw_12khz_500hz, 1)
+      m_cwfilter(FilterParameters::jj1bdx_cw_48khz_500hz, 1)
 
       // Construct SSB filter (in sample rate 12kHz)
       ,
-      m_ssbfilter(FilterParameters::jj1bdx_ssb_12khz_1500hz, 1)
+      m_ssbfilter(FilterParameters::jj1bdx_ssb_48khz_1500hz, 1)
 
       // Construct HighPassFilterIir
       // cutoff: 60Hz for 12kHz sampling rate
@@ -77,17 +77,17 @@ AmDecoder::AmDecoder(IQSampleCoeff &amfilter_coeff, const ModType mode)
                   : 0.0003)
 
       // fine tuner for CW pitch shifting (shift up 500Hz)
-      // sampling rate: 12kHz
-      // table size: 120 = 12000 / 100
+      // sampling rate: 48kHz
+      // table size: 480 = 48000 / 100
       ,
-      m_cw_finetuner(low_rate_pcm / 100, 500 / 100)
+      m_cw_finetuner(internal_rate_pcm / 100, 500 / 100)
 
       // fine tuner for WSPR/SSB pitch shifting (shift up and down 1500Hz)
-      // sampling rate: 12kHz
-      // table size: 120 = 12000 / 100
+      // sampling rate: 48kHz
+      // table size: 480 = 48000 / 100
       ,
-      m_wspr_ssb_up_finetuner(low_rate_pcm / 100, 1500 / 100),
-      m_wspr_ssb_down_finetuner(low_rate_pcm / 100, -1500 / 100)
+      m_wspr_ssb_up_finetuner(internal_rate_pcm / 100, 1500 / 100),
+      m_wspr_ssb_down_finetuner(internal_rate_pcm / 100, -1500 / 100)
 
       // CW downsampler and upsampler
       ,
@@ -109,8 +109,8 @@ void AmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
   case ModType::LSB:
   case ModType::CW:
   case ModType::WSPR:
-    // Downsanple first
-    m_rate_downsampler.process(samples_in, m_buf_filtered1);
+    // Do nothing, just move
+    m_buf_filtered1 = std::move(samples_in);
     // If no downsampled signal comes out, terminate and wait for next block.
     if (m_buf_filtered1.size() == 0) {
       audio.resize(0);
@@ -151,8 +151,8 @@ void AmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
       m_buf_filtered2 = std::move(m_buf_filtered1);
       break;
     }
-    // Upsample back
-    m_rate_upsampler.process(m_buf_filtered2, m_buf_filtered3);
+    // Do nothing, just move
+    m_buf_filtered3 = std::move(m_buf_filtered2);
     // If no upsampled signal comes out, terminate and wait for next block.
     if (m_buf_filtered3.size() == 0) {
       audio.resize(0);
