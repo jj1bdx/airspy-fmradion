@@ -20,6 +20,16 @@ FetchContent_Declare(
   GIT_TAG 6c0cb87edd029ddfb403a8e24577c144a03605a6)
 FetchContent_MakeAvailable(cmake_git_version_tracking)
 
+# cmake-format: off
+# Use local {fmt} 12.1.0
+# By default, fmt builds the static library only
+# cmake-format: on
+FetchContent_Declare(
+  fmt
+  GIT_REPOSITORY https://github.com/fmtlib/fmt
+  GIT_TAG 407c905e45ad75fc29bf0f9bb7c5c2fd3475976f)
+FetchContent_MakeAvailable(fmt)
+
 # EXPORT_COMPILE_COMMANDS is supported for CMake version 3.20 or later
 # only
 if(CMAKE_VERSION VERSION_LESS 3.20.0)
@@ -35,28 +45,6 @@ include(FindPkgConfig)
 
 # Find Threads package
 find_package(Threads REQUIRED)
-
-# Find fmt library.
-
-# cmake-format: off
-# NOTE: find_package() for fmt didn't work on macOS
-# due to compilation errors on Apple Clang 16, as:
-#/Users/kenji/src/airspy-fmradion/include/DataBuffer.h:49:12: error: no member named 'scoped_lock' in namespace 'std'
-#   49 |       std::scoped_lock<std::mutex> lock(m_mutex);
-#      |       ~~~~~^
-#/Users/kenji/src/airspy-fmradion/include/DataBuffer.h:49:34: error: expected '(' for function-style cast or type construction
-#   49 |       std::scoped_lock<std::mutex> lock(m_mutex);
-# cmake-format: on
-
-pkg_check_modules(PKG_FMT fmt REQUIRED)
-if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-  find_library(
-    FMT_LIBRARY libfmt.dylib HINTS /usr/local/lib /opt/homebrew/lib
-                                   ${PKG_FMT_LIBRARY_DIRS})
-else()
-  find_library(FMT_LIBRARY libfmt.so HINTS ${PKG_FMT_LIBRARY_DIRS})
-endif()
-message(STATUS "fmt ${PKG_FMT_VERSION}: ${FMT_LIBRARY}")
 
 # Find Volk library.
 pkg_check_modules(PKG_VOLK volk REQUIRED)
@@ -322,6 +310,7 @@ add_executable(airspy-fmradion main.cpp)
 include_directories(
   ${CMAKE_SOURCE_DIR}/include
   ${CMAKE_SOURCE_DIR}/r8brain-free-src
+  ${fmt_SOURCE_DIR}/include
   ${AIRSPYHF_INCLUDE_DIRS}
   ${AIRSPY_INCLUDE_DIRS}
   ${RTLSDR_INCLUDE_DIRS}
@@ -330,11 +319,11 @@ include_directories(
 
 target_link_libraries(
   airspy-fmradion
+  fmt::fmt
   sfmbase
   r8b
   Threads::Threads
   ${PORTAUDIO_LINK_LIBRARIES}
-  ${FMT_LIBRARY}
   ${VOLK_LIBRARY}
   ${EXTRA_LIBS}
   cmake_git_version_tracking)
