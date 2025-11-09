@@ -34,7 +34,6 @@ public:
   // Static constants.
   static constexpr double sample_rate_pcm = 48000;
   static constexpr double internal_rate_pcm = 48000;
-  static constexpr double low_rate_pcm = 12000;
   // Half bandwidth of audio signal in Hz (4.5kHz for AM)
   static constexpr double bandwidth_pcm = 4500;
   // Deemphasis constant in microseconds.
@@ -79,14 +78,10 @@ private:
   float m_if_rms;
 
   IQSampleVector m_buf_filtered;
-  IQSampleVector m_buf_filtered1;
   IQSampleVector m_buf_filtered1a;
   IQSampleVector m_buf_filtered1b;
   IQSampleVector m_buf_filtered2;
-  IQSampleVector m_buf_filtered2a;
-  IQSampleVector m_buf_filtered2b;
   IQSampleVector m_buf_filtered3;
-  IQSampleVector m_buf_filtered4;
   IQSampleDecodedVector m_buf_decoded;
   SampleVector m_buf_baseband_demod;
   SampleVector m_buf_baseband_preagc;
@@ -103,8 +98,6 @@ private:
   FineTuner m_cw_finetuner;
   FineTuner m_wspr_ssb_up_finetuner;
   FineTuner m_wspr_ssb_down_finetuner;
-  IfResampler m_rate_downsampler;
-  IfResampler m_rate_upsampler;
 };
 
 #endif

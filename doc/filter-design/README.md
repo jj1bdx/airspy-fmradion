@@ -8,3 +8,10 @@
 # example
 ./display-freq-khz.py 48 48kHz-fmaudio-64taps-coeff.txt
 ```
+
+## Design tools used
+
+* For .ih_fir files: Iowa Hills Software FIR filter design program
+* For .json files: [PyFDA](https://github.com/chipmuenk/pyFDA/)
+
+

@@ -34,18 +34,19 @@ public:
   static const SampleCoeff jj1bdx_48khz_nbfmaudio;
   static const SampleCoeff delay_3taps_only_audio;
 
-  static const IQSampleCoeff jj1bdx_ssb_12khz_1500hz;
   static const IQSampleCoeff jj1bdx_am_48khz_narrow;
   static const IQSampleCoeff jj1bdx_am_48khz_medium;
   static const IQSampleCoeff jj1bdx_am_48khz_default;
   static const IQSampleCoeff jj1bdx_am_48khz_wide;
-  static const IQSampleCoeff jj1bdx_cw_12khz_500hz;
   static const IQSampleCoeff jj1bdx_nbfm_48khz_default;
   static const IQSampleCoeff jj1bdx_nbfm_48khz_narrow;
   static const IQSampleCoeff jj1bdx_nbfm_48khz_medium;
   static const IQSampleCoeff jj1bdx_nbfm_48khz_wide;
   static const IQSampleCoeff jj1bdx_fm_384kHz_narrow;
   static const IQSampleCoeff jj1bdx_fm_384kHz_medium;
+
+  static const IQSampleCoeff jj1bdx_cw_48khz_500hz;
+  static const IQSampleCoeff jj1bdx_ssb_48khz_1500hz;
 
   // TODO: Hilbert filter coefficients are ASYMMETRIC,
   // so they should not be treated the same as
