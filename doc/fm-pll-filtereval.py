@@ -10,11 +10,11 @@ sosprelpf = [1.46974784e-06, 0, 0, 1, -1.99682419, 0.996825659]
 # 1st-order HPF (or inversed LPF)
 sosfirsthpf = [0.000304341788, -0.000304324564, 0, 1, 0, 0]
 
-sostest = [sosprelpf, sosprelpf, sosfirsthpf, sosfirsthpf, sosinteg]
-
 sosref = [sosprelpf, sosfirsthpf, sosinteg]
 
 soshpfonly = [sosfirsthpf]
+
+soslpfonly = [sosprelpf]
 
 sostwofilt = [sosprelpf, sosfirsthpf]
 
