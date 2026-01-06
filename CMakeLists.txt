@@ -289,8 +289,7 @@ set(sfmbase_HEADERS
 # Use R8B_PFFFT_DOUBLE for double-precision conversion
 # cmake-format: on
 
-add_library(r8b r8brain-free-src/r8bbase.cpp
-                r8brain-free-src/pffft_double/pffft_double.c)
+add_library(r8b r8brain-free-src/fft/pffft_double.c)
 target_include_directories(r8b PUBLIC r8brain-free-src)
 target_compile_definitions(r8b PUBLIC R8B_EXTFFT=1 R8B_FASTTIMING=1
                                       R8B_PFFFT_DOUBLE=1)
