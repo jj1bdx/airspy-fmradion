@@ -98,7 +98,8 @@ void PilotPhaseLock::process(const SampleVector &samples_in,
 
     // Convert I/Q ratio to estimate of phase error.
     // Note: maximum phase error during the locked state is +- 0.02 radian.
-    // Sample phase_err = atan2(phasor_q, phasor_i);
+    // Sample phase_err = std::atan2(new_phasor_q, new_phasor_i);
+    // Use float atan2 for fast and light-weight phase detection.
     Sample phase_err = Utility::fast_atan2f(new_phasor_q, new_phasor_i);
 
     // Calculate pilot level (accurate).
