@@ -25,6 +25,13 @@
 #include "SoftFM.h"
 
 #include "portaudio.h"
+#ifdef __APPLE__
+#include "pa_mac_core.h"
+#ifndef paMacCorePro
+#define paMacCorePro ((unsigned long)0x01)
+#endif // paMacCorePro
+#endif // __APPLE__
+
 #include <sndfile.h>
 
 /** Base class for writing audio data to file or playback. */
@@ -111,7 +118,10 @@ public:
   // Kenji's experiments show that
   // 40ms (0.04) is sufficient for macOS, Ubuntu, and Raspberry Pi OS
 
-  static constexpr PaTime minimum_latency = 0.04;
+  static constexpr PaTime minimum_latency_high = 0.04;
+
+  // 15ms (0.015) is sufficient for modern macOS machines
+  static constexpr PaTime minimum_latency_low = 0.015;
 
   //
   // Construct PortAudio output stream.
