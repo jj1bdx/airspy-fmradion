@@ -13,6 +13,9 @@ Use the following versions of VOLK aka libvolk:
 * 2.5.2
 * 3.1.2
 * 3.2.0
+* 3.3.0
+  - neon implementation revised on 3.3.0
+  - recalculate volk_profile
 
 ## For macOS: use Homebrew
 
