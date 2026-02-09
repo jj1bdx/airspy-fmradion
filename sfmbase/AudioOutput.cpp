@@ -209,10 +209,10 @@ PortAudioOutput::PortAudioOutput(const PaDeviceIndex device_index,
   PaMacCoreStreamInfo mac_core_flags;
   PaMacCore_SetupStreamInfo(&mac_core_flags, paMacCorePro);
   m_outputparams.hostApiSpecificStreamInfo = &mac_core_flags;
+  fmt::println(stderr, "Configured macOS CoreAudio options");
   // Guarantee minimum latency.
   if (m_outputparams.suggestedLatency < minimum_latency_low) {
     m_outputparams.suggestedLatency = minimum_latency_low;
-    fmt::println(stderr, "Configured macOS CoreAudio options");
   }
 #else  // !__APPLE_
   m_outputparams.suggestedLatency =
