@@ -21,6 +21,7 @@
 #include <cstring>
 #include <fmt/format.h>
 #include <fmt/ranges.h>
+#include <memory>
 #include <thread>
 #include <unistd.h>
 

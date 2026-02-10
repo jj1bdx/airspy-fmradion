@@ -22,6 +22,7 @@
 #include <cstring>
 #include <fmt/format.h>
 #include <fmt/ranges.h>
+#include <memory>
 #include <ranges>
 #include <rtl-sdr.h>
 #include <thread>
@@ -301,7 +302,6 @@ bool RtlSdrSource::stop() {
   if (m_thread) {
     m_thread->join();
     m_thread.reset();
-    m_thread = 0;
   }
 
   return true;

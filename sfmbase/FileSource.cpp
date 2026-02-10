@@ -20,6 +20,7 @@
 
 #include <chrono>
 #include <fmt/format.h>
+#include <memory>
 #include <thread>
 
 #include "ConfigParser.h"
@@ -375,7 +376,6 @@ bool FileSource::stop() {
   if (m_thread) {
     m_thread->join();
     m_thread.reset();
-    m_thread = 0;
   }
 
   return true;
