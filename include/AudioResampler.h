@@ -22,6 +22,7 @@
 #include "SoftFM.h"
 
 #include "CDSPResampler.h"
+#include <memory>
 
 // class AudioResampler
 
@@ -38,7 +39,7 @@ public:
   void process(const SampleVector &samples_in, SampleVector &samples_out);
 
 private:
-  r8b::CDSPResampler *m_cdspr;
+  std::unique_ptr<r8b::CDSPResampler> m_cdspr;
 };
 
 #endif

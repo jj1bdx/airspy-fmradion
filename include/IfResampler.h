@@ -38,8 +38,8 @@ public:
   void process(const IQSampleVector &samples_in, IQSampleVector &samples_out);
 
 private:
-  r8b::CDSPResampler24 *m_cdspr_re;
-  r8b::CDSPResampler24 *m_cdspr_im;
+  std::unique_ptr<r8b::CDSPResampler24> m_cdspr_re;
+  std::unique_ptr<r8b::CDSPResampler24> m_cdspr_im;
 };
 
 #endif

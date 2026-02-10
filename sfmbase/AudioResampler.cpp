@@ -25,8 +25,8 @@
 
 AudioResampler::AudioResampler(const double input_rate,
                                const double output_rate)
-    : m_cdspr(
-          new r8b::CDSPResampler(input_rate, output_rate, max_input_length)) {
+    : m_cdspr(std::make_unique<r8b::CDSPResampler>(input_rate, output_rate,
+                                                   max_input_length)) {
 #ifdef DEBUG_AUDIORESAMPLER
   int latency = m_cdspr->getInLenBeforeOutStart();
   fmt::println(stderr, "AudioResampler latency = {}", latency);
