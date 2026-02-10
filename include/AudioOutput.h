@@ -120,8 +120,9 @@ public:
 
   static constexpr PaTime minimum_latency_high = 0.04;
 
-  // 15ms (0.015) is sufficient for modern macOS machines
-  static constexpr PaTime minimum_latency_low = 0.015;
+  // For lower latencies,
+  // 25ms (0.025) is sufficient for modern macOS machines
+  static constexpr PaTime minimum_latency_low = 0.025;
 
   //
   // Construct PortAudio output stream.
