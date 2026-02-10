@@ -28,6 +28,10 @@
 #include "SoftFM.h"
 #include "sndfile.h"
 
+#ifdef __APPLE__
+#include "pa_mac_core.h"
+#endif // __APPLE__
+
 // class SndfileOutput
 
 // Constructor
@@ -207,7 +211,7 @@ PortAudioOutput::PortAudioOutput(const PaDeviceIndex device_index,
   m_outputparams.suggestedLatency =
       Pa_GetDeviceInfo(m_outputparams.device)->defaultLowOutputLatency;
   PaMacCoreStreamInfo mac_core_flags;
-  PaMacCore_SetupStreamInfo(&mac_core_flags, paMacCorePro);
+  PaMacCore_SetupStreamInfo(&mac_core_flags, paMacCoreChangeDeviceParameters);
   m_outputparams.hostApiSpecificStreamInfo = &mac_core_flags;
   fmt::println(stderr, "Configured macOS CoreAudio options");
   // Guarantee minimum latency.

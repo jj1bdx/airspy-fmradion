@@ -25,12 +25,6 @@
 #include "SoftFM.h"
 
 #include "portaudio.h"
-#ifdef __APPLE__
-#include "pa_mac_core.h"
-#ifndef paMacCorePro
-#define paMacCorePro ((unsigned long)0x01)
-#endif // paMacCorePro
-#endif // __APPLE__
 
 #include <sndfile.h>
 
