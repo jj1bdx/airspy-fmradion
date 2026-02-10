@@ -46,6 +46,7 @@ Intel Mac hardware is no longer supported by airspy-fmradion, although the autho
   * Updated r8brain-free-src to Version 7.1; CMakefile.txt was updated as well.
   * [Changed CW/USB/LSB FIR filters not to down/up-convert between 48kHz and 12kHz sampling rates, and to use the 2049-tap filters of 48ksamples/sec](https://github.com/jj1bdx/airspy-fmradion/issues/48). This significantly reduced output latency, tolerable for interactive use (such as FT8 reception). The CPU usage increased \~4 times than before, but was still in acceptable range (\~60% of FM `-E 100` setting).
   * File permission mode for the sound file output and the ppsfile is explicitly set to 0600 instead of 0666.
+  * Refactored non-owning raw pointers to unique pointers.
 * 20250929-0: Made the following changes:
   * Changed PortAudioOutput to use the own callback code instead of the stock blocking stream, for shorter output latency. See 20230923 in this changelog.
   * PortAudio minimum latency is no longer explicitly set, and is now set to defaultHighOutputLatency. Note: this behavior can be changed by setting compilation flag `PA_LOW_LATENCY` to defaultLowOutputLatency. Practically in many cases the low output latency setting works fine, but is not the default value, for safety.
