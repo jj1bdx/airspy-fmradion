@@ -22,6 +22,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <fcntl.h>
 #include <fmt/format.h>
 #include <getopt.h>
 #include <memory>
@@ -190,7 +191,7 @@ static void badarg(const char *label) {
 }
 
 static bool get_device(std::vector<std::string> &devnames, DevType devtype,
-                       Source **srcsdr, int devidx) {
+                       std::unique_ptr<Source> &up_srcsdr, int devidx) {
   // Get device names.
   switch (devtype) {
   case DevType::RTLSDR:
@@ -226,16 +227,16 @@ static bool get_device(std::vector<std::string> &devnames, DevType devtype,
   // Open receiver devices.
   switch (devtype) {
   case DevType::RTLSDR:
-    *srcsdr = new RtlSdrSource(devidx);
+    up_srcsdr = std::make_unique<RtlSdrSource>(devidx);
     break;
   case DevType::Airspy:
-    *srcsdr = new AirspySource(devidx);
+    up_srcsdr = std::make_unique<AirspySource>(devidx);
     break;
   case DevType::AirspyHF:
-    *srcsdr = new AirspyHFSource(devidx);
+    up_srcsdr = std::make_unique<AirspyHFSource>(devidx);
     break;
   case DevType::FileSource:
-    *srcsdr = new FileSource(devidx);
+    up_srcsdr = std::make_unique<FileSource>(devidx);
     break;
   }
 
@@ -298,7 +299,11 @@ int main(int argc, char **argv) {
   std::string filtertype_str("default");
   FilterType filtertype = FilterType::Default;
   std::vector<std::string> devnames;
-  Source *srcsdr = 0;
+  // Source device ownership will be transferred to thread therefore the
+  // unique_ptr with move is convenient.
+  // If the pointer is to be shared with the main thread,
+  // use shared_ptr (and no move) instead.
+  std::unique_ptr<Source> up_srcsdr = 0;
   int err;
   pthread_t sigmask_thread_id;
 
@@ -545,8 +550,14 @@ int main(int argc, char **argv) {
     } else {
       fmt::println(stderr, "writing pulse-per-second markers to '{}'",
                    ppsfilename);
-      ppsfile = fopen(ppsfilename.c_str(), "w");
-
+      int pps_fd =
+          open(ppsfilename.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0600);
+      if (pps_fd < 0) {
+        fmt::println(stderr, "ERROR: can not open '{}' ({})", ppsfilename,
+                     strerror(errno));
+        exit(1);
+      }
+      ppsfile = fdopen(pps_fd, "w");
       if (ppsfile == nullptr) {
         fmt::println(stderr, "ERROR: can not open '{}' ({})", ppsfilename,
                      strerror(errno));
@@ -632,36 +643,34 @@ int main(int argc, char **argv) {
     exit(1);
   }
 
-  if (!get_device(devnames, devtype, &srcsdr, devidx)) {
+  if (!get_device(devnames, devtype, up_srcsdr, devidx)) {
     exit(1);
   }
 
-  if (!(*srcsdr)) {
-    fmt::println(stderr, "ERROR source: {}", srcsdr->error());
-    delete srcsdr;
+  if (!(up_srcsdr)) {
+    fmt::println(stderr, "ERROR source: {}", up_srcsdr->error());
     exit(1);
   }
 
   // Configure device and start streaming.
-  if (!srcsdr->configure(config_str)) {
-    fmt::println(stderr, "ERROR: configuration: {}", srcsdr->error());
-    delete srcsdr;
+  if (!up_srcsdr->configure(config_str)) {
+    fmt::println(stderr, "ERROR: configuration: {}", up_srcsdr->error());
     exit(1);
   }
 
-  double freq = srcsdr->get_configured_frequency();
+  double freq = up_srcsdr->get_configured_frequency();
   fmt::print(stderr, "tuned for {:.7g} [MHz]", freq * 1.0e-6);
-  double tuner_freq = srcsdr->get_frequency();
+  double tuner_freq = up_srcsdr->get_frequency();
   if (tuner_freq != freq) {
     fmt::print(stderr, ", device tuned for {:.7g} [MHz]", tuner_freq * 1.0e-6);
   }
   fmt::println(stderr, "");
 
-  double ifrate = srcsdr->get_sample_rate();
+  double ifrate = up_srcsdr->get_sample_rate();
 
   unsigned int if_blocksize;
 
-  bool enable_fs_fourth_downconverter = !(srcsdr->is_low_if());
+  bool enable_fs_fourth_downconverter = !(up_srcsdr->is_low_if());
 
   bool enable_downsampling = true;
   double if_decimation_ratio = 1.0;
@@ -738,15 +747,10 @@ int main(int argc, char **argv) {
   fmt::print(stderr, "Demodulator rate: {:.8g} [Hz], ", demodulator_rate);
   fmt::println(stderr, "audio decimation: / {:.9g}", audio_decimation_ratio);
 
-  srcsdr->print_specific_parms();
+  up_srcsdr->print_specific_parms();
 
   // Create source data queue.
   DataBuffer<IQSample> source_buffer;
-
-  // ownership will be transferred to thread therefore the unique_ptr with
-  // move is convenient if the pointer is to be shared with the main thread
-  // use shared_ptr (and no move) instead
-  std::unique_ptr<Source> up_srcsdr(srcsdr);
 
   // Start reading from device in separate thread.
   up_srcsdr->start(&source_buffer, &stop_flag);

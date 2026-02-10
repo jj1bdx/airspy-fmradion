@@ -42,7 +42,7 @@ SndfileOutput::SndfileOutput(const std::string &filename,
   if (filename == "-") {
     m_fd = STDOUT_FILENO;
   } else {
-    m_fd = open(filename.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0666);
+    m_fd = open(filename.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0600);
     if (m_fd < 0) {
       m_error =
           fmt::format("can not open '{}' ({})", filename, strerror(errno));
