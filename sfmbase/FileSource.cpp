@@ -32,8 +32,9 @@ FileSource *FileSource::m_this = 0;
 FileSource::FileSource(int dev_index)
     : m_sample_rate(default_sample_rate), m_frequency(default_frequency),
       m_zero_offset(false), m_block_length(default_block_length),
-      m_sfp(nullptr), m_fmt_fn(nullptr), m_thread(0) {
-  m_sfinfo = {0};
+      m_sfp(nullptr), m_fmt_fn(nullptr), m_thread(nullptr) {
+  (void)dev_index;
+  m_sfinfo = {0, 0, 0, 0, 0, 0};
   m_this = this;
 }
 
@@ -361,7 +362,7 @@ bool FileSource::start(DataBuffer<IQSample> *buf, std::atomic_bool *stop_flag) {
 
   // Start thread.
   if (m_thread == 0) {
-    m_thread = new std::thread(run);
+    m_thread = std::make_unique<std::thread>(run);
     return true;
   } else {
     m_error = "Source thread already started";
@@ -373,7 +374,7 @@ bool FileSource::stop() {
   // Terminate thread.
   if (m_thread) {
     m_thread->join();
-    delete m_thread;
+    m_thread.reset();
     m_thread = 0;
   }
 

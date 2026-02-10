@@ -131,7 +131,7 @@ private:
   bool (*m_fmt_fn)(IQSampleVector *samples);
   static FileSource *m_this;
 
-  std::thread *m_thread;
+  std::unique_ptr<std::thread> m_thread;
 };
 
 #endif /* INCLUDE_FILESOURCE_H */

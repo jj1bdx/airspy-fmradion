@@ -99,7 +99,7 @@ private:
   bool m_confAgc;
   static RtlSdrSource *m_this;
 
-  std::thread *m_thread;
+  std::unique_ptr<std::thread> m_thread;
 };
 
 #endif

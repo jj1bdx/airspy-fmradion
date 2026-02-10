@@ -34,7 +34,8 @@ AirspyHFSource *AirspyHFSource::m_this = 0;
 
 // Open Airspy HF device.
 AirspyHFSource::AirspyHFSource(int dev_index)
-    : m_dev(0), m_sampleRate(0), m_frequency(0), m_running(false), m_thread(0) {
+    : m_dev(0), m_sampleRate(0), m_frequency(0), m_running(false),
+      m_thread(nullptr) {
   // Get library version number first.
   airspyhf_lib_version(&m_libv);
 #ifdef DEBUG_AIRSPYHFSOURCE
@@ -326,7 +327,7 @@ bool AirspyHFSource::start(DataBuffer<IQSample> *buf,
     fmt::println(stderr, "AirspyHFSource::start: starting");
 #endif
     m_running = true;
-    m_thread = new std::thread(run, m_dev, m_stop_flag);
+    m_thread = std::make_unique<std::thread>(run, m_dev, m_stop_flag);
     return true;
   } else {
     fmt::println(stderr, "AirspyHFSource::start: error");
@@ -361,7 +362,7 @@ bool AirspyHFSource::stop() {
                  fmt::underlying(rc));
   }
   m_thread->join();
-  delete m_thread;
+  m_thread.reset();
   return true;
 }
 

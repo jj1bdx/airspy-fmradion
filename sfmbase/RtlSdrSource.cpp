@@ -35,7 +35,7 @@ RtlSdrSource *RtlSdrSource::m_this = 0;
 
 // Open RTL-SDR device.
 RtlSdrSource::RtlSdrSource(int dev_index)
-    : m_dev(0), m_block_length(default_block_length), m_thread(0) {
+    : m_dev(0), m_block_length(default_block_length), m_thread(nullptr) {
   int r;
 
   const char *devname = rtlsdr_get_device_name(dev_index);
@@ -289,7 +289,7 @@ bool RtlSdrSource::start(DataBuffer<IQSample> *buf,
   m_stop_flag = stop_flag;
 
   if (m_thread == 0) {
-    m_thread = new std::thread(run);
+    m_thread = std::make_unique<std::thread>(run);
     return true;
   } else {
     m_error = "Source thread already started";
@@ -300,7 +300,7 @@ bool RtlSdrSource::start(DataBuffer<IQSample> *buf,
 bool RtlSdrSource::stop() {
   if (m_thread) {
     m_thread->join();
-    delete m_thread;
+    m_thread.reset();
     m_thread = 0;
   }
 
