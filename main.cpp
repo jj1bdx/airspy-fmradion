@@ -303,7 +303,7 @@ int main(int argc, char **argv) {
   // unique_ptr with move is convenient.
   // If the pointer is to be shared with the main thread,
   // use shared_ptr (and no move) instead.
-  std::unique_ptr<Source> up_srcsdr = 0;
+  std::unique_ptr<Source> up_srcsdr = nullptr;
   int err;
   pthread_t sigmask_thread_id;
 
