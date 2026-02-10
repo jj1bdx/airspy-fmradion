@@ -22,7 +22,6 @@
 #include "SoftFM.h"
 
 #include "CDSPResampler.h"
-#include <memory>
 
 // class AudioResampler
 
