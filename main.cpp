@@ -22,6 +22,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <fcntl.h>
 #include <fmt/format.h>
 #include <getopt.h>
 #include <memory>
@@ -545,8 +546,14 @@ int main(int argc, char **argv) {
     } else {
       fmt::println(stderr, "writing pulse-per-second markers to '{}'",
                    ppsfilename);
-      ppsfile = fopen(ppsfilename.c_str(), "w");
-
+      int pps_fd =
+          open(ppsfilename.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0600);
+      if (pps_fd < 0) {
+        fmt::println(stderr, "ERROR: can not open '{}' ({})", ppsfilename,
+                     strerror(errno));
+        exit(1);
+      }
+      ppsfile = fdopen(pps_fd, "w");
       if (ppsfile == nullptr) {
         fmt::println(stderr, "ERROR: can not open '{}' ({})", ppsfilename,
                      strerror(errno));
