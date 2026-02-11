@@ -21,6 +21,7 @@
 #include <cstring>
 #include <fmt/format.h>
 #include <fmt/ranges.h>
+#include <memory>
 #include <thread>
 #include <unistd.h>
 
@@ -34,7 +35,8 @@ AirspyHFSource *AirspyHFSource::m_this = 0;
 
 // Open Airspy HF device.
 AirspyHFSource::AirspyHFSource(int dev_index)
-    : m_dev(0), m_sampleRate(0), m_frequency(0), m_running(false), m_thread(0) {
+    : m_dev(0), m_sampleRate(0), m_frequency(0), m_running(false),
+      m_thread(nullptr) {
   // Get library version number first.
   airspyhf_lib_version(&m_libv);
 #ifdef DEBUG_AIRSPYHFSOURCE
@@ -72,11 +74,12 @@ AirspyHFSource::AirspyHFSource(int dev_index)
 
   if (m_dev) {
     uint32_t nbSampleRates;
-    uint32_t *sampleRates;
+    std::vector<uint32_t> sampleRates;
 
     airspyhf_get_samplerates(m_dev, &nbSampleRates, 0);
-    sampleRates = new uint32_t[nbSampleRates];
-    airspyhf_get_samplerates(m_dev, sampleRates, nbSampleRates);
+    sampleRates.resize(nbSampleRates);
+    airspyhf_get_samplerates(m_dev, sampleRates.data(), nbSampleRates);
+
 #ifdef DEBUG_AIRSPYHFSOURCE
     fmt::println(stderr, "nbSampleRates = {}", nbSampleRates);
     fmt::println(stderr, "sampleRates[0] = {}", sampleRates[0]);
@@ -91,8 +94,6 @@ AirspyHFSource::AirspyHFSource(int dev_index)
         m_srates.push_back(sampleRates[i]);
       }
     }
-
-    delete[] sampleRates;
 
     m_sratesStr = fmt::format("{}", fmt::join(m_srates, ", "));
   }
@@ -326,7 +327,7 @@ bool AirspyHFSource::start(DataBuffer<IQSample> *buf,
     fmt::println(stderr, "AirspyHFSource::start: starting");
 #endif
     m_running = true;
-    m_thread = new std::thread(run, m_dev, m_stop_flag);
+    m_thread = std::make_unique<std::thread>(run, m_dev, m_stop_flag);
     return true;
   } else {
     fmt::println(stderr, "AirspyHFSource::start: error");
@@ -361,7 +362,7 @@ bool AirspyHFSource::stop() {
                  fmt::underlying(rc));
   }
   m_thread->join();
-  delete m_thread;
+  m_thread.reset();
   return true;
 }
 

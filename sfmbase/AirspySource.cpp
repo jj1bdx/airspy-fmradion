@@ -22,6 +22,7 @@
 #include <cstring>
 #include <fmt/format.h>
 #include <fmt/ranges.h>
+#include <memory>
 #include <thread>
 #include <unistd.h>
 
@@ -48,7 +49,7 @@ const std::vector<int> AirspySource::m_vgains({0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
 AirspySource::AirspySource(int dev_index)
     : m_dev(0), m_sampleRate(10000000), m_frequency(100000000), m_lnaGain(8),
       m_mixGain(0), m_vgaGain(10), m_biasAnt(false), m_lnaAGC(false),
-      m_mixAGC(false), m_running(false), m_thread(0) {
+      m_mixAGC(false), m_running(false), m_thread(nullptr) {
 
   // Get library version number first.
   airspy_lib_version(&m_libv);
@@ -86,13 +87,11 @@ AirspySource::AirspySource(int dev_index)
 
   if (m_dev) {
     uint32_t nbSampleRates;
-    uint32_t *sampleRates;
+    std::vector<uint32_t> sampleRates;
 
     airspy_get_samplerates(m_dev, &nbSampleRates, 0);
-
-    sampleRates = new uint32_t[nbSampleRates];
-
-    airspy_get_samplerates(m_dev, sampleRates, nbSampleRates);
+    sampleRates.resize(nbSampleRates);
+    airspy_get_samplerates(m_dev, sampleRates.data(), nbSampleRates);
 
     if (nbSampleRates == 0) {
       m_error = "Failed to get Airspy device sample rate list";
@@ -103,8 +102,6 @@ AirspySource::AirspySource(int dev_index)
         m_srates.push_back(sampleRates[i]);
       }
     }
-
-    delete[] sampleRates;
 
     m_sratesStr = fmt::format("{}", fmt::join(m_srates, ", "));
 
@@ -406,7 +403,7 @@ bool AirspySource::start(DataBuffer<IQSample> *buf,
     fmt::println(stderr, "AirspySource::start: starting");
 #endif
     m_running = true;
-    m_thread = new std::thread(run, m_dev, stop_flag);
+    m_thread = std::make_unique<std::thread>(run, m_dev, stop_flag);
     return *this;
   } else {
     fmt::println(stderr, "AirspySource::start: error");
@@ -444,7 +441,7 @@ bool AirspySource::stop() {
   fmt::println(stderr, "AirspySource::stop");
 #endif
   m_thread->join();
-  delete m_thread;
+  m_thread.reset();
   return true;
 }
 

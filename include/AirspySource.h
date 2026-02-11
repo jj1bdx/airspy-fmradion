@@ -109,7 +109,7 @@ private:
   int m_ndev;
   std::vector<uint64_t> m_serials;
 
-  std::thread *m_thread;
+  std::unique_ptr<std::thread> m_thread;
 };
 
 #endif /* INCLUDE_AIRSPYSOURCE_H_ */

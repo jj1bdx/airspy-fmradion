@@ -50,7 +50,7 @@
 // define this for enabling coefficient monitor functions
 // #undef COEFF_MONITOR
 
-#define AIRSPY_FMRADION_VERSION "20250929-0"
+#define AIRSPY_FMRADION_VERSION "20260211-0"
 
 // Flag to set graceful termination
 // in process_signals()
@@ -303,7 +303,7 @@ int main(int argc, char **argv) {
   // unique_ptr with move is convenient.
   // If the pointer is to be shared with the main thread,
   // use shared_ptr (and no move) instead.
-  std::unique_ptr<Source> up_srcsdr = 0;
+  std::unique_ptr<Source> up_srcsdr = nullptr;
   int err;
   pthread_t sigmask_thread_id;
 
@@ -588,38 +588,39 @@ int main(int argc, char **argv) {
   // Set output device first, then print the configuration to stderr.
   switch (outmode) {
   case OutputMode::RAW_INT16:
-    audio_output.reset(
-        new SndfileOutput(filename, pcmrate, stereo,
-                          SF_FORMAT_RAW | SF_FORMAT_PCM_16 | SF_ENDIAN_LITTLE));
+    audio_output = std::make_unique<SndfileOutput>(
+        filename, pcmrate, stereo,
+        SF_FORMAT_RAW | SF_FORMAT_PCM_16 | SF_ENDIAN_LITTLE);
     fmt::println(
         stderr,
         "writing raw 16-bit integer little-endian audio samples to '{}'",
         filename);
     break;
   case OutputMode::RAW_FLOAT32:
-    audio_output.reset(
-        new SndfileOutput(filename, pcmrate, stereo,
-                          SF_FORMAT_RAW | SF_FORMAT_FLOAT | SF_ENDIAN_LITTLE));
+    audio_output = std::make_unique<SndfileOutput>(
+        filename, pcmrate, stereo,
+        SF_FORMAT_RAW | SF_FORMAT_FLOAT | SF_ENDIAN_LITTLE);
     fmt::println(stderr,
                  "writing raw 32-bit float little-endian audio samples to '{}'",
                  filename);
     break;
   case OutputMode::WAV_INT16:
-    audio_output.reset(new SndfileOutput(filename, pcmrate, stereo,
-                                         SF_FORMAT_RF64 | SF_FORMAT_PCM_16 |
-                                             SF_ENDIAN_LITTLE));
+    audio_output = std::make_unique<SndfileOutput>(
+        filename, pcmrate, stereo,
+        SF_FORMAT_RF64 | SF_FORMAT_PCM_16 | SF_ENDIAN_LITTLE);
     fmt::println(stderr, "writing RF64/WAV int16 audio samples to '{}'",
                  filename);
     break;
   case OutputMode::WAV_FLOAT32:
-    audio_output.reset(
-        new SndfileOutput(filename, pcmrate, stereo,
-                          SF_FORMAT_RF64 | SF_FORMAT_FLOAT | SF_ENDIAN_LITTLE));
+    audio_output = std::make_unique<SndfileOutput>(
+        filename, pcmrate, stereo,
+        SF_FORMAT_RF64 | SF_FORMAT_FLOAT | SF_ENDIAN_LITTLE);
     fmt::println(stderr, "writing RF64/WAV float32 audio samples to '{}'",
                  filename);
     break;
   case OutputMode::PORTAUDIO:
-    audio_output.reset(new PortAudioOutput(portaudiodev, pcmrate, stereo));
+    audio_output =
+        std::make_unique<PortAudioOutput>(portaudiodev, pcmrate, stereo);
     if (portaudiodev == -1) {
       fmt::print(stderr, "playing audio to PortAudio default device: ");
     } else {
@@ -630,8 +631,8 @@ int main(int argc, char **argv) {
     break;
 #if defined(LIBSNDFILE_MP3_ENABLED)
   case OutputMode::MP3_FMAUDIO:
-    audio_output.reset(new SndfileOutput(
-        filename, pcmrate, stereo, SF_FORMAT_MPEG | SF_FORMAT_MPEG_LAYER_III));
+    audio_output = std::make_unique<SndfileOutput>(
+        filename, pcmrate, stereo, SF_FORMAT_MPEG | SF_FORMAT_MPEG_LAYER_III);
     fmt::println(stderr, "writing MP3 FM-broadcast audio samples to '{}'",
                  filename);
     break;
