@@ -17,7 +17,7 @@ The following Git repositories are required:
 
 ## Platforms tested
 
-* Mac mini 2023 Apple Silicon (M2 Pro), macOS 26.1, Apple clang version 17.0.0 (clang-1700.4.4.1)
+* Mac mini 2023 Apple Silicon (M2 Pro), macOS 26.2, Apple clang version 17.0.0 (clang-1700.6.3.2)
 * Ubuntu 24.04.3 LTS x86\_64, gcc 14.2.0
 * Raspberry Pi 5 with Raspberry Pi OS 64bit Lite (Debian Trixie 13.1), gcc 14.2.0
 
@@ -41,7 +41,7 @@ Intel Mac hardware is no longer supported by airspy-fmradion, although the autho
 
 ## Changes (including requirement changes)
 
-* xxxxxxxx-0: Made the following changes:
+* 20260211-0: Made the following changes:
   * {fmt} is now a required repository fetched from CMake. The static library will be automatically built and linked.
   * Updated r8brain-free-src to Version 7.1; CMakefile.txt was updated as well.
   * [Changed CW/USB/LSB FIR filters not to down/up-convert between 48kHz and 12kHz sampling rates, and to use the 2049-tap filters of 48ksamples/sec](https://github.com/jj1bdx/airspy-fmradion/issues/48). This significantly reduced output latency, tolerable for interactive use (such as FT8 reception). The CPU usage increased \~4 times than before, but was still in acceptable range (\~60% of FM `-E 100` setting).
