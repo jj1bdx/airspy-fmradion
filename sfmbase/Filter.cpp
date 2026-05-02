@@ -197,7 +197,7 @@ void LowPassFilterRC::process_interleaved(const SampleVector &samples_in,
   unsigned int n = samples_in.size();
   samples_out.resize(n);
 
-  for (unsigned int i = 0; i + 1 < n; i += 2) {
+  for (unsigned int i = 0; (i + 1) < n; i += 2) {
     samples_out[i] = m_filter0.process(samples_in[i]);
     samples_out[i + 1] = m_filter1.process(samples_in[i + 1]);
   }
@@ -217,7 +217,7 @@ void LowPassFilterRC::process_inplace(SampleVector &samples) {
 void LowPassFilterRC::process_interleaved_inplace(SampleVector &samples) {
   unsigned int n = samples.size();
 
-  for (unsigned int i = 0; i + 1 < n; i += 2) {
+  for (unsigned int i = 0; (i + 1) < n; i += 2) {
     Sample x0 = samples[i];
     Sample x1 = samples[i + 1];
     samples[i] = m_filter0.process(x0);
