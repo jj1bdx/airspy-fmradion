@@ -165,7 +165,12 @@ void SndfileOutput::add_error_log_info(SNDFILE *sf) {
   int length;
 
   length = sf_command(sf, SFC_GET_LOG_INFO, buffer, max_length);
-  std::string logmsg(buffer, length);
+  if (length <= 0) {
+    m_error.append("\n=== SFC_GET_LOG_INFO returned no data\n");
+    m_zombie = true;
+    return;
+  }
+  std::string logmsg(buffer, static_cast<std::size_t>(length));
 
   m_error.append("\n=== SFC_GET_LOG_INFO output:\n");
   m_error.append(logmsg);

@@ -21,6 +21,7 @@
 #define INCLUDE_AIRSPYHFSOURCE_H
 
 #include "libairspyhf/airspyhf.h"
+#include <atomic>
 #include <cstdint>
 #include <string>
 #include <thread>
@@ -77,7 +78,7 @@ private:
    */
   bool configure(int sampleRateIndex, uint8_t hfAttLevel, uint32_t frequency);
 
-  void callback(const float *buf, int len);
+  void callback(const float *buf, std::size_t len);
   static int rx_callback(airspyhf_transfer_t *transfer);
   static void run(airspyhf_device *dev, std::atomic_bool *stop_flag);
 
@@ -86,8 +87,8 @@ private:
   uint32_t m_frequency;
   bool m_low_if;
   bool m_running;
-  static AirspyHFSource *m_this;
-  std::vector<int> m_srates;
+  static std::atomic<AirspyHFSource *> m_this;
+  std::vector<std::uint32_t> m_srates;
   std::string m_sratesStr;
 
   airspyhf_lib_version_t m_libv;

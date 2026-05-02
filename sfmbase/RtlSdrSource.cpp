@@ -32,7 +32,7 @@
 #include "RtlSdrSource.h"
 #include "Utility.h"
 
-RtlSdrSource *RtlSdrSource::m_this = 0;
+std::atomic<RtlSdrSource *> RtlSdrSource::m_this{nullptr};
 
 // Open RTL-SDR device.
 RtlSdrSource::RtlSdrSource(int dev_index)
@@ -69,7 +69,7 @@ RtlSdrSource::~RtlSdrSource() {
     rtlsdr_close(m_dev);
   }
 
-  m_this = 0;
+  m_this = nullptr;
 }
 
 bool RtlSdrSource::configure(std::string configurationStr) {
@@ -310,8 +310,12 @@ bool RtlSdrSource::stop() {
 void RtlSdrSource::run() {
   IQSampleVector iqsamples;
 
-  while (!m_this->m_stop_flag->load() && get_samples(&iqsamples)) {
-    m_this->m_buf->push(std::move(iqsamples));
+  RtlSdrSource *self = m_this.load();
+  if (!self) {
+    return;
+  }
+  while (!self->m_stop_flag->load() && get_samples(&iqsamples)) {
+    self->m_buf->push(std::move(iqsamples));
   }
 }
 
@@ -319,7 +323,8 @@ void RtlSdrSource::run() {
 bool RtlSdrSource::get_samples(IQSampleVector *samples) {
   int r, n_read;
 
-  if (!m_this->m_dev) {
+  RtlSdrSource *self = m_this.load();
+  if (!self || !self->m_dev) {
     return false;
   }
 
@@ -327,28 +332,29 @@ bool RtlSdrSource::get_samples(IQSampleVector *samples) {
     return false;
   }
 
-  std::vector<uint8_t> buf(2 * m_this->m_block_length);
+  std::vector<uint8_t> buf(2 * self->m_block_length);
 
-  r = rtlsdr_read_sync(m_this->m_dev, buf.data(), 2 * m_this->m_block_length,
+  r = rtlsdr_read_sync(self->m_dev, buf.data(), 2 * self->m_block_length,
                        &n_read);
 
   if (r < 0) {
-    m_this->m_error = "rtlsdr_read_sync failed";
+    self->m_error = "rtlsdr_read_sync failed";
     return false;
   }
 
-  if (n_read != 2 * m_this->m_block_length) {
-    m_this->m_error = "short read, samples lost";
+  if (n_read != 2 * self->m_block_length) {
+    self->m_error = "short read, samples lost";
     return false;
   }
 
-  samples->resize(m_this->m_block_length);
+  samples->resize(self->m_block_length);
 
-  for (int i = 0; i < m_this->m_block_length; i++) {
-    int32_t re = buf[2 * i];
-    int32_t im = buf[2 * i + 1];
-    (*samples)[i] = IQSample((re - 128) / IQSample::value_type(128),
-                             (im - 128) / IQSample::value_type(128));
+  for (int i = 0; i < self->m_block_length; i++) {
+    // RTL-SDR outputs offset-binary 8-bit: 0..255 with 128 = DC zero.
+    int32_t re = static_cast<int32_t>(buf[2 * i]) - 128;
+    int32_t im = static_cast<int32_t>(buf[2 * i + 1]) - 128;
+    (*samples)[i] = IQSample(re / IQSample::value_type(128),
+                             im / IQSample::value_type(128));
   }
 
   return true;
@@ -356,14 +362,16 @@ bool RtlSdrSource::get_samples(IQSampleVector *samples) {
 
 // Return a list of supported devices.
 void RtlSdrSource::get_device_names(std::vector<std::string> &devices) {
-  char manufacturer[256], product[256], serial[256];
+  // Buffer size matches librtlsdr's internal libusb_get_string_descriptor_ascii
+  // limit; this coupling is load-bearing and undocumented in librtlsdr.
+  static constexpr std::size_t USB_STRING_MAX = 256;
+  char manufacturer[USB_STRING_MAX], product[USB_STRING_MAX],
+      serial[USB_STRING_MAX];
   int device_count = rtlsdr_get_device_count();
 
   if (device_count > 0) {
-    devices.resize(device_count);
+    devices.reserve(static_cast<std::size_t>(device_count));
   }
-
-  devices.clear();
 
   for (int i = 0; i < device_count; i++) {
     if (!rtlsdr_get_device_usb_strings(i, manufacturer, product, serial)) {

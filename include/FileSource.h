@@ -20,6 +20,7 @@
 #ifndef INCLUDE_FILESOURCE_H
 #define INCLUDE_FILESOURCE_H
 
+#include <atomic>
 #include <string>
 #include <thread>
 #include <vector>
@@ -129,7 +130,7 @@ private:
   double m_sample_rate_per_us;
 
   bool (*m_fmt_fn)(IQSampleVector *samples);
-  static FileSource *m_this;
+  static std::atomic<FileSource *> m_this;
 
   std::unique_ptr<std::thread> m_thread;
 };

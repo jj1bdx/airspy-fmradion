@@ -21,6 +21,7 @@
 #define INCLUDE_AIRSPYSOURCE_H
 
 #include "libairspy/airspy.h"
+#include <atomic>
 #include <cstdint>
 #include <string>
 #include <thread>
@@ -81,7 +82,7 @@ private:
                  int lna_gain, int mix_gain, int vga_gain, bool lna_agc,
                  bool mix_agc);
 
-  void callback(const float *buf, int len);
+  void callback(const float *buf, std::size_t len);
   static int rx_callback(airspy_transfer_t *transfer);
   static void run(airspy_device *dev, std::atomic_bool *stop_flag);
 
@@ -95,11 +96,11 @@ private:
   bool m_lnaAGC;
   bool m_mixAGC;
   bool m_running;
-  static AirspySource *m_this;
+  static std::atomic<AirspySource *> m_this;
   static const std::vector<int> m_lgains;
   static const std::vector<int> m_mgains;
   static const std::vector<int> m_vgains;
-  std::vector<int> m_srates;
+  std::vector<std::uint32_t> m_srates;
   std::string m_lgainsStr;
   std::string m_mgainsStr;
   std::string m_vgainsStr;

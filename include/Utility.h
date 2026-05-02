@@ -100,6 +100,9 @@ inline bool parse_int(const char *s, int &v, bool allow_unit = false) {
 // Compute RMS over the specified IQSample vector.
 inline float rms_level_sample(const IQSampleVector &samples) {
   unsigned int n = samples.size();
+  if (n == 0) {
+    return 0.0f;
+  }
   volk::vector<float> magnitude_sq;
   magnitude_sq.resize(n);
 
@@ -117,6 +120,12 @@ inline void samples_mean_rms(const IQSampleDecodedVector &samples, float &mean,
   float vsum = 0;
   float vsumsq = 0;
   unsigned int n = samples.size();
+
+  if (n == 0) {
+    mean = 0.0f;
+    rms = 0.0f;
+    return;
+  }
 
   volk_32f_accumulator_s32f(&vsum, samples.data(), n);
   volk_32f_x2_dot_prod_32f(&vsumsq, samples.data(), samples.data(), n);

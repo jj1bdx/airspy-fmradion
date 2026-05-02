@@ -17,7 +17,9 @@
 // You should have received a copy of the GNU General Public License along
 // with this program; if not, see http://www.gnu.org/licenses/gpl-2.0.html
 
+#include <algorithm>
 #include <atomic>
+#include <cmath>
 #include <csignal>
 #include <cstdio>
 #include <cstdlib>
@@ -349,24 +351,24 @@ int main(int argc, char **argv) {
 #endif // LIBSNDFILE_MP3_ENABLED
 
   const struct option longopts[] = {
-      {"modtype", optional_argument, nullptr, 'm'},
-      {"devtype", optional_argument, nullptr, 't'},
+      {"modtype", required_argument, nullptr, 'm'},
+      {"devtype", required_argument, nullptr, 't'},
       {"quiet", required_argument, nullptr, 'q'},
-      {"config", optional_argument, nullptr, 'c'},
+      {"config", required_argument, nullptr, 'c'},
       {"dev", required_argument, nullptr, 'd'},
       {"mono", no_argument, nullptr, 'M'},
       {"raw", required_argument, nullptr, 'R'},
       {"float", required_argument, nullptr, 'F'},
       {"wav", required_argument, nullptr, 'W'},
       {"wavfloat", required_argument, nullptr, 'G'},
-      {"play", optional_argument, nullptr, 'P'},
+      {"play", required_argument, nullptr, 'P'},
       {"pps", required_argument, nullptr, 'T'},
       {"pilotshift", no_argument, nullptr, 'X'},
       {"usa", no_argument, nullptr, 'U'},
-      {"filtertype", optional_argument, nullptr, 'f'},
+      {"filtertype", required_argument, nullptr, 'f'},
       {"squelch", required_argument, nullptr, 'l'},
       {"multipathfilter", required_argument, nullptr, 'E'},
-      {"ifrateppm", optional_argument, nullptr, 'r'},
+      {"ifrateppm", required_argument, nullptr, 'r'},
 #if defined(LIBSNDFILE_MP3_ENABLED)
       {"mp3fmaudio", required_argument, nullptr, 'C'},
 #endif // LIBSNDFILE_MP3_ENABLED
@@ -648,7 +650,7 @@ int main(int argc, char **argv) {
     exit(1);
   }
 
-  if (!(up_srcsdr)) {
+  if (!(*up_srcsdr)) {
     fmt::println(stderr, "ERROR source: {}", up_srcsdr->error());
     exit(1);
   }
@@ -662,7 +664,7 @@ int main(int argc, char **argv) {
   double freq = up_srcsdr->get_configured_frequency();
   fmt::print(stderr, "tuned for {:.7g} [MHz]", freq * 1.0e-6);
   double tuner_freq = up_srcsdr->get_frequency();
-  if (tuner_freq != freq) {
+  if (std::fabs(tuner_freq - freq) > 1.0) {
     fmt::print(stderr, ", device tuned for {:.7g} [MHz]", tuner_freq * 1.0e-6);
   }
   fmt::println(stderr, "");
@@ -699,7 +701,7 @@ int main(int argc, char **argv) {
   // Status refresh rate.
   // TODO: ~0.1sec / display (should be tuned)
   unsigned int stat_rate =
-      (unsigned int)((double)ifrate / (double)if_blocksize / 9.0);
+      std::max(1u, (unsigned int)((double)ifrate / (double)if_blocksize / 9.0));
   fmt::println(stderr, "stat_rate = {}", stat_rate);
 
   // IF rate compensation if requested.
