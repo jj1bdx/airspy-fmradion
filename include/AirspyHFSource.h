@@ -85,7 +85,7 @@ private:
   struct airspyhf_device *m_dev;
   uint32_t m_sampleRate;
   uint32_t m_frequency;
-  bool m_low_if;
+  bool m_low_if = false;
   bool m_running;
   static std::atomic<AirspyHFSource *> m_this;
   std::vector<std::uint32_t> m_srates;

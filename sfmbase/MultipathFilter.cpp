@@ -28,6 +28,9 @@
 // Institute of Television Engineers of Japan, Vol. 39, No. 3, pp. 228-234
 // (1985). https://doi.org/10.3169/itej1978.39.228
 
+#include <cassert>
+#include <climits>
+
 #include "MultipathFilter.h"
 
 // Class MultipathFilter
@@ -62,6 +65,9 @@ MultipathFilter::MultipathFilter(unsigned int stages)
       m_error(0) {
 
   assert(stages > 0);
+  // Guard against constructor overflow on m_filter_order = stages*4 + 1
+  // and m_index_reference_point = stages*3 + 1.
+  assert(stages < (UINT_MAX / 4));
   for (unsigned int i = 0; i < m_filter_order; i++) {
     m_state[i] = IQSample(0, 0);
   }

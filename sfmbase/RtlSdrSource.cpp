@@ -164,7 +164,14 @@ bool RtlSdrSource::configure(std::string configurationStr) {
   // Intentionally tune at a higher frequency to avoid DC offset.
   m_confFreq = frequency;
   m_confAgc = agcmode;
-  double tuner_freq = frequency - sample_rate / 4.0;
+  // Compute the Fs/4 down-shift in integer arithmetic to avoid a
+  // double->uint32_t narrowing (regression of V20 hardening).
+  const uint32_t shift = sample_rate / 4u;
+  if (frequency < shift) {
+    m_error = "Frequency too low for Fs/4 down-shift";
+    return false;
+  }
+  const uint32_t tuner_freq = frequency - shift;
 
   return configure(sample_rate, tuner_freq, tuner_gain, block_length, agcmode,
                    antbias);

@@ -415,7 +415,9 @@ void FileSource::run() {
   double delta = 0.0;
 
   // Get clock and start reading.
-  auto begin = std::chrono::system_clock::now();
+  // Use steady_clock so the cadence is immune to wall-clock (NTP) jumps.
+  std::chrono::steady_clock::time_point begin =
+      std::chrono::steady_clock::now();
   while (!self->m_stop_flag->load()) {
     // Read and convert samples.
     if (!get_samples(&iqsamples)) {
@@ -426,11 +428,20 @@ void FileSource::run() {
     self->m_buf->push(std::move(iqsamples));
 
     // Get clock and calculate elapsed.
-    auto end = std::chrono::system_clock::now();
-    auto elapsed = end - begin;
+    std::chrono::steady_clock::time_point end =
+        std::chrono::steady_clock::now();
+    std::chrono::steady_clock::duration elapsed = end - begin;
+    std::chrono::microseconds sleep_dur =
+        expected -
+        std::chrono::duration_cast<std::chrono::microseconds>(elapsed);
 
-    // Throttle.
-    std::this_thread::sleep_for(expected - elapsed);
+    // Throttle. If we are behind schedule, drop the debt instead of
+    // accumulating an ever-more-negative sleep on subsequent iterations.
+    if (sleep_dur > std::chrono::microseconds::zero()) {
+      std::this_thread::sleep_for(sleep_dur);
+    } else {
+      begin = std::chrono::steady_clock::now() - expected;
+    }
 
     // Get next clock.
     begin += expected;
@@ -485,9 +496,17 @@ bool FileSource::get_sf_read_float(IQSampleVector *samples) {
     return false;
   }
 
+  // Defensive upper bound on block_length: 16 M float-pairs ~= 128 MB.
+  // configure() already clamps block_length, but enforce here so that
+  // future callers cannot bypass the clamp.
+  static constexpr int kMaxBlockSamples = 1 << 24;
+  if (self->m_block_length <= 0 || self->m_block_length > kMaxBlockSamples) {
+    return false;
+  }
+
   // setup vector for reading
   sf_count_t n_read;
-  sf_count_t sz = self->m_block_length * 2;
+  sf_count_t sz = static_cast<sf_count_t>(self->m_block_length) * 2;
   std::vector<float> buf(sz);
 
   // read float samples

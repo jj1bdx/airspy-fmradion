@@ -48,7 +48,9 @@ public:
   AmDecoder(IQSampleCoeff &amfilter_coeff, const ModType mode);
 
   // Process IQ samples and return audio samples.
-  void process(const IQSampleVector &samples_in, SampleVector &audio);
+  // samples_in is taken by value so that std::move(samples_in) inside
+  // the body actually moves.
+  void process(IQSampleVector samples_in, SampleVector &audio);
 
   // Return RMS baseband signal level (where nominal level is 0.707).
   double get_baseband_level() const { return m_baseband_level; }

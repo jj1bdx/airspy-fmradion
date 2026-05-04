@@ -97,7 +97,7 @@ private:
   int m_block_length;
   std::vector<int> m_gains;
   std::string m_gainsStr;
-  bool m_confAgc;
+  bool m_confAgc = false;
   static std::atomic<RtlSdrSource *> m_this;
 
   std::unique_ptr<std::thread> m_thread;

@@ -81,25 +81,31 @@ AirspyHFSource::AirspyHFSource(int dev_index)
   }
 
   if (m_dev) {
-    uint32_t nbSampleRates;
+    uint32_t nbSampleRates = 0;
     std::vector<uint32_t> sampleRates;
 
-    airspyhf_get_samplerates(m_dev, &nbSampleRates, 0);
-    sampleRates.resize(nbSampleRates);
-    airspyhf_get_samplerates(m_dev, sampleRates.data(), nbSampleRates);
-
-#ifdef DEBUG_AIRSPYHFSOURCE
-    fmt::println(stderr, "nbSampleRates = {}", nbSampleRates);
-    fmt::println(stderr, "sampleRates[0] = {}", sampleRates[0]);
-#endif
-
-    if (nbSampleRates == 0) {
-      m_error = "Failed to get Airspy HF device sample rate list";
+    airspyhf_error qrc =
+        (airspyhf_error)airspyhf_get_samplerates(m_dev, &nbSampleRates, 0);
+    if (qrc != AIRSPYHF_SUCCESS || nbSampleRates == 0) {
+      m_error = "Failed to query Airspy HF device sample-rate count";
       airspyhf_close(m_dev);
       m_dev = 0;
     } else {
-      for (uint32_t i = 0; i < nbSampleRates; i++) {
-        m_srates.push_back(sampleRates[i]);
+      sampleRates.resize(nbSampleRates);
+      qrc = (airspyhf_error)airspyhf_get_samplerates(m_dev, sampleRates.data(),
+                                                     nbSampleRates);
+      if (qrc != AIRSPYHF_SUCCESS) {
+        m_error = "Failed to query Airspy HF device sample-rate list";
+        airspyhf_close(m_dev);
+        m_dev = 0;
+      } else {
+#ifdef DEBUG_AIRSPYHFSOURCE
+        fmt::println(stderr, "nbSampleRates = {}", nbSampleRates);
+        fmt::println(stderr, "sampleRates[0] = {}", sampleRates[0]);
+#endif
+        for (uint32_t i = 0; i < nbSampleRates; i++) {
+          m_srates.push_back(sampleRates[i]);
+        }
       }
     }
 

@@ -94,29 +94,39 @@ AirspySource::AirspySource(int dev_index)
   }
 
   if (m_dev) {
-    uint32_t nbSampleRates;
+    uint32_t nbSampleRates = 0;
     std::vector<uint32_t> sampleRates;
 
-    airspy_get_samplerates(m_dev, &nbSampleRates, 0);
-    sampleRates.resize(nbSampleRates);
-    airspy_get_samplerates(m_dev, sampleRates.data(), nbSampleRates);
-
-    if (nbSampleRates == 0) {
-      m_error = "Failed to get Airspy device sample rate list";
+    airspy_error qrc =
+        (airspy_error)airspy_get_samplerates(m_dev, &nbSampleRates, 0);
+    if (qrc != AIRSPY_SUCCESS || nbSampleRates == 0) {
+      m_error = "Failed to query Airspy device sample-rate count";
       airspy_close(m_dev);
       m_dev = 0;
     } else {
-      for (uint32_t i = 0; i < nbSampleRates; i++) {
-        m_srates.push_back(sampleRates[i]);
+      sampleRates.resize(nbSampleRates);
+      qrc = (airspy_error)airspy_get_samplerates(m_dev, sampleRates.data(),
+                                                 nbSampleRates);
+      if (qrc != AIRSPY_SUCCESS) {
+        m_error = "Failed to query Airspy device sample-rate list";
+        airspy_close(m_dev);
+        m_dev = 0;
+      } else {
+        for (uint32_t i = 0; i < nbSampleRates; i++) {
+          m_srates.push_back(sampleRates[i]);
+        }
       }
     }
 
     m_sratesStr = fmt::format("{}", fmt::join(m_srates, ", "));
 
-    rc = (airspy_error)airspy_set_sample_type(m_dev, AIRSPY_SAMPLE_FLOAT32_IQ);
+    if (m_dev) {
+      rc =
+          (airspy_error)airspy_set_sample_type(m_dev, AIRSPY_SAMPLE_FLOAT32_IQ);
 
-    if (rc != AIRSPY_SUCCESS) {
-      m_error = "AirspyInput::start: could not set sample type to FLOAT32_IQ";
+      if (rc != AIRSPY_SUCCESS) {
+        m_error = "AirspyInput::start: could not set sample type to FLOAT32_IQ";
+      }
     }
   }
 
@@ -447,8 +457,19 @@ bool AirspySource::stop() {
 #ifdef DEBUG_AIRSPYSOURCE
   fmt::println(stderr, "AirspySource::stop");
 #endif
-  m_thread->join();
-  m_thread.reset();
+  // Force the run() loop to fall through even if the caller did not
+  // already set *m_stop_flag, so join() cannot deadlock.
+  if (m_dev) {
+    airspy_error rc = (airspy_error)airspy_stop_rx(m_dev);
+    if (rc != AIRSPY_SUCCESS) {
+      fmt::println(stderr, "AirspySource::stop: Cannot stop Airspy Rx: {}: {}",
+                   fmt::underlying(rc), airspy_error_name(rc));
+    }
+  }
+  if (m_thread) {
+    m_thread->join();
+    m_thread.reset();
+  }
   return true;
 }
 

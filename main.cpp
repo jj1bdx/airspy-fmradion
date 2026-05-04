@@ -124,6 +124,7 @@ static void usage() {
       "  -E stages      Enable multipath filter for FM\n"
       "                 (For stable reception only:\n"
       "                  turn off if reception becomes unstable)\n"
+      "                 The value is between 1 to 1024\n"
       "  -r ppm         Set IF offset in ppm (range: +-1000000ppm)\n"
       "                 (This option affects output pitch and timing:\n"
       "                  use for the output timing compensation only!)\n"
@@ -450,7 +451,7 @@ int main(int argc, char **argv) {
       break;
     case 'E':
       if (!Utility::parse_int(optarg, multipathfilter_stages) ||
-          multipathfilter_stages < 1) {
+          multipathfilter_stages < 1 || multipathfilter_stages > 1024) {
         badarg("-E");
       }
       break;

@@ -127,7 +127,7 @@ private:
   SNDFILE *m_sfp;
   SF_INFO m_sfinfo;
 
-  double m_sample_rate_per_us;
+  double m_sample_rate_per_us = 0.0;
 
   bool (*m_fmt_fn)(IQSampleVector *samples);
   static std::atomic<FileSource *> m_this;

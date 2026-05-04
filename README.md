@@ -150,7 +150,7 @@ cmake --build build --target all
   * for AM: wide: +-9kHz, default: +-6kHz, medium: +-4.5kHz, narrow: +-3kHz
   * for NBFM: wide: +-20kHz, default: +-10kHz, medium: +-8kHz, narrow: +-6.25kHz
 * `-l dB` Enable IF squelch, set the level to minus given value of dB
-* `-E stages` Enable multipath filter for FM (For stable reception only: turn off if reception becomes unstable)
+* `-E stages` Enable multipath filter for FM (For stable reception only: turn off if reception becomes unstable). The value is between 1 to 1024.
 * `-r ppm` Set IF offset in ppm (range: +-1000000ppm) (Note: this option affects output pitch and timing: *use for the output timing compensation only!*
 
 ## Timestamp file format
@@ -236,5 +236,10 @@ cmake --build build --target all
 
 * As a whole package: GPLv3 (and later). See [LICENSE](LICENSE).
 * Each source code file might state a GPLv3-compatible license.
+
+## Usage of AI
+
+* Claude Code is used to verify and fix the vulnerabilities of the code.
+* Past bugfixes include GitHub Copilot suggestions.
 
 [End of README.md]

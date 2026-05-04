@@ -44,11 +44,14 @@ void LowPassFilterFirIQ::process(const IQSampleVector &samples_in,
   unsigned int p = m_pos;
   unsigned int pstep = m_downsample;
 
-  samples_out.resize((n - p + pstep - 1) / pstep);
-
+  // Empty input must short-circuit before the resize, otherwise unsigned
+  // (n - p + pstep - 1) underflows when n == 0 and p > 0.
   if (n == 0) {
+    samples_out.clear();
     return;
   }
+
+  samples_out.resize((n - p + pstep - 1) / pstep);
 
   // The first few samples need data from m_state.
   // NOTE: this assumes the filter has symmetric coefficient pairs
@@ -107,11 +110,15 @@ void LowPassFilterFirAudio::process(const SampleVector &samples_in,
   unsigned int order = m_state.size();
   unsigned int n = samples_in.size();
   unsigned int p = m_pos;
-  samples_out.resize(n - p);
 
+  // Empty input must short-circuit before the resize, otherwise unsigned
+  // (n - p) underflows when n == 0 and p > 0.
   if (n == 0) {
+    samples_out.clear();
     return;
   }
+
+  samples_out.resize(n - p);
 
   // The first few samples need data from m_state.
   // NOTE: this assumes the filter has symmetric coefficient pairs
