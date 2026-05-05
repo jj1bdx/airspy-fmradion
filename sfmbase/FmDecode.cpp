@@ -82,7 +82,7 @@ FmDecoder::FmDecoder(bool fmfilter_enable, IQSampleCoeff &fmfilter_coeff,
   // Do nothing
 }
 
-void FmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
+void FmDecoder::process(IQSampleVector samples_in, SampleVector &audio) {
 
   // If no sampled baseband signal comes out,
   // terminate and wait for next block,

@@ -20,6 +20,7 @@
 #ifndef INCLUDE_FILESOURCE_H
 #define INCLUDE_FILESOURCE_H
 
+#include <atomic>
 #include <string>
 #include <thread>
 #include <vector>
@@ -126,10 +127,10 @@ private:
   SNDFILE *m_sfp;
   SF_INFO m_sfinfo;
 
-  double m_sample_rate_per_us;
+  double m_sample_rate_per_us = 0.0;
 
   bool (*m_fmt_fn)(IQSampleVector *samples);
-  static FileSource *m_this;
+  static std::atomic<FileSource *> m_this;
 
   std::unique_ptr<std::thread> m_thread;
 };

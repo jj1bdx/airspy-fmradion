@@ -72,7 +72,11 @@ public:
   std::vector<PpsEvent> get_pps_events() const { return m_pps_events; }
 
   // Erase the first PPS event.
-  void erase_first_pps_event() { m_pps_events.erase(m_pps_events.begin()); }
+  void erase_first_pps_event() {
+    if (!m_pps_events.empty()) {
+      m_pps_events.erase(m_pps_events.begin());
+    }
+  }
 
 private:
   Sample m_minfreq, m_maxfreq;

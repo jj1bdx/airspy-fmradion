@@ -54,14 +54,22 @@ SndfileOutput::SndfileOutput(const std::string &filename,
   if (!sf_format_check(&m_sndfile_sfinfo)) {
     m_error = fmt::format("SF_INFO for file '{}' is invalid", filename);
     m_zombie = true;
+    if (m_fd != STDOUT_FILENO && m_fd >= 0) {
+      ::close(m_fd);
+    }
+    m_fd = -1;
     return;
   }
 
   m_sndfile = sf_open_fd(m_fd, SFM_WRITE, &m_sndfile_sfinfo, SF_TRUE);
   if (m_sndfile == nullptr) {
     m_error =
-        fmt::format("can not open '{}' ({})", filename, sf_strerror(m_sndfile));
+        fmt::format("can not open '{}' ({})", filename, sf_strerror(nullptr));
     m_zombie = true;
+    if (m_fd != STDOUT_FILENO && m_fd >= 0) {
+      ::close(m_fd);
+    }
+    m_fd = -1;
     return;
   }
 
@@ -165,7 +173,12 @@ void SndfileOutput::add_error_log_info(SNDFILE *sf) {
   int length;
 
   length = sf_command(sf, SFC_GET_LOG_INFO, buffer, max_length);
-  std::string logmsg(buffer, length);
+  if (length <= 0) {
+    m_error.append("\n=== SFC_GET_LOG_INFO returned no data\n");
+    m_zombie = true;
+    return;
+  }
+  std::string logmsg(buffer, static_cast<std::size_t>(length));
 
   m_error.append("\n=== SFC_GET_LOG_INFO output:\n");
   m_error.append(logmsg);

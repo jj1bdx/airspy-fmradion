@@ -26,8 +26,9 @@
 // Construct low-pass filter.
 LowPassFilterFirIQ::LowPassFilterFirIQ(const IQSampleCoeff &coeff,
                                        const unsigned int downsample)
-    : m_coeff(coeff), m_order(coeff.size() - 1), m_downsample(downsample),
-      m_pos(0) {
+    : m_coeff(coeff), m_order(coeff.empty() ? 0 : coeff.size() - 1),
+      m_downsample(downsample), m_pos(0) {
+  assert(!coeff.empty());
   assert(downsample >= 1);
   m_state.resize(m_order);
 }
@@ -43,11 +44,14 @@ void LowPassFilterFirIQ::process(const IQSampleVector &samples_in,
   unsigned int p = m_pos;
   unsigned int pstep = m_downsample;
 
-  samples_out.resize((n - p + pstep - 1) / pstep);
-
+  // Empty input must short-circuit before the resize, otherwise unsigned
+  // (n - p + pstep - 1) underflows when n == 0 and p > 0.
   if (n == 0) {
+    samples_out.clear();
     return;
   }
+
+  samples_out.resize((n - p + pstep - 1) / pstep);
 
   // The first few samples need data from m_state.
   // NOTE: this assumes the filter has symmetric coefficient pairs
@@ -95,7 +99,8 @@ void LowPassFilterFirIQ::process(const IQSampleVector &samples_in,
 
 // Construct low-pass filter.
 LowPassFilterFirAudio::LowPassFilterFirAudio(const SampleCoeff &coeff)
-    : m_coeff(coeff), m_order(coeff.size() - 1), m_pos(0) {
+    : m_coeff(coeff), m_order(coeff.empty() ? 0 : coeff.size() - 1), m_pos(0) {
+  assert(!coeff.empty());
   m_state.resize(m_order);
 }
 
@@ -105,11 +110,15 @@ void LowPassFilterFirAudio::process(const SampleVector &samples_in,
   unsigned int order = m_state.size();
   unsigned int n = samples_in.size();
   unsigned int p = m_pos;
-  samples_out.resize(n - p);
 
+  // Empty input must short-circuit before the resize, otherwise unsigned
+  // (n - p) underflows when n == 0 and p > 0.
   if (n == 0) {
+    samples_out.clear();
     return;
   }
+
+  samples_out.resize(n - p);
 
   // The first few samples need data from m_state.
   // NOTE: this assumes the filter has symmetric coefficient pairs
@@ -195,7 +204,7 @@ void LowPassFilterRC::process_interleaved(const SampleVector &samples_in,
   unsigned int n = samples_in.size();
   samples_out.resize(n);
 
-  for (unsigned int i = 0; i < n - 1; i += 2) {
+  for (unsigned int i = 0; (i + 1) < n; i += 2) {
     samples_out[i] = m_filter0.process(samples_in[i]);
     samples_out[i + 1] = m_filter1.process(samples_in[i + 1]);
   }
@@ -215,7 +224,7 @@ void LowPassFilterRC::process_inplace(SampleVector &samples) {
 void LowPassFilterRC::process_interleaved_inplace(SampleVector &samples) {
   unsigned int n = samples.size();
 
-  for (unsigned int i = 0; i < n - 1; i += 2) {
+  for (unsigned int i = 0; (i + 1) < n; i += 2) {
     Sample x0 = samples[i];
     Sample x1 = samples[i + 1];
     samples[i] = m_filter0.process(x0);

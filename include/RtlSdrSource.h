@@ -20,6 +20,7 @@
 #ifndef INCLUDE_RTLSDRSOURCE_H
 #define INCLUDE_RTLSDRSOURCE_H
 
+#include <atomic>
 #include <string>
 #include <thread>
 
@@ -96,8 +97,8 @@ private:
   int m_block_length;
   std::vector<int> m_gains;
   std::string m_gainsStr;
-  bool m_confAgc;
-  static RtlSdrSource *m_this;
+  bool m_confAgc = false;
+  static std::atomic<RtlSdrSource *> m_this;
 
   std::unique_ptr<std::thread> m_thread;
 };

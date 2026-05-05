@@ -94,9 +94,9 @@ private:
 
   const unsigned numberOfChannels;
   const unsigned sampleRate;
-  int m_fd;
-  SNDFILE *m_sndfile;
-  SF_INFO m_sndfile_sfinfo;
+  int m_fd = -1;
+  SNDFILE *m_sndfile = nullptr;
+  SF_INFO m_sndfile_sfinfo{};
 };
 
 class PortAudioOutput : public AudioOutput {
@@ -132,9 +132,9 @@ private:
   void add_paerror(const std::string &msg);
 
   unsigned int m_nchannels;
-  PaStreamParameters m_outputparams;
-  PaStream *m_stream;
-  PaError m_paerror;
+  PaStreamParameters m_outputparams{};
+  PaStream *m_stream = nullptr;
+  PaError m_paerror = paNoError;
   volk::vector<float> m_floatbuf;
 };
 

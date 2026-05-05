@@ -31,7 +31,7 @@
 
 // #define DEBUG_AIRSPYHFSOURCE 1
 
-AirspyHFSource *AirspyHFSource::m_this = 0;
+std::atomic<AirspyHFSource *> AirspyHFSource::m_this{nullptr};
 
 // Open Airspy HF device.
 AirspyHFSource::AirspyHFSource(int dev_index)
@@ -54,9 +54,17 @@ AirspyHFSource::AirspyHFSource(int dev_index)
   }
 
   // List all available devices.
-  m_serials.resize(m_ndev);
+  m_serials.resize(static_cast<std::size_t>(m_ndev));
   if (m_ndev != airspyhf_list_devices(m_serials.data(), m_ndev)) {
     m_error = "Failed to obtain Airspy HF device serial numbers";
+    m_dev = 0;
+    m_this = this;
+    return;
+  }
+
+  if (dev_index < 0 ||
+      static_cast<std::size_t>(dev_index) >= m_serials.size()) {
+    m_error = "Device index out of range after re-enumeration";
     m_dev = 0;
     m_this = this;
     return;
@@ -73,25 +81,31 @@ AirspyHFSource::AirspyHFSource(int dev_index)
   }
 
   if (m_dev) {
-    uint32_t nbSampleRates;
+    uint32_t nbSampleRates = 0;
     std::vector<uint32_t> sampleRates;
 
-    airspyhf_get_samplerates(m_dev, &nbSampleRates, 0);
-    sampleRates.resize(nbSampleRates);
-    airspyhf_get_samplerates(m_dev, sampleRates.data(), nbSampleRates);
-
-#ifdef DEBUG_AIRSPYHFSOURCE
-    fmt::println(stderr, "nbSampleRates = {}", nbSampleRates);
-    fmt::println(stderr, "sampleRates[0] = {}", sampleRates[0]);
-#endif
-
-    if (nbSampleRates == 0) {
-      m_error = "Failed to get Airspy HF device sample rate list";
+    airspyhf_error qrc =
+        (airspyhf_error)airspyhf_get_samplerates(m_dev, &nbSampleRates, 0);
+    if (qrc != AIRSPYHF_SUCCESS || nbSampleRates == 0) {
+      m_error = "Failed to query Airspy HF device sample-rate count";
       airspyhf_close(m_dev);
       m_dev = 0;
     } else {
-      for (uint32_t i = 0; i < nbSampleRates; i++) {
-        m_srates.push_back(sampleRates[i]);
+      sampleRates.resize(nbSampleRates);
+      qrc = (airspyhf_error)airspyhf_get_samplerates(m_dev, sampleRates.data(),
+                                                     nbSampleRates);
+      if (qrc != AIRSPYHF_SUCCESS) {
+        m_error = "Failed to query Airspy HF device sample-rate list";
+        airspyhf_close(m_dev);
+        m_dev = 0;
+      } else {
+#ifdef DEBUG_AIRSPYHFSOURCE
+        fmt::println(stderr, "nbSampleRates = {}", nbSampleRates);
+        fmt::println(stderr, "sampleRates[0] = {}", sampleRates[0]);
+#endif
+        for (uint32_t i = 0; i < nbSampleRates; i++) {
+          m_srates.push_back(sampleRates[i]);
+        }
       }
     }
 
@@ -108,7 +122,7 @@ AirspyHFSource::~AirspyHFSource() {
   if (m_dev) {
     airspyhf_close(m_dev);
   }
-  m_this = 0;
+  m_this = nullptr;
 }
 
 void AirspyHFSource::get_device_names(std::vector<std::string> &devices) {
@@ -124,9 +138,10 @@ void AirspyHFSource::get_device_names(std::vector<std::string> &devices) {
   if (ndev <= 0) {
     fmt::println(stderr,
                  "AirspyHFSource::get_device_names: no available device");
+    return;
   }
   // List all available devices.
-  serials.resize(ndev);
+  serials.resize(static_cast<std::size_t>(ndev));
   if (ndev != airspyhf_list_devices(serials.data(), ndev)) {
     fmt::println(stderr, "AirspyHFSource::get_device_names: "
                          "unable to obtain device list");
@@ -184,7 +199,13 @@ bool AirspyHFSource::configure(int sampleRateIndex, uint8_t hfAttLevel,
   if (m_low_if) {
     m_frequency = frequency;
   } else {
-    m_frequency = frequency - 0.25 * m_sampleRate;
+    const double shift = 0.25 * static_cast<double>(m_sampleRate);
+    const double tuned = static_cast<double>(frequency) - shift;
+    if (tuned < 0.0 || tuned > static_cast<double>(UINT32_MAX)) {
+      m_error = "Invalid (computed) tuner frequency after Fs/4 shift";
+      return false;
+    }
+    m_frequency = static_cast<uint32_t>(tuned);
   }
 
   rc = (airspyhf_error)airspyhf_set_freq(m_dev,
@@ -234,9 +255,8 @@ bool AirspyHFSource::configure(int sampleRateIndex, uint8_t hfAttLevel,
 }
 
 int32_t AirspyHFSource::check_sampleRateIndex(uint32_t sampleRate) {
-  uint32_t i;
-  for (i = 0; i < m_srates.size(); i++) {
-    if (m_srates[i] == static_cast<int>(sampleRate)) {
+  for (std::size_t i = 0; i < m_srates.size(); i++) {
+    if (m_srates[i] == sampleRate) {
       return static_cast<int32_t>(i);
     }
   }
@@ -367,21 +387,23 @@ bool AirspyHFSource::stop() {
 }
 
 int AirspyHFSource::rx_callback(airspyhf_transfer_t *transfer) {
-  int len = transfer->sample_count * 2; // interleaved I/Q samples
+  // interleaved I/Q samples
+  const std::size_t len = static_cast<std::size_t>(transfer->sample_count) * 2;
 
-  if (m_this) {
-    m_this->callback((float *)transfer->samples, len);
+  AirspyHFSource *self = m_this.load();
+  if (self) {
+    self->callback((float *)transfer->samples, len);
   }
 
   return 0;
 }
 
-void AirspyHFSource::callback(const float *buf, int len) {
+void AirspyHFSource::callback(const float *buf, std::size_t len) {
   IQSampleVector iqsamples;
 
   iqsamples.resize(len / 2);
 
-  for (int i = 0, j = 0; i < len; i += 2, j++) {
+  for (std::size_t i = 0, j = 0; i < len; i += 2, j++) {
     float re = buf[i];
     float im = buf[i + 1];
     iqsamples[j] = IQSample(re, im);

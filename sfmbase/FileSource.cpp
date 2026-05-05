@@ -18,7 +18,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+#include <cassert>
 #include <chrono>
+#include <cstdlib>
 #include <fmt/format.h>
 #include <memory>
 #include <thread>
@@ -27,7 +29,7 @@
 #include "FileSource.h"
 #include "Utility.h"
 
-FileSource *FileSource::m_this = 0;
+std::atomic<FileSource *> FileSource::m_this{nullptr};
 
 // Constructor
 FileSource::FileSource(int dev_index)
@@ -47,7 +49,7 @@ FileSource::~FileSource() {
     m_sfp = nullptr;
   }
 
-  m_this = 0;
+  m_this = nullptr;
 }
 
 bool FileSource::configure(std::string configurationStr) {
@@ -100,7 +102,7 @@ bool FileSource::configure(std::string configurationStr) {
   // blklen
   if (m.find("blklen") != m.end()) {
     bool blklen_ok = Utility::parse_int(m["blklen"].c_str(), block_length);
-    if (!blklen_ok) {
+    if (!blklen_ok || block_length <= 0) {
       fmt::println(stderr, "FileSource::configure: invalid blklen");
       return false;
     }
@@ -226,6 +228,10 @@ bool FileSource::configure(std::string fname, bool raw, FormatType format_type,
   }
 
   // Calculate samplerate per microsecond.
+  if (m_sample_rate == 0) {
+    m_error = "FileSource: sample rate must not be zero";
+    return false;
+  }
   m_sample_rate_per_us = ((double)m_sample_rate) / 1e6;
 
   // Limit too large block length.
@@ -299,8 +305,8 @@ int FileSource::to_sf_format(FormatType format_type) {
     ret = SF_FORMAT_FLOAT;
     break;
   default:
-    assert(0);
-    break;
+    // Unreachable: all FormatType values must be handled above.
+    std::abort();
   }
 
   return ret;
@@ -385,9 +391,14 @@ bool FileSource::stop() {
 void FileSource::run() {
   IQSampleVector iqsamples;
 
+  FileSource *self = m_this.load();
+  if (!self) {
+    return;
+  }
+
   // expected microseconds per block reading
   double d_expected =
-      ((double)m_this->m_block_length) / m_this->m_sample_rate_per_us;
+      ((double)self->m_block_length) / self->m_sample_rate_per_us;
 
   // Divide into its fractional and integer part.
   double int_part, frac_part;
@@ -404,22 +415,33 @@ void FileSource::run() {
   double delta = 0.0;
 
   // Get clock and start reading.
-  auto begin = std::chrono::system_clock::now();
-  while (!m_this->m_stop_flag->load()) {
+  // Use steady_clock so the cadence is immune to wall-clock (NTP) jumps.
+  std::chrono::steady_clock::time_point begin =
+      std::chrono::steady_clock::now();
+  while (!self->m_stop_flag->load()) {
     // Read and convert samples.
     if (!get_samples(&iqsamples)) {
       break;
     }
 
     // Push samples.
-    m_this->m_buf->push(std::move(iqsamples));
+    self->m_buf->push(std::move(iqsamples));
 
     // Get clock and calculate elapsed.
-    auto end = std::chrono::system_clock::now();
-    auto elapsed = end - begin;
+    std::chrono::steady_clock::time_point end =
+        std::chrono::steady_clock::now();
+    std::chrono::steady_clock::duration elapsed = end - begin;
+    std::chrono::microseconds sleep_dur =
+        expected -
+        std::chrono::duration_cast<std::chrono::microseconds>(elapsed);
 
-    // Throttle.
-    std::this_thread::sleep_for(expected - elapsed);
+    // Throttle. If we are behind schedule, drop the debt instead of
+    // accumulating an ever-more-negative sleep on subsequent iterations.
+    if (sleep_dur > std::chrono::microseconds::zero()) {
+      std::this_thread::sleep_for(sleep_dur);
+    } else {
+      begin = std::chrono::steady_clock::now() - expected;
+    }
 
     // Get next clock.
     begin += expected;
@@ -433,30 +455,31 @@ void FileSource::run() {
   }
 
   // Push end.
-  m_this->m_buf->push_end();
+  self->m_buf->push_end();
 
   // Close sndfile.
-  sf_close(m_this->m_sfp);
+  sf_close(self->m_sfp);
 
   // Clear handle.
-  m_this->m_sfp = nullptr;
+  self->m_sfp = nullptr;
 }
 
 // Fetch a bunch of samples from the file.
 bool FileSource::get_samples(IQSampleVector *samples) {
   bool ret;
 
-  if (!m_this->m_sfp) {
+  FileSource *self = m_this.load();
+  if (!self || !self->m_sfp) {
     return false;
   }
   if (!samples) {
     return false;
   }
-  if (!m_this->m_fmt_fn) {
+  if (!self->m_fmt_fn) {
     return false;
   }
 
-  ret = (*(m_this->m_fmt_fn))(samples);
+  ret = (*(self->m_fmt_fn))(samples);
 
   return ret;
 }
@@ -468,14 +491,27 @@ bool FileSource::get_samples(IQSampleVector *samples) {
 bool FileSource::get_sf_read_float(IQSampleVector *samples) {
   // read a file using sf_read_float() and convert to float32
 
+  FileSource *self = m_this.load();
+  if (!self) {
+    return false;
+  }
+
+  // Defensive upper bound on block_length: 16 M float-pairs ~= 128 MB.
+  // configure() already clamps block_length, but enforce here so that
+  // future callers cannot bypass the clamp.
+  static constexpr int kMaxBlockSamples = 1 << 24;
+  if (self->m_block_length <= 0 || self->m_block_length > kMaxBlockSamples) {
+    return false;
+  }
+
   // setup vector for reading
   sf_count_t n_read;
-  sf_count_t sz = m_this->m_block_length * 2;
+  sf_count_t sz = static_cast<sf_count_t>(self->m_block_length) * 2;
   std::vector<float> buf(sz);
 
   // read float samples
   // Note: implicit conversion done in sf_read_float()
-  n_read = sf_read_float(m_this->m_sfp, buf.data(), sz);
+  n_read = sf_read_float(self->m_sfp, buf.data(), sz);
   if (n_read <= 0) {
     // finish reading.
     return false;

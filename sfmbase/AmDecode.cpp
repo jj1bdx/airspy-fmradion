@@ -93,7 +93,7 @@ AmDecoder::AmDecoder(IQSampleCoeff &amfilter_coeff, const ModType mode)
   // Do nothing
 }
 
-void AmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
+void AmDecoder::process(IQSampleVector samples_in, SampleVector &audio) {
   switch (m_mode) {
   case ModType::AM:
   case ModType::DSB:

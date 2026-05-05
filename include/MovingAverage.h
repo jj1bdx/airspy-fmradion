@@ -20,6 +20,7 @@
 #ifndef INCLUDE_MOVINGAVERAGE_H
 #define INCLUDE_MOVINGAVERAGE_H
 
+#include <cassert>
 #include <vector>
 
 template <class Type> class MovingAverage {
@@ -40,6 +41,9 @@ public:
   }
 
   void feed(Type value) {
+    // Default-constructed MovingAverage has empty history; feed() is invalid
+    // until resize() has been called.
+    assert(!m_history.empty());
     m_sum -= m_history[m_ptr];
     m_history[m_ptr] = value;
     m_sum += value;
@@ -56,7 +60,10 @@ public:
     m_sum = (float)m_history.size() * value;
   }
 
-  Type average() const { return m_sum / (float)m_history.size(); }
+  Type average() const {
+    assert(!m_history.empty());
+    return m_sum / (float)m_history.size();
+  }
 
   Type sum() const { return m_sum; }
 

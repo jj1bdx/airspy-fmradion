@@ -28,7 +28,7 @@
 
 class Source {
 public:
-  Source() : m_confFreq(0), m_buf(0) {}
+  Source() : m_confFreq(0), m_buf(nullptr), m_stop_flag(nullptr) {}
   virtual ~Source() {}
 
   /**

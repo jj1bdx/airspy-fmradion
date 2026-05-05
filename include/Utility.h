@@ -43,6 +43,8 @@
 #ifndef INCLUDE_UTILITY_H
 #define INCLUDE_UTILITY_H
 
+#include <cerrno>
+#include <cmath>
 #include <cstdlib>
 #include <ctime>
 #include <limits.h>
@@ -59,9 +61,16 @@ namespace Utility {
 inline bool parse_dbl(const char *s, double &v) {
   char *endp;
 
+  errno = 0;
   v = strtod(s, &endp);
 
   if (endp == s) {
+    return false;
+  }
+
+  // Reject overflow (HUGE_VAL / -HUGE_VAL with errno==ERANGE),
+  // NaN, and +/-Inf so callers can rely on a finite result.
+  if (errno == ERANGE || !std::isfinite(v)) {
     return false;
   }
 
@@ -76,14 +85,22 @@ inline bool parse_dbl(const char *s, double &v) {
     endp++;
   }
 
+  if (!std::isfinite(v)) {
+    return false;
+  }
+
   return (*endp == '\0');
 }
 
 // Parse integet numbers with "k" suffix.
 inline bool parse_int(const char *s, int &v, bool allow_unit = false) {
   char *endp;
+  errno = 0;
   long t = strtol(s, &endp, 10);
   if (endp == s) {
+    return false;
+  }
+  if (errno == ERANGE) {
     return false;
   }
   if (allow_unit && *endp == 'k' && t > INT_MIN / 1000 && t < INT_MAX / 1000) {
@@ -100,6 +117,9 @@ inline bool parse_int(const char *s, int &v, bool allow_unit = false) {
 // Compute RMS over the specified IQSample vector.
 inline float rms_level_sample(const IQSampleVector &samples) {
   unsigned int n = samples.size();
+  if (n == 0) {
+    return 0.0f;
+  }
   volk::vector<float> magnitude_sq;
   magnitude_sq.resize(n);
 
@@ -117,6 +137,12 @@ inline void samples_mean_rms(const IQSampleDecodedVector &samples, float &mean,
   float vsum = 0;
   float vsumsq = 0;
   unsigned int n = samples.size();
+
+  if (n == 0) {
+    mean = 0.0f;
+    rms = 0.0f;
+    return;
+  }
 
   volk_32f_accumulator_s32f(&vsum, samples.data(), n);
   volk_32f_x2_dot_prod_32f(&vsumsq, samples.data(), samples.data(), n);

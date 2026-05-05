@@ -32,7 +32,7 @@
 
 // #define DEBUG_AIRSPYSOURCE 1
 
-AirspySource *AirspySource::m_this = 0;
+std::atomic<AirspySource *> AirspySource::m_this{nullptr};
 const std::vector<int> AirspySource::m_lgains({0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
                                                11, 12, 13, 14});
 const std::vector<int> AirspySource::m_mgains({0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
@@ -68,9 +68,17 @@ AirspySource::AirspySource(int dev_index)
   }
 
   // List all available devices.
-  m_serials.resize(m_ndev);
+  m_serials.resize(static_cast<std::size_t>(m_ndev));
   if (m_ndev != airspy_list_devices(m_serials.data(), m_ndev)) {
     m_error = "Failed to obtain Airspy device serial numbers";
+    m_dev = 0;
+    m_this = this;
+    return;
+  }
+
+  if (dev_index < 0 ||
+      static_cast<std::size_t>(dev_index) >= m_serials.size()) {
+    m_error = "Device index out of range after re-enumeration";
     m_dev = 0;
     m_this = this;
     return;
@@ -86,29 +94,39 @@ AirspySource::AirspySource(int dev_index)
   }
 
   if (m_dev) {
-    uint32_t nbSampleRates;
+    uint32_t nbSampleRates = 0;
     std::vector<uint32_t> sampleRates;
 
-    airspy_get_samplerates(m_dev, &nbSampleRates, 0);
-    sampleRates.resize(nbSampleRates);
-    airspy_get_samplerates(m_dev, sampleRates.data(), nbSampleRates);
-
-    if (nbSampleRates == 0) {
-      m_error = "Failed to get Airspy device sample rate list";
+    airspy_error qrc =
+        (airspy_error)airspy_get_samplerates(m_dev, &nbSampleRates, 0);
+    if (qrc != AIRSPY_SUCCESS || nbSampleRates == 0) {
+      m_error = "Failed to query Airspy device sample-rate count";
       airspy_close(m_dev);
       m_dev = 0;
     } else {
-      for (uint32_t i = 0; i < nbSampleRates; i++) {
-        m_srates.push_back(sampleRates[i]);
+      sampleRates.resize(nbSampleRates);
+      qrc = (airspy_error)airspy_get_samplerates(m_dev, sampleRates.data(),
+                                                 nbSampleRates);
+      if (qrc != AIRSPY_SUCCESS) {
+        m_error = "Failed to query Airspy device sample-rate list";
+        airspy_close(m_dev);
+        m_dev = 0;
+      } else {
+        for (uint32_t i = 0; i < nbSampleRates; i++) {
+          m_srates.push_back(sampleRates[i]);
+        }
       }
     }
 
     m_sratesStr = fmt::format("{}", fmt::join(m_srates, ", "));
 
-    rc = (airspy_error)airspy_set_sample_type(m_dev, AIRSPY_SAMPLE_FLOAT32_IQ);
+    if (m_dev) {
+      rc =
+          (airspy_error)airspy_set_sample_type(m_dev, AIRSPY_SAMPLE_FLOAT32_IQ);
 
-    if (rc != AIRSPY_SUCCESS) {
-      m_error = "AirspyInput::start: could not set sample type to FLOAT32_IQ";
+      if (rc != AIRSPY_SUCCESS) {
+        m_error = "AirspyInput::start: could not set sample type to FLOAT32_IQ";
+      }
     }
   }
 
@@ -126,7 +144,7 @@ AirspySource::~AirspySource() {
   if (m_dev) {
     airspy_close(m_dev);
   }
-  m_this = 0;
+  m_this = nullptr;
 }
 
 void AirspySource::get_device_names(std::vector<std::string> &devices) {
@@ -141,9 +159,10 @@ void AirspySource::get_device_names(std::vector<std::string> &devices) {
 #endif
   if (ndev <= 0) {
     fmt::println(stderr, "AirspySource::get_device_names: no available device");
+    return;
   }
   // List all available devices.
-  serials.resize(ndev);
+  serials.resize(static_cast<std::size_t>(ndev));
   if (ndev != airspy_list_devices(serials.data(), ndev)) {
     fmt::println(stderr, "AirspySource::get_device_names: "
                          "unable to obtain device list");
@@ -285,10 +304,10 @@ bool AirspySource::configure(std::string configurationStr) {
         Utility::parse_int(m["srate"].c_str(), samplerate, true);
     m_sampleRate = static_cast<uint32_t>(samplerate);
 
-    uint32_t i;
+    std::size_t i;
     for (i = 0; i < m_srates.size(); i++) {
-      if (m_srates[i] == static_cast<int>(m_sampleRate)) {
-        sampleRateIndex = i;
+      if (m_srates[i] == m_sampleRate) {
+        sampleRateIndex = static_cast<int>(i);
         break;
       }
     }
@@ -387,9 +406,7 @@ bool AirspySource::configure(std::string configurationStr) {
   }
 
   m_confFreq = frequency;
-  // tuner_freq shift no longer required
-  double tuner_freq = frequency;
-  return configure(sampleRateIndex, tuner_freq, antBias, lnaGain, mixGain,
+  return configure(sampleRateIndex, frequency, antBias, lnaGain, mixGain,
                    vgaGain, lnaAGC, mixAGC);
 }
 
@@ -440,27 +457,40 @@ bool AirspySource::stop() {
 #ifdef DEBUG_AIRSPYSOURCE
   fmt::println(stderr, "AirspySource::stop");
 #endif
-  m_thread->join();
-  m_thread.reset();
+  // Force the run() loop to fall through even if the caller did not
+  // already set *m_stop_flag, so join() cannot deadlock.
+  if (m_dev) {
+    airspy_error rc = (airspy_error)airspy_stop_rx(m_dev);
+    if (rc != AIRSPY_SUCCESS) {
+      fmt::println(stderr, "AirspySource::stop: Cannot stop Airspy Rx: {}: {}",
+                   fmt::underlying(rc), airspy_error_name(rc));
+    }
+  }
+  if (m_thread) {
+    m_thread->join();
+    m_thread.reset();
+  }
   return true;
 }
 
 int AirspySource::rx_callback(airspy_transfer_t *transfer) {
-  int len = transfer->sample_count * 2; // interleaved I/Q samples
+  // interleaved I/Q samples
+  const std::size_t len = static_cast<std::size_t>(transfer->sample_count) * 2;
 
-  if (m_this) {
-    m_this->callback((float *)transfer->samples, len);
+  AirspySource *self = m_this.load();
+  if (self) {
+    self->callback((float *)transfer->samples, len);
   }
 
   return 0;
 }
 
-void AirspySource::callback(const float *buf, int len) {
+void AirspySource::callback(const float *buf, std::size_t len) {
   IQSampleVector iqsamples;
 
   iqsamples.resize(len / 2);
 
-  for (int i = 0, j = 0; i < len; i += 2, j++) {
+  for (std::size_t i = 0, j = 0; i < len; i += 2, j++) {
     float re = buf[i];
     float im = buf[i + 1];
     iqsamples[j] = IQSample(re, im);
