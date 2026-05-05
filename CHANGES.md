@@ -41,6 +41,9 @@ Intel Mac hardware is no longer supported by airspy-fmradion, although the autho
 
 ## Changes (including requirement changes)
 
+* 20260505-0: Massive bugfix and vulnerability workarounds were introduced, under the analysis of Claude Code.
+  * See doc/FIXES_CLAUDE_20260502.md and doc/FIXES_CLAUDE_20260504.md for the summary of the fixes. 
+  * The `-E` option value range is explicitly limited from 1 to 1024.
 * 20260211-0: Made the following changes:
   * {fmt} is now a required repository fetched from CMake. The static library will be automatically built and linked.
   * Updated r8brain-free-src to Version 7.1; CMakefile.txt was updated as well.
