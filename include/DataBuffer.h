@@ -44,7 +44,7 @@ public:
 
   // Add samples to the queue.
   // If the queue is full, the oldest block is dropped and a warning is
-  // printed (rate-limited) so memory use cannot grow without bound when
+  // printed so memory use cannot grow without bound when
   // the consumer cannot keep up with a real-time source.
   inline void push(std::vector<Element> &&samples) {
     if (!samples.empty()) {
@@ -59,11 +59,9 @@ public:
         }
         // unlock m_mutex here by getting out of scope
       }
-      if (dropped > 0 && (dropped == 1 || (dropped % 100) == 0)) {
-        fmt::println(
-            stderr,
-            "DataBuffer: queue overflow, dropped oldest block ({} so far)",
-            dropped);
+      if (dropped > 0) {
+        fmt::println(stderr, "DataBuffer: queue overflow, dropped blocks = {}",
+                     dropped);
       }
       m_cond.notify_all();
     }
