@@ -29,6 +29,7 @@
 #include <unistd.h>
 
 #include "ConfigParser.h"
+#include "IfResampler.h"
 #include "RtlSdrSource.h"
 #include "Utility.h"
 
@@ -235,10 +236,22 @@ bool RtlSdrSource::configure(uint32_t sample_rate, uint32_t frequency,
   }
 
   // set block length
-  m_block_length = (block_length < 4096)          ? 4096
-                   : (block_length > 1024 * 1024) ? 1024 * 1024
-                                                  : block_length;
+  // Cap the block length at IfResampler::max_input_length (65536) so that
+  // a source block can never exceed what the resampler chain can process
+  // in one call. With the valid RTL-SDR sample rate range
+  // [900001, 3200000] Hz, the IF resampler always downsamples
+  // (ratio >= 900001/384000), so a 65536-sample block shrinks to at most
+  // ~27963 samples, within AudioResampler::max_input_length (32768).
+  m_block_length = (block_length < 4096) ? 4096
+                   : (block_length > IfResampler::max_input_length)
+                       ? IfResampler::max_input_length
+                       : block_length;
   m_block_length -= m_block_length % 4096;
+  if (m_block_length != block_length) {
+    fmt::println(stderr,
+                 "RtlSdrSource::configure: blklen adjusted from {} to {}",
+                 block_length, m_block_length);
+  }
 
   // reset buffer to start streaming
   if (rtlsdr_reset_buffer(m_dev) < 0) {

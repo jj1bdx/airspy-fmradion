@@ -241,10 +241,10 @@ inline void FmDecoder::demod_stereo(const SampleVector &samples_baseband,
 // Duplicate mono signal in left/right channels.
 inline void FmDecoder::mono_to_left_right(const SampleVector &samples_mono,
                                           SampleVector &audio) {
-  unsigned int n = samples_mono.size();
+  size_t n = samples_mono.size();
 
   audio.resize(2 * n);
-  for (unsigned int i = 0; i < n; i++) {
+  for (size_t i = 0; i < n; i++) {
     Sample m = samples_mono[i];
     audio[2 * i] = m;
     audio[2 * i + 1] = m;
@@ -255,11 +255,11 @@ inline void FmDecoder::mono_to_left_right(const SampleVector &samples_mono,
 inline void FmDecoder::stereo_to_left_right(const SampleVector &samples_mono,
                                             const SampleVector &samples_stereo,
                                             SampleVector &audio) {
-  unsigned int n = samples_mono.size();
+  size_t n = samples_mono.size();
   assert(n == samples_stereo.size());
 
   audio.resize(2 * n);
-  for (unsigned int i = 0; i < n; i++) {
+  for (size_t i = 0; i < n; i++) {
     Sample m = samples_mono[i];
     // L-R singal is boosted by 1.017
     // for better separation (suggested by Teruhiko Hayashi)
@@ -273,10 +273,10 @@ inline void FmDecoder::stereo_to_left_right(const SampleVector &samples_mono,
 // (samples_mono used for the size determination only)
 inline void FmDecoder::zero_to_left_right(const SampleVector &samples_mono,
                                           SampleVector &audio) {
-  unsigned int n = samples_mono.size();
+  size_t n = samples_mono.size();
 
   audio.resize(2 * n);
-  for (unsigned int i = 0; i < n; i++) {
+  for (size_t i = 0; i < n; i++) {
     audio[2 * i] = 0.0;
     audio[2 * i + 1] = 0.0;
   }

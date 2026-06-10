@@ -250,6 +250,19 @@ PortAudioOutput::PortAudioOutput(const PaDeviceIndex device_index,
 
 // Output closing method.
 void PortAudioOutput::output_close() {
+  // Make closing idempotent.
+  if (m_closed) {
+    return;
+  }
+  // Set closed flag first so the destructor cannot re-enter this method
+  // even when an error path returns early below.
+  m_closed = true;
+  // If the object is a zombie, add_paerror() has already called
+  // Pa_Terminate(); calling any further PortAudio API is undefined.
+  // Also skip closing if the stream was never opened.
+  if (m_zombie || (m_stream == nullptr)) {
+    return;
+  }
   m_paerror = Pa_StopStream(m_stream);
   if (m_paerror != paNoError) {
     add_paerror("Pa_StopStream()");
@@ -261,8 +274,6 @@ void PortAudioOutput::output_close() {
     return;
   }
   Pa_Terminate();
-  // Set closed flag to prevent multiple closing
-  m_closed = true;
 }
 
 // Destructor.

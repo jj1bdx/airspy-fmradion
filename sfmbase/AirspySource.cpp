@@ -213,6 +213,14 @@ bool AirspySource::configure(int sampleRateIndex, uint32_t frequency,
     return false;
   }
 
+  // Defensive bounds check: all current callers pass a validated index,
+  // but do not trust the caller.
+  if (sampleRateIndex < 0 ||
+      static_cast<std::size_t>(sampleRateIndex) >= m_srates.size()) {
+    m_error = "Invalid sample rate index";
+    return false;
+  }
+
   rc = (airspy_error)airspy_set_freq(m_dev, static_cast<uint32_t>(m_frequency));
 
   if (rc != AIRSPY_SUCCESS) {
@@ -421,7 +429,7 @@ bool AirspySource::start(DataBuffer<IQSample> *buf,
 #endif
     m_running = true;
     m_thread = std::make_unique<std::thread>(run, m_dev, stop_flag);
-    return *this;
+    return true;
   } else {
     fmt::println(stderr, "AirspySource::start: error");
     m_error = "Source thread already started";
@@ -496,5 +504,7 @@ void AirspySource::callback(const float *buf, std::size_t len) {
     iqsamples[j] = IQSample(re, im);
   }
 
-  m_buf->push(std::move(iqsamples));
+  if (m_buf) {
+    m_buf->push(std::move(iqsamples));
+  }
 }
