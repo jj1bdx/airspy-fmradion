@@ -49,26 +49,24 @@ private:
   pair_type split_equal_sign(const std::string str);
 };
 
-/*
+//
+// // Test code example
+//
+// #include "ConfigParser.h"
+// #include <iostream>
+//
+// int main() {
+//  std::string text{"alpha=100,beta,gamma=xyz"};
+//  // std::string text{"="};
+//
+//  ConfigParser cp;
+//  ConfigParser::map_type parsed_map;
+//
+//  cp.parse_config_string(text, parsed_map);
+//  for (ConfigParser::pair_type pair: parsed_map) {
+//      std::cout << pair.first << " => " << pair.second << "\n";
+//  }
+// }
+//
 
-// Test code example
-
-#include "ConfigParser.h"
-#include <iostream>
-
-int main() {
-    std::string text{"alpha=100,beta,gamma=xyz"};
-    // std::string text{"="};
-
-    ConfigParser cp;
-    ConfigParser::map_type parsed_map;
-
-    cp.parse_config_string(text, parsed_map);
-    for (ConfigParser::pair_type pair: parsed_map) {
-        std::cout << pair.first << " => " << pair.second << "\n";
-    }
-}
-
-*/
-
-#endif /* INCLUDE_CONFIGPARSER_H */
+#endif // INCLUDE_CONFIGPARSER_H

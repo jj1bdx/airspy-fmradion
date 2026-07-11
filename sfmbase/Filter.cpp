@@ -310,4 +310,4 @@ void HighPassFilterIir::process_inplace(SampleVector &samples) {
   }
 }
 
-/* end */
+// end

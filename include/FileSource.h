@@ -35,38 +35,38 @@ public:
   static constexpr std::uint32_t default_sample_rate = 384000;
   static constexpr std::int32_t default_frequency = 82500000;
 
-  /** max expected micro seconds per block */
+  /// max expected micro seconds per block
   static constexpr int max_expected_us = 10000;
 
-  /** Constructor */
+  /// Constructor
   FileSource(int dev_index);
 
-  /** Destructor */
+  /// Destructor
   virtual ~FileSource() override;
 
-  /** Configure and prepare for streaming from file. */
+  /// Configure and prepare for streaming from file.
   virtual bool configure(std::string configuration) override;
 
-  /** Return current sample frequency in Hz. */
+  /// Return current sample frequency in Hz.
   virtual std::uint32_t get_sample_rate() override;
 
-  /** Return device current center frequency in Hz. */
+  /// Return device current center frequency in Hz.
   virtual std::uint32_t get_frequency() override;
 
-  /** Return if device is using Low-IF. */
+  /// Return if device is using Low-IF.
   virtual bool is_low_if() override;
 
-  /** Print current parameters specific to device type */
+  /// Print current parameters specific to device type
   virtual void print_specific_parms() override;
 
   virtual bool start(DataBuffer<IQSample> *samples,
                      std::atomic_bool *stop_flag) override;
   virtual bool stop() override;
 
-  /** Return true if the file is OK, return false if there is an error. */
+  /// Return true if the file is OK, return false if there is an error.
   virtual operator bool() const override { return m_error.empty(); }
 
-  /** Return a list of supported devices. */
+  /// Return a list of supported devices.
   static void get_device_names(std::vector<std::string> &devices);
 
 private:
@@ -79,20 +79,18 @@ private:
     Float = 6
   };
 
-  /**
-   * Configure IQ file for streaming.
-   *
-   * fname        :: file to read.
-   * raw          :: true if file is raw format.
-   * format_type  :: S8_LE, S16_LE, S24_LE, U8_LE or FLOAT.
-   *                 need to specify raw is true.
-   * sample_rate  :: desired sample rate in Hz.
-   * frequency    :: desired center frequency in Hz.
-   * zero_offset  :: true if sample contain zero offset.
-   * block_length :: preferred number of samples per block.
-   *
-   * Return true.
-   */
+  /// Configure IQ file for streaming.
+  ///
+  /// fname        :: file to read.
+  /// raw          :: true if file is raw format.
+  /// format_type  :: S8_LE, S16_LE, S24_LE, U8_LE or FLOAT.
+  ///                need to specify raw is true.
+  /// sample_rate  :: desired sample rate in Hz.
+  /// frequency    :: desired center frequency in Hz.
+  /// zero_offset  :: true if sample contain zero offset.
+  /// block_length :: preferred number of samples per block.
+  ///
+  /// Return true.
   bool configure(std::string fname, bool raw = false,
                  FormatType format_type = FormatType::S16_LE,
                  std::uint32_t sample_rate = default_sample_rate,
@@ -100,12 +98,10 @@ private:
                  bool zero_offset = false,
                  int block_length = default_block_length);
 
-  /**
-   * Fetch a bunch of samples from the file.
-   *
-   * This function must be called regularly to maintain streaming.
-   * Return true for success, false if an error occurred.
-   */
+  /// Fetch a bunch of samples from the file.
+  ///
+  /// This function must be called regularly to maintain streaming.
+  /// Return true for success, false if an error occurred.
   static bool get_samples(IQSampleVector *samples);
 
   static bool get_sf_read_float(IQSampleVector *samples);
@@ -135,4 +131,4 @@ private:
   std::unique_ptr<std::thread> m_thread;
 };
 
-#endif /* INCLUDE_FILESOURCE_H */
+#endif // INCLUDE_FILESOURCE_H

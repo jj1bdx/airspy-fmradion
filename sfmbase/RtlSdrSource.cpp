@@ -401,4 +401,4 @@ void RtlSdrSource::get_device_names(std::vector<std::string> &devices) {
   }
 }
 
-/* end */
+// end

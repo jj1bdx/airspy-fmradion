@@ -320,4 +320,4 @@ void PortAudioOutput::add_paerror(const std::string &premsg) {
   m_zombie = true;
 }
 
-/* end */
+// end

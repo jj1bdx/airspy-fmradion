@@ -33,49 +33,47 @@
 
 class AirspyHFSource : public Source {
 public:
-  /** Open Airspy device. */
+  /// Open Airspy device.
   AirspyHFSource(int dev_index);
 
-  /** Close Airspy device. */
+  /// Close Airspy device.
   virtual ~AirspyHFSource() override;
 
   virtual bool configure(std::string configuration) override;
 
-  /** Return current sample frequency in Hz. */
+  /// Return current sample frequency in Hz.
   virtual std::uint32_t get_sample_rate() override;
 
-  /** Return device current center frequency in Hz. */
+  /// Return device current center frequency in Hz.
   virtual std::uint32_t get_frequency() override;
 
-  /** Return if device is using Low-IF. */
+  /// Return if device is using Low-IF.
   virtual bool is_low_if() override;
 
-  /** Print current parameters specific to device type */
+  /// Print current parameters specific to device type
   virtual void print_specific_parms() override;
 
   virtual bool start(DataBuffer<IQSample> *buf,
                      std::atomic_bool *stop_flag) override;
   virtual bool stop() override;
 
-  /** Return true if the device is OK, return false if there is an error. */
+  /// Return true if the device is OK, return false if there is an error.
   virtual operator bool() const override { return m_dev && m_error.empty(); }
 
-  /** Return a list of supported devices. */
+  /// Return a list of supported devices.
   static void get_device_names(std::vector<std::string> &devices);
 
 private:
   int32_t check_sampleRateIndex(uint32_t sampleRate);
-  /**
-   * Configure Airspy HF tuner and prepare for streaming.
-   *
-   * sampleRateIndex :: desired sample rate index in the sample rates
-   * hfAttLevel      :: HF attenuation level and AGC control
-   *                 :: 0 (default): AGC turned on and no attenuation
-   *                 :: 1 ~ 8: AGC turned off, 6 ~ 48dB attenuation (6dB step)
-   * enumeration list. frequency       :: desired center frequency in Hz.
-   *
-   * Return true for success, false if an error occurred.
-   */
+  /// Configure Airspy HF tuner and prepare for streaming.
+  ///
+  /// sampleRateIndex :: desired sample rate index in the sample rates
+  /// hfAttLevel      :: HF attenuation level and AGC control
+  ///                :: 0 (default): AGC turned on and no attenuation
+  ///                :: 1 ~ 8: AGC turned off, 6 ~ 48dB attenuation (6dB step)
+  /// enumeration list. frequency       :: desired center frequency in Hz.
+  ///
+  /// Return true for success, false if an error occurred.
   bool configure(int sampleRateIndex, uint8_t hfAttLevel, uint32_t frequency);
 
   void callback(const float *buf, std::size_t len);
@@ -98,4 +96,4 @@ private:
   std::unique_ptr<std::thread> m_thread;
 };
 
-#endif /* INCLUDE_AIRSPYSOURCE_H_ */
+#endif // INCLUDE_AIRSPYSOURCE_H_
