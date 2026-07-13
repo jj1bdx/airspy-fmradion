@@ -46,6 +46,7 @@ Intel Mac hardware is no longer supported by airspy-fmradion, although the autho
   * Fixed vulnerabilities W1-W7 and X1-X8; see doc/FIXES_CLAUDE_20260610.md for the summary.
   * DataBuffer prints the queue overflow warning on every dropped block.
   * Updated the comment style to C++ single-line comments. See doc/COMMENT_STYLE_20260711.md for the summary.
+  * Now building {fmt} 12.2.0.
 * 20260505-0: Massive bugfix and vulnerability workarounds were introduced, under the analysis of Claude Code.
   * See doc/FIXES_CLAUDE_20260502.md and doc/FIXES_CLAUDE_20260504.md for the summary of the fixes. 
   * The `-E` option value range is explicitly limited from 1 to 1024.
