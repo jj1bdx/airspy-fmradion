@@ -21,6 +21,8 @@
 #define INCLUDE_RTLSDRSOURCE_H
 
 #include <atomic>
+#include <cstddef>
+#include <cstdint>
 #include <string>
 #include <thread>
 
@@ -81,13 +83,14 @@ private:
   /// Return current tuner gain in units of 0.1 dB.
   int get_tuner_gain();
 
-  /// Fetch a bunch of samples from the device.
-  ///
-  /// This function must be called regularly to maintain streaming.
-  /// Return true for success, false if an error occurred.
-  static bool get_samples(IQSampleVector *samples);
+  /// Convert a block of raw offset-binary I/Q bytes and push it
+  /// to the output buffer.
+  void callback(const unsigned char *buf, std::size_t len);
 
-  static void run();
+  /// Static trampoline matching rtlsdr_read_async_cb_t.
+  static void rx_callback(unsigned char *buf, std::uint32_t len, void *ctx);
+
+  static void run(struct rtlsdr_dev *dev, std::atomic_bool *stop_flag);
 
   struct rtlsdr_dev *m_dev;
   int m_block_length;
