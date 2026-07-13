@@ -29,6 +29,17 @@ class IfResampler {
 public:
   // maximum input buffer size
   static constexpr int max_input_length = 65536;
+  // r8brain filter design parameters.
+  // ReqTransBand is in percent of the output Nyquist frequency when
+  // downsampling: 10% of the 192 kHz Nyquist at the 384 kHz IF rate
+  // places the passband edge at 172.8 kHz, far beyond the FM broadcast
+  // channel bandwidth, and 140 dB stop-band attenuation exceeds any
+  // SDR frontend's dynamic range. The previous CDSPResampler24 preset
+  // (2.0%, 180.15 dB) cost 13.3 ms of group delay at
+  // 1152 kHz -> 384 kHz; these values cost 1.6 ms.
+  // See doc/LATENCY_PLAN_20260713.md sections 7-8.
+  static constexpr double req_trans_band = 10.0;
+  static constexpr double req_atten = 140.0;
   // Construct IF IQ resampler.
   // input_rate : input sampling rate.
   // output_rate: input sampling rate.
@@ -38,8 +49,8 @@ public:
   void process(const IQSampleVector &samples_in, IQSampleVector &samples_out);
 
 private:
-  std::unique_ptr<r8b::CDSPResampler24> m_cdspr_re;
-  std::unique_ptr<r8b::CDSPResampler24> m_cdspr_im;
+  std::unique_ptr<r8b::CDSPResampler> m_cdspr_re;
+  std::unique_ptr<r8b::CDSPResampler> m_cdspr_im;
 };
 
 #endif

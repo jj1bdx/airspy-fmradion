@@ -23,10 +23,12 @@
 // class IfResampler
 
 IfResampler::IfResampler(const double input_rate, const double output_rate)
-    : m_cdspr_re(std::make_unique<r8b::CDSPResampler24>(input_rate, output_rate,
-                                                        max_input_length)),
-      m_cdspr_im(std::make_unique<r8b::CDSPResampler24>(input_rate, output_rate,
-                                                        max_input_length)) {
+    : m_cdspr_re(std::make_unique<r8b::CDSPResampler>(
+          input_rate, output_rate, max_input_length, req_trans_band,
+          req_atten)),
+      m_cdspr_im(std::make_unique<r8b::CDSPResampler>(
+          input_rate, output_rate, max_input_length, req_trans_band,
+          req_atten)) {
 #ifdef DEBUG_IFRESAMPLER
   int latency = m_cdspr_re->getInLenBeforeOutStart();
   fmt::println(stderr, "IfResampler latency = {}", latency);
