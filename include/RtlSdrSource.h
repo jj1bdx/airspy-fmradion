@@ -21,6 +21,8 @@
 #define INCLUDE_RTLSDRSOURCE_H
 
 #include <atomic>
+#include <cstddef>
+#include <cstdint>
 #include <string>
 #include <thread>
 
@@ -30,68 +32,65 @@ class RtlSdrSource : public Source {
 public:
   static constexpr int default_block_length = 16384;
 
-  /** Open RTL-SDR device. */
+  /// Open RTL-SDR device.
   RtlSdrSource(int dev_index);
 
-  /** Close RTL-SDR device. */
+  /// Close RTL-SDR device.
   virtual ~RtlSdrSource() override;
 
   virtual bool configure(std::string configuration) override;
 
-  /** Return current sample frequency in Hz. */
+  /// Return current sample frequency in Hz.
   virtual std::uint32_t get_sample_rate() override;
 
-  /** Return device current center frequency in Hz. */
+  /// Return device current center frequency in Hz.
   virtual std::uint32_t get_frequency() override;
 
-  /** Return if device is using Low-IF. */
+  /// Return if device is using Low-IF.
   virtual bool is_low_if() override;
 
-  /** Print current parameters specific to device type */
+  /// Print current parameters specific to device type
   virtual void print_specific_parms() override;
 
   virtual bool start(DataBuffer<IQSample> *samples,
                      std::atomic_bool *stop_flag) override;
   virtual bool stop() override;
 
-  /** Return true if the device is OK, return false if there is an error. */
+  /// Return true if the device is OK, return false if there is an error.
   virtual operator bool() const override { return m_dev && m_error.empty(); }
 
-  /** Return a list of supported devices. */
+  /// Return a list of supported devices.
   static void get_device_names(std::vector<std::string> &devices);
 
 private:
-  /**
-   * Configure RTL-SDR tuner and prepare for streaming.
-   *
-   * sample_rate  :: desired sample rate in Hz.
-   * frequency    :: desired center frequency in Hz.
-   * tuner_gain   :: desired tuner gain in 0.1 dB, or INT_MIN for auto-gain.
-   * block_length :: preferred number of samples per block.
-   * agcmode      :: enable AGC mode.
-   * antbias      :: enable antenna bias tee.
-   *
-   * Return true for success, false if an error occurred.
-   */
+  /// Configure RTL-SDR tuner and prepare for streaming.
+  ///
+  /// sample_rate  :: desired sample rate in Hz.
+  /// frequency    :: desired center frequency in Hz.
+  /// tuner_gain   :: desired tuner gain in 0.1 dB, or INT_MIN for auto-gain.
+  /// block_length :: preferred number of samples per block.
+  /// agcmode      :: enable AGC mode.
+  /// antbias      :: enable antenna bias tee.
+  ///
+  /// Return true for success, false if an error occurred.
   bool configure(std::uint32_t sample_rate, std::uint32_t frequency,
                  int tuner_gain, int block_length = default_block_length,
                  bool agcmode = false, bool antbias = false);
 
-  /** Return a list of supported tuner gain settings in units of 0.1 dB. */
+  /// Return a list of supported tuner gain settings in units of 0.1 dB.
   std::vector<int> get_tuner_gains();
 
-  /** Return current tuner gain in units of 0.1 dB. */
+  /// Return current tuner gain in units of 0.1 dB.
   int get_tuner_gain();
 
-  /**
-   * Fetch a bunch of samples from the device.
-   *
-   * This function must be called regularly to maintain streaming.
-   * Return true for success, false if an error occurred.
-   */
-  static bool get_samples(IQSampleVector *samples);
+  /// Convert a block of raw offset-binary I/Q bytes and push it
+  /// to the output buffer.
+  void callback(const unsigned char *buf, std::size_t len);
 
-  static void run();
+  /// Static trampoline matching rtlsdr_read_async_cb_t.
+  static void rx_callback(unsigned char *buf, std::uint32_t len, void *ctx);
+
+  static void run(struct rtlsdr_dev *dev, std::atomic_bool *stop_flag);
 
   struct rtlsdr_dev *m_dev;
   int m_block_length;

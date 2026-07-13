@@ -29,6 +29,7 @@
 #include <unistd.h>
 
 #include "ConfigParser.h"
+#include "IfResampler.h"
 #include "RtlSdrSource.h"
 #include "Utility.h"
 
@@ -65,6 +66,11 @@ RtlSdrSource::RtlSdrSource(int dev_index)
 
 // Close RTL-SDR device.
 RtlSdrSource::~RtlSdrSource() {
+  // Cancel the async loop and join the source thread (if still running)
+  // before closing the device, so rtlsdr_close() cannot race a live
+  // rtlsdr_read_async() call.
+  stop();
+
   if (m_dev) {
     rtlsdr_close(m_dev);
   }
@@ -235,10 +241,25 @@ bool RtlSdrSource::configure(uint32_t sample_rate, uint32_t frequency,
   }
 
   // set block length
-  m_block_length = (block_length < 4096)          ? 4096
-                   : (block_length > 1024 * 1024) ? 1024 * 1024
-                                                  : block_length;
+  // Cap the block length at IfResampler::max_input_length (65536) so that
+  // a source block can never exceed what the resampler chain can process
+  // in one call. With the valid RTL-SDR sample rate range
+  // [900001, 3200000] Hz, the IF resampler always downsamples
+  // (ratio >= 900001/384000), so a 65536-sample block shrinks to at most
+  // ~27963 samples, within AudioResampler::max_input_length (32768).
+  m_block_length = (block_length < 4096) ? 4096
+                   : (block_length > IfResampler::max_input_length)
+                       ? IfResampler::max_input_length
+                       : block_length;
   m_block_length -= m_block_length % 4096;
+  // The rtlsdr_read_async() buffer size (2 * m_block_length bytes) is
+  // therefore a multiple of 8192, satisfying the library requirement of
+  // a multiple of 512 bytes.
+  if (m_block_length != block_length) {
+    fmt::println(stderr,
+                 "RtlSdrSource::configure: blklen adjusted from {} to {}",
+                 block_length, m_block_length);
+  }
 
   // reset buffer to start streaming
   if (rtlsdr_reset_buffer(m_dev) < 0) {
@@ -297,7 +318,7 @@ bool RtlSdrSource::start(DataBuffer<IQSample> *buf,
   m_stop_flag = stop_flag;
 
   if (m_thread == 0) {
-    m_thread = std::make_unique<std::thread>(run);
+    m_thread = std::make_unique<std::thread>(run, m_dev, stop_flag);
     return true;
   } else {
     m_error = "Source thread already started";
@@ -306,7 +327,16 @@ bool RtlSdrSource::start(DataBuffer<IQSample> *buf,
 }
 
 bool RtlSdrSource::stop() {
+  // Idempotent: only act when the source thread has not been joined yet,
+  // so the destructor can call stop() unconditionally.
   if (m_thread) {
+    // Force the blocked rtlsdr_read_async() call in run() to return
+    // even if the caller did not already set *m_stop_flag,
+    // so join() cannot deadlock. A negative return here only means
+    // the async loop already ended, so it is not reported.
+    if (m_dev) {
+      rtlsdr_cancel_async(m_dev);
+    }
     m_thread->join();
     m_thread.reset();
   }
@@ -314,57 +344,66 @@ bool RtlSdrSource::stop() {
   return true;
 }
 
-void RtlSdrSource::run() {
-  IQSampleVector iqsamples;
-
+void RtlSdrSource::run(struct rtlsdr_dev *dev, std::atomic_bool *stop_flag) {
   RtlSdrSource *self = m_this.load();
-  if (!self) {
+  if (!self || !dev) {
     return;
   }
-  while (!self->m_stop_flag->load() && get_samples(&iqsamples)) {
-    self->m_buf->push(std::move(iqsamples));
+
+  // rtlsdr_read_async() blocks this thread inside the libusb event loop,
+  // invoking rx_callback for each filled buffer, until rtlsdr_cancel_async()
+  // is called from stop().
+  int r = rtlsdr_read_async(dev, rx_callback, nullptr, 0,
+                            static_cast<uint32_t>(2 * self->m_block_length));
+  if (r < 0 && !stop_flag->load()) {
+    fmt::println(stderr, "RtlSdrSource::run: rtlsdr_read_async failed: {}", r);
+    self->m_error = "rtlsdr_read_async failed";
+  }
+
+  // Streaming has ended (cancellation, device failure, or an immediate
+  // rtlsdr_read_async() error). Mark the end of the stream so a consumer
+  // blocked in DataBuffer::pull() always wakes up and the main loop can
+  // terminate and clean up.
+  if (self->m_buf) {
+    self->m_buf->push_end();
   }
 }
 
-// Fetch a bunch of samples from the device.
-bool RtlSdrSource::get_samples(IQSampleVector *samples) {
-  int r, n_read;
-
+void RtlSdrSource::rx_callback(unsigned char *buf, uint32_t len, void *ctx) {
+  (void)ctx;
   RtlSdrSource *self = m_this.load();
-  if (!self || !self->m_dev) {
-    return false;
+  if (self) {
+    self->callback(buf, len);
+  }
+}
+
+// Convert a block of raw offset-binary I/Q bytes and push it
+// to the output buffer.
+void RtlSdrSource::callback(const unsigned char *buf, std::size_t len) {
+  // Keep pushing until the async loop is cancelled: the consumer may be
+  // blocked in DataBuffer::pull() and relies on these pushes (and the
+  // final push_end() in run()) to wake up and observe the stop flag.
+  //
+  // A cancelled in-flight transfer may deliver a short or empty buffer;
+  // this is benign, not a device error.
+  if (len < 2) {
+    return;
   }
 
-  if (!samples) {
-    return false;
-  }
+  const std::size_t nsamples = len / 2;
+  IQSampleVector iqsamples(nsamples);
 
-  std::vector<uint8_t> buf(2 * self->m_block_length);
-
-  r = rtlsdr_read_sync(self->m_dev, buf.data(), 2 * self->m_block_length,
-                       &n_read);
-
-  if (r < 0) {
-    self->m_error = "rtlsdr_read_sync failed";
-    return false;
-  }
-
-  if (n_read != 2 * self->m_block_length) {
-    self->m_error = "short read, samples lost";
-    return false;
-  }
-
-  samples->resize(self->m_block_length);
-
-  for (int i = 0; i < self->m_block_length; i++) {
+  for (std::size_t i = 0; i < nsamples; i++) {
     // RTL-SDR outputs offset-binary 8-bit: 0..255 with 128 = DC zero.
     int32_t re = static_cast<int32_t>(buf[2 * i]) - 128;
     int32_t im = static_cast<int32_t>(buf[2 * i + 1]) - 128;
-    (*samples)[i] = IQSample(re / IQSample::value_type(128),
-                             im / IQSample::value_type(128));
+    iqsamples[i] = IQSample(re / IQSample::value_type(128),
+                            im / IQSample::value_type(128));
   }
 
-  return true;
+  if (m_buf) {
+    m_buf->push(std::move(iqsamples));
+  }
 }
 
 // Return a list of supported devices.
@@ -388,4 +427,4 @@ void RtlSdrSource::get_device_names(std::vector<std::string> &devices) {
   }
 }
 
-/* end */
+// end

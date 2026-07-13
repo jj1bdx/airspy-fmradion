@@ -19,26 +19,24 @@
 
 // For the function fast_atan2f() from GNU Radio
 // the following copyright statement applies:
-/*
- * Copyright 2005,2013 Free Software Foundation, Inc.
- *
- * This file is part of GNU Radio
- *
- * GNU Radio is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 3, or (at your option)
- * any later version.
- *
- * GNU Radio is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with GNU Radio; see the file COPYING.  If not, write to
- * the Free Software Foundation, Inc., 51 Franklin Street,
- * Boston, MA 02110-1301, USA.
- */
+// Copyright 2005,2013 Free Software Foundation, Inc.
+//
+// This file is part of GNU Radio
+//
+// GNU Radio is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation; either version 3, or (at your option)
+// any later version.
+//
+// GNU Radio is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with GNU Radio; see the file COPYING.  If not, write to
+// the Free Software Foundation, Inc., 51 Franklin Street,
+// Boston, MA 02110-1301, USA.
 
 #ifndef INCLUDE_UTILITY_H
 #define INCLUDE_UTILITY_H
@@ -153,15 +151,15 @@ inline void samples_mean_rms(const IQSampleDecodedVector &samples, float &mean,
 
 // fast_atan2f()
 
-/***************************************************************************/
-/* Constant definitions */
-/***************************************************************************/
+//***************************************************************************
+// Constant definitions
+//***************************************************************************
 
-#define TAN_MAP_RES 0.003921569 /* (smallest non-zero value in table) */
+#define TAN_MAP_RES 0.003921569 // (smallest non-zero value in table)
 #define RAD_PER_DEG 0.017453293
 #define TAN_MAP_SIZE 255
 
-/* arctangents from 0 to pi/4 radians */
+// arctangents from 0 to pi/4 radians
 static float fast_atan_table[257] = {
     0.000000e+00, 3.921549e-03, 7.842976e-03, 1.176416e-02, 1.568499e-02,
     1.960533e-02, 2.352507e-02, 2.744409e-02, 3.136226e-02, 3.527947e-02,
@@ -216,32 +214,32 @@ static float fast_atan_table[257] = {
     7.754975e-01, 7.774932e-01, 7.794811e-01, 7.814612e-01, 7.834335e-01,
     7.853982e-01, 7.853982e-01};
 
-/*****************************************************************************
- Function: Arc tangent
-
- Syntax: angle = fast_atan2(y, x);
- float y y component of input vector
- float x x component of input vector
- float angle angle of vector (x, y) in radians
-
- Description: This function calculates the angle of the vector (x,y)
- based on a table lookup and linear interpolation. The table uses a
- 256 point table covering -45 to +45 degrees and uses symmetry to
- determine the final angle value in the range of -180 to 180
- degrees. Note that this function uses the small angle approximation
- for values close to zero. This routine calculates the arc tangent
- with an average error of +/- 3.56e-5 degrees (6.21e-7 radians).
-*****************************************************************************/
+//****************************************************************************
+// Function: Arc tangent
+//
+// Syntax: angle = fast_atan2(y, x);
+// float y y component of input vector
+// float x x component of input vector
+// float angle angle of vector (x, y) in radians
+//
+// Description: This function calculates the angle of the vector (x,y)
+// based on a table lookup and linear interpolation. The table uses a
+// 256 point table covering -45 to +45 degrees and uses symmetry to
+// determine the final angle value in the range of -180 to 180
+// degrees. Note that this function uses the small angle approximation
+// for values close to zero. This routine calculates the arc tangent
+// with an average error of +/- 3.56e-5 degrees (6.21e-7 radians).
+//****************************************************************************
 
 inline float fast_atan2f(float y, float x) {
   float x_abs, y_abs, z;
   float alpha, angle, base_angle;
   int index;
 
-  /* normalize to +/- 45 degree range */
+  // normalize to +/- 45 degree range
   y_abs = fabsf(y);
   x_abs = fabsf(x);
-  /* don't divide by zero! */
+  // don't divide by zero!
   if (!((y_abs > 0.0f) || (x_abs > 0.0f))) {
     return 0.0;
   }
@@ -252,50 +250,50 @@ inline float fast_atan2f(float y, float x) {
     z = x_abs / y_abs;
   }
 
-  /* when ratio approaches the table resolution, the angle is */
-  /* best approximated with the argument itself... */
+  // when ratio approaches the table resolution, the angle is
+  // best approximated with the argument itself...
   if (z < TAN_MAP_RES) {
     base_angle = z;
   } else {
-    /* find index and interpolation value */
+    // find index and interpolation value
     alpha = z * (float)TAN_MAP_SIZE;
     index = ((int)alpha) & 0xff;
     alpha -= (float)index;
-    /* determine base angle based on quadrant and */
-    /* add or subtract table value from base angle based on quadrant */
+    // determine base angle based on quadrant and
+    // add or subtract table value from base angle based on quadrant
     base_angle = fast_atan_table[index];
     base_angle += (fast_atan_table[index + 1] - fast_atan_table[index]) * alpha;
   }
 
-  if (x_abs > y_abs) { /* -45 -> 45 or 135 -> 225 */
-    if (x >= 0.0) {    /* -45 -> 45 */
+  if (x_abs > y_abs) { // -45 -> 45 or 135 -> 225
+    if (x >= 0.0) {    // -45 -> 45
       if (y >= 0.0) {
-        angle = base_angle; /* 0 -> 45, angle OK */
+        angle = base_angle; // 0 -> 45, angle OK
       } else {
-        angle = -base_angle; /* -45 -> 0, angle = -angle */
+        angle = -base_angle; // -45 -> 0, angle = -angle
       }
-    } else { /* 135 -> 180 or 180 -> -135 */
+    } else { // 135 -> 180 or 180 -> -135
       angle = 3.14159265358979323846;
       if (y >= 0.0) {
-        angle -= base_angle; /* 135 -> 180, angle = 180 - angle */
+        angle -= base_angle; // 135 -> 180, angle = 180 - angle
       } else {
-        angle = base_angle - angle; /* 180 -> -135, angle = angle - 180 */
+        angle = base_angle - angle; // 180 -> -135, angle = angle - 180
       }
     }
-  } else {          /* 45 -> 135 or -135 -> -45 */
-    if (y >= 0.0) { /* 45 -> 135 */
+  } else {          // 45 -> 135 or -135 -> -45
+    if (y >= 0.0) { // 45 -> 135
       angle = 1.57079632679489661923;
       if (x >= 0.0) {
-        angle -= base_angle; /* 45 -> 90, angle = 90 - angle */
+        angle -= base_angle; // 45 -> 90, angle = 90 - angle
       } else {
-        angle += base_angle; /* 90 -> 135, angle = 90 + angle */
+        angle += base_angle; // 90 -> 135, angle = 90 + angle
       }
-    } else { /* -135 -> -45 */
+    } else { // -135 -> -45
       angle = -1.57079632679489661923;
       if (x >= 0.0) {
-        angle += base_angle; /* -90 -> -45, angle = -90 + angle */
+        angle += base_angle; // -90 -> -45, angle = -90 + angle
       } else {
-        angle -= base_angle; /* -135 -> -90, angle = -90 - angle */
+        angle -= base_angle; // -135 -> -90, angle = -90 - angle
       }
     }
   }
@@ -344,4 +342,4 @@ inline void remove_nans(IQSampleDecodedVector &samples) {
 
 }; // namespace Utility
 
-#endif /* INCLUDE_UTILITY_H_ */
+#endif // INCLUDE_UTILITY_H_

@@ -27,37 +27,35 @@
 #include "portaudio.h"
 #include <sndfile.h>
 
-/** Base class for writing audio data to file or playback. */
+/// Base class for writing audio data to file or playback.
 class AudioOutput {
 public:
-  /** Destructor. */
+  /// Destructor.
   virtual ~AudioOutput() {}
 
-  /**
-   * Write audio data.
-   *
-   * Return true on success.
-   * Return false if an error occurs.
-   */
+  /// Write audio data.
+  ///
+  /// Return true on success.
+  /// Return false if an error occurs.
   virtual bool write(const SampleVector &samples) = 0;
 
   // Close audio output.
   virtual void output_close() = 0;
 
-  /** Return the last error, or return an empty string if there is no error. */
+  /// Return the last error, or return an empty string if there is no error.
   std::string error() {
     std::string ret(m_error);
     m_error.clear();
     return ret;
   }
 
-  /** Return true if the stream is OK, return false if there is an error. */
+  /// Return true if the stream is OK, return false if there is an error.
   operator bool() const { return (!m_zombie) && m_error.empty(); }
 
   const std::string get_device_name() { return m_device_name; }
 
 protected:
-  /** Constructor. */
+  /// Constructor.
   AudioOutput() : m_zombie(false), m_closed(false) {}
 
   std::string m_error;
@@ -73,14 +71,12 @@ private:
 // Output via libsndfile
 class SndfileOutput : public AudioOutput {
 public:
-  /**
-   * Construct libsndfile audio writer.
-   *
-   * filename     :: file name (including path) or "-" to write to stdout
-   * samplerate   :: audio sample rate in Hz
-   * stereo       :: true if the output stream contains stereo data
-   * sf_info:     :: specify output format by SF_INFO.format
-   */
+  /// Construct libsndfile audio writer.
+  ///
+  /// filename     :: file name (including path) or "-" to write to stdout
+  /// samplerate   :: audio sample rate in Hz
+  /// stereo       :: true if the output stream contains stereo data
+  /// sf_info:     :: specify output format by SF_INFO.format
   SndfileOutput(const std::string &filename, unsigned int samplerate,
                 bool stereo, int format);
 

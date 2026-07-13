@@ -33,51 +33,49 @@
 
 class AirspySource : public Source {
 public:
-  /** Open Airspy device. */
+  /// Open Airspy device.
   AirspySource(int dev_index);
 
-  /** Close Airspy device. */
+  /// Close Airspy device.
   virtual ~AirspySource() override;
 
   virtual bool configure(std::string configuration) override;
 
-  /** Return current sample frequency in Hz. */
+  /// Return current sample frequency in Hz.
   virtual std::uint32_t get_sample_rate() override;
 
-  /** Return device current center frequency in Hz. */
+  /// Return device current center frequency in Hz.
   virtual std::uint32_t get_frequency() override;
 
-  /** Return if device is using Low-IF. */
+  /// Return if device is using Low-IF.
   virtual bool is_low_if() override;
 
-  /** Print current parameters specific to device type */
+  /// Print current parameters specific to device type
   virtual void print_specific_parms() override;
 
   virtual bool start(DataBuffer<IQSample> *buf,
                      std::atomic_bool *stop_flag) override;
   virtual bool stop() override;
 
-  /** Return true if the device is OK, return false if there is an error. */
+  /// Return true if the device is OK, return false if there is an error.
   virtual operator bool() const override { return m_dev && m_error.empty(); }
 
-  /** Return a list of supported devices. */
+  /// Return a list of supported devices.
   static void get_device_names(std::vector<std::string> &devices);
 
 private:
-  /**
-   * Configure Airspy tuner and prepare for streaming.
-   *
-   * sampleRateIndex :: desired sample rate index in the sample rates
-   * enumeration list. frequency       :: desired center frequency in Hz.
-   * bias_ant        :: antenna bias
-   * lna_gain        :: desired LNA gain: 0 to 14 dB.
-   * mix_gain        :: desired mixer gain: 0 to 15 dB.
-   * vga_gain        :: desired VGA gain: 0 to 15 dB
-   * lna_agc         :: LNA AGC
-   * mix_agc         :: Mixer AGC
-   *
-   * Return true for success, false if an error occurred.
-   */
+  /// Configure Airspy tuner and prepare for streaming.
+  ///
+  /// sampleRateIndex :: desired sample rate index in the sample rates
+  /// enumeration list. frequency       :: desired center frequency in Hz.
+  /// bias_ant        :: antenna bias
+  /// lna_gain        :: desired LNA gain: 0 to 14 dB.
+  /// mix_gain        :: desired mixer gain: 0 to 15 dB.
+  /// vga_gain        :: desired VGA gain: 0 to 15 dB
+  /// lna_agc         :: LNA AGC
+  /// mix_agc         :: Mixer AGC
+  ///
+  /// Return true for success, false if an error occurred.
   bool configure(int sampleRateIndex, uint32_t frequency, bool bias_ant,
                  int lna_gain, int mix_gain, int vga_gain, bool lna_agc,
                  bool mix_agc);
@@ -113,4 +111,4 @@ private:
   std::unique_ptr<std::thread> m_thread;
 };
 
-#endif /* INCLUDE_AIRSPYSOURCE_H_ */
+#endif // INCLUDE_AIRSPYSOURCE_H_

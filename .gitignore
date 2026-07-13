@@ -153,3 +153,6 @@ _deps
 # working directory
 
 build/
+
+# re-include the build skill (not a build output directory)
+!.claude/skills/build/

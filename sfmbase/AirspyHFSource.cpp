@@ -176,6 +176,14 @@ bool AirspyHFSource::configure(int sampleRateIndex, uint8_t hfAttLevel,
     return false;
   }
 
+  // Defensive bounds check: all current callers pass a validated index,
+  // but do not trust the caller.
+  if (sampleRateIndex < 0 ||
+      static_cast<std::size_t>(sampleRateIndex) >= m_srates.size()) {
+    m_error = "Invalid sample rate index";
+    return false;
+  }
+
   uint32_t sampleRate = m_srates[sampleRateIndex];
 
   rc = (airspyhf_error)airspyhf_set_samplerate(m_dev, sampleRate);
@@ -312,7 +320,8 @@ bool AirspyHFSource::configure(std::string configurationStr) {
     bool freq_ok = Utility::parse_int(m["freq"].c_str(), freq, true);
     frequency = static_cast<uint32_t>(freq);
 
-    if (!freq_ok || ((frequency > 31000000) && (frequency < 60000000)) ||
+    if (!freq_ok || (frequency < 1000) ||
+        ((frequency > 31000000) && (frequency < 60000000)) ||
         (frequency > 260000000)) {
       m_error = "Invalid frequency";
       return false;
@@ -326,11 +335,13 @@ bool AirspyHFSource::configure(std::string configurationStr) {
 
     int attlevel = 0;
     bool attlevel_ok = Utility::parse_int(m["hf_att"].c_str(), attlevel);
-    hfAttLevel = static_cast<uint8_t>(attlevel);
-    if (!attlevel_ok || (hfAttLevel > 8) || (hfAttLevel < 0)) {
+    // Validate the parsed int before narrowing to uint8_t so that
+    // out-of-range values (e.g. 256) cannot wrap around the check.
+    if (!attlevel_ok || (attlevel < 0) || (attlevel > 8)) {
       m_error = "Invalid HF att level";
       return false;
     }
+    hfAttLevel = static_cast<uint8_t>(attlevel);
   }
 
   m_confFreq = frequency;
@@ -376,13 +387,17 @@ bool AirspyHFSource::stop() {
 #ifdef DEBUG_AIRSPYHFSOURCE
   fmt::println(stderr, "AirspyHFSource::stop");
 #endif
-  airspyhf_error rc = (airspyhf_error)airspyhf_stop(m_dev);
-  if (rc != AIRSPYHF_SUCCESS) {
-    fmt::println(stderr, "AirspyHFSource::run: Cannot stop Airspy HF Rx: {}",
-                 fmt::underlying(rc));
+  if (m_dev) {
+    airspyhf_error rc = (airspyhf_error)airspyhf_stop(m_dev);
+    if (rc != AIRSPYHF_SUCCESS) {
+      fmt::println(stderr, "AirspyHFSource::stop: Cannot stop Airspy HF Rx: {}",
+                   fmt::underlying(rc));
+    }
   }
-  m_thread->join();
-  m_thread.reset();
+  if (m_thread) {
+    m_thread->join();
+    m_thread.reset();
+  }
   return true;
 }
 
@@ -409,5 +424,7 @@ void AirspyHFSource::callback(const float *buf, std::size_t len) {
     iqsamples[j] = IQSample(re, im);
   }
 
-  m_buf->push(std::move(iqsamples));
+  if (m_buf) {
+    m_buf->push(std::move(iqsamples));
+  }
 }

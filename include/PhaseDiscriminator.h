@@ -22,22 +22,18 @@
 
 #include "SoftFM.h"
 
-/* Detect frequency by phase discrimination between successive samples. */
+// Detect frequency by phase discrimination between successive samples.
 class PhaseDiscriminator {
 public:
-  /**
-   * Construct phase discriminator.
-   *
-   * max_freq_dev :: Full scale frequency deviation relative to the
-   *                 full sample frequency.
-   */
+  /// Construct phase discriminator.
+  ///
+  /// max_freq_dev :: Full scale frequency deviation relative to the
+  ///                full sample frequency.
   PhaseDiscriminator(double max_freq_dev);
 
-  /**
-   * Process samples.
-   * Output is a sequence of frequency estimates, scaled such that
-   * output value +/- 1.0 represents the maximum frequency deviation.
-   */
+  /// Process samples.
+  /// Output is a sequence of frequency estimates, scaled such that
+  /// output value +/- 1.0 represents the maximum frequency deviation.
   void process(const IQSampleVector &samples_in,
                IQSampleDecodedVector &samples_out);
 

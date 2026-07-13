@@ -39,23 +39,19 @@ public:
   // for NOAA Satellites (Width: ~40kHz, deviation: +-17kHz)
   static constexpr double freq_dev_wide = 17000;
 
-  /**
-   * Construct Narrow Band FM decoder.
-   *
-   * nbfmfilter_coeff  :: IQSample Filter Coefficients.
-   * freq_dev          :: full scale deviation in Hz.
-   */
+  /// Construct Narrow Band FM decoder.
+  ///
+  /// nbfmfilter_coeff  :: IQSample Filter Coefficients.
+  /// freq_dev          :: full scale deviation in Hz.
   NbfmDecoder(IQSampleCoeff &nbfmfilter_coeff, const double freq_dev);
 
-  /**
-   * Process IQ samples and return audio samples.
-   */
+  /// Process IQ samples and return audio samples.
   void process(const IQSampleVector &samples_in, SampleVector &audio);
 
-  /** Return actual frequency offset in Hz with respect to receiver LO. */
+  /// Return actual frequency offset in Hz with respect to receiver LO.
   float get_tuning_offset() const { return m_baseband_mean * m_freq_dev; }
 
-  /** Return RMS baseband signal level (where nominal level is 0.707). */
+  /// Return RMS baseband signal level (where nominal level is 0.707).
   float get_baseband_level() const { return m_baseband_level; }
 
   // Return RMS IF level.

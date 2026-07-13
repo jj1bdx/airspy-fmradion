@@ -52,7 +52,7 @@
 // define this for enabling coefficient monitor functions
 // #undef COEFF_MONITOR
 
-#define AIRSPY_FMRADION_VERSION "20260505-0"
+#define AIRSPY_FMRADION_VERSION "20260713-0"
 
 // Flag to set graceful termination
 // in process_signals()
@@ -125,7 +125,8 @@ static void usage() {
       "                 (For stable reception only:\n"
       "                  turn off if reception becomes unstable)\n"
       "                 The value is between 1 to 1024\n"
-      "  -r ppm         Set IF offset in ppm (range: +-1000000ppm)\n"
+      "  -r ppm         Set IF offset in ppm (range: within +-1000000ppm,\n"
+      "                 exclusive)\n"
       "                 (This option affects output pitch and timing:\n"
       "                  use for the output timing compensation only!)\n"
       "\n"
@@ -162,7 +163,7 @@ static void usage() {
       "\n"
       "Configuration options for Airspy HF devices:\n"
       "  freq=<int>     Frequency of radio station in Hz (default 100000000)\n"
-      "                 valid values: 192k to 31M, and 60M to 260M\n"
+      "                 valid values: 1k to 31M, and 60M to 260M\n"
       "  srate=<int>    IF sample rate in Hz.\n"
       "                 Depends on Airspy HF firmware and libairspyhf support\n"
       "                 Airspy HF firmware and library must support dynamic\n"
@@ -457,8 +458,10 @@ int main(int argc, char **argv) {
       break;
     case 'r':
       ifrate_offset_enable = true;
+      // Reject the degenerate endpoints: -1000000 ppm would multiply
+      // the IF rate by exactly zero.
       if (!Utility::parse_dbl(optarg, ifrate_offset_ppm) ||
-          std::fabs(ifrate_offset_ppm) > 1000000.0) {
+          std::fabs(ifrate_offset_ppm) >= 1000000.0) {
         badarg("-r");
       }
       break;
@@ -709,6 +712,12 @@ int main(int argc, char **argv) {
   if (ifrate_offset_enable) {
     ifrate *= 1.0 + (ifrate_offset_ppm / 1000000.0);
   }
+  // The resamplers require strictly positive sample rates.
+  if (!(ifrate > 0)) {
+    fmt::println(stderr, "ERROR: IF sample rate must be positive: {:.9g} [Hz]",
+                 ifrate);
+    exit(1);
+  }
 
   // Configure if_decimation_ratio.
   switch (modtype) {
@@ -738,6 +747,20 @@ int main(int argc, char **argv) {
   double demodulator_rate = ifrate / if_decimation_ratio;
   double total_decimation_ratio = ifrate / pcmrate;
   double audio_decimation_ratio = demodulator_rate / pcmrate;
+
+  // Guard the IF resampler against pathological upsampling ratios
+  // (e.g. via extreme -r values): r8brain internal buffer sizes grow
+  // proportionally to the upsampling ratio and its internal (int) length
+  // arithmetic overflows for very large ratios. A 64x bound is far above
+  // any legitimate configuration.
+  constexpr double max_if_upsampling_ratio = 64.0;
+  if (demodulator_rate / ifrate > max_if_upsampling_ratio) {
+    fmt::println(stderr,
+                 "ERROR: IF sample rate {:.9g} [Hz] is too low for "
+                 "demodulator rate {:.9g} [Hz]",
+                 ifrate, demodulator_rate);
+    exit(1);
+  }
 
   // Display ifrate compensation if applicable.
   if (ifrate_offset_enable) {
@@ -938,12 +961,16 @@ int main(int argc, char **argv) {
     // Valid data exists in if_samples
     // from here in the for loop
 
-    if (modtype == ModType::FM) {
-      // the minus factor is to show the ppm correction
-      // to make and not the one which has already been made
-      ppm_average.feed((fm.get_tuning_offset() / tuner_freq) * -1.0e6);
-    } else if (modtype == ModType::NBFM) {
-      ppm_average.feed((nbfm.get_tuning_offset() / tuner_freq) * -1.0e6);
+    // Guard against division by zero when the tuner frequency is unknown
+    // (e.g. filesource with freq=0).
+    if (tuner_freq > 0.0) {
+      if (modtype == ModType::FM) {
+        // the minus factor is to show the ppm correction
+        // to make and not the one which has already been made
+        ppm_average.feed((fm.get_tuning_offset() / tuner_freq) * -1.0e6);
+      } else if (modtype == ModType::NBFM) {
+        ppm_average.feed((nbfm.get_tuning_offset() / tuner_freq) * -1.0e6);
+      }
     }
 
     // Add 1e-9 to log10() to prevent generating NaN
@@ -999,7 +1026,12 @@ int main(int argc, char **argv) {
     // set to zero volume if the squelch is closed.
     Utility::adjust_gain(audiosamples, if_rms >= squelch_level ? 0.5 : 0.0);
     // Write samples to output.
-    audio_output->write(std::move(audiosamples));
+    // Treat a write failure as fatal and exit the main loop cleanly.
+    if (!audio_output->write(std::move(audiosamples))) {
+      fmt::println(stderr, "\nERROR: AudioOutput: {}", audio_output->error());
+      stop_flag.store(true);
+      break;
+    }
 
     // Show status messages for each block if not in quiet mode.
     if (!quietmode) {
@@ -1119,6 +1151,10 @@ int main(int argc, char **argv) {
 
   // Close audio output.
   audio_output->output_close();
+  // Close the PPS output file if opened (and not stdout).
+  if ((ppsfile != nullptr) && (ppsfile != stdout)) {
+    fclose(ppsfile);
+  }
   // Terminate receiver thread.
   up_srcsdr->stop();
 

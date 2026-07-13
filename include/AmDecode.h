@@ -28,7 +28,7 @@
 #include "IfSimpleAgc.h"
 #include "SoftFM.h"
 
-/** Complete decoder for FM broadcast signal. */
+/// Complete decoder for FM broadcast signal.
 class AmDecoder {
 public:
   // Static constants.
@@ -39,12 +39,10 @@ public:
   // Deemphasis constant in microseconds.
   static constexpr double deemphasis_time = 100;
 
-  /**
-   * Construct AM decoder.
-   *
-   * amfilter_coeff    :: IQSample Filter Coefficients.
-   * mode              :: ModType for decoding mode.
-   */
+  /// Construct AM decoder.
+  ///
+  /// amfilter_coeff    :: IQSample Filter Coefficients.
+  /// mode              :: ModType for decoding mode.
   AmDecoder(IQSampleCoeff &amfilter_coeff, const ModType mode);
 
   // Process IQ samples and return audio samples.

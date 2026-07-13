@@ -27,6 +27,7 @@
 
 #include "ConfigParser.h"
 #include "FileSource.h"
+#include "IfResampler.h"
 #include "Utility.h"
 
 std::atomic<FileSource *> FileSource::m_this{nullptr};
@@ -243,6 +244,20 @@ bool FileSource::configure(std::string fname, bool raw, FormatType format_type,
                  "FileSource::configure: large blklen, round blklen {} to {}",
                  m_block_length, tmp_blklen);
     m_block_length = tmp_blklen;
+  }
+
+  // Cap the block length at IfResampler::max_input_length (65536) so that
+  // a source block can never exceed what the resampler chain can process
+  // in one call. The max_expected_us clamp above limits a block to 10 ms
+  // of samples (srate/100), which also bounds the decoder-side block to
+  // at most 10 ms at the demodulator rate (<= 3840 samples), well within
+  // AudioResampler::max_input_length (32768); this cap closes the
+  // remaining gap for sample rates above 6.5536 MHz.
+  if (m_block_length > IfResampler::max_input_length) {
+    fmt::println(stderr,
+                 "FileSource::configure: large blklen, clamp blklen {} to {}",
+                 m_block_length, IfResampler::max_input_length);
+    m_block_length = IfResampler::max_input_length;
   }
 
   m_confFreq = frequency;
@@ -496,10 +511,11 @@ bool FileSource::get_sf_read_float(IQSampleVector *samples) {
     return false;
   }
 
-  // Defensive upper bound on block_length: 16 M float-pairs ~= 128 MB.
+  // Defensive upper bound on block_length: the resampler chain cannot
+  // process blocks larger than IfResampler::max_input_length.
   // configure() already clamps block_length, but enforce here so that
   // future callers cannot bypass the clamp.
-  static constexpr int kMaxBlockSamples = 1 << 24;
+  static constexpr int kMaxBlockSamples = IfResampler::max_input_length;
   if (self->m_block_length <= 0 || self->m_block_length > kMaxBlockSamples) {
     return false;
   }

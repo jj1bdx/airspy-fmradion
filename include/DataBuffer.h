@@ -21,6 +21,8 @@
 #define INCLUDE_DATABUFFER_H
 
 #include <condition_variable>
+#include <cstdint>
+#include <fmt/format.h>
 #include <mutex>
 #include <queue>
 
@@ -28,18 +30,49 @@
 
 template <class Element> class DataBuffer {
 public:
+  // Maximum number of queued blocks before the oldest block is dropped.
+  // Normal real-time operation keeps the queue near empty (the consumer
+  // pulls one block per loop iteration), so this threshold is reached
+  // only when the consumer persistently cannot keep up with the source.
+  // At the supported sources' block rates (~100-400 blocks/s) this allows
+  // several seconds of buffering, and bounds the worst-case memory use
+  // (Airspy R2: 65536 samples * 8 bytes * 1024 blocks = 512 MiB).
+  static constexpr std::size_t max_queue_blocks = 1024;
+
   // Constructor.
   DataBuffer() : m_end_marked(false) {}
 
   // Add samples to the queue.
+  // If the queue is full, the oldest block is dropped and a warning is
+  // printed so memory use cannot grow without bound when
+  // the consumer cannot keep up with a real-time source.
   inline void push(std::vector<Element> &&samples) {
     if (!samples.empty()) {
+      std::uint64_t dropped = 0;
       {
         std::scoped_lock<std::mutex> lock(m_mutex);
         m_queue.push(std::move(samples));
+        while (m_queue.size() > max_queue_blocks) {
+          m_queue.pop();
+          m_dropped_blocks++;
+          dropped = m_dropped_blocks;
+        }
         // unlock m_mutex here by getting out of scope
       }
+      if (dropped > 0) {
+        fmt::println(stderr, "DataBuffer: queue overflow, dropped blocks = {}",
+                     dropped);
+      }
       m_cond.notify_all();
+    }
+  }
+
+  // Return the total number of blocks dropped due to queue overflow.
+  inline std::uint64_t dropped_blocks() {
+    {
+      std::scoped_lock<std::mutex> lock(m_mutex);
+      return m_dropped_blocks;
+      // unlock m_mutex here by getting out of scope
     }
   }
 
@@ -91,6 +124,7 @@ public:
 
 private:
   bool m_end_marked;
+  std::uint64_t m_dropped_blocks = 0;
   std::queue<std::vector<Element>> m_queue;
   std::mutex m_mutex;
   std::condition_variable m_cond;

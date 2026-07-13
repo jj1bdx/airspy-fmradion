@@ -105,15 +105,15 @@ public:
   }
 
 private:
-  /** Demodulate stereo L-R signal. */
+  /// Demodulate stereo L-R signal.
   inline void demod_stereo(const SampleVector &samples_baseband,
                            SampleVector &samples_stereo);
 
-  /** Duplicate mono signal in left/right channels. */
+  /// Duplicate mono signal in left/right channels.
   inline void mono_to_left_right(const SampleVector &samples_mono,
                                  SampleVector &audio);
 
-  /** Extract left/right channels from mono/stereo signals. */
+  /// Extract left/right channels from mono/stereo signals.
   inline void stereo_to_left_right(const SampleVector &samples_mono,
                                    const SampleVector &samples_stereo,
                                    SampleVector &audio);
