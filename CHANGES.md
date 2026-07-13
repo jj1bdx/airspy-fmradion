@@ -41,7 +41,7 @@ Intel Mac hardware is no longer supported by airspy-fmradion, although the autho
 
 ## Changes (including requirement changes)
 
-* dev 20260713: Made the following changes:
+* 20260713-0: Made the following changes:
   * RtlSdrSource now streams with `rtlsdr_read_async()` instead of the blocking `rtlsdr_read_sync()` loop. This gives ~15 USB buffers of in-flight tolerance against scheduling jitter (previously fatal "short read, samples lost"), and adds proper cleanup on SIGINT/SIGQUIT/SIGTERM. CPU usage and throughput are unchanged. See doc/RTL_READ_ASYNC_20260713.md for details.
   * Fixed vulnerabilities W1-W7 and X1-X8; see doc/FIXES_CLAUDE_20260610.md for the summary.
   * DataBuffer prints the queue overflow warning on every dropped block.
