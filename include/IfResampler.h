@@ -35,9 +35,10 @@ public:
   // places the passband edge at 172.8 kHz, far beyond the FM broadcast
   // channel bandwidth, and 140 dB stop-band attenuation exceeds any
   // SDR frontend's dynamic range. The previous CDSPResampler24 preset
-  // (2.0%, 180.15 dB) cost 13.3 ms of group delay at
-  // 1152 kHz -> 384 kHz; these values cost 1.6 ms.
-  // See doc/LATENCY_PLAN_20260713.md sections 7-8.
+  // (2.0%, 180.15 dB) cost 6.2 ms of group delay at
+  // 1152 kHz -> 384 kHz; these values cost 0.7 ms (as-built figures,
+  // measured at the executable level).
+  // See doc/LATENCY_PLAN_20260713.md sections 7-9.
   static constexpr double req_trans_band = 10.0;
   static constexpr double req_atten = 140.0;
   // Construct IF IQ resampler.

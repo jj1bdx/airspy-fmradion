@@ -34,9 +34,10 @@ public:
   // downsampling: 15% of 24 kHz places the passband edge at 20.4 kHz,
   // still above the 19 kHz pilot (removed downstream by the pilot-cut
   // FIR), while 120 dB stop-band attenuation remains far above the FM
-  // broadcast SNR. The r8brain defaults (2.0%, 206.91 dB) cost 77 ms of
-  // group delay at 384 kHz -> 48 kHz; these values cost 4.8 ms.
-  // See doc/LATENCY_PLAN_20260713.md sections 7-8.
+  // broadcast SNR. The r8brain defaults (2.0%, 206.91 dB) cost 34.4 ms
+  // of group delay at 384 kHz -> 48 kHz; these values cost 2.1 ms
+  // (as-built figures, measured at the executable level).
+  // See doc/LATENCY_PLAN_20260713.md sections 7-9.
   static constexpr double req_trans_band = 15.0;
   static constexpr double req_atten = 120.0;
   // Construct audio resampler.
