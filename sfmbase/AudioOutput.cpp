@@ -223,10 +223,6 @@ PortAudioOutput::PortAudioOutput(const PaDeviceIndex device_index,
 #ifdef __APPLE__
   m_outputparams.suggestedLatency =
       Pa_GetDeviceInfo(m_outputparams.device)->defaultLowOutputLatency;
-  PaMacCoreStreamInfo mac_core_flags;
-  PaMacCore_SetupStreamInfo(&mac_core_flags, paMacCoreChangeDeviceParameters);
-  m_outputparams.hostApiSpecificStreamInfo = &mac_core_flags;
-  fmt::println(stderr, "Configured macOS CoreAudio options");
   // Guarantee minimum latency.
   if (m_outputparams.suggestedLatency < minimum_latency_low) {
     m_outputparams.suggestedLatency = minimum_latency_low;
