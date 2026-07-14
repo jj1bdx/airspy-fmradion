@@ -8,6 +8,87 @@ it further without a rewrite, and ranked options to reduce it. This
 document makes no code changes; it is an analysis and planning
 artifact only.
 
+## Executive summary — status as of 2026-07-14, through `dev-macOS-lowlatency`
+
+This document began as a read-only analysis (§0–§6, 2026-07-13) and
+has since accumulated review corrections (§7–§8), implemented changes,
+and executable-level measurements (§9–§11). **Current, measured
+figures live in §9–§11 and in this summary; §0–§8 are retained as the
+historical record and several of their measurement results are
+obsolete — see "Obsoleted measurement results" below before citing
+anything from them.**
+
+### What has been done
+
+On branch `dev-resampler-lowlatency` (off `dev`):
+
+- `c33e03d` — explicit low-latency r8brain parameters
+  (`ReqTransBand`/`ReqAtten`: 15%/120 dB audio, 10%/140 dB IF),
+  implementing §7.4 / §8.4 option 1. Measured end-to-end effect (§9):
+  **−37.7 ms** (resampler chain 40.58 → 2.85 ms), output timeline
+  unchanged, spurs ≤ −99 dBc.
+- `08a5932` — header comments corrected to as-built latency figures.
+- `c64d26e` — CMakeLists cleanup (§10): removed the `r8b` library
+  target and its `R8B_*` defines, which never propagated to `sfmbase`
+  (discovered in §9.4); the pffft object was never linked in, and
+  `main.cpp` vs. `sfmbase` saw differently configured r8brain headers
+  (ODR hazard). Verified bit-identical decode — no DSP change.
+- `4372aa4`, `cbc5562` — documentation (§9, §10).
+
+On branch `dev-macOS-lowlatency` (`ec48dd6`, merge `a026b13`):
+
+- macOS PortAudio output stage: request
+  `defaultLowOutputLatency` with a 25 ms floor (previously
+  `defaultHighOutputLatency` with a 40 ms floor) and set
+  `paMacCoreChangeDeviceParameters`. Measured effect (§11): granted
+  `outputLatency` on the FiiO K7 USB DAC **210.7 → 110.3 ms
+  (−100.3 ms)**; the decomposition shows the entire gain comes from
+  the smaller request.
+
+**Net measured steady-state latency reduction vs. `dev`: ≈ 138 ms**
+(37.7 ms DSP + 100.3 ms output stage), on macOS/arm64 with the
+file-source test configuration and the FiiO K7.
+
+### Current best-known budget (RTL-SDR-class defaults, macOS, FiiO K7)
+
+| Term | Value | Where measured |
+|---|---|---|
+| Source block batching | ~14 ms | §1 row 2 (unchanged) |
+| IF + audio resamplers | 2.85 ms | §9 |
+| Pilot-cut FIR | 1.31 ms | §1 row 10 (unchanged) |
+| PortAudio granted output latency | 110.3 ms | §11 |
+
+The dominant remaining lever is the output stage: the 25 ms request
+floor yields 110 ms granted, while requesting the device's
+`defaultLowOutputLatency` (1.9 ms) is granted only 7.25 ms (§11.2) —
+pending underrun stress testing under real reception (§11.3). Note
+the granted figure is PortAudio's own accounting, not an acoustic
+loopback measurement (§11.3 caveat).
+
+### ⚠ Obsoleted measurement results — do not cite
+
+1. **§1 rows 4/9 and §1.1 analytic resampler estimates** (~1–2 ms IF,
+   ~10–15 ms audio): wrong by up to an order of magnitude. First
+   corrected by §7, whose own figures were then corrected again —
+   see item 2.
+2. **Every r8brain millisecond figure in §7 and §8** (77.06, 13.30,
+   4.77, 1.63 ms, the §7.4 parameter table, and the r8brain rows of
+   §8.2): measured with `R8B_EXTFFT/R8B_FASTTIMING/R8B_PFFFT_DOUBLE`
+   defined, a configuration the shipped binary **never ran** (§9.4).
+   The as-built values are roughly half: 34.39, 6.19, 2.11, 0.75 ms.
+   The non-r8brain rows of §8.2 (soxr, speexdsp, liquid, custom FIR)
+   are unaffected, and §7/§8's conclusions and recommendations stand.
+3. **§7.3's corrected budget** ("software total ≈ 146 ms, CoreAudio/
+   USB-DAC residual ≈ 55–75 ms"): the software total is ≈ 96 ms
+   (§9.4), and §11 shows the "residual" was mostly CoreAudio granting
+   ~5× the requested output latency (a 40 ms request granted 211 ms).
+4. **The predicted 84 ms gain** from the r8brain parameter change
+   (§7/§8 arithmetic): measured gain is **37.7 ms** (§9).
+5. **§8.4's "achievable ≈ 46 ms" estimate**: built from items 2–4;
+   recompute from the budget table above.
+6. **The original "Summary" section** (before §7): superseded in its
+   entirety by this executive summary.
+
 ## 0. Starting point: this has already been investigated once
 
 Before re-deriving everything from the DSP chain, it is worth stating
@@ -55,6 +136,13 @@ with more confidence, and lists why the two "obvious" fixes were
 already tried.
 
 ## 1. Latency budget for a representative configuration
+
+> **⚠ OBSOLETE figures in this section.** The resampler rows (4/9)
+> and the §1.1 analytic estimates are wrong (superseded by §7, then
+> re-corrected by §9.4: as-built 6.19 ms IF, 34.39 ms audio on `dev`;
+> 0.75/2.11 ms after `c33e03d`). The "40 ms PortAudio request" row
+> understates reality ~5×: the granted output latency for that
+> request measured 210.7 ms (§11). See the executive summary.
 
 **Assumed configuration:** RTL-SDR device, `srate=1152000` (the
 `RtlSdrSource::configure()` default, `sfmbase/RtlSdrSource.cpp:83`),
@@ -423,7 +511,12 @@ for the last row, restraint in choosing a flag value), consistent with
   would either confirm or rule out the device as the dominant
   contributor independent of anything in this codebase.
 
-## Summary
+## Summary (original analysis, 2026-07-13 — OBSOLETE)
+
+> **⚠ OBSOLETE in its entirety.** Kept as the historical record of
+> the original §0–§6 analysis. Superseded first by §7, then by the
+> measurements of §9–§11; the current state is in the executive
+> summary at the top of this document.
 
 The DSP pipeline itself, for the default RTL-SDR configuration, is
 estimated at roughly **70 ms** of the observed **~200 ms**
@@ -447,6 +540,15 @@ ceiling (§5) is well under half of the unexplained residual.
 summary.**
 
 ## 7. Review addendum (Claude Fable 5, 2026-07-13): measured r8brain latencies correct the budget
+
+> **⚠ PARTLY OBSOLETE.** The direction of this correction and its
+> conclusions stand, but **every r8brain millisecond figure in this
+> section is obsolete**: the probes were compiled with `R8B_*`
+> defines that never reached the shipped binary (§9.4). As-built
+> values are roughly half (77.06 → 34.39 ms, 13.30 → 6.19 ms, etc.);
+> the budget arithmetic of §7.3 shifts accordingly (§9.4), and §11
+> replaces the "40 ms PortAudio" term with the measured 210.7 ms
+> granted latency.
 
 This section records the results of an independent review of the
 analysis above. All sampled file:line claims in §0-§6 were verified
@@ -595,6 +697,15 @@ measurement is a snapshot of a moving value.
 5. `blklen=4096` and the other §4 workarounds remain valid as-is.
 
 ## 8. AudioResampler alternatives (Claude Fable 5, 2026-07-13)
+
+> **⚠ PARTLY OBSOLETE.** The r8brain rows of §8.2 and all figures
+> derived from them (including §8.4's "77.1 → 4.8 ms" and the
+> "achievable ≈ 46 ms" estimate) carry the §9.4 define error: as
+> built, the change delivers 34.4 → 2.1 ms (audio) and 6.2 → 0.7 ms
+> (IF), measured end-to-end as **−37.7 ms** in §9. The non-r8brain
+> measurements (soxr, speexdsp, liquid-dsp, custom FIR) are
+> unaffected, and the recommendations stand — option 1 was
+> implemented in `c33e03d`.
 
 This section investigates how far the `AudioResampler` latency (77 ms,
 §7.2) can be reduced, including replacing r8brain with another
@@ -912,3 +1023,75 @@ construction. The fix removes two real defects:
   `IfResampler` 858, `AudioResampler` 809 input samples (= 0.75 ms /
   2.11 ms, §9.3).
 - `nm` confirms no pffft symbols in the new executable (as before).
+
+## 11. Measured latency difference: dev-resampler-lowlatency vs. dev-macOS-lowlatency (Claude Fable 5, 2026-07-14)
+
+Branch `dev-macOS-lowlatency` (ec48dd6, merged with
+`dev-resampler-lowlatency` in a026b13) changes only the PortAudio
+output stage on macOS: it requests
+`defaultLowOutputLatency` instead of `defaultHighOutputLatency`,
+lowers the request floor from 40 ms to 25 ms, and sets
+`paMacCoreChangeDeviceParameters` so CoreAudio may reconfigure the
+device. The §9 output-duration method cannot see this stage (the WAV
+path bypasses PortAudio), so this section measures the
+PortAudio-**granted** output latency on the real default device.
+
+### 11.1 Method
+
+- Both branch executables were run against the default output device
+  (FiiO K7 USB DAC) with `-P -` and a 3 s unmodulated-carrier file
+  (decodes to silence), confirming the requested values the binaries
+  actually send: 40.000 ms vs. 25.000 ms.
+- A standalone probe replicating `PortAudioOutput`'s stream setup
+  exactly (paFloat32, stereo, 48 kHz, `paFramesPerBufferUnspecified`,
+  blocking API) opens the stream and reads
+  `Pa_GetStreamInfo()->outputLatency` — PortAudio's report of the
+  full host-buffer + device chain. Each configuration ran in a fresh
+  process (the CoreAudio flag can reconfigure the device, so probes
+  must not contaminate each other); the two branch configurations
+  were each measured 3x with identical results.
+- DSP-path check: the 6 s synthetic-FM decode to WAV is
+  **bit-identical** between the two binaries, as expected — the
+  branches differ only in `AudioOutput`.
+
+### 11.2 Results (FiiO K7, macOS/arm64; device defaultLow = 1.917 ms, defaultHigh = 11.250 ms)
+
+| Configuration | requested | granted `outputLatency` |
+|---|---|---|
+| dev-resampler-lowlatency (`defaultHigh`, floor 40 ms, no flags) | 40.000 ms | **210.667 ms** |
+| dev-macOS-lowlatency (`defaultLow`, floor 25 ms, CoreAudio flags) | 25.000 ms | **110.333 ms** |
+| decomposition: request 25 ms, *no* flags | 25.000 ms | 110.333 ms |
+| decomposition: request 40 ms, *with* flags | 40.000 ms | 210.667 ms |
+| headroom: request device defaultLow, with flags | 1.917 ms | 7.250 ms |
+
+**The branch removes a measured 100.3 ms of output latency**
+(210.667 -> 110.333 ms). The decomposition rows show the entire gain
+comes from the smaller latency request; `paMacCoreChangeDeviceParameters`
+had no measurable effect on the granted latency for this device (it
+may still matter on devices that need a sample-rate switch).
+
+### 11.3 Interpretation
+
+- CoreAudio grants roughly **5x the requested latency** on this
+  device (40 -> 211 ms, 25 -> 110 ms, 1.9 -> 7.3 ms). The
+  conservative 40 ms request was therefore the dominant term of the
+  observed ~200 ms all along — larger than every DSP term of §9
+  combined, and larger than anyone had estimated from the request
+  value: §1/§7.3 budgeted the PortAudio stage as "40 ms + residual",
+  but the residual *was* the amplification of that request.
+- Combined with §9, the two branches together cut the measured
+  steady-state latency by ≈ **138 ms** relative to `dev`
+  (37.7 ms resamplers + 100.3 ms output stage) for the file-source
+  configuration on this hardware.
+- Remaining headroom at the output stage is large: requesting the
+  device's `defaultLowOutputLatency` grants 7.25 ms — the new 25 ms
+  floor, not the device, is now the binding constraint. How far the
+  floor can safely drop is governed by the blocking-write API's
+  underrun margin (§5's callback-API discussion); that calls for
+  on-air stress testing rather than file-source measurement.
+- Caveat: `Pa_GetStreamInfo()->outputLatency` is PortAudio's own
+  accounting of its buffering plus the device-reported latency, not
+  an acoustic loopback measurement; absolute values inherit the USB
+  DAC driver's reporting accuracy, but the difference between two
+  otherwise identical stacks is a valid comparison. Figures are
+  device-specific.
