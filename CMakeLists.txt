@@ -283,16 +283,16 @@ set(sfmbase_HEADERS
     include/Utility.h)
 
 # cmake-format: off
-# For building r8brain-free-src
-# See https://github.com/baconpaul/SampleRateComparison for the details
-# (Licensed GPLv3)
-# Use R8B_PFFFT_DOUBLE for double-precision conversion
+# r8brain-free-src is used header-only, with no R8B_* configuration
+# defines, from the sfmbase sources via the include path below.
+# The former r8b library target compiled fft/pffft_double.c with
+# R8B_EXTFFT/R8B_FASTTIMING/R8B_PFFFT_DOUBLE as PUBLIC definitions,
+# but those never propagated to sfmbase (which does not link r8b), so
+# the pffft object was linked dead and main.cpp saw differently
+# configured r8brain headers than sfmbase (an ODR hazard). The
+# no-defines configuration also measures about half the resampler
+# group delay. See doc/LATENCY_PLAN_20260713.md sections 9-10.
 # cmake-format: on
-
-add_library(r8b r8brain-free-src/fft/pffft_double.c)
-target_include_directories(r8b PUBLIC r8brain-free-src)
-target_compile_definitions(r8b PUBLIC R8B_EXTFFT=1 R8B_FASTTIMING=1
-                                      R8B_PFFFT_DOUBLE=1)
 
 # Base sources
 
@@ -320,7 +320,6 @@ target_link_libraries(
   airspy-fmradion
   fmt::fmt
   sfmbase
-  r8b
   Threads::Threads
   ${PORTAUDIO_LINK_LIBRARIES}
   ${VOLK_LIBRARY}
