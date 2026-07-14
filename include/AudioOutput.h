@@ -106,8 +106,10 @@ public:
   // Ubuntu 22.04.4 on x86_64: 0.034830
   // Kenji's experiments show that
   // 40ms (0.04) is sufficient for macOS, Ubuntu, and Raspberry Pi OS
-
-  static constexpr PaTime minimum_latency = 0.04;
+  // For lower latencies,
+  // 25ms (0.025) is sufficient for modern macOS machines
+  static constexpr PaTime minimum_latency_low = 0.025;
+  static constexpr PaTime minimum_latency_default = 0.04;
 
   //
   // Construct PortAudio output stream.

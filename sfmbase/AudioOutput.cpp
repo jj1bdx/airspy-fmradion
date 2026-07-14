@@ -28,6 +28,10 @@
 #include "SoftFM.h"
 #include "sndfile.h"
 
+#ifdef __APPLE__
+#include "pa_mac_core.h"
+#endif // __APPLE__
+
 // class SndfileOutput
 
 // Constructor
@@ -216,14 +220,26 @@ PortAudioOutput::PortAudioOutput(const PaDeviceIndex device_index,
 
   m_outputparams.channelCount = m_nchannels;
   m_outputparams.sampleFormat = paFloat32;
+#ifdef __APPLE__
+  m_outputparams.suggestedLatency =
+      Pa_GetDeviceInfo(m_outputparams.device)->defaultLowOutputLatency;
+  PaMacCoreStreamInfo mac_core_flags;
+  PaMacCore_SetupStreamInfo(&mac_core_flags, paMacCoreChangeDeviceParameters);
+  m_outputparams.hostApiSpecificStreamInfo = &mac_core_flags;
+  fmt::println(stderr, "Configured macOS CoreAudio options");
+  // Guarantee minimum latency.
+  if (m_outputparams.suggestedLatency < minimum_latency_low) {
+    m_outputparams.suggestedLatency = minimum_latency_low;
+  }
+#else  // !__APPLE_
   m_outputparams.suggestedLatency =
       Pa_GetDeviceInfo(m_outputparams.device)->defaultHighOutputLatency;
   m_outputparams.hostApiSpecificStreamInfo = NULL;
-
   // Guarantee minimum latency.
-  if (m_outputparams.suggestedLatency < minimum_latency) {
-    m_outputparams.suggestedLatency = minimum_latency;
+  if (m_outputparams.suggestedLatency < minimum_latency_default) {
+    m_outputparams.suggestedLatency = minimum_latency_default;
   }
+#endif // __APPLE__
 
   fmt::println(stderr, "suggestedLatency = {:f}",
                m_outputparams.suggestedLatency);
