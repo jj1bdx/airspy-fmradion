@@ -41,6 +41,12 @@ Intel Mac hardware is no longer supported by airspy-fmradion, although the autho
 
 ## Changes (including requirement changes)
 
+* dev-resampler-lowlatency 20260714: Made the following changes for output latency reduction:
+  * IfResampler and AudioResampler now pass explicit r8brain design parameters (`ReqTransBand`/`ReqAtten`) chosen for the actual FM/AM broadcast signal requirements, instead of the library defaults tuned for mastering-grade conversion. Measured steady-state resampler latency: FM 40.6 -> 2.9 ms; AM/CW/NBFM IF resampling 49.6 -> 6.0 ms. Output timeline and decoded audio content are unchanged.
+  * On macOS, PortAudioOutput now requests `defaultLowOutputLatency` with a 25 ms minimum (previously `defaultHighOutputLatency` with a 40 ms minimum). Measured PortAudio-granted output latency on USB DAC FiiO K7: 210.7 -> 110.3 ms. CoreAudio grants roughly 5x the requested latency on this device, so the old 40 ms request was the dominant term of the previously observed ~200 ms latency.
+  * Net measured steady-state latency reduction: ~138 ms for FM, ~144 ms for AM/CW/NBFM.
+  * Removed the ineffective `r8b` CMake library target and its `R8B_*` compile definitions: they never propagated to the sfmbase sources, the pffft object was never linked into the executable, and main.cpp saw differently configured r8brain headers than sfmbase (an ODR hazard). r8brain-free-src is now used header-only. No DSP behavior change (verified bit-identical decode).
+  * Added measured latency analyses: doc/LATENCY_PLAN_20260713.md (FM, including executable-level measurements and an executive summary), doc/AM_LATENCY_PLAN_20260714.md, doc/CW_LATENCY_PLAN_20260714.md, and doc/NBFM_LATENCY_PLAN_20260714.md.
 * 20260713-0: Made the following changes:
   * RtlSdrSource now streams with `rtlsdr_read_async()` instead of the blocking `rtlsdr_read_sync()` loop. This gives ~15 USB buffers of in-flight tolerance against scheduling jitter (previously fatal "short read, samples lost"), and adds proper cleanup on SIGINT/SIGQUIT/SIGTERM. CPU usage and throughput are unchanged. See doc/RTL_READ_ASYNC_20260713.md for details.
   * Fixed vulnerabilities W1-W7 and X1-X8; see doc/FIXES_CLAUDE_20260610.md for the summary.
