@@ -865,3 +865,50 @@ Consequences:
   (~14 ms), the 40 ms PortAudio request, the pilot-cut FIR (1.3 ms),
   and 2.85 ms of resamplers — the next fronts are `blklen` (§4) and
   the PortAudio/CoreAudio output stage (§5/§6), not the DSP chain.
+
+## 10. Fix for the R8B define propagation (Claude Fable 5, 2026-07-14)
+
+Branch `dev-r8b-defines-cleanup` (off `dev-resampler-lowlatency`)
+resolves the §9.4 build inconsistency by standardizing on the
+configuration the binary already runs: **no `R8B_*` defines
+anywhere**.
+
+### 10.1 The change
+
+- Removed the `r8b` library target (`add_library(r8b
+  r8brain-free-src/fft/pffft_double.c)`) together with its
+  `PUBLIC R8B_EXTFFT=1 R8B_FASTTIMING=1 R8B_PFFFT_DOUBLE=1`
+  definitions, and dropped `r8b` from the executable's
+  `target_link_libraries`. r8brain remains in use header-only via the
+  existing global include path.
+- The alternative — propagating the defines program-wide by linking
+  `r8b` into `sfmbase` — was rejected: per §9.4 the with-defines
+  design roughly *doubles* every resampler group delay (chain
+  2.85 ms -> ~6.4 ms) while the 6 s decode runs showed no measurable
+  CPU difference; pffft's benefit targets long filters that the
+  low-latency parameters no longer create.
+
+### 10.2 Why this is a no-op for the shipped binary, and what it does fix
+
+`sfmbase` never saw the defines, so the DSP code path is unchanged by
+construction. The fix removes two real defects:
+
+1. **ODR hazard**: `main.cpp` linked `r8b` and therefore compiled the
+   r8brain headers *with* the defines, while `sfmbase` compiled them
+   *without*. Inline r8brain code reachable from both (e.g. via
+   `IfResampler`'s implicit destructor) existed in two differently
+   configured versions; which one the linker chose was arbitrary.
+2. **Dead compilation**: `pffft_double.c` was compiled into `libr8b`
+   on every build, yet the linker never pulled the unreferenced
+   archive member — `nm` shows zero pffft symbols in the *old*
+   executable too. The object was pure build-time waste.
+
+### 10.3 Verification
+
+- Full clean CMake configure + build passes.
+- The 6 s synthetic-FM decode (§9.1) produces a **bit-identical WAV**
+  to the `dev-resampler-lowlatency` binary's output.
+- A debug-instrumented build prints unchanged as-built latencies:
+  `IfResampler` 858, `AudioResampler` 809 input samples (= 0.75 ms /
+  2.11 ms, §9.3).
+- `nm` confirms no pffft symbols in the new executable (as before).
