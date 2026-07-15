@@ -142,6 +142,7 @@ cmake --build build --target all
 * `-G filename` Write audio data as RF64/WAV `FLOAT_LE` samples. Use filename `-` to write to stdout (_pipe is not supported_)
 * `-C filename`  Write audio data to MP3 file of VBR -V 1. Use filename '-' to write to stdout. (_This function is available when linked with supported libsndfile only._)
 * `-P device_num` Play audio via PortAudio device index number. Use string `-` to specify the default PortAudio device
+* `-L ms` Set PortAudio output suggested latency in milliseconds. Valid range: 1 to 40 (default: platform-dependent) (`-L` is ignored unless PortAudio output (`-P`) is used)
 * `-T filename` Write pulse-per-second timestamps. Use filename '-' to write to stdout
 * `-X` Shift pilot phase (for Quadrature Multipath Monitor) (-X is ignored under mono mode (-M))
 * `-U` Set deemphasis to 75 microseconds (default: 50)
