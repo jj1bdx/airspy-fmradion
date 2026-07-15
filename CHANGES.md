@@ -41,6 +41,7 @@ Intel Mac hardware is no longer supported by airspy-fmradion, although the autho
 
 ## Changes (including requirement changes)
 
+* dev-portaudio-latency-option 20260715: Added the new `-L`/`--portaudio-latency` option to set the PortAudio output suggested latency in milliseconds (valid range: 1 to 40, default: floored at 40 milliseconds). When given, the value is passed verbatim to PortAudio as `suggestedLatency`, bypassing the 40-millisecond minimum-latency floor. `-L` is ignored unless PortAudio output (`-P`) is used.
 * dev-resampler-lowlatency 20260714: Made the following changes for output latency reduction:
   * IfResampler and AudioResampler now pass explicit r8brain design parameters (`ReqTransBand`/`ReqAtten`) chosen for the actual FM/AM broadcast signal requirements, instead of the library defaults tuned for mastering-grade conversion. Measured steady-state resampler latency: FM 40.6 -> 2.9 ms; AM/CW/NBFM IF resampling 49.6 -> 6.0 ms. Output timeline and decoded audio content are unchanged.
   * On macOS, PortAudioOutput now requests `defaultLowOutputLatency` with a 25 ms minimum (previously `defaultHighOutputLatency` with a 40 ms minimum). Measured PortAudio-granted output latency on USB DAC FiiO K7: 210.7 -> 110.3 ms. CoreAudio grants roughly 5x the requested latency on this device, so the old 40 ms request was the dominant term of the previously observed ~200 ms latency.

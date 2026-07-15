@@ -28,10 +28,6 @@
 #include "SoftFM.h"
 #include "sndfile.h"
 
-#ifdef __APPLE__
-#include "pa_mac_core.h"
-#endif // __APPLE__
-
 // class SndfileOutput
 
 // Constructor
@@ -193,7 +189,8 @@ void SndfileOutput::add_error_log_info(SNDFILE *sf) {
 
 // Construct PortAudio output stream.
 PortAudioOutput::PortAudioOutput(const PaDeviceIndex device_index,
-                                 unsigned int samplerate, bool stereo) {
+                                 unsigned int samplerate, bool stereo,
+                                 PaTime suggested_latency_sec) {
   m_nchannels = stereo ? 2 : 1;
 
   m_paerror = Pa_Initialize();
@@ -220,22 +217,21 @@ PortAudioOutput::PortAudioOutput(const PaDeviceIndex device_index,
 
   m_outputparams.channelCount = m_nchannels;
   m_outputparams.sampleFormat = paFloat32;
-#ifdef __APPLE__
-  m_outputparams.suggestedLatency =
-      Pa_GetDeviceInfo(m_outputparams.device)->defaultLowOutputLatency;
-  // Guarantee minimum latency.
-  if (m_outputparams.suggestedLatency < minimum_latency_low) {
-    m_outputparams.suggestedLatency = minimum_latency_low;
+  if (suggested_latency_sec >= 0.0) {
+    // User-specified latency (-L / --portaudio-latency): use it verbatim.
+    // This intentionally bypasses minimum_latency_default floor below;
+    // main.cpp already range-checks
+    // the value to [1, 40] ms before conversion to seconds.
+    m_outputparams.suggestedLatency = suggested_latency_sec;
+  } else {
+    m_outputparams.suggestedLatency =
+        Pa_GetDeviceInfo(m_outputparams.device)->defaultHighOutputLatency;
+    m_outputparams.hostApiSpecificStreamInfo = NULL;
+    // Guarantee minimum latency.
+    if (m_outputparams.suggestedLatency < minimum_latency_default) {
+      m_outputparams.suggestedLatency = minimum_latency_default;
+    }
   }
-#else  // !__APPLE_
-  m_outputparams.suggestedLatency =
-      Pa_GetDeviceInfo(m_outputparams.device)->defaultHighOutputLatency;
-  m_outputparams.hostApiSpecificStreamInfo = NULL;
-  // Guarantee minimum latency.
-  if (m_outputparams.suggestedLatency < minimum_latency_default) {
-    m_outputparams.suggestedLatency = minimum_latency_default;
-  }
-#endif // __APPLE__
 
   fmt::println(stderr, "suggestedLatency = {:f}",
                m_outputparams.suggestedLatency);

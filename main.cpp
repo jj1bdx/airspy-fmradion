@@ -99,6 +99,12 @@ static void usage() {
       "  -P device_num  Play audio via PortAudio device index number\n"
       "                 use string '-' to specify the default PortAudio "
       "device\n"
+      "  -L ms          Set PortAudio output suggested latency in "
+      "milliseconds\n"
+      "                 valid range: 1 to 40\n"
+      "                 (default: floored at 40 milliseconds)\n"
+      "                 (-L is ignored unless PortAudio output (-P) is "
+      "used)\n"
       "  -T filename    Write pulse-per-second timestamps\n"
       "                 use filename '-' to write to stdout\n"
       "  -X             Shift pilot phase (for Quadrature Multipath Monitor)\n"
@@ -285,6 +291,9 @@ int main(int argc, char **argv) {
   OutputMode outmode = OutputMode::RAW_INT16;
   std::string filename("-");
   int portaudiodev = -1;
+  // Sentinel: no -L/--portaudio-latency given, use PortAudio's
+  // platform-default suggestedLatency (computed inside PortAudioOutput).
+  double portaudio_latency_ms = -1.0;
   bool quietmode = false;
   std::string ppsfilename;
   FILE *ppsfile = nullptr;
@@ -364,6 +373,7 @@ int main(int argc, char **argv) {
       {"wav", required_argument, nullptr, 'W'},
       {"wavfloat", required_argument, nullptr, 'G'},
       {"play", required_argument, nullptr, 'P'},
+      {"portaudio-latency", required_argument, nullptr, 'L'},
       {"pps", required_argument, nullptr, 'T'},
       {"pilotshift", no_argument, nullptr, 'X'},
       {"usa", no_argument, nullptr, 'U'},
@@ -379,9 +389,9 @@ int main(int argc, char **argv) {
   int c, longindex;
 
 #if defined(LIBSNDFILE_MP3_ENABLED)
-  const char *optstring = "m:t:c:d:MR:F:W:G:f:l:P:T:qXUE:r:C:";
+  const char *optstring = "m:t:c:d:MR:F:W:G:f:l:P:L:T:qXUE:r:C:";
 #else  // !LIBSNDFILE_MP3_ENABLED
-  const char *optstring = "m:t:c:d:MR:F:W:G:f:l:P:T:qXUE:r:";
+  const char *optstring = "m:t:c:d:MR:F:W:G:f:l:P:L:T:qXUE:r:";
 #endif // LIBSNDFILE_MP3_ENABLED
 
   while ((c = getopt_long(argc, argv, optstring, longopts, &longindex)) >= 0) {
@@ -436,6 +446,12 @@ int main(int argc, char **argv) {
       } else if (!Utility::parse_int(optarg, portaudiodev) ||
                  portaudiodev < 0) {
         badarg("-P");
+      }
+      break;
+    case 'L':
+      if (!Utility::parse_dbl(optarg, portaudio_latency_ms) ||
+          portaudio_latency_ms < 1.0 || portaudio_latency_ms > 40.0) {
+        badarg("-L");
       }
       break;
     case 'T':
@@ -591,6 +607,12 @@ int main(int argc, char **argv) {
   // Prepare output writer.
   std::unique_ptr<AudioOutput> audio_output;
 
+  // Convert the user-supplied PortAudio latency from milliseconds (-L)
+  // to seconds (PaTime); -1.0 means "unset", signalling PortAudioOutput
+  // to fall back to its platform-default-plus-floor logic.
+  PaTime portaudio_suggested_latency =
+      (portaudio_latency_ms >= 0.0) ? (portaudio_latency_ms / 1000.0) : -1.0;
+
   // Set output device first, then print the configuration to stderr.
   switch (outmode) {
   case OutputMode::RAW_INT16:
@@ -625,8 +647,8 @@ int main(int argc, char **argv) {
                  filename);
     break;
   case OutputMode::PORTAUDIO:
-    audio_output =
-        std::make_unique<PortAudioOutput>(portaudiodev, pcmrate, stereo);
+    audio_output = std::make_unique<PortAudioOutput>(
+        portaudiodev, pcmrate, stereo, portaudio_suggested_latency);
     if (portaudiodev == -1) {
       fmt::print(stderr, "playing audio to PortAudio default device: ");
     } else {
