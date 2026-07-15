@@ -108,7 +108,7 @@ public:
   // 40ms (0.04) is sufficient for macOS, Ubuntu, and Raspberry Pi OS
   // For lower latencies,
   // 25ms (0.025) is sufficient for modern macOS machines
-  static constexpr PaTime minimum_latency_low = 0.025;
+  static constexpr PaTime minimum_latency_low = 0.005;
   static constexpr PaTime minimum_latency_default = 0.04;
 
   //
@@ -117,8 +117,15 @@ public:
   // device_index :: device index number
   // samplerate   :: audio sample rate in Hz
   // stereo       :: true if the output stream contains stereo data
+  // suggested_latency_sec :: user-requested suggestedLatency in seconds
+  //                 (PaTime); a negative value (the default) means
+  //                 "no user override" and falls back to the platform
+  //                 default (defaultLowOutputLatency on macOS,
+  //                 defaultHighOutputLatency elsewhere), floored at
+  //                 minimum_latency_low / minimum_latency_default
+  //                 respectively.
   PortAudioOutput(const PaDeviceIndex device_index, unsigned int samplerate,
-                  bool stereo);
+                  bool stereo, PaTime suggested_latency_sec = -1.0);
 
   virtual ~PortAudioOutput() override;
   virtual bool write(const SampleVector &samples) override;
