@@ -118,10 +118,8 @@ public:
   // suggested_latency_sec :: user-requested suggestedLatency in seconds
   //                 (PaTime); a negative value (the default) means
   //                 "no user override" and falls back to the platform
-  //                 default (defaultLowOutputLatency on macOS,
-  //                 defaultHighOutputLatency elsewhere), floored at
-  //                 minimum_latency_low / minimum_latency_default
-  //                 respectively.
+  //                 default (defaultHighOutputLatency), floored at
+  //                 minimum_latency_default.
   PortAudioOutput(const PaDeviceIndex device_index, unsigned int samplerate,
                   bool stereo, PaTime suggested_latency_sec = -1.0);
 
