@@ -219,19 +219,11 @@ PortAudioOutput::PortAudioOutput(const PaDeviceIndex device_index,
   m_outputparams.sampleFormat = paFloat32;
   if (suggested_latency_sec >= 0.0) {
     // User-specified latency (-L / --portaudio-latency): use it verbatim.
-    // This intentionally bypasses the minimum_latency_low /
-    // minimum_latency_default floor below; main.cpp already range-checks
+    // This intentionally bypasses minimum_latency_default floor below;
+    // main.cpp already range-checks
     // the value to [1, 40] ms before conversion to seconds.
     m_outputparams.suggestedLatency = suggested_latency_sec;
   } else {
-#ifdef __APPLE__
-    m_outputparams.suggestedLatency =
-        Pa_GetDeviceInfo(m_outputparams.device)->defaultLowOutputLatency;
-    // Guarantee minimum latency.
-    if (m_outputparams.suggestedLatency < minimum_latency_low) {
-      m_outputparams.suggestedLatency = minimum_latency_low;
-    }
-#else  // !__APPLE_
     m_outputparams.suggestedLatency =
         Pa_GetDeviceInfo(m_outputparams.device)->defaultHighOutputLatency;
     m_outputparams.hostApiSpecificStreamInfo = NULL;
@@ -239,7 +231,6 @@ PortAudioOutput::PortAudioOutput(const PaDeviceIndex device_index,
     if (m_outputparams.suggestedLatency < minimum_latency_default) {
       m_outputparams.suggestedLatency = minimum_latency_default;
     }
-#endif // __APPLE__
   }
 
   fmt::println(stderr, "suggestedLatency = {:f}",
