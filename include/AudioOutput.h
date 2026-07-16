@@ -106,8 +106,9 @@ public:
   // Ubuntu 22.04.4 on x86_64: 0.034830
   // Kenji's experiments show that
   // 40ms (0.04) is sufficient for macOS, Ubuntu, and Raspberry Pi OS
-
-  static constexpr PaTime minimum_latency = 0.04;
+  // For lower latencies, use the -L/--portaudio-latency option
+  // (see suggested_latency_sec below)
+  static constexpr PaTime minimum_latency_default = 0.04;
 
   //
   // Construct PortAudio output stream.
@@ -115,8 +116,13 @@ public:
   // device_index :: device index number
   // samplerate   :: audio sample rate in Hz
   // stereo       :: true if the output stream contains stereo data
+  // suggested_latency_sec :: user-requested suggestedLatency in seconds
+  //                 (PaTime); a negative value (the default) means
+  //                 "no user override" and falls back to the platform
+  //                 default (defaultHighOutputLatency), floored at
+  //                 minimum_latency_default.
   PortAudioOutput(const PaDeviceIndex device_index, unsigned int samplerate,
-                  bool stereo);
+                  bool stereo, PaTime suggested_latency_sec = -1.0);
 
   virtual ~PortAudioOutput() override;
   virtual bool write(const SampleVector &samples) override;

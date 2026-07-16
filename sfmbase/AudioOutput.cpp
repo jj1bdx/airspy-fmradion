@@ -17,6 +17,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+#include <algorithm>
 #include <cerrno>
 #include <cstdio>
 #include <cstring>
@@ -158,7 +159,7 @@ bool SndfileOutput::write(const SampleVector &samples) {
 
   sf_count_t size = samples.size();
   // Write samples to file with items.
-  sf_count_t k = sf_write_double(m_sndfile, samples.data(), size);
+  sf_count_t k = sf_write_float(m_sndfile, samples.data(), size);
   if (k != size) {
     m_error = fmt::format("write failed ({})", sf_strerror(m_sndfile));
     return false;
@@ -189,7 +190,8 @@ void SndfileOutput::add_error_log_info(SNDFILE *sf) {
 
 // Construct PortAudio output stream.
 PortAudioOutput::PortAudioOutput(const PaDeviceIndex device_index,
-                                 unsigned int samplerate, bool stereo) {
+                                 unsigned int samplerate, bool stereo,
+                                 PaTime suggested_latency_sec) {
   m_nchannels = stereo ? 2 : 1;
 
   m_paerror = Pa_Initialize();
@@ -216,13 +218,20 @@ PortAudioOutput::PortAudioOutput(const PaDeviceIndex device_index,
 
   m_outputparams.channelCount = m_nchannels;
   m_outputparams.sampleFormat = paFloat32;
-  m_outputparams.suggestedLatency =
-      Pa_GetDeviceInfo(m_outputparams.device)->defaultHighOutputLatency;
-  m_outputparams.hostApiSpecificStreamInfo = NULL;
-
-  // Guarantee minimum latency.
-  if (m_outputparams.suggestedLatency < minimum_latency) {
-    m_outputparams.suggestedLatency = minimum_latency;
+  if (suggested_latency_sec >= 0.0) {
+    // User-specified latency (-L / --portaudio-latency): use it verbatim.
+    // This intentionally bypasses minimum_latency_default floor below;
+    // main.cpp already range-checks
+    // the value to [1, 40] ms before conversion to seconds.
+    m_outputparams.suggestedLatency = suggested_latency_sec;
+  } else {
+    m_outputparams.suggestedLatency =
+        Pa_GetDeviceInfo(m_outputparams.device)->defaultHighOutputLatency;
+    m_outputparams.hostApiSpecificStreamInfo = NULL;
+    // Guarantee minimum latency.
+    if (m_outputparams.suggestedLatency < minimum_latency_default) {
+      m_outputparams.suggestedLatency = minimum_latency_default;
+    }
   }
 
   fmt::println(stderr, "suggestedLatency = {:f}",
@@ -293,8 +302,8 @@ bool PortAudioOutput::write(const SampleVector &samples) {
   unsigned long sample_size = samples.size();
   m_floatbuf.resize(sample_size);
 
-  // Convert double samples to float.
-  volk_64f_convert_32f(m_floatbuf.data(), samples.data(), sample_size);
+  // Copy float samples to the PortAudio buffer.
+  std::copy_n(samples.data(), sample_size, m_floatbuf.data());
 
   m_paerror =
       Pa_WriteStream(m_stream, m_floatbuf.data(), sample_size / m_nchannels);

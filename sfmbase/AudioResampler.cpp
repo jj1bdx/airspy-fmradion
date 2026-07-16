@@ -19,6 +19,7 @@
 #include "AudioResampler.h"
 #include "CDSPResampler.h"
 
+#include <algorithm>
 #include <fmt/format.h>
 
 // class AudioResampler
@@ -26,7 +27,8 @@
 AudioResampler::AudioResampler(const double input_rate,
                                const double output_rate)
     : m_cdspr(std::make_unique<r8b::CDSPResampler>(input_rate, output_rate,
-                                                   max_input_length)) {
+                                                   max_input_length,
+                                                   req_trans_band, req_atten)) {
 #ifdef DEBUG_AUDIORESAMPLER
   int latency = m_cdspr->getInLenBeforeOutStart();
   fmt::println(stderr, "AudioResampler latency = {}", latency);
@@ -40,19 +42,24 @@ void AudioResampler::process(const SampleVector &samples_in,
 
   assert(input_size <= max_input_length);
 
-  size_t output_length;
+  // r8brain CDSPResampler processes double buffers only;
+  // convert the float input samples to double first.
+  DoubleVector input_double;
+  input_double.resize(input_size);
+  std::copy_n(samples_in.data(), input_size, input_double.data());
 
-  double *input0 = const_cast<double *>(samples_in.data());
+  size_t output_length;
   double *output0;
 
-  output_length = m_cdspr->process(input0, input_size, output0);
+  output_length = m_cdspr->process(input_double.data(), input_size, output0);
 
   // Copy CDSPReampler internal buffer to given system buffer
+  // with type conversion.
 
   // Resize first to ensure the output data fits in samples_out
   samples_out.resize(output_length);
-  if (output_length > 0) {
-    samples_out.assign(output0, output0 + output_length);
+  for (size_t i = 0; i < output_length; i++) {
+    samples_out[i] = static_cast<Sample>(output0[i]);
   }
 #ifdef DEBUG_AUDIORESAMPLER
   fmt::println(stderr, "AudioResampler: input_size = {}, output_length = {}",
