@@ -17,6 +17,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+#include <algorithm>
+
 #include "FmDecode.h"
 #include "Utility.h"
 
@@ -140,8 +142,7 @@ void FmDecoder::process(IQSampleVector samples_in, SampleVector &audio) {
 
   // Convert decoded data to baseband data
   m_buf_baseband.resize(decoded_size);
-  volk_32f_convert_64f(m_buf_baseband.data(), m_buf_decoded.data(),
-                       decoded_size);
+  std::copy_n(m_buf_decoded.data(), decoded_size, m_buf_baseband.data());
 
   // Measure baseband level.
   float baseband_mean, baseband_rms;
@@ -233,7 +234,7 @@ inline void FmDecoder::demod_stereo(const SampleVector &samples_baseband,
   // for (unsigned int i = 0; i < n; i++) {
   //  samples_rawstereo[i] *= 2.0 * samples_baseband[i];
   // }
-  volk_64f_x2_multiply_64f(samples_rawstereo.data(), samples_rawstereo.data(),
+  volk_32f_x2_multiply_32f(samples_rawstereo.data(), samples_rawstereo.data(),
                            samples_baseband.data(), n);
   Utility::adjust_gain(samples_rawstereo, 2.0);
 }

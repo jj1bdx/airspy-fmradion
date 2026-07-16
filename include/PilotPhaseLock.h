@@ -79,9 +79,12 @@ public:
   }
 
 private:
-  Sample m_minfreq, m_maxfreq;
-  Sample m_freq, m_phase;
-  Sample m_pilot_level;
+  // Keep the PLL state in double precision regardless of the Sample
+  // type: m_phase/m_freq are live recursive accumulators, and float
+  // rounding here directly becomes 38 kHz subcarrier phase noise.
+  double m_minfreq, m_maxfreq;
+  double m_freq, m_phase;
+  double m_pilot_level;
   int m_lock_delay;
   int m_lock_cnt;
   int m_pilot_periods;
@@ -91,7 +94,7 @@ private:
   BiquadIirFilter m_biquad_phasor_i1, m_biquad_phasor_i2;
   BiquadIirFilter m_biquad_phasor_q1, m_biquad_phasor_q2;
   FirstOrderIirFilter m_first_phase_err;
-  Sample m_freq_err;
+  double m_freq_err;
 };
 
 #endif
