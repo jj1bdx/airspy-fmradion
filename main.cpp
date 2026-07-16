@@ -2,7 +2,7 @@
 //
 // Copyright (C) 2013, Joris van Rantwijk.
 // Copyright (C) 2015 Edouard Griffiths, F4EXB
-// Copyright (C) 2018-2024 Kenji Rikitake, JJ1BDX
+// Copyright (C) 2018-2026 Kenji Rikitake, JJ1BDX
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -52,7 +52,7 @@
 // define this for enabling coefficient monitor functions
 // #undef COEFF_MONITOR
 
-#define AIRSPY_FMRADION_VERSION "20260713-0"
+#define AIRSPY_FMRADION_VERSION "20260716-0"
 
 // Flag to set graceful termination
 // in process_signals()
