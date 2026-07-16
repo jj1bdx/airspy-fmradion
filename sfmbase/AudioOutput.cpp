@@ -17,6 +17,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+#include <algorithm>
 #include <cerrno>
 #include <cstdio>
 #include <cstring>
@@ -158,7 +159,7 @@ bool SndfileOutput::write(const SampleVector &samples) {
 
   sf_count_t size = samples.size();
   // Write samples to file with items.
-  sf_count_t k = sf_write_double(m_sndfile, samples.data(), size);
+  sf_count_t k = sf_write_float(m_sndfile, samples.data(), size);
   if (k != size) {
     m_error = fmt::format("write failed ({})", sf_strerror(m_sndfile));
     return false;
@@ -301,8 +302,8 @@ bool PortAudioOutput::write(const SampleVector &samples) {
   unsigned long sample_size = samples.size();
   m_floatbuf.resize(sample_size);
 
-  // Convert double samples to float.
-  volk_64f_convert_32f(m_floatbuf.data(), samples.data(), sample_size);
+  // Copy float samples to the PortAudio buffer.
+  std::copy_n(samples.data(), sample_size, m_floatbuf.data());
 
   m_paerror =
       Pa_WriteStream(m_stream, m_floatbuf.data(), sample_size / m_nchannels);

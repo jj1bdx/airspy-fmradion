@@ -73,8 +73,10 @@ void PilotPhaseLock::process(const SampleVector &samples_in,
   for (unsigned int i = 0; i < n; i++) {
 
     // Generate locked pilot tone.
-    Sample psin = std::sin(m_phase);
-    Sample pcos = std::cos(m_phase);
+    // The PLL recursion runs in double precision regardless of the
+    // Sample type; only the samples_out[i] stores narrow to Sample.
+    double psin = std::sin(m_phase);
+    double pcos = std::cos(m_phase);
 
     // Generate double-frequency output.
     if (pilot_shift) {
@@ -88,19 +90,19 @@ void PilotPhaseLock::process(const SampleVector &samples_in,
     }
 
     // Multiply locked tone with input.
-    Sample x = samples_in[i];
-    Sample phasor_i = psin * x;
-    Sample phasor_q = pcos * x;
+    double x = samples_in[i];
+    double phasor_i = psin * x;
+    double phasor_q = pcos * x;
 
     // Run IQ phase error through biquad LPFs once.
-    Sample new_phasor_i = m_biquad_phasor_i1.process(phasor_i);
-    Sample new_phasor_q = m_biquad_phasor_q1.process(phasor_q);
+    double new_phasor_i = m_biquad_phasor_i1.process(phasor_i);
+    double new_phasor_q = m_biquad_phasor_q1.process(phasor_q);
 
     // Convert I/Q ratio to estimate of phase error.
     // Note: maximum phase error during the locked state is +- 0.02 radian.
-    // Sample phase_err = std::atan2(new_phasor_q, new_phasor_i);
+    // double phase_err = std::atan2(new_phasor_q, new_phasor_i);
     // Use float atan2 for fast and light-weight phase detection.
-    Sample phase_err = Utility::fast_atan2f(new_phasor_q, new_phasor_i);
+    double phase_err = Utility::fast_atan2f(new_phasor_q, new_phasor_i);
 
     // Calculate pilot level (accurate).
     m_pilot_level = std::sqrt((new_phasor_i * new_phasor_i) +
@@ -111,7 +113,7 @@ void PilotPhaseLock::process(const SampleVector &samples_in,
     // the frequency. Then the frequency is integrated to produce the phase.
     // These two integrators form the two remaining poles, both at z = 1.
 
-    Sample new_phase_err = m_first_phase_err.process(phase_err);
+    double new_phase_err = m_first_phase_err.process(phase_err);
     m_freq_err = new_phase_err;
     m_freq += m_freq_err;
 

@@ -17,6 +17,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+#include <algorithm>
+
 #include "AmDecode.h"
 #include "Utility.h"
 
@@ -187,8 +189,7 @@ void AmDecoder::process(IQSampleVector samples_in, SampleVector &audio) {
 
   // Convert decoded data to baseband data
   m_buf_baseband_demod.resize(decoded_size);
-  volk_32f_convert_64f(m_buf_baseband_demod.data(), m_buf_decoded.data(),
-                       decoded_size);
+  std::copy_n(m_buf_decoded.data(), decoded_size, m_buf_baseband_demod.data());
 
   // DC blocking.
   m_dcblock.process_inplace(m_buf_baseband_demod);

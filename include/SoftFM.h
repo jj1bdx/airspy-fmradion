@@ -36,7 +36,7 @@ using IQSampleVector = std::vector<IQSample>;
 using IQSampleDecoded = float;
 using IQSampleDecodedVector = std::vector<float>;
 
-using Sample = double;
+using Sample = float;
 using SampleVector = std::vector<Sample>;
 
 using IQSampleCoeff = std::vector<IQSample::value_type>;

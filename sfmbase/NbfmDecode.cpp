@@ -16,6 +16,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+#include <algorithm>
+
 #include "NbfmDecode.h"
 #include "Utility.h"
 
@@ -68,8 +70,7 @@ void NbfmDecoder::process(const IQSampleVector &samples_in,
 
   // Convert decoded data to baseband data
   m_buf_baseband.resize(decoded_size);
-  volk_32f_convert_64f(m_buf_baseband.data(), m_buf_decoded.data(),
-                       decoded_size);
+  std::copy_n(m_buf_decoded.data(), decoded_size, m_buf_baseband.data());
 
   // If no downsampled baseband signal comes out,
   // terminate and wait for next block,
