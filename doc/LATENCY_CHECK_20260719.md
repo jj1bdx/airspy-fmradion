@@ -52,6 +52,11 @@ sampled at the output device), mean over three (default: four) runs each:
 - **Addendum §11 (same day):** `-L 8` — the bottom of the 2048-frame
   bucket — sampled 99.3 ms, the best sub-`-L 10` point of the 2048
   bucket, again matching granted (50.667 ms) + ~50 ms.
+- **Addendum §12 (same day):** `-L 4` — the bottom of the 1024-frame
+  bucket — sampled 73.6 ms, the lowest of the ladder. One run spent
+  its first 10 s with an effectively *empty* ring (45.4 ms, at the
+  path-constant floor) before the usual t≈10 s recovery topped it up:
+  at this depth the buffer has no margin left below capacity.
 
 ## 1. What was measured
 
@@ -524,3 +529,50 @@ The full measured ladder (sampled actual): default 267.4, `-L 20`
 `-L 5` 75.6 ms. The next distinct step down from `-L 8` would be the
 1024-frame bucket (requests of 4-7 ms, granted 25.3-28.3 ms), whose
 measured representative is `-L 5` at 75.6 ms.
+
+## 12. Addendum (same day): `-L 4` — bottom of the 1024-frame bucket
+
+Three `-L 4` runs, same method. Per §9.2, 4 ms is the smallest request
+in the 1024-frame bucket, granting 25.333 ms — 1 ms below `-L 5`.
+
+| Configuration | Suggested | Granted by CoreAudio | Sampled actual latency |
+|---|---|---|---|
+| `-L 4` | 4 ms | 25.333 ms | **73.6 ms** (mean of 3 runs) |
+
+| Run | Behavior |
+|---|---|
+| l4_1 | 45.4 ms until t≈10 s, then +28.35 ms step → 73.7 ms |
+| l4_2 | 73.9 ms; stable (within-run std 0.01 ms) |
+| l4_3 | 73.2 ms; tiny drift 74.0 → 72.5 ms |
+
+All segments sample-exact; content gapless in every run. Findings:
+
+- **Lowest point of the ladder:** 73.6 ms, i.e. granted + 48.3 ms —
+  the constant-excess model holds at the seventh operating point.
+  `-L 4` beats `-L 5` by ~2 ms, matching the 1 ms granted difference
+  within run-to-run spread.
+- **A starved-ring state, finally observed.** l4_1's early state of
+  45.4 ms sits *at or slightly below* the ring-empty floor implied by
+  the path constants (capacity 73.7 − granted 25.3 ≈ 48.4 ms): for
+  its first 10 s the ring ran effectively empty, with the decoder's
+  paced writes feeding the device just in time — yet the output
+  remained gapless and sample-exact for those 10 s. The usual t≈10 s
+  recovery event then inserted the usual ~28.35 ms quantum, pushing
+  the ring to capacity, where it stayed. Unlike the deeper buckets,
+  where the low state sat one quantum below capacity with margin to
+  spare, at `-L 4` the low state has *no* margin: any scheduling
+  hiccup during such a phase would have been an audible dropout.
+- **Sixth up-step, same quantum, same timing.** The +1361-frame step
+  matches l14_1's exactly and the ~1360-frame steps of the default
+  and `-L 20` runs, now observed across all four host-buffer sizes
+  (1024/2048/4096/8192 frames) — and again at t≈10 s.
+
+Practical reading: `-L 4` is the measured floor of this host's
+latency ladder at ~73.6 ms, but it operates with zero fill margin in
+its low state; `-L 5` costs ~2 ms more for a little extra headroom
+within the same bucket. Both sit on ~48-50 ms of path constants that
+no request value can remove.
+
+The complete measured ladder (sampled actual): default 267.4, `-L 20`
+161.2, `-L 15` 152.0, `-L 14` 108.8, `-L 10` 104.3, `-L 8` 99.3,
+`-L 5` 75.6, `-L 4` 73.6 ms.
