@@ -12,11 +12,12 @@ loopback into a Rubix24 ADC) and the effect of Rogue Amoeba
 SoundSource in the CoreAudio path. Test signal: FM stereo decode of a
 384 kHz IQ file (`test-files/piano_iqtest.wav`, 20 s, float32 IQ)
 through the real-time-paced FileSource. Sections §1-§7 are the
-original default-vs-`-L 5` experiment; §8-§15 are same-day addenda.
+original default-vs-`-L 5` experiment; §8-§16 are same-day addenda;
+§17 consolidates the SoundSource findings.
 
 ## Executive summary
 
-### SoundSource affected every absolute figure (§15)
+### SoundSource affected every absolute figure (§15, consolidated in §17)
 
 Every measurement in §1-§14 ran while Rogue Amoeba
 **SoundSource 6.0.6** was hooked into the CoreAudio HAL. Its ACE
@@ -42,23 +43,27 @@ on the FiiO K7.
 ### How `-L` affects the delivered latency
 
 Measured end-to-end output-stage latency (decoder block ready → audio
-sampled at the output device), virtual loopback device, three or more
-runs per point. The "clean path" column subtracts the −29.2 ms
-SoundSource constant measured in §15 (the `-L 5` row's 46.5 ms is the
-directly measured control run):
+sampled at the output device), virtual loopback device, three runs
+per point in both conditions. Both columns are **measured** (clean
+ladder: §16):
 
-| Option | Granted by CoreAudio | Sampled (SoundSource era) | Clean path (est.) |
+| Option | Granted by CoreAudio | Sampled, clean path | (SoundSource era) |
 |---|---|---|---|
-| default (40 ms floor) | 210.667 ms | 267.4 ms | ~238 ms |
-| `-L 30` | 200.667 ms | 262.7 ms | ~234 ms |
-| `-L 20` | 105.333 ms | 161.2 ms | ~132 ms |
-| `-L 15` | 100.333 ms | 152.0 ms | ~123 ms |
-| `-L 14` | 56.667 ms | 108.8 ms | ~80 ms |
-| `-L 10` | 52.667 ms | 104.3 ms | ~75 ms |
-| `-L 8` | 50.667 ms | 99.3 ms | ~70 ms |
-| `-L 7` | 28.333 ms | 76.7 ms | ~48 ms |
-| `-L 5` | 26.333 ms | 75.6 ms | **46.5 ms** (measured) |
-| `-L 4` | 25.333 ms | 73.6 ms | ~44 ms |
+| default (40 ms floor) | 210.667 ms | **236.7 ms** | 267.4 ms |
+| `-L 30` | 200.667 ms | **233.6 ms** | 262.7 ms |
+| `-L 20` | 105.333 ms | **132.9 ms** | 161.2 ms |
+| `-L 15` | 100.333 ms | **126.6 ms** | 152.0 ms |
+| `-L 14` | 56.667 ms | **82.4 ms** | 108.8 ms |
+| `-L 10` | 52.667 ms | **77.0 ms** | 104.3 ms |
+| `-L 8` | 50.667 ms | **70.7 ms** | 99.3 ms |
+| `-L 7` | 28.333 ms | **48.1 ms** | 76.7 ms |
+| `-L 5` | 26.333 ms | **47.1 ms** | 75.6 ms |
+| `-L 4` | 25.333 ms | **43.4 ms** | 73.6 ms |
+
+On the physical FiiO K7 the corresponding clean figures are lower
+still (default 232.2 ms, `-L 5` 31.4 ms — §15): the K7 output path
+carries ~15 ms less constant overhead than the virtual loopback
+capture path.
 
 Structure of this table (details in §9.2): the CoreAudio grant is
 **granted = B + R**, where R is the request in frames at 48 kHz and B
@@ -85,11 +90,14 @@ is the robust low-latency band on this host.
   requested or reported values as latency.
 - **Fill-level physics (§4.1, confirmed §8-§12):** with blocking
   writes, delivered latency is the ring-buffer *fill level*, set by
-  history: underrun recoveries insert a ~28.33 ms quantum (the same in
-  every bucket, hence not the host buffer — §10; every observed
-  up-step hit t≈10 s after stream start), and producer stalls drain
-  the fill by the stall length. Deep buffers (granted ≳ 100 ms) wander
-  between states silently; granted ≲ 50 ms pins at capacity.
+  history: producer stalls drain the fill by the stall length, and (in
+  the SoundSource era) recovery events inserted a ~28.33 ms quantum,
+  the same in every bucket and always at t≈10 s. §16 resolves the
+  quantum's origin: **zero** up-steps occurred in 30 clean runs (vs 7
+  in 35 SoundSource-era runs), and the SoundSource constant itself
+  measures ~28.3 ms on this path — the quantum and the t≈10 s trigger
+  were SoundSource ACE behavior, not CoreAudio's. Downward wander
+  (drains, sub-capacity starts) persists on the clean path.
 - **`-L 20` vs `-L 10` (§8):** 161.2 vs 104.3 ms; `-L 10` was fully
   deterministic, `-L 20` history-dependent (states 129.6-162.4 ms).
 - **`-L 15` (§9):** 152.0 ms — barely better than `-L 20`, because
@@ -840,10 +848,11 @@ Consequences for the earlier sections:
   DAC output path is genuinely *faster* than the Rogue Amoeba virtual
   device. The §14 equality of the two was an artifact of
   SoundSource-era constants lining up.
-- Open question, not re-tested: whether the t≈10 s recovery events
-  and the 28.33 ms quantum of §4/§8/§10 originate in SoundSource's
-  ACE or in the loopback driver. No state step appeared in these six
-  clean K7 runs, but six runs is too few to conclude anything.
+- Open question, not re-tested here: whether the t≈10 s recovery
+  events and the 28.33 ms quantum of §4/§8/§10 originate in
+  SoundSource's ACE or in the loopback driver. No state step appeared
+  in these six clean K7 runs, but six runs is too few to conclude
+  anything. **[Answered in §16: they were SoundSource's.]**
 
 Bottom line: with a clean CoreAudio path, `airspy-fmradion -L 5`
 delivers **~31 ms** actual output-stage latency on the FiiO K7
@@ -851,3 +860,166 @@ delivers **~31 ms** actual output-stage latency on the FiiO K7
 delivers ~232 ms. For low-latency listening, quit HAL-hooking audio
 utilities: SoundSource alone cost more latency (~44 ms) than the
 entire `-L 5` output path.
+
+## 16. Addendum (same day): the full loopback ladder without SoundSource
+
+The complete ten-point ladder of §8-§13 re-measured with SoundSource
+quit: three runs per configuration, cycled (one run of each config per
+round, three rounds) to decorrelate host drift. All 30 runs decoded
+and aligned sample-exact (correlation 1.000000, −82 dB residual).
+
+### 16.1 The clean ladder
+
+| Option | Granted | Sampled, clean | SoundSource era | Δ |
+|---|---|---|---|---|
+| default | 210.667 ms | **236.7 ms** | 267.4 ms | −30.7 |
+| `-L 30` | 200.667 ms | **233.6 ms** | 262.7 ms | −29.1 |
+| `-L 20` | 105.333 ms | **132.9 ms** | 161.2 ms | −28.3 |
+| `-L 15` | 100.333 ms | **126.6 ms** | 152.0 ms | −25.4 |
+| `-L 14` | 56.667 ms | **82.4 ms** | 108.8 ms | −26.4 |
+| `-L 10` | 52.667 ms | **77.0 ms** | 104.3 ms | −27.2 |
+| `-L 8` | 50.667 ms | **70.7 ms** | 99.3 ms | −28.5 |
+| `-L 7` | 28.333 ms | **48.1 ms** | 76.7 ms | −28.6 |
+| `-L 5` | 26.333 ms | **47.1 ms** | 75.6 ms | −28.5 |
+| `-L 4` | 25.333 ms | **43.4 ms** | 73.6 ms | −30.2 |
+
+The SoundSource-era offset is ~25-31 ms at every point (mean
+≈ 28.3 ms), confirming §15's constant-overhead model across the whole
+ladder. The clean sampled−granted excess is ~18-20 ms at the small
+buckets, growing to ~26-33 ms at the deep ones — the same
+occupancy-grows-with-depth pattern as before, minus the SoundSource
+constant. The `-L 5` figure (47.1 ms) agrees with the §15 control run
+(46.5 ms).
+
+### 16.2 The 28.33 ms quantum was SoundSource's
+
+The strongest structural result: **zero content steps occurred in
+these 30 runs.** In the SoundSource era, 7 of 35 loopback runs took a
++28.33 ms up-step, always at t≈10 s after stream start (§4, §8.2,
+§10, §12, §13.1); with SoundSource quit, none of 30 loopback runs nor
+any of the 7 clean K7/control runs stepped (if the per-run step
+probability were still 7/35, the chance of observing 0 in 37 clean
+runs is ≈ 0.03%). Combined with the numerical coincidence that the
+SoundSource path constant on this chain (~28.3 ms) equals the step
+quantum (1360-1361 frames = 28.33 ms), the conclusion is that the
+t≈10 s recovery events and their bucket-independent quantum were
+**SoundSource ACE behavior** — most plausibly ACE dropping in or out
+of its own ~28.33 ms processing buffer — and not a property of
+PortAudio, CoreAudio, or the loopback driver. This closes the §15
+open question and retires §4.1's "underrun-recovery" reading of the
+step mechanism (the fill-level physics of §4.1 itself — capacity
+bounds, drains, history dependence — is unaffected and was
+reconfirmed here).
+
+What remains on a clean path is purely *downward* wander: slow drains
+during producer-slow episodes (cdef_1, all three `-L 30` runs, c8_1,
+c5_2, c4_1 — mild, 2-9 ms over 20 s) and occasional sub-capacity
+starts (c7_1 ran the whole file at 43.2 ms vs its siblings'
+49.8/51.3 ms). Nothing ever moved *up* mid-run: without an external
+insert mechanism, the ring fill can only fall or hold, so a run's
+latency is bounded by its start state and can only improve. Run-to-run
+spread at the small buckets is correspondingly wider than the
+SoundSource era's capacity-pinned behavior (e.g. `-L 7`:
+43.2-51.3 ms), but every individual run was internally stable to
+≤0.8 ms std.
+
+### 16.3 Practical reading (clean path, this host)
+
+- The default delivers ~237 ms; `-L 10` ~77 ms; `-L 5` ~47 ms; the
+  floor (`-L 4`) ~43 ms. On the physical FiiO K7 the same
+  configurations measure lower still (§15: default 232.2 ms, `-L 5`
+  31.4 ms).
+- Bucket economics are unchanged: bottoms of buckets win, cliffs at
+  7→8, 14→15, 28→29 ms.
+- The 1024-frame bucket (`-L 4`-`-L 7`) still runs with ≤28 ms of
+  total fill and remains the dropout-risk zone under load (§13.1's
+  gaps were observed under SoundSource, but the margin argument is
+  intrinsic).
+- All figures remain loopback-path numbers with ~18-20 ms of
+  loopback+capture constant included; subtract toward the K7 figures
+  of §15 for a physical-output estimate.
+
+## 17. How SoundSource affects the latency
+
+This section consolidates everything this report established about
+Rogue Amoeba SoundSource 6.0.6's effect on delivered audio latency
+(measurements in §15 and §16; SoundSource-era data in §1-§14).
+
+### 17.1 Where it sits
+
+SoundSource performs its per-app and per-device volume/EQ processing
+through ACE (Audio Capture Engine), which installs into the CoreAudio
+HAL and intercepts device audio streams. It is therefore *below*
+PortAudio and below every API-visible buffer: an application using
+PortAudio (as airspy-fmradion does) has no way to see it. It
+processes every device it is active on, whether or not any
+SoundSource feature is actually in use for that stream.
+
+### 17.2 A constant, path-dependent added delay
+
+| Path | Added delay | Evidence |
+|---|---|---|
+| Virtual loopback chain (Loopback out + capture in) | ~25-31 ms (mean ≈ 28.3 ms) | ten-point ladder, §16.1 |
+| FiiO K7 chain (K7 out + Rubix24 in) | ~44 ms | §14 vs §15, both configs |
+
+Properties of this delay, as measured:
+
+- **Configuration-independent.** On the K7 the default lost 43.5 ms
+  and `-L 5` lost 44.2 ms when SoundSource was quit; across the ten
+  loopback points the offset is 25-31 ms with no trend vs buffer
+  size. It is a path constant, so it cancels in every config
+  *difference* — which is why all comparative findings of §1-§14
+  survive unchanged.
+- **Invisible to the API.** PortAudio's granted
+  `Pa_GetStreamInfo()->outputLatency` is bit-identical with and
+  without SoundSource (210.667 / 26.333 ms on both devices, §15.1).
+  No PortAudio application can detect or report this delay; only
+  sampling the actual output reveals it.
+- **Path-dependent magnitude.** The measurement chains cross ACE at
+  both their output and capture ends, and the two chains carry
+  different totals (~28 vs ~44 ms). The per-end contributions cannot
+  be decomposed from these measurements; for a listener the relevant
+  number is the output-side share, which is bounded above by the
+  chain totals (≤28-44 ms) and on the loopback chain is at least
+  ~28.3 ms minus the capture share.
+
+### 17.3 Dynamic behavior, not just a constant
+
+SoundSource also changed *how* latency behaved over time:
+
+- **The 28.33 ms step quantum was ACE's.** In the SoundSource era,
+  7 of 35 loopback runs took a mid-run **+1360-1361-frame (28.33 ms)**
+  content delay, always at t≈10 s after stream start, with the same
+  quantum in every host-buffer bucket (1024-8192 frames). With
+  SoundSource quit, zero steps occurred in 37 runs (§16.2). The
+  quantum numerically equals the loopback-chain constant (~28.3 ms),
+  pointing at ACE adding one instance of its own processing buffer —
+  behavior originally misread in §4.1 as a CoreAudio
+  "underrun-recovery" mechanism.
+- **It pinned the fill level at capacity.** SoundSource-era small
+  buckets showed remarkably tight run-to-run spread (`-L 5`:
+  75.6 ± 0.2 ms over three runs) because the insert events pushed the
+  ring to capacity and kept it there. On the clean path there is no
+  upward mechanism: fill can only hold or drain, so run-to-run spread
+  widens (`-L 5` 46.7-47.5 ms; `-L 7` 43.2-51.3 ms) while each run
+  stays internally stable. Ironically, the SoundSource era looked
+  *more* deterministic — at the price of ~28 ms.
+- **No effect on the grant law.** The bucket structure
+  (granted = B + R, §9.2) and its cliffs are pure
+  PortAudio/CoreAudio behavior, identical in both conditions.
+
+### 17.4 Practical guidance
+
+- For latency-sensitive listening with airspy-fmradion on macOS, quit
+  SoundSource (and audit for other HAL-hooking utilities — the same
+  invisibility applies to any ACE-based or similar tool). SoundSource
+  alone added more delay (~28-44 ms) than the entire clean `-L 5`
+  output path on the K7 (~31 ms total, §15).
+- Any absolute latency measurement on a Mac must record whether such
+  utilities are active; requested and granted values will not betray
+  their presence. This report's §1-§14 absolutes are SoundSource-era;
+  §15-§16 are clean-path.
+- If SoundSource's features are needed, its cost on this host is a
+  constant ~28-44 ms per path plus, historically, rare one-time
+  +28.33 ms mid-stream shifts; the `-L` option's relative benefits
+  are unaffected.
