@@ -1,76 +1,112 @@
-# Sampled PortAudio output latency: default vs `-L 5` (20260719)
+# Sampled PortAudio output latency vs the `-L` option (20260719)
 
 **Date:** 2026-07-19
 **Author:** Claude Code (claude-fable-5)
 **Binary:** 20260716-0 (`dbca134`), macOS (Darwin 25.5.0), Mac mini
 **Scope:** Direct measurement of the *actual* PortAudio output latency
-difference between the default output latency and `-L 5`, obtained by
-sampling the real PortAudio output stream (not by trusting requested or
-reported values). FM stereo decode of a 384 kHz IQ file
-(`test-files/piano_iqtest.wav`, 20 s, float32 IQ) through the real-time-paced
-FileSource.
+delivered by airspy-fmradion, obtained by sampling the real output
+stream (not by trusting requested or reported values). Ten `-L`
+operating points (default/40, 30, 20, 15, 14, 10, 8, 7, 5, 4 ms) on a
+virtual loopback device, plus the physical FiiO K7 DAC (via analog
+loopback into a Rubix24 ADC) and the effect of Rogue Amoeba
+SoundSource in the CoreAudio path. Test signal: FM stereo decode of a
+384 kHz IQ file (`test-files/piano_iqtest.wav`, 20 s, float32 IQ)
+through the real-time-paced FileSource. Sections §1-§7 are the
+original default-vs-`-L 5` experiment; §8-§15 are same-day addenda.
 
 ## Executive summary
 
+### SoundSource affected every absolute figure (§15)
+
+Every measurement in §1-§14 ran while Rogue Amoeba
+**SoundSource 6.0.6** was hooked into the CoreAudio HAL. Its ACE
+component silently added **~29 ms** to the virtual-loopback path and
+**~44 ms** to the FiiO K7 measurement chain (which crosses it twice:
+DAC output and ADC capture input) — completely invisible to the
+granted `outputLatency` values, which are bit-identical with and
+without it. Measured with SoundSource quit (§15):
+
+| Configuration | With SoundSource | Without SoundSource |
+|---|---|---|
+| default, FiiO K7 | 275.7 ms | **232.2 ms** |
+| `-L 5`, FiiO K7 | 75.6 ms | **31.4 ms** |
+| `-L 5`, loopback (control) | 75.6 ms | **46.5 ms** |
+
+Config *differences*, the grant law, the bucket structure, and all
+fill-level findings are unaffected — the SoundSource delay is a path
+constant that cancels in every comparison. Absolute figures in §1-§14
+are SoundSource-era numbers; on a clean CoreAudio path,
+`airspy-fmradion -L 5` delivers **~31 ms** actual output-stage latency
+on the FiiO K7.
+
+### How `-L` affects the delivered latency
+
 Measured end-to-end output-stage latency (decoder block ready → audio
-sampled at the output device), mean over three (default: four) runs each:
+sampled at the output device), virtual loopback device, three or more
+runs per point. The "clean path" column subtracts the −29.2 ms
+SoundSource constant measured in §15 (the `-L 5` row's 46.5 ms is the
+directly measured control run):
 
-| Configuration | Suggested | Granted by CoreAudio | Sampled actual latency |
+| Option | Granted by CoreAudio | Sampled (SoundSource era) | Clean path (est.) |
 |---|---|---|---|
-| default (no `-L`) | 40 ms (floor) | 210.667 ms | **267.4 ms** (settled) |
-| `-L 5` | 5 ms | 26.333 ms | **75.6 ms** |
+| default (40 ms floor) | 210.667 ms | 267.4 ms | ~238 ms |
+| `-L 30` | 200.667 ms | 262.7 ms | ~234 ms |
+| `-L 20` | 105.333 ms | 161.2 ms | ~132 ms |
+| `-L 15` | 100.333 ms | 152.0 ms | ~123 ms |
+| `-L 14` | 56.667 ms | 108.8 ms | ~80 ms |
+| `-L 10` | 52.667 ms | 104.3 ms | ~75 ms |
+| `-L 8` | 50.667 ms | 99.3 ms | ~70 ms |
+| `-L 7` | 28.333 ms | 76.7 ms | ~48 ms |
+| `-L 5` | 26.333 ms | 75.6 ms | **46.5 ms** (measured) |
+| `-L 4` | 25.333 ms | 73.6 ms | ~44 ms |
 
-- **Difference: 191.7 ms.** `-L 5` removes about 72% of the output-stage
-  latency relative to the default on this host.
-- Run-to-run repeatability is ±0.4 ms; within-run drift ≤ 0.3 ms.
-- Two of the four default runs spent their first ~10 s in a *lower* state
-  of 238.8 ms, then stepped up by exactly **+1360 output frames
-  (28.33 ms)** to the settled 267.4 ms state, where they stayed. No `-L 5`
-  run ever changed state. See §4.
-- The requested→granted inflation on this CoreAudio host is large and
-  matches the 2026-07-14 FiiO K7 measurement exactly (40 ms request →
-  210.667 ms granted on both devices): it is a property of PortAudio's
-  CoreAudio host implementation, not of the particular output device.
-  The sampled actual latency then sits another ~50-57 ms above the
-  granted figure (blocking-write ring buffer occupancy plus the
-  measurement loop path, §5).
-- **Addendum §8 (same day):** the same method applied to `-L 20` vs
-  `-L 10` gives 161.2 ms vs 104.3 ms sampled actual. `-L 10` was as
-  deterministic as `-L 5`; `-L 20` is already in the history-dependent
-  regime (observed states 129.6-162.4 ms).
-- **Addendum §9 (same day):** `-L 15` sampled 152.0 ms — almost as slow
-  as `-L 20`, because the CoreAudio grant is *not* linear: it is an
-  internal power-of-2 host buffer plus the request
-  (granted = 2^ceil(log2(3R)) + R frames), with a cliff right at
-  14→15 ms (granted 56.7 → 100.3 ms). The apparent ×5.2667 linearity
-  of §8.3 was a sampling artifact of probing only 5/10/20/40 ms.
-- **Addendum §10 (same day):** `-L 14` sampled 108.8 ms, confirming
-  §9.3's ≈108 ms prediction — one requested millisecond across the
-  14→15 cliff costs ~43 ms of delivered latency. The underrun-recovery
-  step quantum is ~28.33 ms in *every* bucket, so it is not the
-  power-of-2 host buffer (refines §4.1's wording).
-- **Addendum §11 (same day):** `-L 8` — the bottom of the 2048-frame
-  bucket — sampled 99.3 ms, the best sub-`-L 10` point of the 2048
-  bucket, again matching granted (50.667 ms) + ~50 ms.
-- **Addendum §12 (same day):** `-L 4` — the bottom of the 1024-frame
-  bucket — sampled 73.6 ms, the lowest of the ladder. One run spent
-  its first 10 s with an effectively *empty* ring (45.4 ms, at the
-  path-constant floor) before the usual t≈10 s recovery topped it up:
-  at this depth the buffer has no margin left below capacity.
-- **Addendum §13 (same day):** `-L 7` sampled 76.7 ms (capacity
-  state); under a period of elevated host load it produced repeated
-  audible-scale gaps — the first config where load crossed from
-  silent latency shifts into dropouts — and was clean again once the
-  load passed. `-L 30` sampled 262.7 ms; all four runs drained slowly
-  through the run, unlike the stable default in the same 8192-frame
-  bucket.
-- **Addendum §14 (same day):** the same measurement on the physical
-  FiiO K7 DAC (analog line out → Rubix24 ADC): default 275.7 ms
-  (capacity state), `-L 5` 75.6 ms — the `-L 5` figure is identical
-  to the loopback value, and the default is within ~8 ms, directly
-  verifying that the loopback results transfer to a physical DAC.
-  Method required native-rate capture and clock-ratio-corrected
-  alignment (Rubix clock −190 ppm; K7 clock only −10 ppm).
+Structure of this table (details in §9.2): the CoreAudio grant is
+**granted = B + R**, where R is the request in frames at 48 kHz and B
+is the smallest power of two ≥ 3R. Within a bucket the delivered
+latency moves ~1 ms per requested ms; across a bucket cliff one
+requested millisecond costs ~22-86 ms of granted buffer (cliffs at
+7→8, 14→15, and 28→29 ms). Efficient choices are the bucket bottoms;
+`-L 5`-`-L 7` (1024-frame bucket) run with near-zero fill margin and
+can produce audible dropouts under host load (§13.1), so `-L 8`-`-L 10`
+is the robust low-latency band on this host.
+
+### Other key findings
+
+- **Anchors and precision:** decoder timeline via `-T` PPS linear fit,
+  arrival via input-callback ADC-timestamp fit, content via FFT
+  cross-correlation against a `-W` reference decode — sample-exact for
+  digital loopback (correlation 1.000000, −82 dB residual),
+  0.999-coherent for the analog DAC path. Run-to-run repeatability
+  ±0.4 ms; all anchor uncertainties ≈ 1-2 ms (§2).
+- **Requested ≠ granted ≠ delivered:** the grant inflation (e.g.
+  40 ms → 210.667 ms) is generic to PortAudio's CoreAudio host across
+  devices (§5), and SoundSource's addition on top was invisible to
+  the granted value (§15) — two independent reasons never to quote
+  requested or reported values as latency.
+- **Fill-level physics (§4.1, confirmed §8-§12):** with blocking
+  writes, delivered latency is the ring-buffer *fill level*, set by
+  history: underrun recoveries insert a ~28.33 ms quantum (the same in
+  every bucket, hence not the host buffer — §10; every observed
+  up-step hit t≈10 s after stream start), and producer stalls drain
+  the fill by the stall length. Deep buffers (granted ≳ 100 ms) wander
+  between states silently; granted ≲ 50 ms pins at capacity.
+- **`-L 20` vs `-L 10` (§8):** 161.2 vs 104.3 ms; `-L 10` was fully
+  deterministic, `-L 20` history-dependent (states 129.6-162.4 ms).
+- **`-L 15` (§9):** 152.0 ms — barely better than `-L 20`, because
+  15 ms sits just past the 14→15 ms grant cliff (56.7 → 100.3 ms).
+  `-L 14` (§10) measured 108.8 ms, confirming the model's prediction.
+- **`-L 4` (§12):** 73.6 ms floor of the SoundSource-era ladder; one
+  run ran 10 s on an effectively empty ring — zero dropout margin.
+- **`-L 7` under load (§13.1):** repeated audible gaps during an
+  episode of elevated host load; clean afterwards. `-L 30` (§13.2)
+  drained slowly in every run and has no niche over the default.
+- **Physical FiiO K7 (§14, §15):** the loopback-measured config
+  differences transfer to the real DAC (default−`-L 5` = 200.8 ms
+  clean vs 191.7 ms loopback-era); with a clean path the K7's output
+  constant is only ~5 ms over granted — *faster* than the virtual
+  loopback device (~20 ms). Alignment across the DAC/ADC clock domains
+  used a matched-filter stretch-ratio search (Rubix −190 ppm, K7
+  −10 ppm).
 
 ## 1. What was measured
 
@@ -745,3 +781,73 @@ Bottom line: on the physical DAC, `airspy-fmradion -L 5` delivers
 ~76 ms actual output-stage latency vs ~276 ms for the default — the
 loopback-derived ladder of §13 can be read as real-device figures to
 within a few milliseconds.
+
+**[Superseded in part by §15:** these runs — like everything above —
+executed with SoundSource in the audio path; see §15 for the clean
+figures. The method and the config difference stand.**]**
+
+## 15. Addendum (same day): without SoundSource in the audio path
+
+All measurements above (§1-§14) ran while Rogue Amoeba
+**SoundSource 6.0.6** was active. Its ACE component hooks into the
+CoreAudio HAL on every device. After quitting SoundSource, the §14
+experiment was repeated unchanged (FiiO K7 → Rubix24, three runs per
+configuration, native-rate capture, ratio-corrected alignment), plus
+one loopback `-L 5` control run.
+
+### 15.1 Results without SoundSource
+
+| Configuration | Granted | Sampled (no SoundSource) | §14 (with SoundSource) |
+|---|---|---|---|
+| default (K7) | 210.667 ms | **232.2 ms** | 275.7 ms |
+| `-L 5` (K7) | 26.333 ms | **31.4 ms** | 75.6 ms |
+| `-L 5` (loopback control) | 26.333 ms | **46.5 ms** | 75.6 ms |
+
+Run detail: default 232.5 / 231.8 / 232.4 ms (mild ~3 ms within-run
+drift); `-L 5` 31.6 / 31.5 / 31.1 ms — within-run std 0.01-0.08 ms,
+the most stable runs of the entire day. Granted values, alignment
+quality (0.999 window correlation, ≤1 frame deviation), and the
+measured clock offsets (Rubix −190 ppm, K7 −15 ppm) are identical to
+§14.
+
+### 15.2 What SoundSource was adding
+
+- **~44 ms on the K7 measurement chain** (−43.5 ms on the default,
+  −44.2 ms on `-L 5` — config-independent, as a constant should be).
+  This chain crosses ACE twice: once on the K7 output and once on the
+  Rubix24 capture input.
+- **~29 ms on the loopback chain** (75.6 → 46.5 ms for `-L 5`).
+- **Nothing visible to PortAudio:** granted latencies are bit-identical
+  with and without SoundSource. ACE's delay is entirely outside what
+  `Pa_GetStreamInfo()` reports — a second, independent instance of the
+  report's core theme that requested/reported values do not describe
+  the delivered latency.
+
+Consequences for the earlier sections:
+
+- **All config differences stand.** The K7 default-vs-`-L 5`
+  difference is 200.8 ms without SoundSource vs 200.1 ms with it; the
+  grant law (§9.2), the bucket ladder ordering, and the fill-level
+  physics are all unaffected — constants cancel in every difference.
+- **All absolute figures in §1-§14 are SoundSource-era.** The §13
+  loopback ladder is shifted up by ~29 ms of SoundSource overhead;
+  subtracting it gives the estimated clean-loopback ladder, and the
+  physical-DAC figures of this section are the true delivered
+  numbers.
+- **The §14 loopback/K7 coincidence dissolves.** With SoundSource
+  quit, the K7 path constant is ~5 ms (31.4 − 26.3 granted) versus
+  ~20 ms for the virtual loopback path (46.5 − 26.3): the physical
+  DAC output path is genuinely *faster* than the Rogue Amoeba virtual
+  device. The §14 equality of the two was an artifact of
+  SoundSource-era constants lining up.
+- Open question, not re-tested: whether the t≈10 s recovery events
+  and the 28.33 ms quantum of §4/§8/§10 originate in SoundSource's
+  ACE or in the loopback driver. No state step appeared in these six
+  clean K7 runs, but six runs is too few to conclude anything.
+
+Bottom line: with a clean CoreAudio path, `airspy-fmradion -L 5`
+delivers **~31 ms** actual output-stage latency on the FiiO K7
+(granted 26.3 ms + ~5 ms of decode/DAC/ADC path), and the default
+delivers ~232 ms. For low-latency listening, quit HAL-hooking audio
+utilities: SoundSource alone cost more latency (~44 ms) than the
+entire `-L 5` output path.
