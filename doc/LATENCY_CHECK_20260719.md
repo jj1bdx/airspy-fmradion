@@ -37,8 +37,18 @@ sampled at the output device), mean over three (default: four) runs each:
 - **Addendum §8 (same day):** the same method applied to `-L 20` vs
   `-L 10` gives 161.2 ms vs 104.3 ms sampled actual. `-L 10` was as
   deterministic as `-L 5`; `-L 20` is already in the history-dependent
-  regime (observed states 129.6-162.4 ms). The CoreAudio grant is an
-  exactly linear ×5.2667 of the request over the whole 5-40 ms range.
+  regime (observed states 129.6-162.4 ms).
+- **Addendum §9 (same day):** `-L 15` sampled 152.0 ms — almost as slow
+  as `-L 20`, because the CoreAudio grant is *not* linear: it is an
+  internal power-of-2 host buffer plus the request
+  (granted = 2^ceil(log2(3R)) + R frames), with a cliff right at
+  14→15 ms (granted 56.7 → 100.3 ms). The apparent ×5.2667 linearity
+  of §8.3 was a sampling artifact of probing only 5/10/20/40 ms.
+- **Addendum §10 (same day):** `-L 14` sampled 108.8 ms, confirming
+  §9.3's ≈108 ms prediction — one requested millisecond across the
+  14→15 cliff costs ~43 ms of delivered latency. The underrun-recovery
+  step quantum is ~28.33 ms in *every* bucket, so it is not the
+  power-of-2 host buffer (refines §4.1's wording).
 
 ## 1. What was measured
 
@@ -307,6 +317,12 @@ is 133.2 ms, exactly one 28.33 ms quantum below it.
 
 ### 8.3 The grant is exactly linear on this host
 
+**[Superseded by §9.2 the same day.]** The linearity below is a
+sampling artifact: 5/10/20/40 ms all double together, landing at the
+same relative position in the host's power-of-2 buffer buckets. The
+true grant law is bucket + request and is strongly non-linear between
+buckets (e.g., 14 ms → 56.7 ms but 15 ms → 100.3 ms).
+
 Granted `outputLatency` for an independent output stream on the same
 device, measured in one session:
 
@@ -343,3 +359,136 @@ matters, choose `-L 10` or lower on this host. The validity notes of
 §6 apply unchanged (loopback-path absolutes; the difference transfers
 to physical devices). Reproduction: the §7 commands with `-L 20` /
 `-L 10` in place of the latency options shown there.
+
+## 9. Addendum (same day): `-L 15`, and the real CoreAudio grant law
+
+Same method as everything above; three `-L 15` runs. This experiment
+was expected to probe the wander boundary between granted 52.7 ms
+(`-L 10`, pinned) and 105.3 ms (`-L 20`, wanders) — the presumed-linear
+grant for 15 ms would be 79.0 ms. The granted value actually measured
+is **100.333 ms**, which falsified the linear model of §8.3 and led to
+the grant-law sweep in §9.2.
+
+### 9.1 `-L 15` results
+
+| Configuration | Suggested | Granted by CoreAudio | Sampled actual latency |
+|---|---|---|---|
+| `-L 15` | 15 ms | 100.333 ms | **152.0 ms** (mean of 3 runs) |
+
+| Run | Behavior |
+|---|---|
+| l15_1 | 148.9 ms mean; drifted 159 → 139 ms over the run |
+| l15_2 | 151.8 ms mean; mild drift 154 → 149 ms |
+| l15_3 | 155.4 ms; stable |
+
+Every run stayed at a single, sample-exact content lag (no
+playback-side underrun steps). The drift in l15_1/l15_2 is
+producer-side: their PPS anchors show the block-pull timeline running
+slightly slow (l15_1 slope 1.0013, i.e. ~0.13% under real time), so
+the ring gradually drained — ~20 ms over 15 s in l15_1 — without ever
+underrunning. This is the same fill-level physics as §8.2, in slow
+motion: a buffer this deep absorbs producer pacing wobble by silently
+trading fill level (= latency) instead of dropping out. The mean
+152.0 ms equals granted 100.3 ms + 51.7 ms, in line with the §8.4
+ladder.
+
+### 9.2 The real grant law: power-of-2 host buffer + request
+
+Sweeping the granted `outputLatency` over requests of 1-40 ms on the
+same device (one session, independent output stream):
+
+| Request | Granted | Granted (frames) | = host buffer + request |
+|---|---|---|---|
+| 1 ms | 6.333 ms | 304 | 256 + 48 |
+| 2 ms | 12.667 ms | 608 | 512 + 96 |
+| 3 ms | 13.667 ms | 656 | 512 + 144 |
+| 4 ms | 25.333 ms | 1216 | 1024 + 192 |
+| 5 ms | 26.333 ms | 1264 | 1024 + 240 |
+| 7 ms | 28.333 ms | 1360 | 1024 + 336 |
+| 8 ms | 50.667 ms | 2432 | 2048 + 384 |
+| 10 ms | 52.667 ms | 2528 | 2048 + 480 |
+| 14 ms | 56.667 ms | 2720 | 2048 + 672 |
+| **15 ms** | **100.333 ms** | 4816 | 4096 + 720 |
+| 20 ms | 105.333 ms | 5056 | 4096 + 960 |
+| 28 ms | 113.333 ms | 5440 | 4096 + 1344 |
+| **29 ms** | **199.667 ms** | 9584 | 8192 + 1392 |
+| 40 ms | 210.667 ms | 10112 | 8192 + 1920 |
+
+Every measured point fits one rule: with the request R in frames at
+48 kHz,
+
+> granted = B + R, where B is the smallest power of two ≥ 3·R.
+
+The host buffer B doubles at requests of ~2.67 · 2^n / 3 frames, i.e.
+the granted latency has *cliffs* between 14→15 ms and 28→29 ms (and
+7→8 ms, 3→4 ms, …). Within a bucket, granted grows only 1 ms per
+requested ms. The §8.3 "×5.2667 linear" observation is what this
+function looks like when sampled only at 5/10/20/40 ms: doubling the
+request doubles both terms, keeping the ratio (B+R)/R constant.
+
+### 9.3 Practical reading
+
+- `-L 15` is a poor operating point on this host: it requests 25% less
+  than `-L 20` but lands in the same 4096-frame bucket, delivering
+  152.0 vs 161.2 ms — only ~9 ms better — and its deep buffer again
+  shows history-dependent fill-level behavior (drift instead of
+  steps this time).
+- The efficient choices sit at the top of each bucket, just below the
+  cliffs: 14 ms (granted 56.7 ms, predicted ≈ 108 ms sampled — not
+  measured here), 7 ms (granted 28.3 ms), or the measured `-L 10` /
+  `-L 5` points. Between `-L 14` and `-L 15` one requested millisecond
+  costs 43.7 ms of granted latency.
+- The updated ladder (sampled actual, capacity state): default 267.4,
+  `-L 20` 161.2, `-L 15` 152.0, `-L 10` 104.3, `-L 5` 75.6 ms.
+
+## 10. Addendum (same day): `-L 14` — the §9.3 prediction tested
+
+Three `-L 14` runs, same method. §9.3 predicted ≈108 ms sampled from
+the grant law (granted 56.667 ms + the ~52 ms excess). Measured:
+
+| Configuration | Suggested | Granted by CoreAudio | Sampled actual latency |
+|---|---|---|---|
+| `-L 14` | 14 ms | 56.667 ms | **108.8 ms** (mean of 3 runs) |
+
+| Run | Behavior |
+|---|---|
+| l14_1 | 80.8 ms until t≈10 s, then +28.35 ms step → 109.1 ms |
+| l14_2 | 111.6 ms; stable throughout |
+| l14_3 | drifted 114.4 → 96.9 ms (slow-producer drain, as l15_1); mean 105.7 ms |
+
+All runs sample-exact at their stable lags. Findings:
+
+- **Prediction confirmed.** 108.8 ms measured vs ≈108 ms predicted.
+  The sampled ≈ granted + ~52 ms model of §8.4 now holds at six
+  operating points spanning granted 26.3-210.7 ms.
+- **The recovery quantum is not the host buffer.** l14_1's up-step is
+  +1361 output frames (28.35 ms) — the same ~28.33 ms quantum as the
+  default runs (§4) and the `-L 20` runs (§8.2), even though the three
+  configurations use host buffers of 8192, 4096, and 2048 frames
+  (170.7, 85.3, 42.7 ms). §4.1 called this insert "one host-buffer
+  quantum"; that attribution was wrong — the quantum is
+  bucket-independent, so it belongs to something further down the
+  chain (the loopback device driver's cycle, or a fixed
+  recovery-path insert), not to the PortAudio host buffer size.
+- **Fifth up-step, same timing.** Every underrun-recovery up-step
+  observed today (default ×2, `-L 20` ×2, `-L 14` ×1) occurred at
+  t≈10 s after stream start, strengthening the deterministic-trigger
+  reading of §8.2.
+- **`-L 14` also wanders.** With granted 56.7 ms, 2 of 3 runs moved
+  (one step up from a quantum-low start, one slow drain). `-L 10`
+  (granted 52.7 ms) never moved in 3 runs — but the two sit in the
+  same 2048-frame bucket only 4 ms apart, so this contrast is more
+  likely small-sample luck than a sharp boundary; treat "granted
+  ≲ 50 ms pins, ≳ 100 ms wanders" as the robust reading, with the
+  50-100 ms range only lightly probed.
+
+Practical reading: `-L 14` delivers ~109 ms vs `-L 10`'s ~104 ms,
+matching their 4 ms granted difference — within a bucket, delivered
+latency moves 1 ms per requested ms, so the lowest request in a bucket
+wins (e.g., 8 ms → granted 50.7 ms, the bottom of the 2048 bucket,
+slightly below `-L 10`). Requesting across a cliff is what matters:
+`-L 14` → 108.8 ms but `-L 15` → 152.0 ms.
+
+The full measured ladder (sampled actual, capacity state): default
+267.4, `-L 20` 161.2, `-L 15` 152.0, `-L 14` 108.8, `-L 10` 104.3,
+`-L 5` 75.6 ms.
