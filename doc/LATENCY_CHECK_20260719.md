@@ -49,6 +49,9 @@ sampled at the output device), mean over three (default: four) runs each:
   14→15 cliff costs ~43 ms of delivered latency. The underrun-recovery
   step quantum is ~28.33 ms in *every* bucket, so it is not the
   power-of-2 host buffer (refines §4.1's wording).
+- **Addendum §11 (same day):** `-L 8` — the bottom of the 2048-frame
+  bucket — sampled 99.3 ms, the best sub-`-L 10` point of the 2048
+  bucket, again matching granted (50.667 ms) + ~50 ms.
 
 ## 1. What was measured
 
@@ -492,3 +495,32 @@ slightly below `-L 10`). Requesting across a cliff is what matters:
 The full measured ladder (sampled actual, capacity state): default
 267.4, `-L 20` 161.2, `-L 15` 152.0, `-L 14` 108.8, `-L 10` 104.3,
 `-L 5` 75.6 ms.
+
+## 11. Addendum (same day): `-L 8` — bottom of the 2048-frame bucket
+
+Three `-L 8` runs, same method. Per §9.2, 8 ms is the smallest request
+in the 2048-frame bucket, granting 50.667 ms — slightly *below*
+`-L 10`'s 52.667 ms.
+
+| Configuration | Suggested | Granted by CoreAudio | Sampled actual latency |
+|---|---|---|---|
+| `-L 8` | 8 ms | 50.667 ms | **99.3 ms** (mean of 3 runs) |
+
+| Run | Behavior |
+|---|---|
+| l8_1 | drifted mildly 98.8 → 93.0 ms (slow-producer drain); mean 95.9 ms |
+| l8_2 | 101.6 ms; stable |
+| l8_3 | 100.3 ms; stable |
+
+All runs sample-exact at a single content lag; no underrun-recovery
+steps. The capacity state is ~100.3-101.6 ms, again granted + ~50 ms,
+and ~3 ms below `-L 10` — consistent with the 2 ms granted difference
+plus run-to-run spread. Within the 2048 bucket the request is nearly
+free: `-L 8`, `-L 10`, and `-L 14` deliver 99.3 / 104.3 / 108.8 ms for
+granted 50.7 / 52.7 / 56.7 ms.
+
+The full measured ladder (sampled actual): default 267.4, `-L 20`
+161.2, `-L 15` 152.0, `-L 14` 108.8, `-L 10` 104.3, `-L 8` 99.3,
+`-L 5` 75.6 ms. The next distinct step down from `-L 8` would be the
+1024-frame bucket (requests of 4-7 ms, granted 25.3-28.3 ms), whose
+measured representative is `-L 5` at 75.6 ms.
