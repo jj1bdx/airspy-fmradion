@@ -34,6 +34,11 @@ sampled at the output device), mean over three (default: four) runs each:
   The sampled actual latency then sits another ~50-57 ms above the
   granted figure (blocking-write ring buffer occupancy plus the
   measurement loop path, §5).
+- **Addendum §8 (same day):** the same method applied to `-L 20` vs
+  `-L 10` gives 161.2 ms vs 104.3 ms sampled actual. `-L 10` was as
+  deterministic as `-L 5`; `-L 20` is already in the history-dependent
+  regime (observed states 129.6-162.4 ms). The CoreAudio grant is an
+  exactly linear ×5.2667 of the request over the whole 5-40 ms range.
 
 ## 1. What was measured
 
@@ -232,3 +237,109 @@ Analysis: linear-fit the PPS file (emit clock), linear-fit the ADC
 timestamps (arrival clock), FFT-cross-correlate the recording against
 `reference.wav` (alignment, verified sample-exact), and average
 `arrival − emit` over t = 3-18 s.
+
+## 8. Addendum (same day): `-L 20` vs `-L 10`
+
+Same method, binary, IQ file, and loopback device as §1-§7, measured
+the same day. Four `-L 20` runs and three `-L 10` runs, alternated; a
+fourth `-L 20` run was added after two of the first three changed
+state mid-run. Every stable segment of every run aligned sample-exact
+against the reference decode (correlation 1.000000, residual −82 dB).
+
+### 8.1 Results
+
+| Configuration | Suggested | Granted by CoreAudio | Sampled actual latency |
+|---|---|---|---|
+| `-L 20` | 20 ms | 105.333 ms | **161.2 ms** (capacity state, §8.2) |
+| `-L 10` | 10 ms | 52.667 ms | **104.3 ms** (stable) |
+
+- **Difference of the capacity states: 56.9 ms** (granted difference:
+  52.7 ms).
+- `-L 10` behaved like `-L 5`: every run held a single state from the
+  first 0.5 s window to the end (103.4 / 104.5 / 104.9 ms; within-run
+  std ≤ 0.7 ms).
+- `-L 20` did **not** deliver a single latency: three of four runs
+  changed state mid-run, in *both* directions.
+
+Per-run states:
+
+| Run | State trajectory |
+|---|---|
+| l20_1 | 133.1 ms until t≈10 s, then +28.33 ms step → 160.0 ms |
+| l20_2 | 162.4 ms until t≈3 s, then −32.8 ms drop → 129.6 ms |
+| l20_3 | 161.3 ms throughout |
+| l20_4 | 133.3 ms until t≈10 s, then +28.33 ms step → 161.0 ms |
+| l10_1 | 103.4 ms throughout |
+| l10_2 | 104.5 ms throughout |
+| l10_3 | 104.9 ms throughout |
+
+The capacity state (buffer at full occupancy) is 161.2 ms
+(160.0-162.4 across the four `-L 20` runs); the one-quantum-low state
+is 133.2 ms, exactly one 28.33 ms quantum below it.
+
+### 8.2 Fill-level wander in both directions — §4.1 confirmed
+
+- **Up-steps:** `l20_1` and `l20_4` show the identical +1360-output-
+  frame (28.333 ms) underrun-recovery quantum as the default runs of
+  §4, and in the same 9.5-10.0 s window. Their early state sits
+  exactly one quantum below capacity.
+- **Down-step:** `l20_2`'s PPS anchor shows its first three markers on
+  a line 32.8 ms of emit-time *earlier* than the steady line of the
+  remaining sixteen (which fit with 0.4 ms residual, slope 0.999993):
+  the producer stalled once for ~33 ms at t≈3 s. The ring drained by
+  the stall duration and stayed there — latency dropped permanently
+  from 162.4 to 129.6 ms. The recording is gapless and sample-exact at
+  a single content lag throughout: the deep buffer absorbed the stall
+  without any audible dropout, at the price of a silently shifted
+  latency.
+- Together these are the mirror-image confirmation of §4.1's
+  mechanism: the fill level moves up by one host-buffer quantum on an
+  underrun recovery and down by the stall length on a producer stall;
+  capacity only bounds it. A granted buffer of 105.3 ms (`-L 20`) is
+  large enough to wander; 52.7 ms (`-L 10`) and 26.3 ms (`-L 5`)
+  filled to capacity immediately and never moved in any run. On this
+  host the boundary of the history-dependent regime therefore lies
+  between granted 52.7 ms and 105.3 ms.
+- All four observed up-steps across both experiments (default and
+  `-L 20`) occurred at t≈10 s after stream start, which suggests a
+  deterministic ~10 s trigger on this host (CoreAudio or the loopback
+  driver's housekeeping) rather than random scheduling noise.
+
+### 8.3 The grant is exactly linear on this host
+
+Granted `outputLatency` for an independent output stream on the same
+device, measured in one session:
+
+| Requested | Granted | Ratio |
+|---|---|---|
+| 40 ms | 210.667 ms | 5.267 |
+| 20 ms | 105.333 ms | 5.267 |
+| 10 ms | 52.667 ms | 5.267 |
+| 5 ms | 26.333 ms | 5.267 |
+
+The CoreAudio-host inflation is a constant ×5.2667 multiplier over the
+whole tested range, not a fixed offset or a floor.
+
+### 8.4 The full ladder
+
+| Configuration | Granted | Sampled (capacity state) | Sampled − granted |
+|---|---|---|---|
+| default (40 ms floor) | 210.667 ms | 267.4 ms | 56.7 ms |
+| `-L 20` | 105.333 ms | 161.2 ms | 55.9 ms |
+| `-L 10` | 52.667 ms | 104.3 ms | 51.6 ms |
+| `-L 5` | 26.333 ms | 75.6 ms | 49.3 ms |
+
+Sampled actual latency tracks the granted value plus the ~50-57 ms
+occupancy-and-measurement-path constant of §5, growing mildly with
+buffer size.
+
+### 8.5 Practical reading
+
+`-L 10` delivers ~104 ms actual output-stage latency on this host and
+was exactly as deterministic as `-L 5`. `-L 20` already sits in the
+history-dependent regime: its delivered latency was "somewhere between
+129.6 and 162.4 ms depending on run history". If predictable latency
+matters, choose `-L 10` or lower on this host. The validity notes of
+§6 apply unchanged (loopback-path absolutes; the difference transfers
+to physical devices). Reproduction: the §7 commands with `-L 20` /
+`-L 10` in place of the latency options shown there.
