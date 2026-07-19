@@ -64,6 +64,13 @@ sampled at the output device), mean over three (default: four) runs each:
   load passed. `-L 30` sampled 262.7 ms; all four runs drained slowly
   through the run, unlike the stable default in the same 8192-frame
   bucket.
+- **Addendum §14 (same day):** the same measurement on the physical
+  FiiO K7 DAC (analog line out → Rubix24 ADC): default 275.7 ms
+  (capacity state), `-L 5` 75.6 ms — the `-L 5` figure is identical
+  to the loopback value, and the default is within ~8 ms, directly
+  verifying that the loopback results transfer to a physical DAC.
+  Method required native-rate capture and clock-ratio-corrected
+  alignment (Rubix clock −190 ppm; K7 clock only −10 ppm).
 
 ## 1. What was measured
 
@@ -656,3 +663,85 @@ granting 10 ms less — there is no niche for it. The complete measured
 ladder (sampled actual, capacity state): default 267.4, `-L 30` 262.7,
 `-L 20` 161.2, `-L 15` 152.0, `-L 14` 108.8, `-L 10` 104.3, `-L 8`
 99.3, `-L 7` 76.7, `-L 5` 75.6, `-L 4` 73.6 ms.
+
+## 14. Addendum (same day): the physical FiiO K7 DAC
+
+All previous sections observed a virtual loopback device. This section
+repeats the §1-§7 experiment (default vs `-L 5`, three runs each,
+alternated) on the **FiiO K7 USB DAC**, with the K7's line output
+cabled into the Rubix24's analog input 1/2 and recorded from there.
+The decoded audio therefore passes through the real DAC, an analog
+cable, and a real ADC before being sampled.
+
+### 14.1 Method changes for an analog path
+
+Two things break the digital-loopback assumptions and had to be
+handled:
+
+- **Native-rate capture.** The Rubix24's hardware clock was set to
+  44.1 kHz; a first attempt capturing at 48 kHz silently inserted
+  CoreAudio's sample-rate converter, which polluted the input-callback
+  ADC timestamps (22 ms scatter vs the normal <0.01 ms) and made the
+  recordings unalignable. Capturing at the device-native 44 100 Hz
+  restored clean timestamps (0.008-0.011 ms fit residual). Lesson: for
+  timing work, always capture at the device's configured hardware
+  rate.
+- **Clock-ratio-corrected alignment.** The K7 DAC and the Rubix ADC
+  run on independent crystals, so the recording is time-stretched
+  relative to the reference decode. Alignment uses a matched-filter
+  search: the FFT cross-correlation peak is maximized over a ppm grid
+  of stretch ratios around the nominal 147/160. The peak is sharp
+  (240 vs a ~33 spurious floor), and at the best ratio every 0.5 s
+  window of every run aligns within ≤2 frames at correlation 0.999 —
+  coherent alignment over the full 20 s, so the analog path's
+  alignment is verified, just at analog precision instead of the
+  digital loopback's sample-exactness.
+
+The measured stretch decomposes into Rubix clock −190 ppm vs host and
+K7 clock only −10 to −15 ppm vs host: the K7's crystal is excellent,
+and its clock offset contributes <0.3 ms of latency drift over a 20 s
+run.
+
+### 14.2 Results
+
+Granted latencies on the K7 are bit-identical to the loopback's
+(210.667 ms for the default's 40 ms request, 26.333 ms for 5 ms),
+reconfirming §5's finding that the grant is host-generic.
+
+| Configuration | Granted | Sampled actual (K7) | Loopback (§2/§8) |
+|---|---|---|---|
+| default | 210.667 ms | **275.7 ms** (capacity state) | 267.4 ms |
+| `-L 5` | 26.333 ms | **75.6 ms** | 75.6 ms |
+
+| Run | Behavior |
+|---|---|
+| kd_1 | 276.0 ms, stable (mild −5 ms drift) |
+| kd_2 | drained 279.1 → 242.7 ms (slow-producer episode, slope 1.0024) |
+| kd_3 | 275.5 ms, stable |
+| kl_1 | 74.7 ms | 
+| kl_2 | 76.0 ms |
+| kl_3 | 76.2 ms |
+
+- **The loopback numbers transfer.** `-L 5` on the physical DAC is
+  75.6 ms — identical to the loopback measurement to within 0.1 ms.
+  The default's capacity state is 275.7 vs 267.4 ms (+8.3 ms). The
+  default-vs-`-L 5` difference on the K7 is 200.1 ms (capacity
+  states), vs 191.7 ms on the loopback. §6's claim that the loopback
+  difference transfers to physical devices is now directly verified,
+  and the physical output path adds at most a few ms over the virtual
+  one.
+- **The same fill-level physics.** kd_2 shows the familiar
+  slow-producer drain (~36 ms over the run, gapless, coherent
+  alignment throughout) — the deep-buffer behavior of §8.2/§9.1/§13.2
+  reproduced on real hardware.
+- One K7-specific observation: the default-config runs show ~9 ms of
+  block-pull timing jitter in the PPS anchor (vs ~1 ms for `-L 5`
+  runs, config-correlated, all three of each), suggesting coarser
+  write-blocking granularity on this device with the deep buffer. It
+  adds noise to individual PPS points but averages out in the
+  19-point fit.
+
+Bottom line: on the physical DAC, `airspy-fmradion -L 5` delivers
+~76 ms actual output-stage latency vs ~276 ms for the default — the
+loopback-derived ladder of §13 can be read as real-device figures to
+within a few milliseconds.
