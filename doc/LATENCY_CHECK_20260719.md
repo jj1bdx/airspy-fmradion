@@ -57,6 +57,13 @@ sampled at the output device), mean over three (default: four) runs each:
   its first 10 s with an effectively *empty* ring (45.4 ms, at the
   path-constant floor) before the usual t≈10 s recovery topped it up:
   at this depth the buffer has no margin left below capacity.
+- **Addendum §13 (same day):** `-L 7` sampled 76.7 ms (capacity
+  state); under a period of elevated host load it produced repeated
+  audible-scale gaps — the first config where load crossed from
+  silent latency shifts into dropouts — and was clean again once the
+  load passed. `-L 30` sampled 262.7 ms; all four runs drained slowly
+  through the run, unlike the stable default in the same 8192-frame
+  bucket.
 
 ## 1. What was measured
 
@@ -576,3 +583,76 @@ no request value can remove.
 The complete measured ladder (sampled actual): default 267.4, `-L 20`
 161.2, `-L 15` 152.0, `-L 14` 108.8, `-L 10` 104.3, `-L 8` 99.3,
 `-L 5` 75.6, `-L 4` 73.6 ms.
+
+## 13. Addendum (same day): `-L 7` and `-L 30` — the remaining bucket edges
+
+Five `-L 7` runs and four `-L 30` runs. 7 ms is the top of the
+1024-frame bucket (granted 28.333 ms); 30 ms is the bottom of the
+8192-frame bucket (granted 200.667 ms) — the same bucket as the
+default's 40 ms.
+
+| Configuration | Suggested | Granted by CoreAudio | Sampled actual latency |
+|---|---|---|---|
+| `-L 7` | 7 ms | 28.333 ms | **76.7 ms** (capacity state) |
+| `-L 30` | 30 ms | 200.667 ms | **262.7 ms** (mean of 4 runs) |
+
+### 13.1 `-L 7`: the first config where load produced dropouts
+
+The first three `-L 7` runs coincided with a period of elevated host
+load, visible config-independently in the PPS anchors of that batch
+(block-pull fit residuals 3-10 ms and slopes up to 1.0038, vs the
+usual ≤1.7 ms and ≈1.00000). Under that load:
+
+| Run | Behavior |
+|---|---|
+| l7_1 | four gaps (inserts of 5.8/1.7/21/28 ms at t≈7/9/14.5/16.5 s) |
+| l7_2 | three gaps (9.1/11/6.7 ms at t≈7/12.5/16 s) |
+| l7_3 | one gap (13.7 ms at t≈5 s), then stable at 76.2 ms |
+| l7_4 (calm) | starved start ~50 ms, usual +28.35 ms recovery at t≈10 s → 78.7 ms |
+| l7_5 (calm) | 76.8 ms with two tiny adjustments (1.8 ms, 0.3 ms) |
+
+Per-segment analysis of the glitchy runs (local PPS fits per stable
+segment) shows the *latency* stayed in a narrow 68-76 ms band
+throughout: each event was a whole-pipeline hiccup — a producer stall
+drained the shallow 28 ms ring past empty, the output gapped for the
+difference, and the fill returned to its usual level. Unlike every
+deeper configuration, where load and stalls were absorbed as silent
+latency shifts, at `-L 7`'s depth the same disturbances punched
+through as **audible content gaps** (up to four in 20 s). Two
+confirmation runs after the load subsided (l7_4/l7_5, PPS residuals
+back to 1.4-2.6 ms) reverted to the canonical clean behavior,
+including the t≈10 s recovery event — its seventh observation today,
+still with the ~28.35 ms quantum, still at t≈10 s.
+
+This is the concrete form of the §4.1 caveat: the capacity state
+76.7 ms is only ~1-3 ms above the 1024-bucket siblings `-L 5`
+(75.6 ms) and `-L 4` (73.6 ms), and all three share the same ~25-28 ms
+of total fill — meaning the whole 1024 bucket, not `-L 7`
+specifically, operates within one scheduling hiccup of a dropout.
+Which config glitches is decided by when the load arrives, not by the
+1-3 ms of extra fill.
+
+### 13.2 `-L 30`: slow drain in every run
+
+All four `-L 30` runs held a single sample-exact content lag (no
+steps, no gaps) but *drained slowly and monotonically* through the
+20 s window (e.g., l30_4: 268.5 → 254.9 ms), with producer-slope
+signatures of 1.0002-1.0009. Run means: 264.1 / 262.2 / 262.9 /
+261.7 ms; overall 262.7 ms.
+
+Two honest caveats. First, the sampled−granted excess here is 62.0 ms,
+several ms above the ~50-57 ms trend of the rest of the ladder; the
+start-of-run values (~265-268 ms) imply an initial fill slightly above
+the nominal granted capacity, which this experiment cannot decompose
+further. Second, the persistent slow drain distinguishes `-L 30` from
+the default (same 8192-frame bucket, stable at 267.4 ms in the
+morning's runs), and it persisted in the calm confirmation batch while
+an `-L 7` run alongside it was clean — so it is a reproducible
+characteristic of this operating point in these conditions, not batch
+load; the mechanism was not isolated.
+
+Practical reading: `-L 30` delivers within ~5 ms of the default while
+granting 10 ms less — there is no niche for it. The complete measured
+ladder (sampled actual, capacity state): default 267.4, `-L 30` 262.7,
+`-L 20` 161.2, `-L 15` 152.0, `-L 14` 108.8, `-L 10` 104.3, `-L 8`
+99.3, `-L 7` 76.7, `-L 5` 75.6, `-L 4` 73.6 ms.
