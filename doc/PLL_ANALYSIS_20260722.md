@@ -7,6 +7,62 @@ This is a read-only analysis; no source code was changed.
 
 ---
 
+## Executive summary
+
+`PilotPhaseLock` regenerates the phase-coherent 38 kHz stereo subcarrier by
+locking a numerically-controlled oscillator to the transmitted 19 kHz pilot.
+Structurally it is a **classic second-order, type-2 PLL with an active PI loop
+filter** — the digital twin of a charge-pump analog PLL:
+
+- **Phase detector** = quadrature product mixer → ~30 Hz biquad LPF → `atan2`.
+  The `atan2` makes the detector gain amplitude-independent (`Kd ≈ 1`).
+- **Loop filter** = a first-order FIR `F(z) = b0 + b1·z⁻¹` **plus** the `m_freq`
+  accumulator; together these form a discrete **PI controller** (the FIR is the
+  proportional term + stabilizing zero, the accumulator is the integrator).
+- **Oscillator** = the `m_phase` accumulator (NCO/VCO integrator). Two
+  integrators (poles at z = 1) ⇒ **type-2** ⇒ zero steady-state phase error
+  against a detuned pilot.
+
+**Key finding — the loop is mildly *under*-damped, not over-damped.** Taken in
+isolation the PI coefficients suggest an over-damped `ωn ≈ 8 Hz, ζ ≈ 1.16`
+loop. But the ~30 Hz phasor LPF sits *inside* the loop and dominates it: the
+exact 5th-order closed loop has a dominant pole pair at **≈22 Hz with ζ ≈ 0.57**,
+a **≈30 Hz** closed-loop bandwidth, +2.3 dB gain peaking, and **≈29 % phase-step
+overshoot**. It is nonetheless comfortably stable (max pole radius 0.99993),
+with a hard ±30 Hz frequency clamp bounding pull-in and a 0.5 s lock guard.
+
+**Verification.** Confirmed three ways on a real 20 s off-air recording
+(`test-files/piano_iqtest.wav`): the transfer-function analysis, a Python port
+of the exact difference equations, and the compiled binary built with
+`-DDEBUG_PLL_FILTER`. The loop locks in 0.5 s, tracks the pilot to
+**19000.01 Hz** (matching an independent spectral estimate to **0.1 mHz**),
+holds phase error **< 0.02 rad**, and shows the **≈30 % overshoot** of an
+under-damped loop. The port and the binary agree to ~0.0003 Hz.
+
+| Property                    | Value                                             |
+|-----------------------------|---------------------------------------------------|
+| Loop type                   | type-2 (two integrators, one stabilizing zero)    |
+| Phase-detector gain         | ≈ 1 rad/rad (`atan2`, amplitude-independent)      |
+| Dominant pole pair (exact)  | fn ≈ 22 Hz, **ζ ≈ 0.57 (mildly under-damped)**    |
+| Closed-loop −3 dB bandwidth | ≈ 30 Hz (set by the in-loop phasor LPF)           |
+| Phase-step overshoot        | ≈ 29 % (theory) / ≈ 35 % (measured on real loop)  |
+| Frequency (hold) range      | 19 kHz ± 30 Hz (hard clamp)                       |
+| Lock declaration            | 0.5 s of continuous pilot above `minsignal`       |
+| Steady-state tracking       | pilot → 19000.01 Hz, phase error < 0.02 rad       |
+
+## Contents
+
+1. [Purpose](#1-purpose)
+2. [Block diagram](#2-block-diagram)
+3. [Phase detector](#3-phase-detector)
+4. [Loop filter and oscillator — the transfer functions](#4-loop-filter-and-oscillator--the-transfer-functions)
+5. [Continuous-domain equivalent, natural frequency and damping](#5-continuous-domain-equivalent-natural-frequency-and-damping)
+6. [Analogy with an analog-circuit PLL](#6-analogy-with-an-analog-circuit-pll)
+7. [Empirical verification on a real-world IQ recording](#7-empirical-verification-on-a-real-world-iq-recording)
+8. [Numerical summary](#8-numerical-summary)
+
+---
+
 ## 1. Purpose
 
 FM broadcast stereo multiplexes a 19 kHz *pilot* tone into the baseband.
