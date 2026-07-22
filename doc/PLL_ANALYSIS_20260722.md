@@ -387,7 +387,109 @@ Two subtleties worth stating explicitly for the analogy:
 
 ---
 
-## 7. Numerical summary
+## 7. Empirical verification on a real-world IQ recording
+
+The analysis above was checked against a real off-air recording,
+`test-files/piano_iqtest.wav` — 20 s of stereo IEEE-float IQ at exactly
+384 kHz (I = left, Q = right). The verification faithfully reproduces the
+receiver's front end and the loop:
+
+1. **FM discriminator** — `bb[n] = angle(iq[n]·conj(iq[n−1])) / normfac`,
+   `normfac = 2π·75000/384000`, exactly matching `PhaseDiscriminator`
+   (±1.0 ≡ 75 kHz deviation; the IF-AGC is irrelevant because angle demod is
+   amplitude-independent).
+2. **PLL** — a line-for-line port of the `PilotPhaseLock::process` difference
+   equations (quadrature mixer, single biquad on I and Q, `atan2`, FIR loop
+   filter, frequency/phase accumulators, ±30 Hz clamp, lock logic).
+
+### 7.1 Lock, tracking, and steady-state error
+
+| Quantity                                | Predicted / claimed          | Measured on real IQ            |
+|-----------------------------------------|------------------------------|--------------------------------|
+| Lock declaration                        | 0.5 s continuous pilot       | **locked at t = 0.500 s**      |
+| Tracked pilot frequency (t > 1 s)       | → 19 kHz, zero SS error      | **19000.012 ± 0.044 Hz**       |
+| Independent pilot estimate¹             | —                            | 19000.011 Hz (**Δ = 0.0001 Hz**)|
+| Pilot level `2·|phasor|`                | ≫ minsignal (0.001)          | ≈ 0.104 (≈100× threshold)      |
+| Locked-state phase error                | ±0.02 rad (source comment)   | **std 0.0024, max 0.0157 rad** |
+
+¹ Independent of the PLL: the baseband is band-passed at 18.5–19.5 kHz and the
+pilot frequency read from the slope of the analytic-signal phase over 15 s.
+Its agreement with the NCO to **0.1 mHz** confirms both the port and the
+**type-2 zero-steady-state-frequency-error** property on live data. The
+measured locked phase error never exceeds the ±0.02 rad the source annotates.
+
+### 7.2 Transient response measured on the live loop
+
+To measure the closed-loop step response *on the running loop* (not just in
+the linear model), a controlled dual-run experiment was used: the same real
+baseband drives two identical loops, one of which has a +0.15 rad step added to
+its phase-detector output at time `n0` (equivalent to a reference phase step).
+The normalized difference `(θ_pert − θ_base)/Δ` is the closed-loop phase-step
+response, averaged over six injection instants (t = 4…14 s):
+
+| Metric              | Theory (linearized, §5.4) | Measured on real loop |
+|---------------------|---------------------------|-----------------------|
+| Overshoot           | ≈29 %                     | **≈35 %**             |
+| Peak time           | ≈27 ms                    | ≈20 ms                |
+| 2 % settling        | ≈100 ms                   | ≈95 ms                |
+| Final value         | 1.0                       | 1.000                 |
+
+The measured response **overshoots and rings**, confirming the corrected
+conclusion of §5.1 — the real loop is **mildly under-damped, not
+over-damped**. The measured overshoot is slightly larger and faster than the
+noise-free linear prediction, as expected: the injected step rides on top of
+the program modulation continuously exciting the loop, and the loop's mild
+nonlinearity (the `atan2` detector and the ±30 Hz clamp) is active on live
+signal. The agreement is otherwise close.
+
+![Verification of PilotPhaseLock on real IQ](PLL_ANALYSIS_20260722_verify.png)
+
+Panels: (a) NCO frequency snapping to 19 kHz and holding inside the ±30 Hz
+clamp; (b) pilot level far above `minsignal`; (c) locked-state phase-error
+distribution inside ±0.02 rad; (d) measured vs predicted phase-step response.
+
+### 7.3 Cross-check against the compiled binary (`-DDEBUG_PLL_FILTER`)
+
+The Python port above was itself validated against the **real compiled
+program**. `PilotPhaseLock.cpp` carries a `DEBUG_PLL_FILTER` guard that prints
+`m_freq`, `m_freq_err`, and `m_pilot_level` (in Hz) once per block. The binary
+was built with that macro enabled — without editing any source — via
+
+```
+cmake -S . -B build-dbg -DEXTRA_FLAGS="-DDEBUG_PLL_FILTER"   # CMakeLists appends ${EXTRA_FLAGS}
+cmake --build build-dbg --target airspy-fmradion
+./build-dbg/airspy-fmradion -m fm -t filesource \
+    -c freq=0,srate=384000,filename=test-files/piano_iqtest.wav -F /dev/null 2> pll_debug.txt
+```
+
+and run on the same recording (3750 blocks of 2048 samples = 20 s). Steady-state
+(t > 1 s) comparison of the C++ binary against the Python port:
+
+| Quantity                    | Python port      | **C++ binary (`-DDEBUG_PLL_FILTER`)** |
+|-----------------------------|------------------|---------------------------------------|
+| tracked `m_freq` mean       | 19000.0117 Hz    | **19000.0120 Hz**                     |
+| tracked `m_freq` std        | 0.0444 Hz        | **0.0441 Hz**                         |
+| `m_freq_err` (mean / max)   | —                | **−3e-7 Hz / 0.0015 Hz**              |
+| pilot level `2·m_pilot_level` mean | 0.1036    | **0.1036**                            |
+| pilot level min             | 0.1007           | **0.1008**                            |
+
+The two agree to **~0.0003 Hz in frequency and four digits in pilot level** —
+i.e. within run-to-run numerical noise. The binary confirms the port is a
+faithful model, so the transfer-function results in §5 apply to the shipping
+code. (The binary's first block starts at 19029 Hz — pinned against the
++30 Hz clamp by the pre-lock phase detector — then converges to within 0.1 Hz
+of 19 kHz in ~11 blocks, ≈60 ms, a direct sighting of the clamp doing its job.)
+
+**Conclusion.** On a real 20 s off-air recording the loop locks in 0.5 s,
+tracks the pilot to within 0.05 Hz of 19 kHz (matching an independent estimate
+to 0.1 mHz), holds phase error under 0.02 rad, and exhibits the ≈30 % overshoot
+of a mildly under-damped type-2 loop. All three views — the transfer-function
+analysis (including its corrected damping figure), the Python port, and the
+compiled binary with `-DDEBUG_PLL_FILTER` — agree.
+
+---
+
+## 8. Numerical summary
 
 | Parameter                        | Symbol / expression        | Value                    |
 |----------------------------------|----------------------------|--------------------------|
