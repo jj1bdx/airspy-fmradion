@@ -32,30 +32,33 @@ noisy, multipath-corrupted baseband stream it:
 ## 2. Block diagram
 
 ```
-             +-----------------------------------------------+
-             |                 PilotPhaseLock                |
-             |                                               |
-  x[n] ------+----> (×) sin(phase) -> BiquadLPF -> I --+     |
- baseband    |       phase detector (product)          |     |
-             |                                          v     |
-             |                                    fast_atan2  |  phase
-             |                                          |     |  error
-             |    +----> (×) cos(phase) -> BiquadLPF -> Q     |  e[n]
-             |    |                                     |     |
-             |    |                                     v     |
-             |    |                          +--------------------+
-             |    |                          | loop filter F(z)   |  PI
-             |    |                          | (FIR) + freq accum |  controller
-             |    |                          +--------------------+
-             |    |                                     |
-             |    |                                 m_freq (ω[n])
-             |    |                                     v
-             |    |                          m_phase += m_freq   <-- NCO / VCO
-             |    |                                     |
-             |    +-------------------------------------+  feedback
-             |                                          |
-             |                       sin(2·phase)/cos(2·phase) -> samples_out (38 kHz)
-             +-----------------------------------------------+
+             +---------------------------------------------------------------+
+             |                        PilotPhaseLock                         |
+             |                                                               |
+  x[n] ------+--+--> (×) sin(phase) --> BiquadLPF --> I --+                  |
+ baseband    |  |        (product / mixer)                |                  |
+             |  |                                          v                  |
+             |  |                                    +------------+           |
+             |  |                                    | fast_atan2 |-> e[n]    |
+             |  |                                    |  (Q, I)    | phase err  |
+             |  |                                    +------------+     |      |
+             |  |                                          ^            |      |
+             |  +--> (×) cos(phase) --> BiquadLPF --> Q ---+            |      |
+             |           (product / mixer)                              v      |
+             |                                             +---------------------+
+             |                                             | loop filter F(z)    | PI
+             |                                             | (FIR) + freq accum  | ctrl
+             |                                             +---------------------+
+             |                                                       |           |
+             |                                                 m_freq (ω[n])      |
+             |                                                       v           |
+             |                                         m_phase += m_freq  <- NCO/VCO
+             |                                                       |           |
+             |   +---------------------------------------------------+ feedback  |
+             |   |  (m_phase drives the sin/cos generators above)                |
+             |   v                                                               |
+             | sin(phase),cos(phase)      sin(2·phase)/cos(2·phase) -> samples_out (38 kHz)
+             +---------------------------------------------------------------+
 ```
 
 Three functional blocks, exactly as in a textbook PLL: **phase detector**,
