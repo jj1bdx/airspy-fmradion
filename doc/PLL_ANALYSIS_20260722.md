@@ -62,6 +62,7 @@ under-damped loop. The port and the binary agree to ~0.0003 Hz.
 7. [Empirical verification on a real-world IQ recording](#7-empirical-verification-on-a-real-world-iq-recording)
 8. [Stereo separation limited by the PLL](#8-stereo-separation-limited-by-the-pll)
 9. [Numerical summary](#9-numerical-summary)
+10. [Conclusion](#10-conclusion)
 
 ---
 
@@ -647,18 +648,59 @@ for multipath monitoring rather than audio.)
 | Subcarrier phase error           | φ = 2·(pilot phase error)  | rms 0.0047, worst 0.031 rad |
 | PLL-limited stereo separation    | 20·log₁₀((1+cosφ)/(1−cosφ))| ≈ 105 dB rms / ≈ 72 dB worst |
 
-**Bottom line.** `PilotPhaseLock` is a digital realization of a classic
-second-order, type-2 PLL with an active PI loop filter. The `atan2` phase
-detector gives amplitude-independent unity gain; the FIR `F(z)` provides the
-proportional term and the stabilizing zero; the `m_freq` and `m_phase`
-accumulators are the loop-filter and VCO integrators that make it type-2 (zero
-steady-state phase error against a detuned pilot). The PI filter alone would
-suggest an over-damped ωn ≈ 8 Hz, ζ ≈ 1.16 loop — but the ≈30 Hz phasor LPF is
-*inside* the loop and dominates it: the true response has a dominant pole pair
-at ≈22 Hz with **ζ ≈ 0.57 (mildly under-damped)**, a ≈30 Hz closed-loop
-bandwidth, +2.3 dB gain peaking, and ≈29 % phase-step overshoot. The loop is
-nonetheless comfortably **stable** (max pole radius 0.99993), and with the
-±30 Hz pull-in clamp and 0.5 s lock guard it is robust against noisy, fading
-pilots. This is a conventional ζ ≈ 0.5–0.7 PLL operating point — a good
-speed/damping compromise — not the over-damped regime the loop-filter
-coefficients suggest in isolation.
+---
+
+## 10. Conclusion
+
+`PilotPhaseLock` is a digital realization of a **classic second-order, type-2
+PLL with an active PI loop filter** — the direct discrete counterpart of a
+charge-pump analog PLL. Gathering the findings of the whole analysis:
+
+1. **Architecture (§2–§4).** A quadrature product detector + ~30 Hz phasor
+   low-pass + `atan2` forms an amplitude-independent phase detector (Kd ≈ 1).
+   The first-order FIR `F(z) = b0 + b1·z⁻¹` supplies the proportional term and
+   the stabilizing zero; cascaded with the `m_freq` accumulator it *is* a
+   discrete PI controller. The `m_phase` accumulator is the NCO/VCO integrator.
+   Two integrators (poles at z = 1) make the loop **type-2**.
+
+2. **The central correction (§5).** The loop-filter coefficients alone imply an
+   over-damped `ωn ≈ 8 Hz, ζ ≈ 1.16` loop. That is misleading: the ~30 Hz
+   phasor LPF sits *inside* the loop and dominates it. The exact 5th-order
+   closed loop has a dominant pole pair at **≈22 Hz with ζ ≈ 0.57 — mildly
+   under-damped** — a ≈30 Hz closed-loop bandwidth, +2.3 dB gain peaking, and
+   ≈29 % phase-step overshoot. It remains comfortably **stable** (max pole
+   radius 0.99993). This is a conventional ζ ≈ 0.5–0.7 operating point, not the
+   over-damped regime the numbers suggest in isolation.
+
+3. **Steady-state behavior (§5.2).** Being type-2, the loop tracks a detuned
+   pilot with **zero steady-state phase error**; the hard ±30 Hz frequency
+   clamp bounds pull-in and blocks false lock, and a 0.5 s lock guard rejects
+   transient noise.
+
+4. **Analog analogy (§6).** Every block maps one-to-one onto the textbook
+   active-PI analog PLL: mixer PD, RC image filter, op-amp PI integrator with
+   its series-R zero, VCO integrator, ×2 output doubler, varactor-range clamp.
+
+5. **Verified three ways (§7).** On a real 20 s off-air recording
+   (`piano_iqtest.wav`), the transfer-function analysis, a Python port of the
+   exact difference equations, and the **compiled binary built with
+   `-DDEBUG_PLL_FILTER`** all agree: lock at 0.5 s; pilot tracked to
+   **19000.01 Hz**, matching an independent spectral estimate to **0.1 mHz**;
+   phase error **< 0.02 rad**; and a **≈35 % measured phase-step overshoot**
+   confirming the under-damped result. Port vs binary agree to ~0.0003 Hz.
+
+6. **Stereo separation (§8).** Subcarrier phase error φ = 2·(pilot phase error)
+   scales (L−R) by cos φ, so `separation = 20·log₁₀((1+cos φ)/(1−cos φ))`
+   (validated end-to-end to < 0.001 dB). At the measured jitter this is
+   **≈105 dB rms** (worst instant ≈72 dB) — far above the 30–50 dB real
+   receivers reach. **The PLL is not the stereo-separation bottleneck.**
+
+**Overall assessment.** The design is sound and well-matched to its job. Its
+one non-obvious property is that the in-loop phasor filter, not the PI
+coefficients, sets the true bandwidth and damping — so the loop is mildly
+under-damped with modest overshoot rather than over-damped. That has no
+practical downside here: acquisition is fast and robust, steady-state tracking
+is essentially exact, and the resulting phase jitter is ~100 dB below the
+stereo-separation floor. The single-stage phasor biquad and the ±30 Hz clamp
+are the two choices most responsible for the loop's stability and robustness,
+and both are borne out by the real-signal measurements.
