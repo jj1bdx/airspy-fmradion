@@ -18,8 +18,9 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "PilotPhaseLock.h"
-#include "Utility.h"
 
+#include <algorithm>
+#include <cmath>
 #include <fmt/format.h>
 
 // Define this to print PLL filter messages
@@ -100,9 +101,11 @@ void PilotPhaseLock::process(const SampleVector &samples_in,
 
     // Convert I/Q ratio to estimate of phase error.
     // Note: maximum phase error during the locked state is +- 0.02 radian.
-    // double phase_err = std::atan2(new_phasor_q, new_phasor_i);
-    // Use float atan2 for fast and light-weight phase detection.
-    double phase_err = Utility::fast_atan2f(new_phasor_q, new_phasor_i);
+    // Use double std::atan2 for the phase detector: both phasor inputs are
+    // already double, and on modern FPUs std::atan2 is faster than the
+    // fast_atan2f() float table lookup while being correctly rounded.
+    // See doc/CORE_MATH_ATAN2F_20260722.md for measurements.
+    double phase_err = std::atan2(new_phasor_q, new_phasor_i);
 
     // Calculate pilot level (accurate).
     m_pilot_level = std::sqrt((new_phasor_i * new_phasor_i) +
