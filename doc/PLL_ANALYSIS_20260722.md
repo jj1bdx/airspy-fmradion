@@ -49,6 +49,7 @@ under-damped loop. The port and the binary agree to ~0.0003 Hz.
 | Frequency (hold) range      | 19 kHz ± 30 Hz (hard clamp)                       |
 | Lock declaration            | 0.5 s of continuous pilot above `minsignal`       |
 | Steady-state tracking       | pilot → 19000.01 Hz, phase error < 0.02 rad       |
+| PLL-limited stereo separation | ≈ 105 dB rms (≫ real-world 30–50 dB) — not the bottleneck |
 
 ## Contents
 
@@ -59,7 +60,8 @@ under-damped loop. The port and the binary agree to ~0.0003 Hz.
 5. [Continuous-domain equivalent, natural frequency and damping](#5-continuous-domain-equivalent-natural-frequency-and-damping)
 6. [Analogy with an analog-circuit PLL](#6-analogy-with-an-analog-circuit-pll)
 7. [Empirical verification on a real-world IQ recording](#7-empirical-verification-on-a-real-world-iq-recording)
-8. [Numerical summary](#8-numerical-summary)
+8. [Stereo separation limited by the PLL](#8-stereo-separation-limited-by-the-pll)
+9. [Numerical summary](#9-numerical-summary)
 
 ---
 
@@ -545,7 +547,80 @@ compiled binary with `-DDEBUG_PLL_FILTER` — agree.
 
 ---
 
-## 8. Numerical summary
+## 8. Stereo separation limited by the PLL
+
+The PLL's job is to hand `demod_stereo` a 38 kHz subcarrier that is *phase
+coherent* with the transmitted one. Any residual phase error therefore feeds
+straight into **stereo separation** — the isolation between the recovered L and
+R channels.
+
+### 8.1 How subcarrier phase error becomes crosstalk
+
+The (L−R) signal rides on a **double-sideband suppressed-carrier** 38 kHz
+subcarrier. `demod_stereo` multiplies the composite by the regenerated
+`2·sin(2·phase)` and low-passes it. If the regenerated subcarrier leads the
+true one by φ, the product-to-baseband term is
+
+```
+2·sin(2ω_p t + φ)·(L−R)·sin(2ω_p t)  --LPF-->  (L−R)·cos φ
+```
+
+so the recovered difference signal is scaled by **cos φ** while the mono (L+R)
+path is untouched. Reconstructing `L = M + S`, `R = M − S` with an L-only input
+(so `M = S = L`) gives `L_out = L(1+cos φ)`, `R_out = L(1−cos φ)`, i.e.
+
+```
+separation(φ) = 20·log₁₀( (1 + cos φ) / (1 − cos φ) )   ≈  20·log₁₀(4/φ²)  (small φ)
+```
+
+Two points specific to this loop:
+
+- **φ = 2·(pilot phase error).** The subcarrier is generated as `sin(2·phase)`,
+  so the 19 kHz pilot phase error θ **doubles** to a 38 kHz error φ = 2θ.
+- **No static penalty.** Because the loop is **type-2** (§5.2) its mean phase
+  error is ~0, so there is no fixed separation floor from a standing phase
+  offset — only the small dynamic jitter matters. A type-1 loop would sit at a
+  frequency-dependent standing offset and cap separation accordingly.
+
+Note this is *pure* DSB scaling: there is no independent quadrature signal at
+38 kHz, so phase error only attenuates (L−R) — it does not inject a first-order
+wrong-channel copy. That is why the penalty is second order in φ.
+
+### 8.2 Measurement
+
+**Formula validated end-to-end.** A synthetic L-only tone was passed through an
+exact replica of `demod_stereo` (multiply by `2·sin(2·phase+φ)`, 15 kHz audio
+LPF, `L=M+S / R=M−S`) with a *known* subcarrier phase error φ, and separation
+was read out by lock-in at the tone. It matches the formula to < 0.001 dB over
+φ = 0.001…0.2 rad (red points in the figure).
+
+**PLL-limited separation from the real recording.** Using the measured pilot
+phase error on `piano_iqtest.wav` (§7.1: rms 0.0024 rad, max 0.0157 rad), the
+38 kHz error is φ = 2θ (rms 0.0047 rad, worst 0.031 rad):
+
+| Operating point                | Subcarrier error φ | Separation |
+|--------------------------------|--------------------|------------|
+| PLL rms (typical)              | 0.0047 rad         | **≈ 105 dB** |
+| PLL worst instantaneous        | 0.031 rad          | **≈ 72 dB**  |
+| Typical real-world FM receiver | —                  | 30–50 dB (other causes) |
+
+![Stereo separation vs PLL subcarrier phase error](PLL_ANALYSIS_20260722_separation.png)
+
+**Conclusion.** The PLL's phase jitter limits separation to roughly **105 dB
+(rms)** — and even the worst instantaneous excursion only reaches ~72 dB, far
+above the 30–50 dB that real receivers achieve. **The pilot PLL is *not* the
+stereo-separation bottleneck**; practical separation is set by other error
+sources (channel-path amplitude/phase matching, de-emphasis tracking between
+the mono and stereo paths, IF/multipath distortion). The under-damped loop of
+§5 is thus perfectly adequate for separation — its ~30 % phase-step overshoot
+is a transient that settles long before it could matter, and its steady-state
+jitter is ~100 dB down. (The deliberate `pilot_shift` / QMM mode uses
+`cos(2·phase)`, a 90° subcarrier shift → cos φ = 0 → zero separation by design,
+for multipath monitoring rather than audio.)
+
+---
+
+## 9. Numerical summary
 
 | Parameter                        | Symbol / expression        | Value                    |
 |----------------------------------|----------------------------|--------------------------|
@@ -569,6 +644,8 @@ compiled binary with `-DDEBUG_PLL_FILTER` — agree.
 | Frequency (hold) range           | 19 kHz ± 30·(fs)/fs        | ± 30 Hz                  |
 | Lock-declaration delay           | int(15/bandwidth)          | 192000 samples = 0.5 s   |
 | Lock amplitude threshold         | minsignal                  | 0.001                    |
+| Subcarrier phase error           | φ = 2·(pilot phase error)  | rms 0.0047, worst 0.031 rad |
+| PLL-limited stereo separation    | 20·log₁₀((1+cosφ)/(1−cosφ))| ≈ 105 dB rms / ≈ 72 dB worst |
 
 **Bottom line.** `PilotPhaseLock` is a digital realization of a classic
 second-order, type-2 PLL with an active PI loop filter. The `atan2` phase
