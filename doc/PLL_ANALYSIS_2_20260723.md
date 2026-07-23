@@ -185,6 +185,50 @@ signature, unchanged by the retune.
 - **(d) Frequency-step (20 Hz) phase error** — transient excursion, then decay
   to zero steady-state error.
 
+### 3.4 Open-loop response, phase margin, and gain margin
+
+The closed-loop Bode above answers "how does the loop follow its reference"; the
+**open-loop** response answers "how much stability margin does it have". The loop
+is broken at the phase detector — the error `e = θ_in − θ` is injected as an
+independent input and the fed-back NCO phase `θ` is taken as the output, so
+
+```
+L(z) = θ(z) / e(z)  =  [phasor biquad] · Kd · [FIR PI] · [m_freq integ.] · [m_phase integ.]
+```
+
+with the linearized detector gain Kd ≈ 1 rad/rad (`std::atan2`, amplitude-
+normalized). `L(z)` is evaluated on the same exact 5-state model with the `θ`
+feedback path removed.
+
+| Open-loop quantity                    | Value                    |
+|---------------------------------------|--------------------------|
+| Low-frequency slope                   | −40 dB/decade (two integrators, type-2) |
+| DC phase                              | −180° (two poles at z = 1) |
+| **Gain crossover** (\|L\| = 0 dB)     | **f_gc = 15.7 Hz**       |
+| ∠L at gain crossover                  | −128.4°                  |
+| **Phase margin**                      | **PM = 51.6°**           |
+| **Phase crossover** (∠L = −180°)      | **f_pc = 82.7 Hz**       |
+| \|L\| at phase crossover              | −21.9 dB                 |
+| **Gain margin**                       | **GM = 21.9 dB**         |
+
+Both margins are comfortable: **PM ≈ 52°** and **GM ≈ 22 dB**. The phase does
+*not* fall monotonically toward −180° after DC — the FIR stabilizing zero
+(PI zero at 3.46 Hz) injects a phase **lead** that lifts ∠L to a −125° maximum
+right around the 16 Hz crossover, which is exactly what buys the phase margin
+(and hence the ζ = 0.710 damping) before the in-loop phasor poles and the NCO
+delay drag the phase back down through −180° at 83 Hz. The 52° phase margin is
+the open-loop counterpart of the +1.84 dB closed-loop peaking and the ≈ 24 %
+step overshoot of §3.2–§3.3 — three views of the same well-damped operating
+point.
+
+![PilotPhaseLock open-loop Bode plot with stability margins (current dev)](PLL_ANALYSIS_2_20260723_openloop.png)
+
+- **(a) Open-loop magnitude** — −40 dB/decade at low frequency (type-2), crossing
+  0 dB at 15.7 Hz; the phase-crossover point sits 21.9 dB below 0 dB.
+- **(b) Open-loop phase** — starts at −180°, the FIR zero lifts it to a −125°
+  hump around crossover (the phase-margin reserve), then the phasor poles and
+  NCO delay carry it through −180° at 82.7 Hz.
+
 ---
 
 ## 4. Empirical verification on a real-world IQ recording
@@ -332,6 +376,9 @@ the current design.
 | **Exact dominant pole pair**     | full 5th-order loop        | **fn = 22.3 Hz, ζ = 0.710** |
 | Closed-loop −3 dB bandwidth      | from exact model           | 27.5 Hz                  |
 | Magnitude peaking                | gain peak                  | +1.84 dB @ 9.5 Hz        |
+| **Open-loop gain crossover**     | \|L\| = 0 dB               | **15.7 Hz**              |
+| **Phase margin**                 | 180° + ∠L(f_gc)            | **51.6°**                |
+| **Gain margin**                  | −\|L\|(∠L = −180°)         | **21.9 dB @ 82.7 Hz**    |
 | Phase-step overshoot / settling  | exact sim                  | 23.7 % / 107 ms (2 %)    |
 | Phase-step overshoot (measured)  | live dual-run              | ≈ 26 %                   |
 | Max closed-loop pole radius      | max |z|                    | 0.999926 (stable)        |
@@ -383,9 +430,11 @@ analysis.
 Exact linear model and figures (scratchpad Python, numpy + scipy + matplotlib):
 
 ```
-pll_model.py   # 5-state exact linear model -> poles, ζ, fn, Bode, step data
-pll_port.py    # faithful FM-discriminator + PLL port on piano_iqtest.wav
-pll_fig.py     # the two 4-panel figures
+pll_model.py     # 5-state exact linear model -> poles, ζ, fn, closed-loop Bode, step
+pll_openloop.py  # open-loop L(z) (feedback broken) -> phase margin, gain margin
+pll_port.py      # faithful FM-discriminator + PLL port on piano_iqtest.wav
+pll_fig.py       # the two 4-panel closed-loop / verification figures
+pll_open_fig.py  # the open-loop Bode figure (§3.4)
 ```
 
 Binary verification:
