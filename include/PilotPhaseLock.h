@@ -28,7 +28,7 @@ class PilotPhaseLock {
 public:
   // Static constants.
   // Expected pilot frequency (used for PPS events).
-  static constexpr int pilot_frequency = 19000;
+  static constexpr unsigned int pilot_frequency = 19000;
   // IF sampling rate.
   static constexpr double sample_rate_if = 384000;
   // Bandwidth (30Hz) relative to sample frequency.
