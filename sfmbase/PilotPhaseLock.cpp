@@ -43,12 +43,18 @@ PilotPhaseLock::PilotPhaseLock(double freq)
       m_pilot_level(0), m_lock_delay(int(15.0 / bandwidth)), m_lock_cnt(0),
       // Initialize PPS generator.
       m_pilot_periods(0), m_pps_cnt(0), m_sample_cnt(0), m_pps_events(0),
-      // approx 30Hz LPF by 2nd-order biquad IIR Butterworth filter
-      // Caution: use only once for stable PLL locking
-      m_biquad_phasor_i1(1.46974784e-06, 0, 0, -1.99682419, 0.996825659),
-      m_biquad_phasor_q1(1.46974784e-06, 0, 0, -1.99682419, 0.996825659),
-      // differentiator-like 1st-order inverse LPF (not really an HPF)
-      m_first_phase_err(0.000304341788, -0.000304324564, 0), m_freq_err(0) {
+      // In-loop phasor LPF: 2nd-order all-pole IIR (real corners ~40/188 Hz),
+      // widened from the original ~34/160 Hz so the dominant closed-loop pole
+      // pair is damped at zeta ~= 0.71 (was ~0.57). Unity DC gain; 38 kHz image
+      // still suppressed by ~105 dB. Caution: use only once for stable locking.
+      // See doc/PLL_REDESIGN_20260723.md and doc/PLL_ANALYSIS_20260722.md.
+      m_biquad_phasor_i1(2.037743564e-06, 0, 0, -1.996259818, 0.996261856),
+      m_biquad_phasor_q1(2.037743564e-06, 0, 0, -1.996259818, 0.996261856),
+      // PI-controller proportional term / stabilizing zero (with the m_freq
+      // accumulator as the integrator). Gains rescaled x0.889 vs the original
+      // to hold the loop natural frequency at ~22 Hz after widening the LPF.
+      m_first_phase_err(2.705503620719e-04, -2.705350504729e-04, 0),
+      m_freq_err(0) {
   // do nothing
 }
 
