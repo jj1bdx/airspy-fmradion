@@ -107,13 +107,9 @@ void PilotPhaseLock::process(const SampleVector &samples_in,
 
     // Convert I/Q ratio to estimate of phase error.
     // Note: maximum phase error during the locked state is +- 0.02 radian.
-    // Use double std::atan2 for the phase detector: both phasor inputs are
-    // already double, so this avoids a redundant double->float narrowing and
-    // gives a correctly-rounded phase error. Speed relative to the
-    // fast_atan2f() float table lookup is platform dependent (faster on
-    // arm64, ~2x slower per call on x86_64/glibc), but the difference is a
-    // negligible fraction of one core and does not change the decoded output.
-    // See doc/CORE_MATH_ATAN2F_20260722.md and
+    // Use double std::atan2 for the phase detector.
+    // For the performance and accuracy analysis,
+    // see doc/CORE_MATH_ATAN2F_20260722.md and
     // doc/STD_ATAN2_X86_64_20260722.md.
     double phase_err = std::atan2(new_phasor_q, new_phasor_i);
 
