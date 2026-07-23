@@ -35,13 +35,15 @@
 // Construct phase-locked loop.
 PilotPhaseLock::PilotPhaseLock(double freq)
     : // Set min/max locking frequencies.
-      m_minfreq((freq - bandwidth) * 2.0 * M_PI),
-      m_maxfreq((freq + bandwidth) * 2.0 * M_PI),
+      m_minfreq((freq - bandwidth_pll) * 2.0 * M_PI),
+      m_maxfreq((freq + bandwidth_pll) * 2.0 * M_PI),
       // Set valid signal threshold.
       // Initialize frequency and phase.
       m_freq(freq * 2.0 * M_PI), m_phase(0),
-      // Lock decision time: 0.5 second (for 30Hz bandwidth)
-      m_pilot_level(0), m_lock_delay(int(15.0 / bandwidth)), m_lock_cnt(0),
+      // Lock decision (settling) time: 0.2 second (for 30Hz bandwidth)
+      m_pilot_level(0),
+      m_lock_delay(static_cast<unsigned int>(6.0 / bandwidth_pll)),
+      m_lock_cnt(0),
       // Initialize PPS generator.
       m_pilot_periods(0), m_pps_cnt(0), m_sample_cnt(0), m_pps_events(0),
       // In-loop phasor LPF: 2nd-order all-pole IIR (real corners ~40/188 Hz),

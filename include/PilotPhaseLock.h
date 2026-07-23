@@ -32,7 +32,7 @@ public:
   // IF sampling rate.
   static constexpr double sample_rate_if = 384000;
   // Bandwidth (30Hz) relative to sample frequency.
-  static constexpr double bandwidth = 30 / sample_rate_if;
+  static constexpr double bandwidth_pll = 30 / sample_rate_if;
   // Minimum pilot amplitude (lowered to prevent accidental unlocking)
   static constexpr double minsignal = 0.001;
 
@@ -85,9 +85,9 @@ private:
   double m_minfreq, m_maxfreq;
   double m_freq, m_phase;
   double m_pilot_level;
-  int m_lock_delay;
-  int m_lock_cnt;
-  int m_pilot_periods;
+  unsigned int m_lock_delay;
+  unsigned int m_lock_cnt;
+  unsigned int m_pilot_periods;
   std::uint64_t m_pps_cnt;
   std::uint64_t m_sample_cnt;
   std::vector<PpsEvent> m_pps_events;
