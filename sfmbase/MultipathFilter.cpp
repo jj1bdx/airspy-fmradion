@@ -40,6 +40,11 @@
 
 MultipathFilter::MultipathFilter(unsigned int stages)
     : // Filter stages.
+      // Size this to the echo delay spread; more stages is
+      // not safer. Each stage adds 4 taps spanning 10.4us,
+      // 3:1 before/after the reference. Taps beyond the
+      // delay spread carry no signal and add gradient noise,
+      // which raises the residual error and costs CPU.
       m_stages(stages)
 
       // Filter reference point position in the vector.
