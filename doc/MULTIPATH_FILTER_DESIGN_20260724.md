@@ -1,11 +1,185 @@
-# FM Multipath Filter — Design Notes and Improvement Candidates
+# FM Multipath Filter — Design, Measurements, and Changes
+
+Work on `include/MultipathFilter.h` / `sfmbase/MultipathFilter.cpp`, July 2026.
+Branch `dev-multipath-exp`.
+
+---
+
+## Executive summary
+
+A design discussion proposed five improvements to the CMA multipath filter
+(Part I §5). The source was then read, the proposals were re-derived against
+what the code actually does, and everything testable was measured — first on
+off-air recordings using the filter's own cost function, then against a
+synthesised channel where the correct answer is known.
+
+**Four things were changed in the source.** All are on `dev-multipath-exp`;
+`main` and `dev` are untouched. §0 lists the diff.
+
+| Change | Effect | Evidence |
+| --- | --- | --- |
+| Ring buffer + incremental power sum | **1.6× faster** filter, `-E36`–`-E200` | [measured] |
+| α scaled with the filter order | **+6.1 dB** audio SNR at `-E100` | [measured, ground truth] |
+| Delay line cleared on divergence reset | fixes a reset that left the poisoning sample in place | [established] |
+| Divergence guard bounded at magnitude 10 | trips at \|error\| = 92 instead of 8.7e37 | [measured] |
+
+**The single most important result is not a code change.** Sizing `-E` wrong
+costs more than everything else here gains. On a 3 µs echo, `-E200` decodes
+**6.9 dB worse than switching the filter off**; on a shallow (a = 0.5) echo the
+filter is a net loss at every setting. `-E` must be sized to the echo delay
+spread — it is not a "more is safer" knob, and the help text now says so.
+This is the missing mechanism behind the README's long-standing *"For stable
+reception only: turn off if reception becomes unstable"*.
+
+**Three proposals were rejected or deferred on evidence:**
+
+- **Double-precision coefficients** — rejected. The NLMS step clears the
+  float32 ULP by 86–450× in every configuration measured (§11).
+- **Raising α from 0.1** — rejected. It lowers the filter's own cost function
+  by 38 %, and measures 0.2–3.2 dB *worse* against ground truth (§17.1). α
+  stays 0.1.
+- **Coefficient leakage** — deferred. No tap-norm drift on any of the three
+  off-air recordings (§13).
+
+**The recurring lesson: the CM cost function is not a quality metric.** It was
+wrong twice, in opposite directions — it undervalued the α scaling by a factor
+of six in dB terms and it recommended an α re-tune that ground truth rejects.
+Part I §6 predicted exactly this. Nothing here resting on `mf_error` alone
+should be treated as settled, which is why §17's synthesised-channel harness
+matters more than any single result it produced.
+
+**Still open:** frequency-domain adaptation (§5.1) — demoted, since its case
+rested on making large `-E` affordable and large `-E` is now known to be
+harmful; and softening the reference-tap constraint (§5.4) — the predicted
+failure did **not** occur on a non-minimum-phase channel (§17.4), so it needs
+a time-varying fade before it can be judged.
+
+---
+
+## 0. What actually changed in the source
+
+`git diff dev` on branch `dev-multipath-exp`, excluding documentation:
+
+```
+ include/FmDecode.h          |   4 +-
+ include/MultipathFilter.h   |  76 +++++++++++++++++++++++------
+ main.cpp                    |   1 +
+ sfmbase/FmDecode.cpp        |   6 ++-
+ sfmbase/MultipathFilter.cpp | 116 +++++++++++++++++++++++++++++++-------------
+ 5 files changed, 153 insertions(+), 50 deletions(-)
+```
+
+### `sfmbase/MultipathFilter.cpp`, `include/MultipathFilter.h`
+
+**1. Delay line is now a ring buffer with a duplicated tail** (§12).
+`m_state` is allocated at `2 * m_filter_order`; each input sample is written
+at both `m_state_pos` and `m_state_pos + m_filter_order`, and `m_window`
+points at the contiguous span `[m_state_pos + 1, +N)` handed to VOLK. This
+removes `m_state.emplace_back()` / `m_state.erase(m_state.begin())`, which
+shifted the entire delay line on every input sample.
+New members: `m_window`, `m_state_pos`.
+
+**2. NLMS power sum is maintained incrementally** (§12).
+`m_state_power` is updated in `single_process()` as
+`+= |x_new|² − |x_leaving|²`, replacing a `volk_32fc_magnitude_squared_32f`
+pass, a `volk_32f_accumulator_s32f` pass, and the `volk::vector<float>` scratch
+buffer that was heap-allocated on **every** coefficient update. Exactness is
+maintained by `resync_state_power()`, called every `resync_interval` = 65 536
+updates. New members: `m_state_power`, `m_resync_cnt`; new private method
+`resync_state_power()`.
+
+**3. `alpha` is scaled with the filter order** (§15.1, §15.4, §17.3).
+New constants `alpha_reference_order = 145` (the order at which `alpha` was
+tuned, i.e. `-E36`) and `alpha_maximum = 0.5`; new member `m_alpha`:
+
+```cpp
+m_alpha(std::min(alpha * double(m_filter_order) / alpha_reference_order,
+                 alpha_maximum))
+```
+
+`update_coeff()` divides by `m_alpha` instead of `alpha`. `-E36` is unchanged
+by construction. The clamp exists because the stability limit of this loop is
+on `alpha`, not on `mu` (§15.2).
+
+**4. Divergence guard bounds magnitude, not just finiteness** (§16.2).
+New constant `divergence_limit = 10.0f`. Both tests in `process()` are written
+as `!(std::abs(v) <= divergence_limit)` so that NaN — which compares false
+against everything — is still rejected.
+
+**5. `reset_state()` added** (§16.1), clearing the delay line, `m_state_pos`,
+`m_window`, `m_state_power` and `m_resync_cnt`.
+
+**6. Dead getter removed, const-correctness fixed** (§8.4, §16.6).
+`get_reference_level()` is deleted — the reference tap is pinned to `1+0j`
+every update, so it could only ever return `1.0` — and a comment records why
+and what would bring it back. `get_error()` loses its meaningless return-type
+`const`; `get_coefficients()` becomes a `const` member. The stale
+`"maximum amplitude must be less than sqrt(2 / alpha)"` comment, which
+described unnormalised LMS, is replaced (§8.2).
+
+**7. Compile-time overrides for experiments only.** `MF_ALPHA` (default 0.1)
+and `MF_ALPHA_MAX` (default 0.5) exist so the sweeps in §15 and §17 can be
+run without editing the source. Both default to the shipping values, so a
+normal build is unaffected.
+
+### `sfmbase/FmDecode.cpp`
+
+`reset_state()` is now called alongside `initialize_coefficients()` in the
+divergence recovery path (§16.1).
+
+### `include/FmDecode.h`
+
+`get_multipath_error()` and `get_multipath_coefficients()` become `const`
+members (§16.6).
+
+### `main.cpp`
+
+One line added to the `-E` help text: *"Size this to the echo delay spread"*
+(§15.4, §17.2). The detailed rationale lives as a comment in the
+`MultipathFilter` constructor.
+
+### New files, not part of the build
+
+- `doc/make_two_ray_channel.py` — synthesises `y[n] = x[n] + a·e^{jθ}·x[n−τ]`
+  on a clean IQ recording, with windowed-sinc fractional delay.
+- `doc/eval_two_ray_snr.py` — scores a decode against the decode of the clean
+  file via a least-squares FIR fit.
+
+The generated channel files are written to `test-files/` and are **not**
+committed; regenerate them with the recipe in §18.
+
+### What was deliberately *not* changed
+
+`alpha` is still 0.1 (§17.1 rejects raising it), there is still no leakage
+term (§13), coefficients are still `std::complex<float>` (§11), the reference
+tap is still hard-pinned (§17.4), and the adaptation is still time-domain,
+sample-by-sample (§12.3).
+
+---
+
+## How to read this document
+
+- **Part I** is the original design discussion, preserved as received. Its
+  author had not read `MultipathFilter.cpp`; several of its premises are
+  corrected in §8. It is kept intact because its framing of the problem — and
+  in particular its §6 warning about the CM cost — turned out to be right.
+- **Part II** is the source review and the measurements. §8–§14 use the
+  filter's own error signal on off-air recordings; §15–§16 add the interfm
+  recording and the code changes; **§17 is where ground truth arrives** and
+  should be read before acting on anything earlier.
+- **§19** is the current ranking.
+
+---
+
+# Part I — Design discussion, as received
 
 Working notes on `include/MultipathFilter.h` / `sfmbase/MultipathFilter.cpp`.
 
-**Status:** design discussion only. Nothing here has been validated against
-recorded IQ or on-air reception. Items are tagged **[established]** (follows
-from theory or from the existing code/docs) or **[hypothesis]** (plausible,
-needs testing before acting on).
+**Status:** design discussion only. Nothing in Part I had been validated
+against recorded IQ or on-air reception at the time of writing; Part II
+supersedes it wherever the two disagree. Items are tagged **[established]**
+(follows from theory or from the existing code/docs) or **[hypothesis]**
+(plausible, needs testing before acting on).
 
 **Provenance:** derived from a design discussion in July 2026. The reviewer
 read `include/MultipathFilter.h` on `main` plus the README and CHANGES
@@ -1146,12 +1320,15 @@ Until then §5.4 stays open but loses its supporting argument.
 
 ## 18. Reproduction recipe
 
+**Builds.** Compile-time defines go in `EXTRA_FLAGS`, never in
+`CMAKE_CXX_FLAGS`.
+
 ```sh
-# instrumented build (never put -D... in CMAKE_CXX_FLAGS; use EXTRA_FLAGS)
+# instrumented build
 cmake -S . -B build-mf -DEXTRA_FLAGS="-DCOEFF_MONITOR"
 cmake --build build-mf --target all
 
-# alpha override, for the sweeps in §15 (branch dev-multipath-exp only)
+# alpha override, for the sweeps in §15 and §17
 cmake -S . -B build-mf -DEXTRA_FLAGS="-DCOEFF_MONITOR -DMF_ALPHA=0.4"
 
 # forcing divergence, to exercise the §16.2 guard: MF_ALPHA_MAX must be raised
@@ -1160,7 +1337,31 @@ cmake -S . -B build-mf \
     -DEXTRA_FLAGS="-DCOEFF_MONITOR -DMF_ALPHA=1.0 -DMF_ALPHA_MAX=2.0"
 ```
 
-Ground-truth measurement against a synthesised channel (§17):
+**Coefficient and error dump**, CSV on stderr every `stat_rate*10` blocks:
+
+```sh
+./build-mf/airspy-fmradion -t filesource \
+    -c filename=test-files/interfm-20260724102822z-iq.wav,srate=384000,freq=89700000 \
+    -E36 -W /tmp/out.wav 2> /tmp/coeff.log
+```
+
+Dump lines are `block,<n>,mf_error,<e>,mf_coeff,<i>,<re>,<im>,...`, emitted
+without a leading newline, so they are not anchored to the start of a line in
+the captured log.
+
+**CPU cost.** `-q` suppresses the status line and the `COEFF_MONITOR` dump.
+Timing must use `user` CPU time: the file source paces itself to real time, so
+wall clock is pinned at the recording's duration regardless of load. This
+machine showed ~10 % run-to-run drift, so interleave the configurations being
+compared and take minima.
+
+```sh
+/usr/bin/time -p ./build-mf/airspy-fmradion -q -t filesource \
+    -c filename=test-files/piano_iqtest.wav,srate=384000,freq=100000000 \
+    -E100 -W /tmp/out.wav
+```
+
+**Ground-truth measurement** against a synthesised channel (§17):
 
 ```sh
 # 1. synthesise the channel into test-files/
@@ -1179,23 +1380,7 @@ Ground-truth measurement against a synthesised channel (§17):
 
 # 4. score it
 ./doc/eval_two_ray_snr.py --reference /tmp/ref.wav /tmp/test.wav
-
-# coefficient / error dump (CSV on stderr, every stat_rate*10 blocks)
-./build-mf/airspy-fmradion -t filesource \
-    -c filename=test-files/interfm-20260724102822z-iq.wav,srate=384000,freq=89700000 \
-    -E36 -W /tmp/out.wav 2> /tmp/coeff.log
-
-# CPU cost (-q suppresses the status line and the COEFF_MONITOR dump)
-/usr/bin/time -p ./build-mf/airspy-fmradion -q -t filesource \
-    -c filename=test-files/piano_iqtest.wav,srate=384000,freq=100000000 \
-    -E100 -W /tmp/out.wav
 ```
-
-Dump lines are `block,<n>,mf_error,<e>,mf_coeff,<i>,<re>,<im>,...`, emitted
-without a leading newline, so they are not anchored to the start of a line in
-the captured log. Timing must use `user` CPU time: the file source paces itself
-to real time, so wall clock is pinned at the recording's duration regardless of
-load.
 
 ---
 

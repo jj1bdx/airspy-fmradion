@@ -151,7 +151,7 @@ cmake --build build --target all
   * for AM: wide: +-9kHz, default: +-6kHz, medium: +-4.5kHz, narrow: +-3kHz
   * for NBFM: wide: +-20kHz, default: +-10kHz, medium: +-8kHz, narrow: +-6.25kHz
 * `-l dB` Enable IF squelch, set the level to minus given value of dB
-* `-E stages` Enable multipath filter for FM (For stable reception only: turn off if reception becomes unstable). The value is between 1 to 1024.
+* `-E stages` Enable multipath filter for FM. Size this to the echo delay spread (For stable reception only: turn off if reception becomes unstable). The value is between 1 to 1024.
 * `-r ppm` Set IF offset in ppm (range: +-1000000ppm) (Note: this option affects output pitch and timing: *use for the output timing compensation only!*
 
 ## Timestamp file format
@@ -167,10 +167,14 @@ cmake --build build --target all
 
 ### FM multipath filter
 
-* A Normalized LMS-based multipath filter can be enabled after IF AGC
+* A blind constant-modulus (CMA) multipath filter with Normalized LMS step normalization can be enabled after IF AGC
 * IF sample stages is defined by `-E` options
+* Each stage adds 4 taps spanning 10.4 microseconds, allocated 3:1 before/after the reference point
+* **Size `-E` to the echo delay spread. More stages is not safer.** Taps beyond the delay spread carry no signal, add gradient noise, and slow the per-tap adaptation rate. Measured against a synthesized channel with a 3 microsecond echo, `-E200` decodes 6.9 dB *worse* than switching the filter off, while the optimum for that channel is around `-E12`; for an 8 microsecond echo the optimum moves up to `-E36`. On shallow echoes the filter is a net loss at any setting
+* Start low and raise `-E` only while it keeps helping
 * Practical upper limit of `-E` value: 200
-* Practical `-E` value: up to 50 for Raspberry Pi 4, approx. 100 for a modern computer
+* Practical `-E` value for CPU load: up to 50 for Raspberry Pi 4, approx. 100 for a modern computer
+* See doc/MULTIPATH\_FILTER\_DESIGN\_20260724.md for the design notes and measurements
 
 ## Airspy R2 / Mini configuration options
 
