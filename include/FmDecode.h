@@ -97,10 +97,10 @@ public:
   void erase_first_pps_event() { m_pilotpll.erase_first_pps_event(); }
 
   // Get error value of the multipath filter.
-  double get_multipath_error() { return m_multipathfilter.get_error(); }
+  double get_multipath_error() const { return m_multipathfilter.get_error(); }
 
   // Get multipath filter coefficients.
-  const MfCoeffVector &get_multipath_coefficients() {
+  const MfCoeffVector &get_multipath_coefficients() const {
     return m_multipathfilter.get_coefficients();
   }
 

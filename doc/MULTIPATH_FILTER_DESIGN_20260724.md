@@ -812,6 +812,14 @@ that is equally consistent with added noise. **A post-discriminator THD and
 separation measurement on the synthesised channel of §17 is required before
 changing the default.**
 
+**That measurement was subsequently made, and it rejects this section's
+recommendation.** Against ground truth (§17.1) α = 0.4 is 0.2–3.2 dB *worse*
+than α = 0.1 on all three synthesised channels, and the audio optimum is flat
+over 0.05–0.2. **α remains 0.1 in the code.** The 38 % CM-error improvement
+reported above is real and reproducible; it simply does not correspond to
+anything the listener receives. Read this section as a description of the CM
+cost surface, not as a tuning recommendation.
+
 ---
 
 ### 15.4 Result of adopting §15.1 — a real but partial win, and the scaling law is wrong
@@ -869,9 +877,16 @@ the range anyone uses.
 carry no signal (§9: far-field energy is 1e-4 at every stage count) and they
 cost error floor through gradient noise that no step-size choice removes.
 `-E` should be sized to the measured delay spread — for interfm, ±50 µs, which
-`-E36` already more than covers — and not raised "for safety". The help text
-at `main.cpp:130` presents `-E` as a pure capability knob and should say
-otherwise.
+`-E36` already more than covers — and not raised "for safety".
+
+**Implemented:** the `-E` help text in `main.cpp` now says so. Ground truth
+later confirmed the advice far more sharply than the CM error did — on a 3 µs
+echo, `-E200` scores 7 dB *worse than switching the filter off* (§17.2).
+
+**Two of this section's conclusions were later overturned by ground truth**
+and are corrected in §17.3: the α scaling is worth +6.1 dB of
+post-discriminator SNR at `-E100`, not the 12 % that the CM error suggested,
+and the demotion of §15.1 that this section argued for was a mistake.
 
 ---
 
@@ -998,36 +1013,136 @@ f(src1[i])` this is safe by construction, and the same call has been run across
 every measurement in this part with stable results. The comment could be
 upgraded from a hedge to a statement of why.
 
-### 16.6 Minor
+### 16.6 Minor — **fixed**
 
-**[established]** `get_error()` and `get_reference_level()`
-(`MultipathFilter.h:62,69`) return `const` fundamental types by value, which
-clang flags under `-Wignored-qualifiers`; `get_coefficients()` and
-`get_reference_level()` are not `const`-qualified members despite not mutating
-anything, so neither is callable through a `const MultipathFilter&`.
+**[established]** `get_error()` and `get_reference_level()` returned `const`
+fundamental types by value, which clang flags under `-Wignored-qualifiers`;
+`get_coefficients()` and `get_reference_level()` were not `const`-qualified
+members despite not mutating anything, so neither was callable through a
+`const MultipathFilter&`.
 
----
-
-## 17. What still needs a synthesised channel
-
-**[established]** interfm removed the biggest gap — there is now a real
-dispersive, time-varying channel to test against. What remains:
-
-| Question | Needs |
-| --- | --- |
-| §5.4 — does the pinned reference tap thrash in a deep fade? | two-ray channel with `a > 1` (non-minimum-phase) |
-| §15.3 — is α = 0.2–0.4 actually better *for the audio*? | known ground truth to measure THD and separation against |
-| Part I §2 — is the tap count right for deep echoes? | `a` swept 0.3–0.95 |
-
-`piano_iqtest.wav` is clean 384 kHz complex baseband, so all three can be
-generated from it: apply `y[n] = x[n] + a·e^{jθ}·x[n−τ]` with fractional-delay
-interpolation for non-integer `τ`, write back as a 384 kHz float WAV, and feed
-it through `-t filesource` exactly as the originals are. This is Part I §6's
-own validation plan. Its insistence on measuring **post-discriminator** THD and
-stereo separation rather than the CM cost applies unchanged, and §15.3 is now
-blocked on it.
+Fixed on `dev-multipath-exp`: the pointless return-type `const` is gone,
+`get_coefficients()` is now `const`, and `get_reference_level()` is **removed**
+outright rather than repaired — per §8.4 it could only ever return 1.0. A
+comment in its place records why, and what would have to change for it to come
+back. `FmDecode`'s two forwarding accessors are `const` to match. The stale
+`sqrt(2 / alpha)` stability comment flagged in §8.2 was replaced at the same
+time as the α scaling went in.
 
 ---
+
+## 17. The synthesised two-ray channel — **built, and it changes the answers**
+
+**Implemented.** `doc/make_two_ray_channel.py` applies
+`y[n] = x[n] + a·e^{jθ}·x[n−τ]` to a clean IQ recording, with a
+windowed-sinc fractional delay so that sub-sample echoes are exact for a
+band-limited signal, and renormalises the mean envelope to 1.0 to match what
+the IF AGC delivers. Three channels were generated from `piano_iqtest.wav`
+into `test-files/`:
+
+| File | `a` | `τ` | Character |
+| --- | --- | --- | --- |
+| `piano_iqtest-a0p5-t5us.wav` | 0.5 | 5 µs (1.92 samples) | mild |
+| `piano_iqtest-a0p9-t3us.wav` | 0.9 | 3 µs (1.15 samples) | deep, short delay |
+| `piano_iqtest-a1p2-t8us.wav` | 1.2 | 8 µs (3.07 samples) | **non-minimum-phase** |
+
+**This is the first ground truth in this document.** Because the clean file
+exists, its decode is the correct answer, and any decode of a corrupted file
+can be scored against it. `doc/eval_two_ray_snr.py` does that: it fits a
+least-squares 129-tap FIR from the test audio to the reference and reports the
+residual power as an SNR. Fitting a filter rather than a scalar gain matters —
+the multipath filter delays the audio by `stages − 1` samples at 384 kHz,
+which is a *fractional* number of 48 kHz audio samples, and an integer-sample
+alignment leaves a residual that swamps everything else. An earlier attempt at
+this measurement using scalar gain and integer alignment produced a flat
+32–35 dB for every configuration, which was the alignment floor and not a
+result. What the FIR fit leaves behind is what no linear time-invariant
+relation can explain: the nonlinear distortion that multipath causes after FM
+demodulation.
+
+### 17.1 α: the CM-error optimum is wrong
+
+**[measured]** Post-discriminator SNR against the clean decode, `-E36`:
+
+| Channel | filter off | α=0.05 | α=0.1 | α=0.2 | α=0.4 | α=0.6 |
+| --- | --- | --- | --- | --- | --- | --- |
+| a=0.5, 5 µs | **61.97** | 56.61 | 56.74 | 56.55 | 55.74 | 54.69 |
+| a=0.9, 3 µs | 39.62 | 53.31 | 54.13 | **54.27** | 54.06 | 51.52 |
+| a=1.2, 8 µs | 40.08 | **52.96** | 52.71 | 51.76 | 49.77 | 46.53 |
+
+**§15.3 is rejected.** The CM-error sweep recommended α ≈ 0.4 on the strength
+of a 38 % lower error floor. Against ground truth α = 0.4 is 1.0 dB, 0.2 dB
+and 3.2 dB *worse* than α = 0.1 on the three channels. The audio optimum is
+flat over 0.05–0.2 and falls away above it. **The current default of 0.1 is
+correct and is not changed.**
+
+This is Part I §6's warning arriving in full: the CM cost is blind to the flat
+directions of its own cost function, and optimising it optimised the wrong
+thing. Every α conclusion in §15.3 that rests on `mf_error` alone should be
+read as a statement about the CM cost, not about the receiver.
+
+### 17.2 Stage count: over-provisioning is actively harmful
+
+**[measured]** Same metric, α = 0.1 at the reference order:
+
+| Channel | off | `-E6` | `-E12` | `-E24` | `-E36` | `-E100` | `-E200` |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| a=0.5, 5 µs | **61.97** | 58.16 | 57.33 | — | 56.74 | — | — |
+| a=0.9, 3 µs | 39.62 | 54.32 | **55.22** | 54.65 | 54.13 | 52.03 | 32.75 |
+| a=1.2, 8 µs | 40.08 | — | 44.33 | — | **52.71** | — | — |
+
+Three things follow.
+
+- **The optimum tracks the delay spread**, as §15.4 argued. The 3 µs channel
+  peaks at `-E12`; the 8 µs channel is still climbing at `-E36` and is 8.4 dB
+  worse at `-E12`. "Set it high to be safe" is not a valid strategy in either
+  direction.
+- **`-E200` on the 3 µs channel scores 32.75 dB against 39.62 dB with the
+  filter switched off** — nearly 7 dB *worse than not filtering at all*. This
+  is the strongest available evidence for §15.4, and it is the concrete
+  mechanism behind the README's "turn off if reception becomes unstable".
+- **On a mild channel the filter is a net loss at every setting.** At a = 0.5
+  the best filtered result is 3.8 dB below the unfiltered decode. FM is
+  robust to shallow echoes on its own, and the equaliser's misadjustment noise
+  costs more than the distortion it removes.
+
+### 17.3 The §15.1 α scaling is worth far more than the CM error showed
+
+**[measured]** a = 0.9, 3 µs, separating stage count from the α scaling:
+
+| `-E` | α effective | SNR |
+| --- | --- | --- |
+| `-E36` | 0.1 (reference order) | 54.13 |
+| `-E100` | 0.277 (scaled) | **52.03** |
+| `-E100` | 0.1 (scaling undone) | 45.93 |
+| `-E200` | 0.5 (scaled, clamped) | 32.75 |
+| `-E200` | 0.1 (scaling undone) | 31.66 |
+
+At `-E100` the α scaling is worth **+6.1 dB** of post-discriminator SNR. The CM
+error registered the same change as a 12 % improvement (§15.4), which led to
+its demotion from rank 1 to rank 5. That demotion was wrong, and it was wrong
+for the same reason §15.3 was wrong: the CM cost was the only metric available
+at the time. §15.1 is promoted back.
+
+The `-E200` rows also show the collapse there is *not* caused by the scaling —
+31.66 dB without it — so the stage-count conclusion in §17.2 stands
+independently.
+
+### 17.4 §5.4 — the reference-tap constraint did not thrash
+
+**[measured]** The `a = 1.2` channel is non-minimum-phase: the echo is stronger
+than the direct path, which is the condition §5.4 predicts the hard
+`w[ref] = 1 + 0j` pin cannot serve. At `-E36` the filter nevertheless recovers
+**+12.6 dB** over the unfiltered decode (52.71 vs 40.08) with no instability,
+no divergence resets, and a normal-looking tap profile.
+
+So the predicted failure mode did not reproduce even under the condition it
+was predicted for. Either the mechanism is wrong, or a single static
+non-minimum-phase channel is not enough to trigger it and a *time-varying*
+fade that crosses `a = 1` during the run is required. **[hypothesis]** The
+latter is the more likely reading and is the natural next channel to
+synthesise — `make_two_ray_channel.py` currently generates only static `a`.
+Until then §5.4 stays open but loses its supporting argument.
 
 ## 18. Reproduction recipe
 
@@ -1043,6 +1158,27 @@ cmake -S . -B build-mf -DEXTRA_FLAGS="-DCOEFF_MONITOR -DMF_ALPHA=0.4"
 # too, or the §15.1 clamp holds the effective alpha at 0.5 and nothing diverges
 cmake -S . -B build-mf \
     -DEXTRA_FLAGS="-DCOEFF_MONITOR -DMF_ALPHA=1.0 -DMF_ALPHA_MAX=2.0"
+```
+
+Ground-truth measurement against a synthesised channel (§17):
+
+```sh
+# 1. synthesise the channel into test-files/
+./doc/make_two_ray_channel.py --input test-files/piano_iqtest.wav \
+    --amp 0.9 --delay 3.0 --phase 2.1 --outdir test-files
+
+# 2. decode the CLEAN file with the filter off -- this is the reference
+./build-mf/airspy-fmradion -q -t filesource \
+    -c filename=test-files/piano_iqtest.wav,srate=384000,freq=100000000 \
+    -W /tmp/ref.wav
+
+# 3. decode the channel file under whatever setting is being tested
+./build-mf/airspy-fmradion -q -t filesource \
+    -c filename=test-files/piano_iqtest-a0p9-t3us.wav,srate=384000,freq=100000000 \
+    -E36 -W /tmp/test.wav
+
+# 4. score it
+./doc/eval_two_ray_snr.py --reference /tmp/ref.wav /tmp/test.wav
 
 # coefficient / error dump (CSV on stderr, every stat_rate*10 blocks)
 ./build-mf/airspy-fmradion -t filesource \
@@ -1065,50 +1201,52 @@ load.
 
 ## 19. Revised ranking
 
-Three revisions are marked: **(i)** the interfm recording, after which raising
-`-E` is no longer assumed to be good; **(ii)** adopting §15.1 in code, which
-delivered a quarter of what it promised (§15.4) and demoted itself;
-**(iii)** adopting §16.2, which did exactly what it was designed to do and
-still produced no measurable improvement, for a reason worth knowing.
+Four revisions are marked: **(i)** the interfm recording, after which raising
+`-E` is no longer assumed to be good; **(ii)** adopting §15.1 in code;
+**(iii)** adopting §16.2; **(iv)** building the synthesised channel of §17,
+which produced the first ground truth in this document and overturned two
+earlier conclusions.
 
-A pattern is emerging across (ii) and (iii): every candidate here that was
-ranked on a plausible mechanism rather than a measured outcome has come back
-smaller than advertised. The three items with measured payoffs — §12, §15.3,
-§15.4 — are ranked above the ones with reasoned payoffs deliberately.
+**The lesson of (iv) is the most important thing here.** Every ranking before
+it was built on `mf_error`, and `mf_error` was wrong twice in opposite
+directions — it undervalued the α scaling by a factor of six in dB terms
+(§17.3) and it recommended an α re-tune that ground truth rejects (§17.1).
+Part I §6 said this would happen. Nothing in this document that rests on the
+CM cost alone should be treated as settled.
 
-| Rank | Item | Status | Basis | Change |
-| --- | --- | --- | --- | --- |
-| 1 | §12 remove redundant O(N) passes | implemented on `dev-multipath-exp`, 1.6× measured | [measured] | back to 1 |
-| 2 | §15.4 size `-E` to the delay spread; say so in the help text | not done | [measured] | **new — the surviving lesson of §15** |
-| 3 | §15.3 re-tune α (0.1 → 0.2–0.4), gated on §17 | not done — 38 % at `-E36`, the largest single win measured | [measured] | was 3 |
-| 4 | §16.1 clear the delay line on divergence reset | implemented on `dev-multipath-exp` | [established] | was 4 |
-| 5 | §15.1 scale α with the filter order | **implemented on `dev-multipath-exp`** — 11–16 % at `-E100`, ~0 beyond `-E200` | [measured] | **was 1, demoted** |
-| 6 | §17 build the synthesised two-ray channel | not done — gates 3 and 10 | [established] | was 7 |
-| 7 | §16.2 magnitude bound on the divergence guard | **implemented on `dev-multipath-exp`** — bounds the excursion by 36 orders of magnitude, but no measurable audio benefit | [measured] | **demoted from 6** |
-| 8 | §8.2 / §16.6 fix the stale header comment and dead getter | not done | [established] | was 7 |
-| 9 | §5.1 frequency-domain adaptation | open | [hypothesis] | was 8 |
-| 10 | §5.4 soften the reference-tap constraint | open; failure not reproduced | [hypothesis] | was 9 |
-| — | §5.5 gear shifting | **deferred** — optima coincide across static and dispersive channels, so a fixed re-tune captures most of it | [measured] | unchanged |
-| — | §5.2 double-precision coefficients | **rejected** — ≥86 ULP of margin | [measured] | unchanged |
-| — | §5.3 coefficient leakage | **deferred** — no drift on any of the three recordings | [measured] | unchanged |
+| Rank | Item | Status | Basis |
+| --- | --- | --- | --- |
+| 1 | §17.2 size `-E` to the delay spread | help text done; the number itself is the operator's | [measured, ground truth] |
+| 2 | §12 remove redundant O(N) passes | implemented — 1.6× | [measured] |
+| 3 | §15.1 scale α with the filter order | implemented — **+6.1 dB at `-E100`** | [measured, ground truth] |
+| 4 | §16.1 clear the delay line on divergence reset | implemented | [established] |
+| 5 | §17 synthesised two-ray channel + SNR harness | implemented — `doc/make_two_ray_channel.py`, `doc/eval_two_ray_snr.py`, three files in `test-files/` | [measured] |
+| 6 | §8.2 / §16.6 header comment, dead getter, const-correctness | implemented | [established] |
+| 7 | §16.2 magnitude bound on the divergence guard | implemented — 36 orders of magnitude, no audio benefit | [measured] |
+| 8 | Time-varying two-ray channel crossing `a = 1` | not done — needed to give §5.4 another chance (§17.4) | [hypothesis] |
+| 9 | §5.1 frequency-domain adaptation | open | [hypothesis] |
+| — | §15.3 re-tune α to 0.2–0.4 | **rejected** — 0.2–3.2 dB worse against ground truth; α stays 0.1 | [measured, ground truth] |
+| — | §5.4 soften the reference-tap constraint | **open, but unsupported** — the predicted failure did not occur on a non-minimum-phase channel | [measured] |
+| — | §5.5 gear shifting | **deferred** — optima coincide across channels | [measured] |
+| — | §5.2 double-precision coefficients | **rejected** — ≥86 ULP of margin | [measured] |
+| — | §5.3 coefficient leakage | **deferred** — no drift on any recording | [measured] |
 
-**Why §15.1 demoted itself.** It was ranked first on the strength of the
-cross-over test in §15.1, which showed the `-E` penalty tracks `mu`. Adopting
-it recovered only a quarter of the penalty at `-E100` and none at `-E200`, and
-the follow-up sweep at N = 1601 showed the optimal α moves 2× where the optimal
-`mu` moves 22× — i.e. constant-α, the pre-existing behaviour, is closer to
-right than the constant-`mu` law that replaced it (§15.4). The change is kept
-because it is free and helps in the range people use, but the *lesson* of §15
-is the sizing advice now at rank 2, not the compensation.
+**Why §17.2 is first and is not a code change.** The single largest effect
+measured anywhere in this document is that `-E200` on a 3 µs echo scores
+6.9 dB *below* switching the filter off, and that on a shallow echo the filter
+is a net loss at every setting. No code change fixes that; it is a matter of
+the operator choosing `-E` to match the channel, which is why the work was to
+say so in the help text. It also supplies the missing mechanism behind the
+README's long-standing "For stable reception only: turn off if reception
+becomes unstable".
 
 **Why §5.1 is demoted.** Its case rested on making `-E200`-class filters
-affordable. Three measurements undercut that: the time-domain cost it must beat
-is 1.6× lower than Part I computed (§8.3) and another 1.6× lower after §12; the
-useful span on the one genuinely dispersive recording is ±50 µs, which `-E36`
-already more than covers (§9); and raising `-E` past that *degrades* the error
-floor by 44 %, of which the α scaling of §15.4 recovers only a quarter and no
-α at all recovers the rest. Frequency-domain adaptation
-remains the right answer if a channel is ever found that genuinely needs
-hundreds of taps — its per-bin normalisation argument is untested and may still
-be its strongest feature — but "the current `-E` ceiling is the problem" is no
-longer supported by evidence.
+affordable. The time-domain cost it must beat is 1.6× lower than Part I
+computed (§8.3) and another 1.6× lower after §12; the useful span on the one
+genuinely dispersive off-air recording is ±50 µs (§9); and ground truth now
+shows `-E200` is not merely expensive but actively harmful on a short-delay
+channel (§17.2). Frequency-domain adaptation remains the right answer if a
+channel is ever found that genuinely needs hundreds of taps — its per-bin
+normalisation argument is still untested and may be its strongest feature —
+but "the current `-E` ceiling is the problem" is not supported by any
+measurement here.

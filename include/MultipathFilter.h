@@ -91,21 +91,19 @@ public:
   // Process IQ samples and return filtered IQ samples.
   // Return true if the processing is successful
   // (or the input length is zero);
-  // Return false if the processing fails
-  // (i.e., internal values contains infinite values (NaN, inf, etc)).
+  // Return false if the processing fails, i.e. the output or the error value
+  // left the range allowed by divergence_limit (which includes NaN and inf).
   bool process(const IQSampleVector &samples_in, IQSampleVector &samples_out);
 
   // Obtain the latest error value.
-  const double get_error() const { return m_error; }
+  double get_error() const { return m_error; }
 
   // Obtain the internal filter coefficient.
-  const MfCoeffVector &get_coefficients() { return m_coeff; }
+  const MfCoeffVector &get_coefficients() const { return m_coeff; }
 
-  // Obtain the referenct point level value.
-  // Initial value is 1.0.
-  const float get_reference_level() {
-    return m_coeff[m_index_reference_point].real();
-  }
+  // Note: there is no get_reference_level(). The reference tap is pinned to
+  // 1+0j at the end of every update, so such an accessor could only ever
+  // return 1.0. If the constraint is ever softened, add it back.
 
 private:
   // Process single value.
