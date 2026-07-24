@@ -48,11 +48,24 @@ Part I §6 predicted exactly this. Nothing here resting on `mf_error` alone
 should be treated as settled, which is why §17's synthesised-channel harness
 matters more than any single result it produced.
 
-**Still open:** frequency-domain adaptation (§5.1) — demoted, since its case
+**A fading channel is where the filter is weakest.** Across nine synthesised
+channels that cross `a = 1` while fading, `-E36` is a **net loss in 7 of 9
+cases**, by up to 10.2 dB. It is not instability — no divergence, ‖w‖ bounded
+throughout — and it is not tracking lag, since a faster α is worse at every
+fade rate. A CMA equaliser adapting on a moving channel simply injects more
+misadjustment noise than the distortion it removes. With §17.2 this gives the
+README's *"turn off if reception becomes unstable"* a measured mechanism.
+
+**Softening the reference-tap constraint (§5.4) is rejected.** Its diagnosis is
+right — with the pin removed, `|w[ref]|` settles at 0.31–0.88, so the
+unconstrained solution really does want less than unity there — but doing it
+is worse in 8 of 9 fading cells (§17.4). The pin suppresses global *delay*, a
+flat direction Part I overlooked, and that matters more than the magnitude it
+costs.
+
+**Still open:** frequency-domain adaptation (§5.1), demoted since its case
 rested on making large `-E` affordable and large `-E` is now known to be
-harmful; and softening the reference-tap constraint (§5.4) — the predicted
-failure did **not** occur on a non-minimum-phase channel (§17.4), so it needs
-a time-varying fade before it can be judged.
+harmful.
 
 ---
 
@@ -152,8 +165,9 @@ committed; regenerate them with the recipe in §18.
 
 `alpha` is still 0.1 (§17.1 rejects raising it), there is still no leakage
 term (§13), coefficients are still `std::complex<float>` (§11), the reference
-tap is still hard-pinned (§17.4), and the adaptation is still time-domain,
-sample-by-sample (§12.3).
+tap is still hard-pinned (§17.4 rejects softening it — the `MF_SOFT_REF`
+variant used for that test was reverted and is not in the tree), and the
+adaptation is still time-domain, sample-by-sample (§12.3).
 
 ---
 
@@ -583,6 +597,26 @@ overwritten with `(1,0)` at the end of every update
 (`MultipathFilter.cpp:158`), so the getter returns exactly `1.0f` for the
 entire life of the process. It has no callers. It becomes meaningful only if
 §5.4's soft constraint is ever adopted.
+
+### 8.5 The CM cost is not blind to global gain
+
+**[established]** Part I §4 states that the CM cost function "is blind to global
+gain and global phase — those are flat directions in which the tap vector would
+otherwise drift indefinitely". Half of that is wrong. The CM error is
+`e = R₂ − |y|²` with `R₂ = 1`: scaling the tap vector scales `|y|` and is
+penalised directly. **Gain is the one thing this cost function pins hardest.**
+
+The genuinely flat directions are global **phase** and global **delay** — the
+latter because a fractionally-spaced equaliser can shift its whole response in
+time without changing the envelope at all.
+
+This is not pedantry. It decided the outcome of §17.4: the first attempt at a
+softened reference-tap constraint normalised ‖w‖ as well as pinning the phase,
+on the strength of Part I's claim, and scored 34.87 dB against the hard pin's
+54.13 dB on a static channel — 19 dB worse, because the added norm constraint
+fights the cost function instead of complementing it. Re-doing it as a pure
+rotation brought it back to parity on static channels and made the real
+comparison possible.
 
 ---
 
@@ -1302,21 +1336,103 @@ The `-E200` rows also show the collapse there is *not* caused by the scaling —
 31.66 dB without it — so the stage-count conclusion in §17.2 stands
 independently.
 
-### 17.4 §5.4 — the reference-tap constraint did not thrash
+### 17.4 §5.4 — tested to destruction on a fading channel, and **rejected**
 
-**[measured]** The `a = 1.2` channel is non-minimum-phase: the echo is stronger
-than the direct path, which is the condition §5.4 predicts the hard
-`w[ref] = 1 + 0j` pin cannot serve. At `-E36` the filter nevertheless recovers
-**+12.6 dB** over the unfiltered decode (52.71 vs 40.08) with no instability,
-no divergence resets, and a normal-looking tap profile.
+`make_two_ray_channel.py` gained `--fade-depth`, `--fade-rate` and
+`--doppler`, so the echo amplitude can be swung in dB while the echo phase
+rotates at a Doppler rate. That produces the condition §5.4 is actually about:
+a channel that crosses `a = 1` *during* the run rather than sitting statically
+on one side of it.
 
-So the predicted failure mode did not reproduce even under the condition it
-was predicted for. Either the mechanism is wrong, or a single static
-non-minimum-phase channel is not enough to trigger it and a *time-varying*
-fade that crosses `a = 1` during the run is required. **[hypothesis]** The
-latter is the more likely reading and is the natural next channel to
-synthesise — `make_two_ray_channel.py` currently generates only static `a`.
-Until then §5.4 stays open but loses its supporting argument.
+**Nine channels** from `piano_iqtest.wav`: base a = 0.9, τ = 3 µs, 10 Hz
+Doppler, fade depth 3 / 6 / 12 dB × fade rate 0.5 / 2 / 10 Hz. Every one
+crosses `a = 1`; 29 %, 40 % and 45 % of each run is non-minimum-phase at the
+three depths, and the composite envelope reaches a true null. Scored at `-E36`.
+
+**The predicted thrashing does not happen.** With the shipping hard pin there
+were **no divergence resets in any cell** and ‖w‖ stayed bounded at 1.72–1.84
+throughout. Whatever goes wrong on a fading channel, the filter does not lose
+control of the tap vector.
+
+**The diagnosis in §5.4 is nevertheless correct.** A `MF_SOFT_REF` build was
+made — experiment only, since reverted — which pins *only the reference tap's
+phase* and leaves its magnitude free:
+
+```cpp
+// scale = conj(w[ref]) / |w[ref]|, a pure rotation
+volk_32fc_s32fc_multiply_32fc(m_coeff.data(), m_coeff.data(), scale, N);
+```
+
+Under it `|w[ref]|` settles at **0.31–0.88, mean ≈ 0.45** across all nine
+cells. So the unconstrained solution genuinely does want `|w[ref]| < 1` when
+the echo is comparable to or stronger than the direct path, exactly as §5.4
+predicted.
+
+**The prescription is still wrong.** Post-discriminator SNR, hard pin versus
+soft constraint:
+
+| Fade | Rate | filter off | hard pin | soft | soft − hard | \|w[ref]\| under soft (min/mean/max) |
+| --- | --- | --- | --- | --- | --- | --- |
+| 3 dB | 0.5 Hz | 15.85 | **16.87** | 9.66 | −7.21 | 0.330 / 0.432 / 0.680 |
+| 3 dB | 2 Hz | 24.22 | 16.69 | 15.39 | −1.30 | 0.366 / 0.496 / 0.756 |
+| 3 dB | 10 Hz | 19.34 | 13.52 | 13.85 | +0.33 | 0.383 / 0.474 / 0.717 |
+| 6 dB | 0.5 Hz | 19.81 | 14.45 | 13.91 | −0.54 | 0.311 / 0.406 / 0.603 |
+| 6 dB | 2 Hz | 15.96 | **17.91** | 10.81 | −7.11 | 0.374 / 0.472 / 0.817 |
+| 6 dB | 10 Hz | 26.13 | 15.92 | 15.53 | −0.39 | 0.359 / 0.453 / 0.730 |
+| 12 dB | 0.5 Hz | 30.78 | 22.07 | 15.64 | −6.43 | 0.327 / 0.430 / 0.816 |
+| 12 dB | 2 Hz | 26.62 | 17.96 | 16.53 | −1.43 | 0.332 / 0.450 / 0.854 |
+| 12 dB | 10 Hz | 33.98 | 26.88 | 26.53 | −0.35 | 0.312 / 0.464 / 0.876 |
+
+**[measured]** Softening the constraint is worse in **8 of 9 cells**; mean gain
+over the unfiltered decode is **−5.60 dB with the hard pin and −8.31 dB with
+the soft one**. On the three *static* channels the two are indistinguishable
+(54.13/54.25, 56.74/56.81, 52.71/52.79 dB), so the penalty is specific to a
+moving channel.
+
+**Why the pin helps more than it costs.** Part I §4 justifies it as removing
+the CM cost's two flat directions, global gain and global phase. §8.5 corrects
+that: gain is not flat. What the pin also suppresses is **global delay**, which
+for a fractionally-spaced equaliser is very nearly flat and which the
+phase-only constraint leaves wide open. On a static channel that does not
+matter — the filter settles somewhere on the flat direction and stays. On a
+fading channel the tap vector is free to drift along it while the channel
+moves, and that drift is itself a time-varying filter applied to the audio.
+
+**Verdict: §5.4 is rejected.** The hard reference-tap pin is not the cause of
+"unstable reception", and softening it makes matters worse on exactly the
+channels it was proposed to fix. This does not rule out some *other* soft
+constraint — one that also anchors delay, e.g. pinning the tap-vector centroid
+— but §5.4 as written is answered.
+
+### 17.5 What the fading channels actually show
+
+**[measured]** The result that matters more than §5.4 either way: **on a
+fading channel the filter is a net loss at `-E36` with either constraint**, in
+7 of 9 cells with the hard pin, by up to 10.2 dB. Combined with §17.2 — where
+an over-provisioned `-E` costs 6.9 dB on a *static* channel — the README's
+"For stable reception only: turn off if reception becomes unstable" now has a
+measured mechanism, and it is not instability in any dynamical sense. It is
+that a CMA equaliser adapting on a moving channel injects more misadjustment
+noise than the multipath distortion it removes.
+
+**It is not tracking lag.** Raising α on the 6 dB cells makes it worse at every
+fade rate:
+
+| Fade rate | filter off | α = 0.1 | α = 0.4 |
+| --- | --- | --- | --- |
+| 0.5 Hz | 19.81 | **14.45** | 12.71 |
+| 2 Hz | 15.96 | **17.91** | 11.72 |
+| 10 Hz | 26.13 | **15.92** | 13.21 |
+
+**[measured]** A faster step does not recover the loss; it adds misadjustment
+faster than it buys tracking. §5.5 gear shifting stays deferred, now with
+direct evidence against its central premise rather than only the indirect
+argument in §15.3.
+
+**Caveat on these numbers.** The filter-off baseline varies non-monotonically
+across cells (15.85–33.98 dB) because different fade rates place different
+numbers of envelope nulls inside the 12 s analysis window. Comparisons *within*
+a row are sound; comparisons *between* rows are not.
 
 ## 18. Reproduction recipe
 
@@ -1364,9 +1480,14 @@ compared and take minima.
 **Ground-truth measurement** against a synthesised channel (§17):
 
 ```sh
-# 1. synthesise the channel into test-files/
+# 1. synthesise the channel into test-files/ -- static,
 ./doc/make_two_ray_channel.py --input test-files/piano_iqtest.wav \
     --amp 0.9 --delay 3.0 --phase 2.1 --outdir test-files
+
+#    or fading across a = 1, as used in section 17.4
+./doc/make_two_ray_channel.py --input test-files/piano_iqtest.wav \
+    --amp 0.9 --delay 3.0 --phase 2.1 \
+    --fade-depth 6 --fade-rate 2 --doppler 10 --outdir test-files
 
 # 2. decode the CLEAN file with the filter off -- this is the reference
 ./build-mf/airspy-fmradion -q -t filesource \
@@ -1405,14 +1526,13 @@ CM cost alone should be treated as settled.
 | 2 | §12 remove redundant O(N) passes | implemented — 1.6× | [measured] |
 | 3 | §15.1 scale α with the filter order | implemented — **+6.1 dB at `-E100`** | [measured, ground truth] |
 | 4 | §16.1 clear the delay line on divergence reset | implemented | [established] |
-| 5 | §17 synthesised two-ray channel + SNR harness | implemented — `doc/make_two_ray_channel.py`, `doc/eval_two_ray_snr.py`, three files in `test-files/` | [measured] |
+| 5 | §17 synthesised channel + SNR harness, static and fading | implemented — `doc/make_two_ray_channel.py` (incl. `--fade-depth`/`--fade-rate`/`--doppler`), `doc/eval_two_ray_snr.py` | [measured] |
 | 6 | §8.2 / §16.6 header comment, dead getter, const-correctness | implemented | [established] |
 | 7 | §16.2 magnitude bound on the divergence guard | implemented — 36 orders of magnitude, no audio benefit | [measured] |
-| 8 | Time-varying two-ray channel crossing `a = 1` | not done — needed to give §5.4 another chance (§17.4) | [hypothesis] |
-| 9 | §5.1 frequency-domain adaptation | open | [hypothesis] |
+| 8 | §5.1 frequency-domain adaptation | open | [hypothesis] |
 | — | §15.3 re-tune α to 0.2–0.4 | **rejected** — 0.2–3.2 dB worse against ground truth; α stays 0.1 | [measured, ground truth] |
-| — | §5.4 soften the reference-tap constraint | **open, but unsupported** — the predicted failure did not occur on a non-minimum-phase channel | [measured] |
-| — | §5.5 gear shifting | **deferred** — optima coincide across channels | [measured] |
+| — | §5.4 soften the reference-tap constraint | **rejected** — the diagnosis is right (`\|w[ref]\|` wants 0.31–0.88) but softening is worse in 8 of 9 fading cells | [measured, ground truth] |
+| — | §5.5 gear shifting | **deferred** — a faster α is worse at every fade rate tested | [measured, ground truth] |
 | — | §5.2 double-precision coefficients | **rejected** — ≥86 ULP of margin | [measured] |
 | — | §5.3 coefficient leakage | **deferred** — no drift on any recording | [measured] |
 
