@@ -117,8 +117,12 @@ void FmDecoder::process(IQSampleVector samples_in, SampleVector &audio) {
                                                m_samples_in_multipathfiltered);
       // Check if the error evaluation becomes invalid/infinite.
       if (!done_ok) {
-        // Reset the filter coefficients.
+        // Reset the filter coefficients and the delay line.
+        // The delay line must be cleared too: the non-finite sample which
+        // triggered the reset is already in it, and would keep the output
+        // non-finite until it aged out.
         m_multipathfilter.initialize_coefficients();
+        m_multipathfilter.reset_state();
         // Discard the invalid filter output, and
         // use the no-filter input after resetting the filter.
         m_samples_in_multipathfiltered = std::move(m_samples_in_after_agc);

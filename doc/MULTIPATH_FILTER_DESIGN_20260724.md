@@ -898,15 +898,79 @@ calling it alongside `initialize_coefficients()` in the recovery path.
 is why they show the coefficient vector pinned at identity
 (off-reference energy exactly 1.00000) while `|mf_error|` stays at 1e35.
 
-### 16.2 The `isfinite` guard fires far too late
+### 16.2 The `isfinite` guard fired far too late — **replaced by a magnitude bound**
 
 **[measured]** §15.2 shows `|mf_error|` reaching 1e36–1e38 while the guard at
-`MultipathFilter.cpp:182,190` stays satisfied, because those magnitudes are
-finite. A diverging CMA loop passes through six orders of magnitude of
-obviously-wrong output before anything notices. A cheap magnitude bound — the
-CM error cannot legitimately exceed a few units when `R₂ = 1` — would catch it
-immediately and make recovery far less disruptive. **[hypothesis]** not
-implemented.
+`MultipathFilter.cpp:182,190` stayed satisfied, because those magnitudes are
+finite. A diverging CMA loop passed through some thirty-six orders of magnitude
+of obviously-wrong output before anything noticed.
+
+**Implemented on `dev-multipath-exp`.** Both tests in `process()` now bound the
+magnitude at `divergence_limit = 10.0f` instead of only rejecting non-finite
+values:
+
+```cpp
+if (!(std::abs(output.real()) <= divergence_limit) ||
+    !(std::abs(output.imag()) <= divergence_limit)) {
+  return false;
+}
+...
+if (!(std::abs(m_error) <= divergence_limit)) {
+  return false;
+}
+```
+
+The comparisons are deliberately written as "not within the limit" rather than
+"greater than the limit", so NaN — which compares false against everything —
+is still rejected. This preserves the property that makes `-ffast-math`
+forbidden in this project, while no longer depending on it as the only line of
+defence.
+
+**Headroom.** With the IF AGC holding the input at unity, `|y| ≈ 1` and the CM
+error sits near zero. The largest legitimate `|mf_error|` observed across every
+run in this document is 3.16e-1 (interfm `-E100`), so the limit of 10 is 32×
+above anything measured, and `|y| = 10` corresponds to 100× the nominal output
+power. **[measured]** No false trip occurs: interfm `-E36`/`-E100`, joak
+`-E100` and piano `-E100` all reproduce their pre-change error statistics
+exactly.
+
+**Effect on a genuinely diverging loop** (interfm `-E36`, forced with
+`alpha = 1.0`):
+
+| Guard | mean \|mf_error\| | max \|mf_error\| |
+| --- | --- | --- |
+| `isfinite` only | 3.405e+36 | 8.706e+37 |
+| `\|x\| ≤ 10` | 1.703e+01 | 9.196e+01 |
+
+**[measured]** Thirty-six orders of magnitude. The printed maxima exceed 10
+because the recorded value is the one that *tripped* the guard, and because
+the per-component output bound of 10 permits `|y|² ≤ 200` and hence an error
+down to −199 within a single update.
+
+**But the audible payoff is nil, and the reason is worth recording.**
+Decoded audio from the same diverging configuration:
+
+| Configuration | peak | rms |
+| --- | --- | --- |
+| converged (α = 0.1) | 0.5040 | 0.1667 |
+| diverging, `isfinite` guard | 0.5846 | 0.1610 |
+| diverging, magnitude guard | 0.5846 | 0.1610 |
+
+**[measured]** Identical. In both cases the filter is resetting continuously —
+off-reference tap energy is exactly 1.00000 at every dump, i.e. the
+coefficients are pinned at the identity — so the filter is effectively bypassed
+and the audio matches the filter-off case (§15.3: −4.1 dB from the converged
+result). More fundamentally, the phase discriminator takes `atan2` of
+consecutive samples and is blind to amplitude, exactly as Part I §4 notes, so
+even a 1e19-magnitude output still yields a well-defined phase. The earlier
+claim in this section that a tighter bound would "make recovery far less
+disruptive" is **not supported**: nothing measurable was recovered.
+
+The change is kept as defensive hygiene — it costs nothing measurable (piano
+`-E100`, 5 interleaved runs each: 3.60–3.98 s with the old guard, 3.52–3.75 s
+with the new one, i.e. within this machine's ~10 % run-to-run drift), it bounds
+what reaches every downstream stage, and it makes divergence observable instead
+of silent. It should not be sold as an audio improvement.
 
 ### 16.3 The 100-block warm-up is a hard bypass
 
@@ -975,6 +1039,11 @@ cmake --build build-mf --target all
 # alpha override, for the sweeps in §15 (branch dev-multipath-exp only)
 cmake -S . -B build-mf -DEXTRA_FLAGS="-DCOEFF_MONITOR -DMF_ALPHA=0.4"
 
+# forcing divergence, to exercise the §16.2 guard: MF_ALPHA_MAX must be raised
+# too, or the §15.1 clamp holds the effective alpha at 0.5 and nothing diverges
+cmake -S . -B build-mf \
+    -DEXTRA_FLAGS="-DCOEFF_MONITOR -DMF_ALPHA=1.0 -DMF_ALPHA_MAX=2.0"
+
 # coefficient / error dump (CSV on stderr, every stat_rate*10 blocks)
 ./build-mf/airspy-fmradion -t filesource \
     -c filename=test-files/interfm-20260724102822z-iq.wav,srate=384000,freq=89700000 \
@@ -996,9 +1065,16 @@ load.
 
 ## 19. Revised ranking
 
-Two revisions are marked: **(i)** the interfm recording, after which raising
+Three revisions are marked: **(i)** the interfm recording, after which raising
 `-E` is no longer assumed to be good; **(ii)** adopting §15.1 in code, which
-delivered a quarter of what it promised (§15.4) and demoted itself.
+delivered a quarter of what it promised (§15.4) and demoted itself;
+**(iii)** adopting §16.2, which did exactly what it was designed to do and
+still produced no measurable improvement, for a reason worth knowing.
+
+A pattern is emerging across (ii) and (iii): every candidate here that was
+ranked on a plausible mechanism rather than a measured outcome has come back
+smaller than advertised. The three items with measured payoffs — §12, §15.3,
+§15.4 — are ranked above the ones with reasoned payoffs deliberately.
 
 | Rank | Item | Status | Basis | Change |
 | --- | --- | --- | --- | --- |
@@ -1007,8 +1083,8 @@ delivered a quarter of what it promised (§15.4) and demoted itself.
 | 3 | §15.3 re-tune α (0.1 → 0.2–0.4), gated on §17 | not done — 38 % at `-E36`, the largest single win measured | [measured] | was 3 |
 | 4 | §16.1 clear the delay line on divergence reset | implemented on `dev-multipath-exp` | [established] | was 4 |
 | 5 | §15.1 scale α with the filter order | **implemented on `dev-multipath-exp`** — 11–16 % at `-E100`, ~0 beyond `-E200` | [measured] | **was 1, demoted** |
-| 6 | §16.2 magnitude bound on the divergence guard | not done | [measured] | was 5 |
-| 7 | §17 build the synthesised two-ray channel | not done — gates 3 and 10 | [established] | was 6 |
+| 6 | §17 build the synthesised two-ray channel | not done — gates 3 and 10 | [established] | was 7 |
+| 7 | §16.2 magnitude bound on the divergence guard | **implemented on `dev-multipath-exp`** — bounds the excursion by 36 orders of magnitude, but no measurable audio benefit | [measured] | **demoted from 6** |
 | 8 | §8.2 / §16.6 fix the stale header comment and dead getter | not done | [established] | was 7 |
 | 9 | §5.1 frequency-domain adaptation | open | [hypothesis] | was 8 |
 | 10 | §5.4 soften the reference-tap constraint | open; failure not reproduced | [hypothesis] | was 9 |

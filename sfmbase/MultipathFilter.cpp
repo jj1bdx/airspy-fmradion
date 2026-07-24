@@ -28,8 +28,10 @@
 // Institute of Television Engineers of Japan, Vol. 39, No. 3, pp. 228-234
 // (1985). https://doi.org/10.3169/itej1978.39.228
 
+#include <algorithm>
 #include <cassert>
 #include <climits>
+#include <cmath>
 
 #include "MultipathFilter.h"
 
@@ -48,7 +50,18 @@ MultipathFilter::MultipathFilter(unsigned int stages)
       ,
       m_filter_order((m_stages * 4) + 1)
 
-      // mu = alpha / (sum of input signal state square norm).
+      // Scale alpha with the filter order so that the per-tap adaptation
+      // rate mu ~= alpha_effective / m_filter_order stays at the value it has
+      // at the reference order, instead of falling as 1 / m_filter_order.
+      // Clamped because the stability limit of this loop is on alpha itself,
+      // not on mu: alpha = 1.0 diverges regardless of the order.
+      // See doc/MULTIPATH_FILTER_DESIGN_20260724.md §15.
+      ,
+      m_alpha(std::min(alpha * static_cast<double>(m_filter_order) /
+                           static_cast<double>(alpha_reference_order),
+                       alpha_maximum))
+
+      // mu = alpha_effective / (sum of input signal state square norm).
       // When the reference level = 1.0,
       // estimated norm of the input state vector ~= m_filter_order
       // * norm(input_signal) ~= 1.0 since abs(input_signal) ~= 1.0
@@ -56,11 +69,13 @@ MultipathFilter::MultipathFilter(unsigned int stages)
       //   the actually measureed mu is nominally +-10% or less
       // Note: reference level is 1.0, therefore excluded from this expression.
       ,
-      m_mu(alpha / m_filter_order)
+      m_mu(m_alpha / m_filter_order)
 
       // Initialize coefficient and state vectors with the size.
+      // The state ring buffer holds each sample twice (see the header).
       ,
-      m_coeff(m_filter_order), m_state(m_filter_order),
+      m_coeff(m_filter_order), m_state(m_filter_order * 2), m_window(nullptr),
+      m_state_pos(0), m_state_power(0), m_resync_cnt(0),
       // Initialize calculation error value.
       m_error(0) {
 
@@ -68,10 +83,28 @@ MultipathFilter::MultipathFilter(unsigned int stages)
   // Guard against constructor overflow on m_filter_order = stages*4 + 1
   // and m_index_reference_point = stages*3 + 1.
   assert(stages < (UINT_MAX / 4));
-  for (unsigned int i = 0; i < m_filter_order; i++) {
+  reset_state();
+  initialize_coefficients();
+}
+
+// Clear the delay line and every quantity derived from it.
+void MultipathFilter::reset_state() {
+  for (unsigned int i = 0; i < m_filter_order * 2; i++) {
     m_state[i] = IQSample(0, 0);
   }
-  initialize_coefficients();
+  m_state_pos = 0;
+  m_window = m_state.data() + 1;
+  m_state_power = 0;
+  m_resync_cnt = 0;
+}
+
+// Recompute the window power sum exactly.
+void MultipathFilter::resync_state_power() {
+  double sum = 0;
+  for (unsigned int i = 0; i < m_filter_order; i++) {
+    sum += std::norm(m_window[i]);
+  }
+  m_state_power = sum;
 }
 
 void MultipathFilter::initialize_coefficients() {
@@ -90,26 +123,30 @@ void MultipathFilter::initialize_coefficients() {
 
 // Apply a simple FIR filter for each input.
 inline IQSample MultipathFilter::single_process(const IQSample filter_input) {
-  // Remove the element number zero (oldest one)
-  // and add the input as the newest element at the end of the buffer
-  m_state.emplace_back(filter_input);
-  m_state.erase(m_state.begin());
+  // m_state[m_state_pos] still holds the sample written m_filter_order steps
+  // ago, i.e. the one leaving the window; update the running power sum with
+  // it before it is overwritten.
+  m_state_power += std::norm(filter_input) - std::norm(m_state[m_state_pos]);
+  // Store the newest sample twice so that the newest m_filter_order samples
+  // stay contiguous: the window is [m_state_pos + 1, m_state_pos + 1 + N).
+  m_state[m_state_pos] = filter_input;
+  m_state[m_state_pos + m_filter_order] = filter_input;
+  m_window = m_state.data() + m_state_pos + 1;
+  m_state_pos++;
+  if (m_state_pos == m_filter_order) {
+    m_state_pos = 0;
+  }
   IQSample output = IQSample(0, 0);
   // VOLK calculation, equivalent to:
   // for (unsigned int i = 0; i < m_filter_order; i++) {
-  //   output += m_state[i] * m_coeff[i];
+  //   output += m_window[i] * m_coeff[i];
   // }
-  volk_32fc_x2_dot_prod_32fc(&output, m_state.data(), m_coeff.data(),
-                             m_filter_order);
+  volk_32fc_x2_dot_prod_32fc(&output, m_window, m_coeff.data(), m_filter_order);
   return output;
 }
 
 // Update coefficients by complex LMS/CMA method.
 inline void MultipathFilter::update_coeff(const IQSample result) {
-
-  volk::vector<float> state_mag_sq;
-  state_mag_sq.resize(m_filter_order);
-  float state_mag_sq_sum;
 
   // Input instant envelope
   const double env = std::norm(result);
@@ -117,17 +154,18 @@ inline void MultipathFilter::update_coeff(const IQSample result) {
   const double error = if_target_level - env;
 
   // Normalized LMS (NLMS) processing
-  // First calculate the square norm of input data (m_state) by
-  // * Compute the square magnitude of each element of m_state
-  // * Then add the square magnitude for all the elements
-  volk_32fc_magnitude_squared_32f(state_mag_sq.data(), m_state.data(),
-                                  m_filter_order);
-  volk_32f_accumulator_s32f(&state_mag_sq_sum, state_mag_sq.data(),
-                            m_filter_order);
+  // The square norm of the input data window is maintained incrementally in
+  // single_process(); recompute it exactly every resync_interval updates to
+  // bound the accumulated rounding drift of the running sum.
+  if (++m_resync_cnt >= resync_interval) {
+    m_resync_cnt = 0;
+    resync_state_power();
+  }
+  const double state_mag_sq_sum = std::max(0.0, m_state_power);
 
   // Obtain the step size (dymanically computed)
   // Add offset to prevent division-by-zero error
-  m_mu = alpha / (state_mag_sq_sum + 1e-10);
+  m_mu = m_alpha / (state_mag_sq_sum + 1e-10);
 
   // Calculate correlation vector
   const float factor = error * m_mu;
@@ -136,7 +174,7 @@ inline void MultipathFilter::update_coeff(const IQSample result) {
 // Recalculate all coefficients
 // VOLK calculation, equivalent to:
 // for (unsigned int i = 0; i < m_filter_order; i++) {
-//  m_coeff[i] += factor_times_result * std::conj(m_state[i]);
+//  m_coeff[i] += factor_times_result * std::conj(m_window[i]);
 // }
 // Note: always check if the result and the source vectors can overlap!
 // For volk_32fc_x2_s32fc_multiply_conjugate_add_32fc(),
@@ -145,13 +183,13 @@ inline void MultipathFilter::update_coeff(const IQSample result) {
 // handled in the following if-else-endif clause.
 #if VOLK_VERSION < 030100
   // Before 3.1.0
-  volk_32fc_x2_s32fc_multiply_conjugate_add_32fc(
-      m_coeff.data(), m_coeff.data(), m_state.data(), factor_times_result,
-      m_filter_order);
+  volk_32fc_x2_s32fc_multiply_conjugate_add_32fc(m_coeff.data(), m_coeff.data(),
+                                                 m_window, factor_times_result,
+                                                 m_filter_order);
 #else
   // 3.1.0 and later (version inclusive)
   volk_32fc_x2_s32fc_multiply_conjugate_add2_32fc(
-      m_coeff.data(), m_coeff.data(), m_state.data(), &factor_times_result,
+      m_coeff.data(), m_coeff.data(), m_window, &factor_times_result,
       m_filter_order);
 #endif // VOLK_VERSION
   // Set the middle (position 0) coefficient to 1+0j (unity)
@@ -178,16 +216,23 @@ bool MultipathFilter::process(const IQSampleVector &samples_in,
     IQSample output = single_process(samples_in[i]);
     // Note well: -ffast-math DISABLES NaN processing (-menable-no-nans)
     // so DO NOT specify -ffast-math!
-    // Check if output real/imag are finite
-    if (!std::isfinite(output.real()) || !std::isfinite(output.imag())) {
+    // Check the output magnitude against divergence_limit rather than
+    // against infinity: a diverging loop passes through many orders of
+    // magnitude of obviously-wrong output long before it overflows, and
+    // every one of those samples reaches the discriminator.
+    // The comparisons are written as "not within the limit" so that NaN,
+    // which compares false against everything, is rejected as well.
+    if (!(std::abs(output.real()) <= divergence_limit) ||
+        !(std::abs(output.imag()) <= divergence_limit)) {
       return false;
     }
     samples_out[i] = output;
     if ((i & filter_interval) == 0) {
       // Update filter coefficients here
       update_coeff(output);
-      // Check if error value is finite
-      if (!std::isfinite(m_error)) {
+      // Check the error value the same way. With if_target_level = 1.0 the
+      // error cannot legitimately leave a small neighbourhood of zero.
+      if (!(std::abs(m_error) <= divergence_limit)) {
         return false;
       }
     }
