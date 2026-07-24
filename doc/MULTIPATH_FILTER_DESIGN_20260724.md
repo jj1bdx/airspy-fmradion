@@ -296,8 +296,11 @@ citation of them here as motivation, not proof.
 
 # Part II — Source review and measured results
 
-**Added 2026-07-24; revised the same day after a third recording containing
-real multipath became available.** Part I was written without reading
+**Added 2026-07-24; revised the same day, first after a third recording
+containing real multipath became available, then again after §15.1 was
+adopted in code and measured — it recovered a quarter of what it promised and
+demoted itself from the top of the ranking.** Part I was written without
+reading
 `sfmbase/MultipathFilter.cpp`. This part closes that gap: the implementation
 was read line by line, the numeric claims in §5 were recomputed against what
 the code actually does, and every candidate that could be tested was tested.
@@ -700,11 +703,32 @@ from taps that carry no signal.
 **Consequence:** `-E` is documented and used as a "how much multipath to
 correct" knob, but it is simultaneously an *inverse adaptation-rate* knob, and
 nothing in the code or the help text says so. On a time-varying channel that
-side effect dominates. This is a defect in the knob, not a tuning preference.
+side effect dominates. This is a defect in the knob, not a tuning preference —
+though §15.4 shows that compensating the step size fixes only part of it, and
+that the rest is intrinsic to carrying taps that hold no signal.
 
-**Fix [hypothesis], not yet implemented:** make the effective `mu` independent
-of `-E`, e.g. scale `alpha` with N so the per-tap step stays constant. §15.2
-shows the scaling cannot be unbounded.
+**Fix — implemented on `dev-multipath-exp`, see §15.4 for the result.** Make
+the effective `mu` independent of `-E` by scaling `alpha` with N. §15.2 shows
+the scaling cannot be unbounded, so it is clamped:
+
+```cpp
+// MultipathFilter.h
+static constexpr unsigned int alpha_reference_order = 145;  // -E36
+static constexpr double alpha_maximum = 0.5;
+// MultipathFilter.cpp, constructor
+m_alpha(std::min(alpha * double(m_filter_order) / alpha_reference_order,
+                 alpha_maximum))
+```
+
+| `-E` | N | α effective | mu |
+| --- | --- | --- | --- |
+| 36 | 145 | 0.1000 | 6.90e-4 |
+| 100 | 401 | 0.2766 | 6.90e-4 |
+| 200 | 801 | 0.5000 (clamped) | 6.24e-4 |
+| 400 | 1601 | 0.5000 (clamped) | 3.12e-4 |
+
+`-E36` is unchanged by construction, so the default configuration cannot
+regress.
 
 ### 15.2 The stability limit is on α, not on mu
 
@@ -787,6 +811,67 @@ with multipath suppression restoring separation — but without ground truth
 that is equally consistent with added noise. **A post-discriminator THD and
 separation measurement on the synthesised channel of §17 is required before
 changing the default.**
+
+---
+
+### 15.4 Result of adopting §15.1 — a real but partial win, and the scaling law is wrong
+
+**[measured]** Second-half mean `|mf_error|`, default (fixed α = 0.1) versus
+the α-scaled build:
+
+| File | `-E` | N | default | α-scaled | change |
+| --- | --- | --- | --- | --- | --- |
+| interfm | 36 | 145 | 2.175e-2 | 2.175e-2 | 0 (by construction) |
+| interfm | 100 | 401 | 3.142e-2 | **2.751e-2** | **−12.4 %** |
+| interfm | 200 | 801 | 3.200e-2 | 3.113e-2 | −2.7 % |
+| interfm | 400 | 1601 | 4.249e-2 | 4.391e-2 | **+3.3 %** |
+| joak | 36 | 145 | 3.861e-3 | 3.861e-3 | 0 |
+| joak | 100 | 401 | 2.545e-3 | **2.269e-3** | **−10.8 %** |
+| piano | 100 | 401 | 5.887e-3 | **4.923e-3** | **−16.4 %** |
+
+CPU cost is unchanged — the scaling is computed once in the constructor
+(piano `-E100`, min of 3 interleaved runs: 3.56 s vs 3.59 s, within noise).
+Stability is confirmed at the clamp: α = 0.5 runs without divergence at both
+N = 801 and N = 1601, extending §15.2's stability data, which previously only
+covered N = 145.
+
+So the change is worth keeping: a consistent 11–16 % improvement at `-E100`
+across all three recordings, zero CPU cost, and `-E36` untouched. **But it
+does not do what §15.1 hoped.** The `-E36` → `-E100` penalty on interfm was
+2.18e-2 → 3.14e-2; holding `mu` constant recovers it only to 2.75e-2, about a
+quarter of the gap. Beyond `-E200` the clamp binds and the benefit vanishes.
+
+**And the constant-`mu` law is not the right law.** Sweeping α at N = 1601 on
+interfm:
+
+| N | α | mu | 2nd-half mean \|mf_error\| |
+| --- | --- | --- | --- |
+| 1601 | 0.1 | 6.25e-5 | 4.249e-2 |
+| 1601 | 0.2 | 1.25e-4 | **3.909e-2** |
+| 1601 | 0.5 | 3.12e-4 | 4.391e-2 |
+| 145 | 0.4 | 2.76e-3 | **1.345e-2** |
+
+**[measured]** The optimum at N = 1601 is α ≈ 0.2, against α ≈ 0.4 at N = 145.
+Over an 11× change in filter order the optimal **α** moves by 2×, while the
+optimal **mu** moves by 22×. In other words the data says the truth is much
+closer to *constant α* — which is what the code did before this change — than
+to *constant mu*, which is what §15.1 proposed. The cross-over test in §15.1 is
+still valid (dropping `mu` at fixed N does reproduce the larger-N floor), but
+it does not license the inverse conclusion that holding `mu` fixed restores
+the smaller-N floor. It mostly does not.
+
+**[hypothesis]** A better-fitting rule would be a mild decrease of α with N
+rather than a proportional increase. That is not implemented: two α points at
+N = 1601 and one channel are not enough to fit a law, and `-E400` is outside
+the range anyone uses.
+
+**What survives is the sizing advice, not the compensation.** The extra taps
+carry no signal (§9: far-field energy is 1e-4 at every stage count) and they
+cost error floor through gradient noise that no step-size choice removes.
+`-E` should be sized to the measured delay spread — for interfm, ±50 µs, which
+`-E36` already more than covers — and not raised "for safety". The help text
+at `main.cpp:130` presents `-E` as a pure capability knob and should say
+otherwise.
 
 ---
 
@@ -911,31 +996,42 @@ load.
 
 ## 19. Revised ranking
 
-Changes from the pre-interfm ranking are marked. The headline change is that
-**raising `-E` is no longer assumed to be good**, which demotes everything
-whose payoff was "make large `-E` affordable".
+Two revisions are marked: **(i)** the interfm recording, after which raising
+`-E` is no longer assumed to be good; **(ii)** adopting §15.1 in code, which
+delivered a quarter of what it promised (§15.4) and demoted itself.
 
 | Rank | Item | Status | Basis | Change |
 | --- | --- | --- | --- | --- |
-| 1 | §15.1 decouple the adaptation rate from `-E` | not done | [measured] | **new — top** |
-| 2 | §12 remove redundant O(N) passes | implemented on `dev-multipath-exp`, 1.6× measured | [measured] | was 1 |
-| 3 | §15.3 re-tune α (0.1 → 0.2–0.4), gated on §17 | not done | [measured] | **new** |
-| 4 | §16.1 clear the delay line on divergence reset | implemented on `dev-multipath-exp` | [established] | was 2 |
-| 5 | §16.2 magnitude bound on the divergence guard | not done | [measured] | **new** |
-| 6 | §17 build the synthesised two-ray channel | not done — gates 3 and 9 | [established] | was 4 |
-| 7 | §8.2 / §16.6 fix the stale header comment and dead getter | not done | [established] | was 3 |
-| 8 | §5.1 frequency-domain adaptation | open | [hypothesis] | **demoted** |
-| 9 | §5.4 soften the reference-tap constraint | open; failure not reproduced | [hypothesis] | was 7 |
-| — | §5.5 gear shifting | **deferred** — optima coincide across static and dispersive channels, so a fixed re-tune captures most of it | [measured] | **demoted from 6** |
+| 1 | §12 remove redundant O(N) passes | implemented on `dev-multipath-exp`, 1.6× measured | [measured] | back to 1 |
+| 2 | §15.4 size `-E` to the delay spread; say so in the help text | not done | [measured] | **new — the surviving lesson of §15** |
+| 3 | §15.3 re-tune α (0.1 → 0.2–0.4), gated on §17 | not done — 38 % at `-E36`, the largest single win measured | [measured] | was 3 |
+| 4 | §16.1 clear the delay line on divergence reset | implemented on `dev-multipath-exp` | [established] | was 4 |
+| 5 | §15.1 scale α with the filter order | **implemented on `dev-multipath-exp`** — 11–16 % at `-E100`, ~0 beyond `-E200` | [measured] | **was 1, demoted** |
+| 6 | §16.2 magnitude bound on the divergence guard | not done | [measured] | was 5 |
+| 7 | §17 build the synthesised two-ray channel | not done — gates 3 and 10 | [established] | was 6 |
+| 8 | §8.2 / §16.6 fix the stale header comment and dead getter | not done | [established] | was 7 |
+| 9 | §5.1 frequency-domain adaptation | open | [hypothesis] | was 8 |
+| 10 | §5.4 soften the reference-tap constraint | open; failure not reproduced | [hypothesis] | was 9 |
+| — | §5.5 gear shifting | **deferred** — optima coincide across static and dispersive channels, so a fixed re-tune captures most of it | [measured] | unchanged |
 | — | §5.2 double-precision coefficients | **rejected** — ≥86 ULP of margin | [measured] | unchanged |
 | — | §5.3 coefficient leakage | **deferred** — no drift on any of the three recordings | [measured] | unchanged |
+
+**Why §15.1 demoted itself.** It was ranked first on the strength of the
+cross-over test in §15.1, which showed the `-E` penalty tracks `mu`. Adopting
+it recovered only a quarter of the penalty at `-E100` and none at `-E200`, and
+the follow-up sweep at N = 1601 showed the optimal α moves 2× where the optimal
+`mu` moves 22× — i.e. constant-α, the pre-existing behaviour, is closer to
+right than the constant-`mu` law that replaced it (§15.4). The change is kept
+because it is free and helps in the range people use, but the *lesson* of §15
+is the sizing advice now at rank 2, not the compensation.
 
 **Why §5.1 is demoted.** Its case rested on making `-E200`-class filters
 affordable. Three measurements undercut that: the time-domain cost it must beat
 is 1.6× lower than Part I computed (§8.3) and another 1.6× lower after §12; the
 useful span on the one genuinely dispersive recording is ±50 µs, which `-E36`
 already more than covers (§9); and raising `-E` past that *degrades* the error
-floor by 44 % with no α able to recover it (§15). Frequency-domain adaptation
+floor by 44 %, of which the α scaling of §15.4 recovers only a quarter and no
+α at all recovers the rest. Frequency-domain adaptation
 remains the right answer if a channel is ever found that genuinely needs
 hundreds of taps — its per-bin normalisation argument is untested and may still
 be its strongest feature — but "the current `-E` ceiling is the problem" is no
