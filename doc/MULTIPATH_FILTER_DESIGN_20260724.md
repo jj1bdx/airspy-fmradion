@@ -296,20 +296,19 @@ citation of them here as motivation, not proof.
 
 # Part II — Source review and measured results
 
-**Added 2026-07-24.** Part I above was written without reading
+**Added 2026-07-24; revised the same day after a third recording containing
+real multipath became available.** Part I was written without reading
 `sfmbase/MultipathFilter.cpp`. This part closes that gap: the implementation
 was read line by line, the numeric claims in §5 were recomputed against what
-the code actually does, and the candidates that could be tested were tested on
-the two IQ recordings held in `test-files/`.
+the code actually does, and every candidate that could be tested was tested.
 
 Same tagging convention as Part I, with one addition: **[measured]** means a
-number in this part came out of an actual run, not out of an estimate.
+number came out of an actual run, not an estimate.
 
-**Method.** Static review by a C++/DSP reviewer pass over
-`include/MultipathFilter.h`, `sfmbase/MultipathFilter.cpp`,
-`sfmbase/FmDecode.cpp` and the `COEFF_MONITOR` block in `main.cpp`, followed by
-instrumented runs. Code experiments were done on branch `dev-multipath-exp`;
-`main` and `dev` are untouched.
+**Method.** Static review of `include/MultipathFilter.h`,
+`sfmbase/MultipathFilter.cpp`, `sfmbase/FmDecode.cpp` and the `COEFF_MONITOR`
+block in `main.cpp`, followed by instrumented runs. Code experiments were done
+on branch `dev-multipath-exp`; `main` and `dev` are untouched.
 
 **Measurement environment**
 
@@ -320,8 +319,17 @@ instrumented runs. Code experiments were done on branch `dev-multipath-exp`;
 | VOLK | 3.3.0 |
 | Baseline commit | `8f1354b` |
 | Instrumentation | `cmake -S . -B build-mf -DEXTRA_FLAGS="-DCOEFF_MONITOR"` |
-| Recording A | `test-files/piano_iqtest.wav` — 384 kHz float IQ, 2 ch, 20.0 s |
-| Recording B | `test-files/joakfm-20260715045930z-iq.wav` — 384 kHz float IQ, 2 ch, 60.0 s |
+
+**Recordings** — all 384 kHz float IQ, 2 channels:
+
+| Tag | File | Length | Character |
+| --- | --- | --- | --- |
+| piano | `test-files/piano_iqtest.wav` | 20.0 s | clean |
+| joak | `test-files/joakfm-20260715045930z-iq.wav` | 60.0 s | off-air NHK JOAK FM, near-clean |
+| interfm | `test-files/interfm-20260724102822z-iq.wav` | 100.0 s | off-air InterFM, **real multipath** |
+
+The interfm recording changes several conclusions and is what most of the
+re-prioritisation in §16 rests on. Where a result predates it, that is stated.
 
 ---
 
@@ -359,25 +367,28 @@ w[ref]  ← 1 + 0j                                hard overwrite
 
 This is **Godard/CMA(2,2)** — gradient `e(n)·y(n)·conj(x(n))` with
 `e(n) = R₂ − |y(n)|²` — with NLMS power normalisation of the step. It is not
-decision-directed LMS. The header's own citation of Treichler & Agee is
-correct; only Part I's description of the step size was wrong.
+decision-directed LMS. The header's citation of Treichler & Agee is correct;
+only Part I's description of the step size was wrong.
 
-**Consequences.**
+Because `|x[n]| ≈ 1` under IF AGC to unity, `‖x‖² ≈ N`, so in practice
+**`mu ≈ alpha / N`**. This single relation drives most of §15: raising `-E`
+silently divides the per-tap adaptation rate.
 
-- §5.5 proposes gear-shifting "the step size". The step size is already
-  renormalised every update. What would have to be gear-shifted is `alpha`,
-  the dimensionless numerator. See §12.5.
-- §5.2's ULP argument has to use the real NLMS `mu ≈ alpha/N`, not an assumed
-  fixed LMS step. This changes the numbers by orders of magnitude. See §11.
-
-### 8.2 The header documents a stability bound for a different algorithm
+### 8.2 The header's stability comment is wrong in its expression but right in spirit
 
 **[established]** `MultipathFilter.h:40-44` says *"maximum amplitude must be
-less than sqrt(2 / alpha) to maintain the filter convergence"*. That is the
-bound for **unnormalised** LMS. For NLMS the convergence condition is
-amplitude-independent, `0 < alpha < 2` — which is the entire reason the
-normalisation is there. The comment describes a criterion that does not apply
-to the code below it, and will mislead the next person who tunes `alpha`.
+less than sqrt(2 / alpha)"*. That is the bound for **unnormalised** LMS, and
+the code is normalised, so the expression does not apply as written.
+
+**[measured]** However, the obvious replacement — NLMS's amplitude-independent
+`0 < alpha < 2` — is also wrong here, and an earlier draft of this document
+asserted it. Measured on interfm at `-E36`, `alpha = 0.6` is stable and
+`alpha = 1.0` **diverges** (§15.2). NLMS's `0 < alpha < 2` result is for a
+*linear* error `d − y`; CMA's error `R₂ − |y|²` is quadratic in the output, so
+the effective loop gain depends on the output amplitude and the clean
+normalised bound does not carry over. The header comment is therefore right
+that the bound is amplitude-dependent, and wrong only about the formula.
+The measured safe region on these recordings is `alpha ≲ 0.6`.
 
 ### 8.3 The per-sample MAC count in §5.1 is overstated by 1.6×
 
@@ -385,8 +396,7 @@ to the code below it, and will mislead the next person who tunes `alpha`.
 output sample (filter + update)". The update runs only every 4th sample
 (`MultipathFilter.cpp:176-193`), so the true figure is `N + N/4 = 1.25N`. At
 N = 401 and 384 kHz that is **192 M complex MAC/s**, not the ~300 M quoted.
-The FFT method's advantage is correspondingly 1.6× smaller than §5.1 claims —
-which matters, because §5.1 is ranked highest partly on that arithmetic.
+The FFT method's advantage is correspondingly 1.6× smaller than §5.1 claims.
 
 ### 8.4 `get_reference_level()` is structurally dead
 
@@ -399,47 +409,53 @@ entire life of the process. It has no callers. It becomes meaningful only if
 
 ---
 
-## 9. What the two recordings actually contain
+## 9. What the three recordings contain
 
-**[measured]** This governs which candidates could be tested at all.
-
-Converged tap profile, from the last `COEFF_MONITOR` dump of each run:
+**[measured]** This governs which candidates can be tested at all.
+Converged tap statistics, from the last `COEFF_MONITOR` dump of each run:
 
 | File | `-E` | N | largest non-reference tap | off-reference energy Σ\|w\|²−1 |
 | --- | --- | --- | --- | --- |
-| piano | 36 | 145 | 0.0472 | 0.0083 |
-| piano | 100 | 401 | 0.0362 | 0.0057 |
-| piano | 400 | 1601 | 0.0234 | 0.0030 |
-| joak | 36 | 145 | 0.0485 | 0.0085 |
-| joak | 100 | 401 | 0.0388 | 0.0064 |
+| piano | 36 | 145 | 0.0472 | 0.008 |
+| piano | 100 | 401 | 0.0362 | 0.006 |
+| joak | 36 | 145 | 0.0485 | 0.008 |
+| joak | 100 | 401 | 0.0388 | 0.006 |
+| **interfm** | **36** | **145** | **0.3296** | **0.367** |
+| **interfm** | **100** | **401** | **0.3010** | **0.352** |
+| **interfm** | **200** | **801** | **0.2820** | **0.349** |
 
-**Neither recording contains significant multipath.** The equaliser settles
-with under 1 % of its energy off the reference tap; the deepest echo either
-file implies is of order 5 % amplitude. Part I §2 is concerned with echoes of
-`a = 0.5–0.95`; nothing remotely that deep is present here. Any candidate whose
-payoff depends on deep echoes (§5.1's conditioning argument, §5.4 entirely)
-**cannot be accepted or rejected on these files**, and a synthesised channel is
-required — see §13.
+piano and joak are effectively multipath-free — the equaliser settles with
+under 1 % of its energy off the reference tap, implying echoes of order 5 %.
+**interfm is a genuine multipath channel**: 33 % peak echo and 35 % of the tap
+energy off the reference, 40× more than the other two. It is also
+*time-varying* — ‖w‖ wanders between 1.19 and 1.25 for the whole 100 s rather
+than settling.
 
 ![Converged tap magnitude vs delay](MULTIPATH_FILTER_DESIGN_20260724_taps.png)
 
 The figure is Part I §6's own suggested diagnostic ("tap magnitude versus
-index"), and it works: at `-E36` the trace turns *upward* at the left edge of
-the span, the signature of energy piling against a truncated delay line, while
-at `-E100` it decays smoothly into a ~1e-4 floor with ~500 µs of margin to
-spare.
+index"), and it works. Two things it shows:
+
+- **`-E36` truncates on all three recordings.** The trace turns *upward* at the
+  left edge of the span, the signature of energy piling against a truncated
+  delay line. At `-E100` and beyond the profiles decay smoothly into a floor
+  and agree with each other.
+- **The channel is short-delay and deep**, exactly Part I §2's case. On
+  interfm at `-E100`, 0.435 of the 0.442 off-reference energy lies within
+  ±50 µs of the reference; the peak echo tap is at **−2.6 µs, one sample**.
+  Beyond 200 µs there is 1e-4 of energy — nothing.
 
 | File | `-E` | max \|w\| in outer 5 taps | as fraction of largest non-ref tap |
 | --- | --- | --- | --- |
+| interfm | 36 | 9.06e-3 | 2.7 % |
+| interfm | 100 | 9.2e-4 | 0.31 % |
+| interfm | 200 | 5.3e-4 | 0.19 % |
 | joak | 36 | 5.06e-3 | 10.4 % |
 | joak | 100 | 1.0e-4 | 0.26 % |
-| piano | 36 | 2.17e-3 | 4.6 % |
-| piano | 100 | 7e-5 | 0.19 % |
 
-**[measured]** So `-E36` is span-limited even on a near-clean off-air signal,
-and `-E100` is comfortably not. This is a concrete argument for the value of
-raising the practical `-E` ceiling, independent of which method is used to
-raise it.
+So on span grounds `-E100` is better than `-E36` on interfm. §15 shows that on
+*error* grounds it is nevertheless worse — and that tension is the single most
+important result in this document.
 
 ---
 
@@ -457,79 +473,67 @@ subtracts the `-E`-disabled run (1.28 s).
 | 200 | 801 | 7.86 | 6.58 | 857 | 1.07 | 32.9 % |
 | 400 | 1601 | 11.50 | 10.22 | 1331 | 0.83 | 51.1 % |
 
-Cost is very close to linear in N, as expected for an O(N)-per-sample
-algorithm. Note that on this machine `-E400` still runs at half of one core —
-the doc's "~100 on a modern CPU" ceiling is conservative for Apple silicon, and
-the binding constraint on Raspberry Pi-class hardware will be much tighter.
+Cost is close to linear in N, as expected. On this machine `-E400` still runs
+at half of one core — Part I's "~100 on a modern CPU" ceiling is conservative
+for Apple silicon, though it will bind much harder on Raspberry Pi-class
+hardware.
 
 ---
 
 ## 11. §5.2 double-precision coefficients — **rejected by measurement**
 
 **[measured]** The hypothesis is that `mu·gradient` falls below the float32 ULP
-and quantises to zero. With the real NLMS step `mu ≈ alpha/N` (since
-`|x[n]| ≈ 1` under IF AGC to unity) the per-update tap increment is
+and quantises to zero. With the real NLMS step `mu ≈ alpha/N` the per-update
+tap increment is `|Δw| ≈ (alpha/N)·|e|`, and stalling needs
+`|Δw| < ULP(w) = |w|·2⁻²³`. Both `|e|` and `|w|` are measured, not assumed:
 
-```
-|Δw| = mu·|e|·|y|·|x_i| ≈ (alpha/N)·|e|
-```
-
-and stalling needs `|Δw| < ULP(w) = |w|·2⁻²³`. Both `|e|` and `|w|` are now
-measured rather than assumed:
-
-| `-E` | N | mu = α/N | measured mean \|e\| | \|Δw\| | largest non-ref \|w\| | ULP(\|w\|) | margin |
+| File | `-E` | mu = α/N | mean \|e\| | \|Δw\| | largest non-ref \|w\| | ULP(\|w\|) | margin |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 36 | 145 | 6.90e-4 | 3.8e-3 | 2.6e-6 | 0.0485 | 5.8e-9 | **450×** |
-| 100 | 401 | 2.49e-4 | 2.7e-3 | 6.7e-7 | 0.0388 | 4.6e-9 | **145×** |
-| 400 | 1601 | 6.25e-5 | 3.8e-3 | 2.4e-7 | 0.0234 | 2.8e-9 | **86×** |
-
-Equivalently, stalling at `-E100` would require the steady-state CM error to
-fall to `|e| ≈ 1.9e-5`; it measures 2.7e-3, two orders of magnitude above.
+| interfm | 36 | 6.90e-4 | 1.9e-2 | 1.3e-5 | 0.330 | 3.9e-8 | **335×** |
+| interfm | 100 | 2.49e-4 | 3.1e-2 | 7.7e-6 | 0.301 | 3.6e-8 | **215×** |
+| joak | 36 | 6.90e-4 | 3.8e-3 | 2.6e-6 | 0.0485 | 5.8e-9 | **450×** |
+| joak | 100 | 2.49e-4 | 2.7e-3 | 6.7e-7 | 0.0388 | 4.6e-9 | **145×** |
+| piano | 400 | 6.25e-5 | 3.8e-3 | 2.4e-7 | 0.0234 | 2.8e-9 | **86×** |
 
 Measured steady-state error floors, for the record:
 
 | File | `-E` | mean \|mf_error\| | 2nd-half mean | max |
 | --- | --- | --- | --- | --- |
+| interfm | 36 | 1.89e-2 | 2.18e-2 | 9.39e-2 |
+| interfm | 100 | 3.10e-2 | 3.14e-2 | 2.72e-1 |
+| interfm | 200 | 3.15e-2 | 3.20e-2 | 2.37e-1 |
+| joak | 36 | 3.76e-3 | 3.86e-3 | 1.37e-2 |
+| joak | 100 | 2.72e-3 | 2.55e-3 | 9.27e-3 |
 | piano | 36 | 3.85e-3 | 4.33e-3 | 1.44e-2 |
 | piano | 100 | 5.12e-3 | 5.89e-3 | 2.31e-2 |
 | piano | 400 | 5.55e-3 | 3.76e-3 | 1.61e-2 |
-| joak | 36 | 3.76e-3 | 3.86e-3 | 1.37e-2 |
-| joak | 100 | 2.72e-3 | 2.55e-3 | 9.27e-3 |
 
-**Conclusion.** The error floor is set by CMA misadjustment — a function of
-`alpha` — not by coefficient precision. The margin does shrink with N, so Part
-I's *direction* is right, but even at `-E400` there are ~86 ULP of headroom.
-Note also that Part I's picture has the risk backwards: `ULP` scales with a
-tap's own magnitude, so small taps are no worse off than large ones; the only
-tap of magnitude 1 is the reference tap, and it is overwritten every update
-anyway.
+The margin is smallest on the *cleanest* signal at the *highest* tap count —
+and it is still 86 ULP. On the recording that actually has multipath, where
+the filter is doing real work, the error floor is an order of magnitude higher
+and the margin correspondingly larger. The floor is set by CMA misadjustment
+and tracking lag, not by coefficient precision.
 
 Two further points against §5.2 as written:
 
 - **[established]** Widening only `m_coeff` would not help even if stalling
   were real, because `env = std::norm(result)` (`MultipathFilter.cpp:115`)
   evaluates in float32 — `std::norm` on a `complex<float>` returns `float` —
-  and only the already-rounded result is widened to `double`. Recovering
-  precision there would require `complex<double>` all the way through the
-  forward path, i.e. a double-precision replacement for
-  `volk_32fc_x2_dot_prod_32fc`. That is a much larger change than §5.2
-  describes.
+  and only the already-rounded result is widened to `double`. Fixing that
+  needs `complex<double>` through the whole forward path, i.e. a
+  double-precision replacement for `volk_32fc_x2_dot_prod_32fc`.
 - **[established]** `COEFF_MONITOR` prints coefficients with `{:.9f}`
-  (`main.cpp:1125`). float32 carries ~7 significant decimal digits, so the last
-  two printed digits are formatting artefacts. Do not read them as evidence of
-  resolution.
+  (`main.cpp:1125`); float32 carries ~7 significant decimal digits, so the last
+  two printed digits are formatting artefacts.
 
-**Verdict: do not implement.** Revisit only if a future recording shows
-`|mf_error|` settling below ~1e-4 at high `-E`.
+**Verdict: do not implement.**
 
 ---
 
-## 12. Revised improvement ranking
-
-### 12.1 Remove the redundant O(N) work — **implemented and measured, highest payoff/risk ratio**
+## 12. Remove the redundant O(N) work — **implemented and measured**
 
 **[established]** Per 4 input samples the baseline makes **11 O(N) passes** over
-the delay line, of which only 5 are intrinsic to the algorithm:
+the delay line, of which only 5 are intrinsic:
 
 | Pass | Where | Per 4 samples | Necessary? |
 | --- | --- | --- | --- |
@@ -540,32 +544,30 @@ the delay line, of which only 5 are intrinsic to the algorithm:
 | `volk_32f_accumulator_s32f` | `MultipathFilter.cpp:125` | 1 | **no** |
 | `..._multiply_conjugate_add2_32fc` | `MultipathFilter.cpp:153` | 1 | yes |
 
-The `erase(begin())` is the worst of these: a full O(N) element shift on
-*every* input sample, 384 000 times per second, purely to move a window that
-never needed moving. At `-E400` that is a 12.8 kB `memmove` per sample,
-≈4.9 GB/s of pure bookkeeping traffic.
+`erase(begin())` is the worst: a full O(N) element shift on *every* input
+sample, 384 000 times per second, to move a window that never needed moving.
+At `-E400` that is a 12.8 kB `memmove` per sample, ≈4.9 GB/s of pure
+bookkeeping traffic.
 
 Two changes remove six of the eleven passes:
 
 1. **Ring buffer with duplicated tail.** Allocate `2N`, write each new sample
-   at both `pos` and `pos+N`, and hand VOLK the contiguous span
-   `[pos+1, pos+1+N)`. O(1) per sample instead of O(N).
-2. **Incremental window power.** Maintain `m_state_power` in `double`,
-   updated as `+= |x_new|² − |x_leaving|²` — the leaving sample is exactly the
-   one about to be overwritten at `pos`. This deletes the `magnitude_squared`
-   pass, the `accumulator` pass, *and* the scratch vector that only existed to
+   at both `pos` and `pos+N`, hand VOLK the contiguous span
+   `[pos+1, pos+1+N)`. O(1) per sample.
+2. **Incremental window power.** Maintain `m_state_power` in `double`, updated
+   as `+= |x_new|² − |x_leaving|²` — the leaving sample is exactly the one
+   about to be overwritten at `pos`. This deletes the `magnitude_squared`
+   pass, the `accumulator` pass, *and* the scratch vector that existed only to
    hold their intermediate result. An exact recomputation every 65 536 updates
    bounds the rounding drift.
 
 **Alignment check.** The ring buffer hands VOLK a pointer that is 16-byte
-aligned only half the time. VOLK's unsuffixed dispatchers were verified to
-handle this: `volk_32fc_x2_dot_prod_32fc` was run at all 8 byte-offsets against
-a double-precision reference at N = 401, relative error ≤ 4.6e-7 in every case.
-**[measured]** So the unsuffixed entry points do dispatch on runtime alignment
-and the technique is safe.
+aligned only half the time. `volk_32fc_x2_dot_prod_32fc` was run at all 8
+byte-offsets against a double-precision reference at N = 401: relative error
+≤ 4.6e-7 in every case **[measured]**. The unsuffixed entry points do dispatch
+on runtime alignment, so the technique is safe.
 
-**Result** — same file, same protocol as §10, `user` seconds, min of ≥3
-interleaved runs:
+**Result** — same protocol as §10:
 
 | `-E` | N | base | optimised | filter only, base → opt | speedup |
 | --- | --- | --- | --- | --- | --- |
@@ -575,17 +577,16 @@ interleaved runs:
 | 200 | 801 | 7.86 | 5.38 | 6.58 → 4.10 | **1.60×** |
 | 400 | 1601 | 11.50 | 10.90 | 10.22 → 9.62 | 1.06× |
 
-**[measured]** A consistent ~1.6× across the whole practical range, `-E36`
-through `-E200`. The gain collapses at `-E400`: the ring buffer doubles the
-delay-line footprint (25.6 kB instead of 12.8 kB at N = 1601), and past some
-point that costs more in cache traffic than the eliminated `memmove` saves.
-Per-tap cost bears this out — optimised ns/sample/tap runs 0.85, 0.71, 0.67,
-0.78 across `-E36/100/200/400`, i.e. it improves monotonically and then turns
-around, whereas the baseline improves monotonically throughout (1.31, 1.14,
-1.07, 0.83). **[hypothesis]** If very large `-E` ever matters, the tail
-duplication should be replaced by a two-segment dot product.
+**[measured]** A consistent ~1.6× across `-E36` to `-E200`. The gain collapses
+at `-E400`: the ring buffer doubles the delay-line footprint (25.6 kB at
+N = 1601), and past some point that costs more in cache traffic than the
+eliminated `memmove` saves. Optimised ns/sample/tap runs 0.85, 0.71, 0.67,
+0.78 across `-E36/100/200/400` — improving, then turning around — whereas the
+baseline improves monotonically (1.31, 1.14, 1.07, 0.83). **[hypothesis]** If
+very large `-E` ever matters, replace the tail duplication with a two-segment
+dot product.
 
-**Numerical equivalence.** Decoded audio, baseline vs optimised, same input:
+**Numerical equivalence.** Decoded audio, baseline vs optimised:
 
 | File | `-E` | difference / signal |
 | --- | --- | --- |
@@ -594,105 +595,204 @@ duplication should be replaced by a two-segment dot product.
 | joak | 36 | −104.3 dB |
 | joak | 100 | −104.2 dB |
 
-**[measured]** Below the 16-bit output floor. Convergence is unchanged as well:
-re-running `joak -E100` under `COEFF_MONITOR` reproduces the baseline's
-`|mf_error|` statistics (mean 2.719e-3, ‖w‖ 1.00000 → 1.00393) to five
-significant figures. The residual difference comes only from the power sum
-being accumulated in `double` rather than through VOLK's float accumulator.
+**[measured]** Below the 16-bit output floor. Convergence is unchanged too:
+re-running `joak -E100` under `COEFF_MONITOR` reproduces the baseline
+statistics (mean 2.719e-3, ‖w‖ 1.00000 → 1.00393) to five significant figures.
+The only difference is that the power sum accumulates in `double` rather than
+through VOLK's float accumulator.
 
-**Relation to §5.1.** This is the same CPU budget §5.1 targets, obtained
-without block latency, without an FFT dependency, and without changing the
-algorithm — the arithmetic performed is identical, only the bookkeeping around
-it changed. It should be done first regardless of whether §5.1 is ever
-attempted, and it moves §5.1's break-even point: combined with the 1.6×
-correction in §8.3, the frequency-domain method now has to beat a
-2.6×-cheaper time-domain baseline than §5.1 assumed.
+This is the same CPU budget §5.1 targets, obtained without block latency,
+without an FFT dependency, and without changing the arithmetic performed.
 
-### 12.2 §5.3 leakage — no evidence of drift yet, do not add blind
+---
+
+## 13. §5.3 leakage — no evidence of drift
 
 **[measured]** ‖w‖ over the full runs:
 
-| File | `-E` | ‖w‖ start → end | run length |
-| --- | --- | --- | --- |
-| piano | 36 | 1.00000 → 1.00523 | 20 s |
-| piano | 100 | 1.00000 → 1.00351 | 20 s |
-| piano | 400 | 1.00000 → 1.00178 | 20 s |
-| joak | 36 | 1.00000 → 1.00538 | 60 s |
-| joak | 100 | 1.00000 → 1.00393 | 60 s |
+| File | `-E` | ‖w‖ start → end | max | run length |
+| --- | --- | --- | --- | --- |
+| piano | 36 | 1.00000 → 1.00523 | 1.00523 | 20 s |
+| piano | 400 | 1.00000 → 1.00178 | 1.00178 | 20 s |
+| joak | 36 | 1.00000 → 1.00538 | 1.00540 | 60 s |
+| joak | 100 | 1.00000 → 1.00393 | 1.00394 | 60 s |
+| interfm | 36 | 1.00000 → 1.21478 | 1.25095 | 100 s |
+| interfm | 100 | 1.00000 → 1.20097 | 1.23483 | 100 s |
+| interfm | 200 | 1.00000 → 1.19502 | 1.22493 | 100 s |
 
-The rise is convergence, not drift — it is monotone, it saturates, and it gets
-*smaller* as N grows, which is the opposite of what unconstrained tap
-directions would produce. On `joak -E36`, ‖w‖ reaches 1.0047 by t ≈ 25 s and
-then creeps to 1.0054 over the remaining 35 s. **[hypothesis]** That residual
-creep cannot be distinguished from continued slow convergence in 60 s; a
-recording of several minutes is needed to settle it.
+On piano and joak the rise is convergence, not drift: monotone, saturating,
+and *smaller* as N grows — the opposite of what unconstrained tap directions
+would produce. On interfm ‖w‖ reaches ~1.20 within the first few seconds and
+then oscillates in a band without trending; the far-field taps (>200 µs from
+the reference) hold 1e-4 of the energy at every stage count, i.e. the
+unconstrained directions are *not* filling up. **No leakage is indicated on
+any of the three recordings.**
+
+One caveat **[measured]**: at `alpha = 0.6` on interfm the off-reference energy
+jumps from 1.37 to 1.70 and the edge taps grow to 0.017. If `alpha` is raised
+(§15.3), leakage should be re-examined at the new operating point.
 
 **[established]** If leakage is eventually wanted, the cheapest correct place is
 one extra O(N) VOLK pass immediately before the existing gradient add:
 `volk_32fc_s32fc_multiply_32fc(m_coeff.data(), m_coeff.data(), 1-mu*lambda, N)`.
-No special case is needed for the reference tap, because the existing hard pin
-runs after it and restores `1+0j` anyway.
-
-### 12.3 §5.1 frequency-domain adaptation — still the big win, but the case is weaker
-
-**[hypothesis]** Unchanged in principle. Two adjustments from Part I: the
-time-domain baseline it must beat is 1.6× cheaper than stated (§8.3) and now a
-further 1.6× cheaper again (§12.1), for a combined 2.6×; and its second
-argument — that per-bin normalisation fixes eigenvalue spread — is
-**untestable on the recordings available**, because neither contains a channel
-with enough dispersion to stress conditioning (§9). Do §12.1 first, then
-re-derive the break-even.
-
-### 12.4 §5.4 reference-tap constraint — cannot be tested with what exists
-
-**[established]** Confirming the mechanism from the source: the VOLK update at
-`MultipathFilter.cpp:146-156` is applied to *all* N taps including the
-reference, and `MultipathFilter.cpp:158` then overwrites that tap. So this is
-a project-after-the-fact constraint — the gradient component along the
-reference tap is computed and thrown away, not projected out beforehand. The
-same pin is applied at construction (`:85`) and on every divergence reset.
-
-Neither recording contains a deep fade or a non-minimum-phase channel (§9), so
-the failure mode behind the README's *"turn off if reception becomes
-unstable"* cannot be reproduced here. See §13 for the synthesis route. Part
-I's instruction — do not change the constraint before reproducing the failure —
-stands.
-
-### 12.5 §5.5 step-size gear shifting — needs a smoothed statistic first
-
-**[established]** `m_error` (`MultipathFilter.cpp:160`) is the raw, signed,
-single-sample CM residual of whichever sample happened to land on an update
-boundary. The measured spread confirms it is unusable as a direct control
-input: on `joak -E100` the mean of `|mf_error|` is 2.7e-3 while the max is
-9.3e-3, a 3.4× swing in steady state with no channel change at all
-**[measured]**. Driving `alpha` off that would schedule gain on noise.
-
-What would be needed:
-
-1. An EMA of `|e|` or `e²`, with a time constant between the update interval
-   (10.4 µs) and the fade coherence time (~40 ms) — the codebase already uses
-   this pattern at `FmDecode.cpp:151`.
-2. A mapping from that statistic to an `alpha` multiplier, with hysteresis and
-   hard bounds keeping the effective `alpha` inside `0 < alpha < 2`.
-3. `alpha` becomes a mutable member instead of `static constexpr`; the cost is
-   O(1) inside an already-O(N) function.
-4. **[hypothesis]** A fresh stability argument. NLMS's `0 < alpha < 2`
-   guarantee assumes fixed `alpha`. During a real fade `‖x‖²` also moves, so
-   numerator and denominator of `mu` can swing the same way at the same
-   moment — precisely when gear shifting would be raising `alpha`. Part I does
-   not flag this interaction.
-
-Also **[measured]**: neither recording contains a channel change, so the only
-gear-shift-relevant transient available is the initial acquisition after the
-100-block warm-up. That gives a legitimate before/after baseline but says
-nothing about re-acquisition after a fade, which is where §5.5 claims its
-payoff.
+No special case is needed for the reference tap — the existing hard pin runs
+after it and restores `1+0j` anyway.
 
 ---
 
-## 13. Bugs and code-level findings
+## 14. §5.4 reference-tap constraint — mechanism confirmed, failure still not reproducible
 
-### 13.1 The delay line is not cleared on a divergence reset — **fixed on the branch**
+**[established]** Confirming the mechanism from source: the VOLK update at
+`MultipathFilter.cpp:146-156` is applied to *all* N taps including the
+reference, and `MultipathFilter.cpp:158` then overwrites that tap. This is a
+project-after-the-fact constraint — the gradient component along the reference
+tap is computed and thrown away, not projected out beforehand. The same pin is
+applied at construction (`:85`) and on every divergence reset.
+
+**[measured]** interfm gives a real dispersive channel at last, but its echo is
+33 % — the direct path still dominates, so the channel is minimum-phase and the
+hard pin is the correct constraint there. The README's *"turn off if reception
+becomes unstable"* failure mode needs `a > 1`, which none of the three
+recordings provides. See §17. Part I's instruction — do not change the
+constraint before reproducing the failure — stands.
+
+---
+
+## 15. New: the `-E` knob silently detunes the loop
+
+This section did not exist before the interfm recording. It is the main
+re-prioritisation driver.
+
+### 15.1 More taps make the error floor worse, not better
+
+**[measured]** On interfm, second-half mean `|mf_error|` at the default
+`alpha = 0.1`:
+
+| `-E` | N | mu = α/N | 2nd-half mean \|mf_error\| |
+| --- | --- | --- | --- |
+| 36 | 145 | 6.90e-4 | **2.18e-2** |
+| 100 | 401 | 2.49e-4 | 3.14e-2 |
+| 200 | 801 | 1.25e-4 | 3.20e-2 |
+
+Raising `-E` from 36 to 100 makes the CM error floor **44 % worse**, even
+though §9 shows `-E36` is the one truncating its span. The extra taps are not
+holding anything: far-field energy is 1e-4 at every stage count.
+
+**The mechanism is the per-tap adaptation rate, not the tap count.** Because
+`mu ≈ alpha/N` with `alpha` fixed, raising `-E` divides the adaptation rate by
+the same factor. A cross-over test isolates this — `alpha` was made overridable
+at compile time (`-DMF_ALPHA=...`) and set so that `mu` matches the other
+stage count:
+
+| Configuration | N | α | mu | 2nd-half mean \|mf_error\| |
+| --- | --- | --- | --- | --- |
+| `-E36` default | 145 | 0.1 | 6.90e-4 | 2.18e-2 |
+| `-E100` default | 401 | 0.1 | 2.49e-4 | 3.14e-2 |
+| `-E36` at `-E100`'s mu | 145 | 0.0362 | 2.49e-4 | **3.11e-2** |
+| `-E100` at `-E36`'s mu | 401 | 0.2766 | 6.90e-4 | 2.75e-2 |
+
+**[measured]** Dropping `mu` at N = 145 reproduces N = 401's floor almost
+exactly (3.11e-2 vs 3.14e-2). The reverse direction recovers only part of the
+gap (3.14e-2 → 2.75e-2, still short of 2.18e-2), so adaptation rate explains
+most but not all of the penalty; the remainder is presumably gradient noise
+from taps that carry no signal.
+
+**Consequence:** `-E` is documented and used as a "how much multipath to
+correct" knob, but it is simultaneously an *inverse adaptation-rate* knob, and
+nothing in the code or the help text says so. On a time-varying channel that
+side effect dominates. This is a defect in the knob, not a tuning preference.
+
+**Fix [hypothesis], not yet implemented:** make the effective `mu` independent
+of `-E`, e.g. scale `alpha` with N so the per-tap step stays constant. §15.2
+shows the scaling cannot be unbounded.
+
+### 15.2 The stability limit is on α, not on mu
+
+**[measured]** interfm, testing where divergence sets in:
+
+| N | α | mu | Result |
+| --- | --- | --- | --- |
+| 145 | 0.4 | 2.76e-3 | stable |
+| 145 | 0.6 | 4.14e-3 | stable |
+| 145 | 1.0 | 6.90e-3 | **diverges** |
+| 401 | 0.2766 | 6.90e-4 | stable |
+| 401 | 0.4 | 1.00e-3 | stable |
+| 401 | 1.106 | 2.76e-3 | **diverges** |
+| 801 | 2.209 | 2.76e-3 | **diverges** |
+
+N = 145 at α = 0.4 and N = 401 at α = 1.106 have *identical* `mu` = 2.76e-3,
+yet one is stable and the other diverges. The binding constraint is `alpha`,
+somewhere in 0.6 < α_max < 1.0 on this channel. This is what refutes the
+`0 < alpha < 2` claim corrected in §8.2.
+
+The practical consequence for §15.1's fix: `alpha` cannot be scaled up
+indefinitely to hold `mu` constant as `-E` rises. Past roughly `-E150`
+(α = 0.4 × 401/145 ≈ 1.1 at N = 401 already diverges) there is no `alpha` that
+recovers `-E36`'s adaptation rate. **Raising `-E` on a time-varying channel
+costs error floor that cannot be bought back.**
+
+Divergence, when it happens, is not graceful: `|mf_error|` reaches 1e36–1e38
+and the coefficient vector is repeatedly reset to identity. Note that these
+values are *finite*, so the `isfinite` guard in `process()`
+(`MultipathFilter.cpp:182`) does not catch the blow-up until it overflows —
+a magnitude-based sanity check would catch it far earlier.
+
+### 15.3 The default α = 0.1 is below optimum on all three recordings
+
+**[measured]** Sweeping α at `-E36`, second-half mean `|mf_error|`:
+
+| α | interfm | joak |
+| --- | --- | --- |
+| 0.0362 | 3.11e-2 | — |
+| 0.05 | 2.83e-2 | 4.24e-3 |
+| **0.1 (current default)** | **2.18e-2** | **3.86e-3** |
+| 0.2 | 1.51e-2 | 3.61e-3 |
+| 0.4 | **1.35e-2** | **3.44e-3** |
+| 0.6 | 1.47e-2 | — |
+| 0.8 | 1.99e-2 | 4.84e-3 |
+| 1.0 | diverges | — |
+
+![CM error floor vs alpha](MULTIPATH_FILTER_DESIGN_20260724_alpha.png)
+
+(The shaded divergence region was measured on interfm only; α = 1.0 was not
+tried on joak, and the boundary is not assumed to be channel-independent.)
+
+The optimum is α ≈ 0.4 on both, giving a **38 % lower error floor on interfm**
+and 11 % on joak. The curve is shallow on the near-clean signal and steep on
+the dispersive one, which is the expected shape: α matters when there is
+something to track.
+
+Notably the two optima **coincide**, which weakens Part I §5.5's case: if a
+single α is near-optimal for both a static and a time-varying channel, gear
+shifting has less to gain than a plain re-tune. What the sweep does not settle
+is the safety margin — α = 0.4 sits within a factor of 2.5 of measured
+divergence, on one channel, with no margin analysis behind it. α = 0.2 gets
+most of the benefit (1.51e-2 vs 1.35e-2) at half the risk.
+
+**This must not be adopted on CM error alone.** Part I §6 is explicit that the
+CM cost is blind to the flat directions of the cost function, and §11 above is
+a worked example of how far it can be from the question actually being asked.
+What is known about the audio **[measured]**, interfm at `-E36`:
+
+| Comparison | difference / signal |
+| --- | --- |
+| filter off vs α = 0.1 | −4.1 dB |
+| filter off vs α = 0.4 | −4.1 dB |
+| α = 0.1 vs α = 0.4 | −43.5 dB |
+
+The filter is doing substantial work on this recording (−4.1 dB), and the α
+change is a real but much smaller perturbation on top. Stereo difference (L−R)
+RMS rises from 0.1098 with the filter off to 0.1306 with it on, consistent
+with multipath suppression restoring separation — but without ground truth
+that is equally consistent with added noise. **A post-discriminator THD and
+separation measurement on the synthesised channel of §17 is required before
+changing the default.**
+
+---
+
+## 16. Bugs and code-level findings
+
+### 16.1 The delay line is not cleared on a divergence reset — **fixed on the branch**
 
 **[established]** When `process()` returns false, `FmDecode.cpp:119-125`
 recovers by calling `initialize_coefficients()`, which touches only `m_coeff`
@@ -703,45 +803,53 @@ But the non-finite sample that triggered the reset is *already in the delay
 line*: `single_process()` inserts it (`:95-96`) before `process()` performs the
 `isfinite` check (`:182`). Since the dot product reads the entire N-sample
 window every sample, one poisoned entry makes every subsequent output
-non-finite until it ages out — up to N samples, ≈1 ms at `-E400`. The recovery
-therefore is not clean: freshly reset identity coefficients are convolved
-against a still-poisoned delay line, and the expected behaviour is a *burst* of
-resets rather than one.
+non-finite until it ages out — up to N samples, ≈1 ms at `-E400`. Freshly
+reset identity coefficients are convolved against a still-poisoned delay line,
+so the expected behaviour is a *burst* of resets rather than one.
 
 Fixed on `dev-multipath-exp` by adding `MultipathFilter::reset_state()` and
 calling it alongside `initialize_coefficients()` in the recovery path.
-**[hypothesis]** Not observed firing on either recording — neither diverges —
-so the fix is reasoned, not demonstrated.
+**[measured]** The divergence runs in §15.2 exercise exactly this path, which
+is why they show the coefficient vector pinned at identity
+(off-reference energy exactly 1.00000) while `|mf_error|` stays at 1e35.
 
-### 13.2 The 100-block warm-up is a hard bypass
+### 16.2 The `isfinite` guard fires far too late
+
+**[measured]** §15.2 shows `|mf_error|` reaching 1e36–1e38 while the guard at
+`MultipathFilter.cpp:182,190` stays satisfied, because those magnitudes are
+finite. A diverging CMA loop passes through six orders of magnitude of
+obviously-wrong output before anything notices. A cheap magnitude bound — the
+CM error cannot legitimately exceed a few units when `R₂ = 1` — would catch it
+immediately and make recovery far less disruptive. **[hypothesis]** not
+implemented.
+
+### 16.3 The 100-block warm-up is a hard bypass
 
 **[established]** While `m_wait_multipath_blocks > 0` (`FmDecode.cpp:109-112`)
 `process()` is never called at all, so the delay line stays empty and the
 coefficients stay at construction values. At block 101 the filter switches on
 abruptly against a cold delay line, with no crossfade. Probably benign, but it
-is current behaviour rather than a documented design choice, and it is the one
-transient in these recordings usable as a convergence-speed baseline (§12.5).
+is current behaviour rather than a documented design choice.
 
-### 13.3 `assert()` is live in the standard build
+### 16.4 `assert()` is live in the standard build
 
 **[established]** `CMakeLists.txt:230` sets `CMAKE_CXX_FLAGS` directly and the
 documented build never sets `CMAKE_BUILD_TYPE`, so CMake never injects
 `-DNDEBUG`. The constructor guards (`MultipathFilter.cpp:67,70`) and the
-postcondition at `:195` are compiled in. This is fragile rather than wrong:
-anyone building with `-DCMAKE_BUILD_TYPE=Release` picks up
-`CMAKE_CXX_FLAGS_RELEASE` = `-O3 -DNDEBUG` *in addition to* the project flags
-and silently loses all three.
+postcondition at `:195` are compiled in. Fragile rather than wrong: building
+with `-DCMAKE_BUILD_TYPE=Release` adds `-O3 -DNDEBUG` and silently loses all
+three.
 
-### 13.4 In-place VOLK aliasing
+### 16.5 In-place VOLK aliasing
 
 `MultipathFilter.cpp:148-156` passes `m_coeff.data()` as both destination and
-first source, with an existing comment saying the overlap "seems to be OK".
+first source, with a comment saying the overlap "seems to be OK".
 **[established]** For a strictly element-wise kernel `dst[i] = src0[i] +
-f(src1[i])` this is safe by construction, and the same call has now been run
-across all the measurements in this part with bit-stable results. The comment
-could be upgraded from a hedge to a statement of why.
+f(src1[i])` this is safe by construction, and the same call has been run across
+every measurement in this part with stable results. The comment could be
+upgraded from a hedge to a statement of why.
 
-### 13.5 Minor
+### 16.6 Minor
 
 **[established]** `get_error()` and `get_reference_level()`
 (`MultipathFilter.h:62,69`) return `const` fundamental types by value, which
@@ -751,42 +859,41 @@ anything, so neither is callable through a `const MultipathFilter&`.
 
 ---
 
-## 14. What still needs a synthesised channel
+## 17. What still needs a synthesised channel
 
-**[established]** §9 shows both recordings are essentially multipath-free. The
-following cannot be settled without a channel that is not in `test-files/`:
+**[established]** interfm removed the biggest gap — there is now a real
+dispersive, time-varying channel to test against. What remains:
 
 | Question | Needs |
 | --- | --- |
 | §5.4 — does the pinned reference tap thrash in a deep fade? | two-ray channel with `a > 1` (non-minimum-phase) |
-| §5.1 — does per-bin normalisation actually help conditioning? | a dispersive channel, `a` in 0.7–0.95 |
+| §15.3 — is α = 0.2–0.4 actually better *for the audio*? | known ground truth to measure THD and separation against |
 | Part I §2 — is the tap count right for deep echoes? | `a` swept 0.3–0.95 |
-| §5.5 — does gear shifting shorten re-acquisition? | a time-varying channel with recurring fades |
 
-`piano_iqtest.wav` is clean 384 kHz complex baseband, so all four can be
-generated offline from it: read the WAV, apply
-`y[n] = x[n] + a·e^{jθ}·x[n−τ]` with fractional-delay interpolation for
-non-integer `τ`, write back as a 384 kHz float WAV, and feed the result through
-`-t filesource` exactly as the originals are fed. This is Part I §6's own
-validation plan, and it is the only route to those four answers with what is in
-this repository today. Part I §6's insistence on measuring **post-discriminator**
-THD and stereo separation rather than the CM cost applies unchanged — §11 is a
-worked example of how far the CM error alone can be from the question actually
-being asked.
+`piano_iqtest.wav` is clean 384 kHz complex baseband, so all three can be
+generated from it: apply `y[n] = x[n] + a·e^{jθ}·x[n−τ]` with fractional-delay
+interpolation for non-integer `τ`, write back as a 384 kHz float WAV, and feed
+it through `-t filesource` exactly as the originals are. This is Part I §6's
+own validation plan. Its insistence on measuring **post-discriminator** THD and
+stereo separation rather than the CM cost applies unchanged, and §15.3 is now
+blocked on it.
 
 ---
 
-## 15. Reproduction recipe
+## 18. Reproduction recipe
 
 ```sh
 # instrumented build (never put -D... in CMAKE_CXX_FLAGS; use EXTRA_FLAGS)
 cmake -S . -B build-mf -DEXTRA_FLAGS="-DCOEFF_MONITOR"
 cmake --build build-mf --target all
 
+# alpha override, for the sweeps in §15 (branch dev-multipath-exp only)
+cmake -S . -B build-mf -DEXTRA_FLAGS="-DCOEFF_MONITOR -DMF_ALPHA=0.4"
+
 # coefficient / error dump (CSV on stderr, every stat_rate*10 blocks)
 ./build-mf/airspy-fmradion -t filesource \
-    -c filename=test-files/joakfm-20260715045930z-iq.wav,srate=384000,freq=82500000 \
-    -E100 -W /tmp/out.wav 2> /tmp/coeff.log
+    -c filename=test-files/interfm-20260724102822z-iq.wav,srate=384000,freq=89700000 \
+    -E36 -W /tmp/out.wav 2> /tmp/coeff.log
 
 # CPU cost (-q suppresses the status line and the COEFF_MONITOR dump)
 /usr/bin/time -p ./build-mf/airspy-fmradion -q -t filesource \
@@ -794,24 +901,42 @@ cmake --build build-mf --target all
     -E100 -W /tmp/out.wav
 ```
 
-The dump lines are `block,<n>,mf_error,<e>,mf_coeff,<i>,<re>,<im>,...`; note
-they are emitted without a leading newline, so they are not anchored to the
-start of a line in the captured log. Timing must use `user` CPU time, not wall
-clock: the file source paces itself to real time, so wall clock is pinned at
-the recording's duration regardless of load.
+Dump lines are `block,<n>,mf_error,<e>,mf_coeff,<i>,<re>,<im>,...`, emitted
+without a leading newline, so they are not anchored to the start of a line in
+the captured log. Timing must use `user` CPU time: the file source paces itself
+to real time, so wall clock is pinned at the recording's duration regardless of
+load.
 
 ---
 
-## 16. Revised ranking
+## 19. Revised ranking
 
-| Rank | Item | Status | Basis |
-| --- | --- | --- | --- |
-| 1 | §12.1 remove redundant O(N) passes | implemented on `dev-multipath-exp`, 1.6× measured | [measured] |
-| 2 | §13.1 clear the delay line on divergence reset | implemented on `dev-multipath-exp` | [established] |
-| 3 | §8.2 / §13.5 fix the stale header comment and the dead getter | not done | [established] |
-| 4 | §14 build the synthesised two-ray channel | not done — gates items 5–7 | [established] |
-| 5 | §5.1 frequency-domain adaptation | open; break-even moved 2.6× against it | [hypothesis] |
-| 6 | §5.5 gear shifting, with a smoothed error statistic | open; needs a time-varying channel to evaluate | [hypothesis] |
-| 7 | §5.4 soften the reference-tap constraint | open; failure not yet reproduced | [hypothesis] |
-| — | §5.2 double-precision coefficients | **rejected**, ≥86 ULP of margin measured | [measured] |
-| — | §5.3 coefficient leakage | **deferred**, no drift observed in 60 s | [measured] |
+Changes from the pre-interfm ranking are marked. The headline change is that
+**raising `-E` is no longer assumed to be good**, which demotes everything
+whose payoff was "make large `-E` affordable".
+
+| Rank | Item | Status | Basis | Change |
+| --- | --- | --- | --- | --- |
+| 1 | §15.1 decouple the adaptation rate from `-E` | not done | [measured] | **new — top** |
+| 2 | §12 remove redundant O(N) passes | implemented on `dev-multipath-exp`, 1.6× measured | [measured] | was 1 |
+| 3 | §15.3 re-tune α (0.1 → 0.2–0.4), gated on §17 | not done | [measured] | **new** |
+| 4 | §16.1 clear the delay line on divergence reset | implemented on `dev-multipath-exp` | [established] | was 2 |
+| 5 | §16.2 magnitude bound on the divergence guard | not done | [measured] | **new** |
+| 6 | §17 build the synthesised two-ray channel | not done — gates 3 and 9 | [established] | was 4 |
+| 7 | §8.2 / §16.6 fix the stale header comment and dead getter | not done | [established] | was 3 |
+| 8 | §5.1 frequency-domain adaptation | open | [hypothesis] | **demoted** |
+| 9 | §5.4 soften the reference-tap constraint | open; failure not reproduced | [hypothesis] | was 7 |
+| — | §5.5 gear shifting | **deferred** — optima coincide across static and dispersive channels, so a fixed re-tune captures most of it | [measured] | **demoted from 6** |
+| — | §5.2 double-precision coefficients | **rejected** — ≥86 ULP of margin | [measured] | unchanged |
+| — | §5.3 coefficient leakage | **deferred** — no drift on any of the three recordings | [measured] | unchanged |
+
+**Why §5.1 is demoted.** Its case rested on making `-E200`-class filters
+affordable. Three measurements undercut that: the time-domain cost it must beat
+is 1.6× lower than Part I computed (§8.3) and another 1.6× lower after §12; the
+useful span on the one genuinely dispersive recording is ±50 µs, which `-E36`
+already more than covers (§9); and raising `-E` past that *degrades* the error
+floor by 44 % with no α able to recover it (§15). Frequency-domain adaptation
+remains the right answer if a channel is ever found that genuinely needs
+hundreds of taps — its per-bin normalisation argument is untested and may still
+be its strongest feature — but "the current `-E` ceiling is the problem" is no
+longer supported by evidence.
