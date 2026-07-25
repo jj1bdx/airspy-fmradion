@@ -33,7 +33,7 @@ The following Git repositories are required:
 * For Raspberry Pi 3 and 4, Airspy R2 10Msps and Airspy Mini 6Msps sampling rates are *not supported* due to the hardware limitation. Use in 2.5Msps for R2, 3Msps for Mini.
 * Since 20231227-0, the buffer length option `-b` is no longer handled and will generate an error. The audio sample data sent to AudioOutput base classes are no longer pre-buffered.
 * The author observed anomalies of being unable to run PortAudio with the `snd_aloop` loopback device while testing on Raspberry Pi OS 32bit Debian *Bullseye*. Portaudio anomaly support is out of our development scope.
-* The author observed output latency of ~200 milliseconds between Sony ICF-M780N radio audio output of FM broadcast and airspy-fmradion FM `-E 100` stereo reception using USB DAC FiiO K7, macOS 26.1 on Mac mini 2023. Note well that the latency between PortAudio and USB DAC itself is dominant.
+* The measured end-to-end delay between an analog FM radio and airspy-fmradion FM `-E 100` stereo reception using USB DAC FiiO K7, macOS 26.5 on Mac mini 2023, is 151 milliseconds with the default output latency, 54 milliseconds with `-L 10`, and 37 milliseconds with `-L 5`; the PortAudio/CoreAudio output stage accounts for nearly all of it, while the Airspy HF+ and the entire decode chain contribute only 6 to 7 milliseconds. Values in the lowest CoreAudio grant bucket (`-L 3` and below) are unusable because the delay never settles and grows by about 1 millisecond per second; see doc/LATENCY_MEASUREMENT_20260725.md for the method and the full `-L` ladder.
 
 ### Intel Mac support is dropped
 
