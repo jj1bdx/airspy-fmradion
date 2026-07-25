@@ -37,8 +37,14 @@ public:
   void process(const IQSampleVector &samples_in, IQSampleVector &samples_out);
 
 private:
-  const IQSampleCoeff m_coeff;
+  // Coefficients stored reversed (m_coeff_reversed[i] = coeff[order - i]) so
+  // that each output is a single VOLK dot product over a chronological window;
+  // see the index algebra in Filter.cpp. VOLK-aligned because it is the fixed
+  // operand of every dot product.
+  volk::vector<float> m_coeff_reversed;
   IQSampleVector m_state;
+  // Per-block scratch holding [m_state | samples_in] contiguously.
+  volk::vector<IQSample> m_scratch;
   unsigned int m_order;
   unsigned int m_downsample;
   unsigned int m_pos;
@@ -58,8 +64,11 @@ public:
   void process(const SampleVector &samples_in, SampleVector &samples_out);
 
 private:
-  SampleCoeff m_coeff;
+  // Coefficients stored reversed; see LowPassFilterFirIQ and Filter.cpp.
+  volk::vector<float> m_coeff_reversed;
   SampleVector m_state;
+  // Per-block scratch holding [m_state | samples_in] contiguously.
+  volk::vector<Sample> m_scratch;
   unsigned int m_order;
   unsigned int m_pos;
 };

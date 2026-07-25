@@ -26,17 +26,31 @@
 // Construct low-pass filter.
 LowPassFilterFirIQ::LowPassFilterFirIQ(const IQSampleCoeff &coeff,
                                        const unsigned int downsample)
-    : m_coeff(coeff), m_order(coeff.empty() ? 0 : coeff.size() - 1),
-      m_downsample(downsample), m_pos(0) {
+    : m_order(coeff.empty() ? 0 : coeff.size() - 1), m_downsample(downsample),
+      m_pos(0) {
   assert(!coeff.empty());
   assert(downsample >= 1);
+  // Store the coefficients reversed so that output p is one dot product over
+  // the chronological window [x[p-order] ... x[p]]; see process().
+  m_coeff_reversed.resize(coeff.size());
+  std::reverse_copy(coeff.begin(), coeff.end(), m_coeff_reversed.begin());
   m_state.resize(m_order);
 }
 
 // Process samples.
+//
+// Each output is a single VOLK dot product, replacing the former hand-rolled
+// warm-up and symmetry-folded steady-state loops. Build one contiguous history
+// buffer m_scratch = [m_state | samples_in], so ext[m] = x[m - order] where x
+// is the virtual stream (previous-block state followed by this block's input).
+// For output p, the oldest-to-newest window is ext[p ... p + order]. With the
+// convolution y[p] = sum_{j=0..order} coeff[j] * x[p-j], substituting i = order
+// - j gives y[p] = sum_{i=0..order} coeff[order-i] * ext[p+i], i.e. a dot
+// product of the window ext.data()+p against the reversed coefficients. Unlike
+// the previous warm-up loop, the j=0 tap (coeff[0] * x[p]) is always included.
 void LowPassFilterFirIQ::process(const IQSampleVector &samples_in,
                                  IQSampleVector &samples_out) {
-  unsigned int order = m_state.size();
+  unsigned int order = m_order;
   unsigned int n = samples_in.size();
 
   // Integer downsample factor, no linear interpolation.
@@ -45,7 +59,8 @@ void LowPassFilterFirIQ::process(const IQSampleVector &samples_in,
   unsigned int pstep = m_downsample;
 
   // Empty input must short-circuit before the resize, otherwise unsigned
-  // (n - p + pstep - 1) underflows when n == 0 and p > 0.
+  // (n - p + pstep - 1) underflows when n == 0 and p > 0. m_state must also be
+  // left untouched when there is no input.
   if (n == 0) {
     samples_out.clear();
     return;
@@ -53,66 +68,52 @@ void LowPassFilterFirIQ::process(const IQSampleVector &samples_in,
 
   samples_out.resize((n - p + pstep - 1) / pstep);
 
-  // The first few samples need data from m_state.
-  // NOTE: this assumes the filter has symmetric coefficient pairs
-  unsigned int i = 0;
-  for (; p < n && p < order; p += pstep, i++) {
-    IQSample y = 0;
-    for (unsigned int j = p + 1; j <= order; j++) {
-      y += m_state[order + p - j] * m_coeff[j];
-    }
-    for (unsigned int j = 1; j <= p; j++) {
-      y += samples_in[p - j] * m_coeff[j];
-    }
-    samples_out[i] = y;
-  }
+  // Assemble the contiguous history: order samples of state, then the block.
+  m_scratch.resize(order + n);
+  std::copy(m_state.begin(), m_state.end(), m_scratch.begin());
+  std::copy(samples_in.begin(), samples_in.end(), m_scratch.begin() + order);
 
-  // Remaining samples only need data from samples_in.
-  // NOTE: this assumes the filter has symmetric coefficient pairs
-  unsigned int half_order = (order - 1) / 2;
+  unsigned int i = 0;
   for (; p < n; p += pstep, i++) {
-    IQSample y = 0;
-    for (unsigned int k = 0; k <= half_order; k++) {
-      y += (samples_in[p - k] + samples_in[p - (order - k)]) * m_coeff[k];
-    }
-    if ((order % 2) == 0) {
-      y += samples_in[p - (order / 2)] * m_coeff[(order / 2)];
-    }
-    samples_out[i] = y;
+    // The window ext.data()+p has an arbitrary (unaligned) offset; VOLK's
+    // dispatch handles that, as in MultipathFilter.
+    volk_32fc_32f_dot_prod_32fc(&samples_out[i], m_scratch.data() + p,
+                                m_coeff_reversed.data(), order + 1);
   }
 
   assert(i == samples_out.size());
 
-  // Update index of start position in text sample block.
+  // Update index of start position in the next sample block.
   m_pos = p - n;
 
-  // Update m_state.
-  if (n < order) {
-    std::copy(m_state.begin() + n, m_state.end(), m_state.begin());
-    std::copy(samples_in.begin(), samples_in.end(), m_state.end() - n);
-  } else {
-    std::copy(samples_in.end() - order, samples_in.end(), m_state.begin());
-  }
+  // The last order samples of the history are the next block's state; this
+  // covers both n < order and n >= order without a branch.
+  std::copy(m_scratch.end() - order, m_scratch.end(), m_state.begin());
 }
 
 // Class LowPassFilterFirAudio
 
 // Construct low-pass filter.
 LowPassFilterFirAudio::LowPassFilterFirAudio(const SampleCoeff &coeff)
-    : m_coeff(coeff), m_order(coeff.empty() ? 0 : coeff.size() - 1), m_pos(0) {
+    : m_order(coeff.empty() ? 0 : coeff.size() - 1), m_pos(0) {
   assert(!coeff.empty());
+  // Store the coefficients reversed; see LowPassFilterFirIQ::process().
+  m_coeff_reversed.resize(coeff.size());
+  std::reverse_copy(coeff.begin(), coeff.end(), m_coeff_reversed.begin());
   m_state.resize(m_order);
 }
 
-// Process samples.
+// Process samples. See LowPassFilterFirIQ::process() for the buffer layout and
+// index algebra; this is the real-valued, non-downsampling counterpart.
 void LowPassFilterFirAudio::process(const SampleVector &samples_in,
                                     SampleVector &samples_out) {
-  unsigned int order = m_state.size();
+  unsigned int order = m_order;
   unsigned int n = samples_in.size();
   unsigned int p = m_pos;
 
   // Empty input must short-circuit before the resize, otherwise unsigned
-  // (n - p) underflows when n == 0 and p > 0.
+  // (n - p) underflows when n == 0 and p > 0. m_state must also be left
+  // untouched when there is no input.
   if (n == 0) {
     samples_out.clear();
     return;
@@ -120,46 +121,25 @@ void LowPassFilterFirAudio::process(const SampleVector &samples_in,
 
   samples_out.resize(n - p);
 
-  // The first few samples need data from m_state.
-  // NOTE: this assumes the filter has symmetric coefficient pairs
-  unsigned int i = 0;
-  for (; p < n && p < order; p++, i++) {
-    Sample y = 0;
-    for (unsigned int j = p + 1; j <= order; j++) {
-      y += m_state[order + p - j] * m_coeff[j];
-    }
-    for (unsigned int j = 1; j <= p; j++) {
-      y += samples_in[p - j] * m_coeff[j];
-    }
-    samples_out[i] = y;
-  }
+  // Assemble the contiguous history: order samples of state, then the block.
+  m_scratch.resize(order + n);
+  std::copy(m_state.begin(), m_state.end(), m_scratch.begin());
+  std::copy(samples_in.begin(), samples_in.end(), m_scratch.begin() + order);
 
-  // Remaining samples only need data from samples_in.
-  // NOTE: this assumes the filter has symmetric coefficient pairs
-  unsigned int half_order = (order - 1) / 2;
+  unsigned int i = 0;
   for (; p < n; p++, i++) {
-    Sample y = 0;
-    for (unsigned int k = 0; k <= half_order; k++) {
-      y += (samples_in[p - k] + samples_in[p - (order - k)]) * m_coeff[k];
-    }
-    if ((order % 2) == 0) {
-      y += samples_in[p - (order / 2)] * m_coeff[(order / 2)];
-    }
-    samples_out[i] = y;
+    volk_32f_x2_dot_prod_32f(&samples_out[i], m_scratch.data() + p,
+                             m_coeff_reversed.data(), order + 1);
   }
 
   assert(i == samples_out.size());
 
-  // Update index of start position in text sample block.
+  // Update index of start position in the next sample block.
   m_pos = p - n;
 
-  // Update m_state.
-  if (n < order) {
-    std::copy(m_state.begin() + n, m_state.end(), m_state.begin());
-    std::copy(samples_in.begin(), samples_in.end(), m_state.end() - n);
-  } else {
-    std::copy(samples_in.end() - order, samples_in.end(), m_state.begin());
-  }
+  // The last order samples of the history are the next block's state; this
+  // covers both n < order and n >= order without a branch.
+  std::copy(m_scratch.end() - order, m_scratch.end(), m_state.begin());
 }
 
 // Class FirstOrderIirFilter
