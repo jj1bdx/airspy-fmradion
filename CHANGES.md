@@ -17,13 +17,12 @@ The following Git repositories are required:
 
 ## Platforms tested
 
-* Mac mini 2023 Apple Silicon (M2 Pro), macOS 26.2, Apple clang version 17.0.0 (clang-1700.6.3.2)
-* Ubuntu 24.04.3 LTS x86\_64, gcc 14.2.0
-* Raspberry Pi 5 with Raspberry Pi OS 64bit Lite (Debian Trixie 13.1), gcc 14.2.0
+* Mac mini 2023 Apple Silicon (M2 Pro), macOS 26.5.2, Apple clang version 21.0.0 (clang-2100.1.1.101)
+* Ubuntu 26.04 LTS x86\_64, gcc 15.2.0
+* Raspberry Pi 5 with Raspberry Pi OS 64bit Lite (Debian Trixie 13.6), gcc 14.2.0
 
 ## Features under development
 
-* FM Pilot PLL is under revision and reconstruction. Initial analysis result is available at doc/fm-pll-filtereval.py (requires Python 3, SciPy, matplotlib, and NumPy).
 * C++23 `std::print()` functionality requirement will be mandated once it is available on all platforms of macOS, Ubuntu LTS, and Raspberry Pi OS.
 
 ## Known limitations
@@ -41,6 +40,12 @@ Intel Mac hardware is no longer supported by airspy-fmradion, although the autho
 
 ## Changes (including requirement changes)
 
+* 20260725-0: Major refactoring, plus the first end-to-end latency measurements. Three changes alter on-air behaviour: the multipath filter adaptation rate above `-E 36`, the pilot PLL retune, and the shorter stereo lock time. The changes include:
+  * VOLK dot products are now used for the FIR low-pass filters
+  * Revised the FM multipath filter: 1.6x faster, NLMS adaptation rate scaled with the filter order, hardened divergence handling, and new guidance that `-E` must be sized to the echo delay spread
+  * Redesigned the FM pilot signal PLL parameters (damping zeta ~0.57 -> 0.71) and shortened the stereo lock decision from 0.5 to 0.2 second
+  * Removed fast_atan2f() of GNU Radio and use std::atan2() instead
+  * Added accurate latency measurement data for macOS with PortAudio
 * dev-lpf-volk 20260725: Rewrote the FIR low-pass filters `LowPassFilterFirIQ` and `LowPassFilterFirAudio` (`sfmbase/Filter.cpp`) to compute each output as a single VOLK dot product. Decoded audio matches the previous code to ~134 dB signal-to-difference (the float32 re-association floor); whole-pipeline user CPU dropped about 8 percent. Reference: doc/LPF_VOLK_20260725.md.
   * `process()` builds one contiguous `[state | input]` history buffer per block and emits each output with one dot product over all `order + 1` taps: `volk_32fc_32f_dot_prod_32fc` for the IQ path (complex samples, real taps), `volk_32f_x2_dot_prod_32f` for the audio path. Coefficients are stored reversed once at construction so the dot product is a true convolution.
   * Removed the hand-rolled warm-up region, the linear-phase symmetry fold, and the `n < order` / `n >= order` state-update branch, which collapses to one `std::copy`; net -11 lines.
