@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 """DAC->ADC analog loopback: sample-clock calibration and path delay.
 
-Plays a 3 kHz tone with periodic marker chirps out of a DAC (default:
-FiiO K7 at 48 kHz), records it back through an ADC at the ADC's native
-rate (default: Roland Rubix24 at 44.1 kHz), and reports
+Plays a 3 kHz tone with periodic marker chirps out of a DAC at 48 kHz,
+records it back through an ADC at 44.1 kHz, and reports
 
   * each device's true sample rate against the host clock, from a linear
     fit of the PortAudio per-block DAC/ADC timestamps;
@@ -12,18 +11,32 @@ rate (default: Roland Rubix24 at 44.1 kHz), and reports
   * the analog path delay left over after PortAudio's own DAC-time and
     ADC-time accounting, from the marker chirps.
 
+The path delay is the reason to reach for this script rather than
+`clock_offset_measure.py`, which drops the chirps to keep the tone clean.
+Note that this one does not set the devices' CoreAudio nominal rates, so
+its ppm figures are only valid when the devices already sit at FS_OUT and
+FS_IN; see OFFSET_MEASUREMENT_20260725.md section 10.3.
+
+Devices are named by PortAudio index, as in `clock_offset_measure.py`.
+
 Requires `sounddevice`, `soundfile`, `numpy`, `scipy`.
 
 Usage:
-    loopback_clock_cal.py [--seconds 60] [--base cal] [--analyze-only]
+    loopback_clock_cal.py --list-devices
+    loopback_clock_cal.py --out-device 1 --in-device 2 [--seconds 60]
+                          [--base cal] [--analyze-only]
 """
 import argparse
 import queue
+import sys
 import time
+from pathlib import Path
 
 import numpy as np
 import soundfile as sf
 from scipy.signal import fftconvolve
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 FS_OUT = 48000
 FS_IN = 44100
@@ -161,14 +174,66 @@ def analyze(base, dur):
           % (ds.mean() * 1e3, ds.std() * 1e3, len(ds)))
 
 
+def check_devices(outdev, indev):
+    """Reject a device pair that cannot do the job, before recording."""
+    import sounddevice as sd
+    if outdev == indev:
+        raise SystemExit('error: output and input must be different devices; '
+                         'one device looping back to itself shares a single '
+                         'clock and would read 0 ppm by construction')
+    try:
+        oi, ii = sd.query_devices(outdev), sd.query_devices(indev)
+    except (ValueError, sd.PortAudioError) as e:
+        raise SystemExit('error: %s (try --list-devices)' % e)
+    if oi['max_output_channels'] < 2:
+        raise SystemExit('error: PortAudio device %d (%s) has %d output '
+                         'channels, need 2'
+                         % (outdev, oi['name'], oi['max_output_channels']))
+    if ii['max_input_channels'] < 2:
+        raise SystemExit('error: PortAudio device %d (%s) has %d input '
+                         'channels, need 2'
+                         % (indev, ii['name'], ii['max_input_channels']))
+    # This script never sets the nominal rate, so say so when the devices
+    # are not already where FS_OUT/FS_IN expect them: CoreAudio would
+    # resample silently and the ppm figures would describe the resampler.
+    try:
+        import coreaudio_rate as ca
+        for idx, kind, want in ((outdev, 'output', FS_OUT),
+                                (indev, 'input', FS_IN)):
+            d = ca.find_by_portaudio_index(idx, kind)
+            if abs(d.nominal_rate - want) > 0.5:
+                print('warning: %s (%s) is at %g Hz, not %g Hz; CoreAudio will '
+                      'resample and the ppm figures will describe the '
+                      'resampler.\n         Fix with: coreaudio_rate.py --set '
+                      '%d %d%s'
+                      % (d.name, kind, d.nominal_rate, want, idx, want,
+                         '' if kind == 'output' else ' --kind input'))
+    except Exception as e:
+        print('warning: could not check nominal sample rates (%s)' % e)
+    print('output: PortAudio %d = %s' % (outdev, oi['name'].strip()))
+    print('input : PortAudio %d = %s' % (indev, ii['name'].strip()))
+
+
 if __name__ == '__main__':
-    ap = argparse.ArgumentParser()
+    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap.add_argument('--list-devices', action='store_true',
+                    help='list PortAudio devices with their hardware rates')
+    ap.add_argument('--out-device', type=int,
+                    help='PortAudio index of the device to play from')
+    ap.add_argument('--in-device', type=int,
+                    help='PortAudio index of the device to record on')
     ap.add_argument('--seconds', type=float, default=60.0)
     ap.add_argument('--base', default='cal')
-    ap.add_argument('--outdev', default='FiiO K7 ')
-    ap.add_argument('--indev', default='Rubix24')
     ap.add_argument('--analyze-only', action='store_true')
     a = ap.parse_args()
+    if a.list_devices:
+        import clock_offset_measure
+        clock_offset_measure.list_devices()
+        raise SystemExit(0)
     if not a.analyze_only:
-        record(a.seconds, a.base, a.outdev, a.indev)
+        if a.out_device is None or a.in_device is None:
+            ap.error('--out-device and --in-device are required '
+                     '(see --list-devices)')
+        check_devices(a.out_device, a.in_device)
+        record(a.seconds, a.base, a.out_device, a.in_device)
     analyze(a.base, a.seconds)
