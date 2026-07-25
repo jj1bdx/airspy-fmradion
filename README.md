@@ -142,7 +142,7 @@ cmake --build build --target all
 * `-G filename` Write audio data as RF64/WAV `FLOAT_LE` samples. Use filename `-` to write to stdout (_pipe is not supported_)
 * `-C filename`  Write audio data to MP3 file of VBR -V 1. Use filename '-' to write to stdout. (_This function is available when linked with supported libsndfile only._)
 * `-P device_num` Play audio via PortAudio device index number. Use string `-` to specify the default PortAudio device
-* `-L ms` Set PortAudio output suggested latency in milliseconds. Valid range: 1 to 40 (default: floored at 40 milliseconds) (`-L` is ignored unless PortAudio output (`-P`) is used)
+* `-L ms` Set PortAudio output suggested latency in milliseconds. Valid range: 1 to 40 (default: floored at 40 milliseconds) (`-L` is ignored unless PortAudio output (`-P`) is used). See [Output latency and the `-L` option](#output-latency-and-the--l-option) for the measured delays
 * `-T filename` Write pulse-per-second timestamps. Use filename '-' to write to stdout
 * `-X` Shift pilot phase (for Quadrature Multipath Monitor) (-X is ignored under mono mode (-M))
 * `-U` Set deemphasis to 75 microseconds (default: 50)
@@ -175,6 +175,28 @@ cmake --build build --target all
 * Practical upper limit of `-E` value: 200
 * Practical `-E` value for CPU load: up to 50 for Raspberry Pi 4, approx. 100 for a modern computer
 * See doc/MULTIPATH\_FILTER\_DESIGN\_20260724.md for the design notes and measurements
+
+### Output latency and the `-L` option
+
+Measured end-to-end, from the antenna to the analog output of a FiiO K7
+USB DAC, against an analog FM radio receiving the same broadcast (macOS
+26.5, Mac mini 2023, Airspy HF+, FM stereo with `-E 100`):
+
+| `-L` | Granted by CoreAudio | Measured delay |
+|---|---|---|
+| 3 | 13.7 ms | 34 to 46 ms, never settles |
+| 5 | 26.3 ms | 37 ms |
+| 10 | 52.7 ms | 54 ms |
+| 20 | 105.3 ms | 92 ms |
+| 30 | 200.7 ms | 133 ms |
+| 40 (default) | 210.7 ms | 151 ms |
+
+* The output stage is nearly the whole delay. The Airspy HF+ and the entire decode chain contribute only 6 to 7 milliseconds, and the USB DAC itself at most 1.3 milliseconds
+* **`-L 10` is the recommended low-latency setting**: about a third of the default delay, while keeping a usable buffer margin. `-L 5` reaches 37 milliseconds but runs with almost no margin and can drop out under host load
+* **Do not use `-L 3` or below.** The delay never settles and grows by about 1 millisecond per second
+* The delay also creeps upward by roughly 13 milliseconds per hour, because nothing disciplines the SDR sample clock against the DAC clock
+* These figures are host-specific and were taken with one run per setting; treat them as a ladder, not as absolute constants
+* See doc/LATENCY\_MEASUREMENT\_20260725.md for the method and the measurements, and doc/LATENCY\_CHECK\_20260719.md for the output stage alone
 
 ## Airspy R2 / Mini configuration options
 
