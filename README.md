@@ -266,7 +266,7 @@ USB DAC, against an analog FM radio receiving the same broadcast (macOS
 
 ## Usage of AI
 
-* Claude Code is used to verify and fix the vulnerabilities of the code.
+* Claude Code is used to verify and fix the vulnerabilities of the code, and to improve the overall SDR design.
 * Past bugfixes include GitHub Copilot suggestions.
 
 [End of README.md]
