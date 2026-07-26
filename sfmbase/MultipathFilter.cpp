@@ -36,7 +36,7 @@
 #include "MultipathFilter.h"
 
 // Define this to print multipath filter messages
-// #undef DEBUG_MULTIPATH_FILTER
+// #define DEBUG_MULTIPATH_FILTER 1
 
 #ifdef DEBUG_MULTIPATH_FILTER
 #include <fmt/format.h>
@@ -97,12 +97,6 @@ MultipathFilter::MultipathFilter(unsigned int stages)
   assert(stages < (UINT_MAX / 4));
   reset_state();
   initialize_coefficients();
-#ifdef DEBUG_MULTIPATH_FILTER
-  fmt::println(
-      stderr,
-      "FM multipath filter configuration: filter_order: {}, alpha: {:.4g}",
-      m_filter_order, m_alpha);
-#endif // DEBUG_MULTIPATH_FILTER
 }
 
 // Clear the delay line and every quantity derived from it.
@@ -219,6 +213,21 @@ inline void MultipathFilter::update_coeff(const IQSample result) {
 // Process block samples.
 bool MultipathFilter::process(const IQSampleVector &samples_in,
                               IQSampleVector &samples_out) {
+#ifdef DEBUG_MULTIPATH_FILTER
+  // Report the configuration from the first filtered block, not from the
+  // constructor: FmDecoder constructs this object even when the multipath
+  // filter is disabled (with a dummy stage count of 1), and process() is
+  // called only while it is enabled. Only one filter instance exists, so a
+  // function-local flag is enough.
+  static bool config_reported = false;
+  if (!config_reported) {
+    config_reported = true;
+    fmt::println(
+        stderr,
+        "FM multipath filter configuration: filter_order: {}, alpha: {:.4g}",
+        m_filter_order, m_alpha);
+  }
+#endif // DEBUG_MULTIPATH_FILTER
   unsigned int n = samples_in.size();
   if (n == 0) {
     // Do nothing, return as successful
