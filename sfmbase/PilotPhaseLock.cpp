@@ -24,7 +24,7 @@
 #include <fmt/format.h>
 
 // Define this to print PLL filter messages
-// #undef DEBUG_PLL_FILTER
+// #define DEBUG_PLL_FILTER 1
 
 #ifdef DEBUG_PLL_FILTER
 #include "FmDecode.h"

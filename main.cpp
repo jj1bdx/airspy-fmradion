@@ -50,7 +50,7 @@
 #include "git.h"
 
 // define this for enabling coefficient monitor functions
-// #undef COEFF_MONITOR
+// #define COEFF_MONITOR 1
 
 #define AIRSPY_FMRADION_VERSION "20260725-0"
 
