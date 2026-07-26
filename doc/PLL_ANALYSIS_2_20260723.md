@@ -418,7 +418,7 @@ detector, and a shortened 0.2 s lock-declaration time.
    from the separation bottleneck.
 
 **Overall.** The changes on `dev` move the loop to a better-damped operating
-point and declare lock faster, while leaving the type-2 tracking behaviour and
+point and declare lock faster, while leaving the type-2 tracking behavior and
 the ~100 dB separation headroom intact. Acquisition is faster and rings less;
 steady-state decoded output is essentially identical to the loop of the original
 analysis.

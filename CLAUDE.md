@@ -20,6 +20,8 @@ demand:
 detection (checked in `MultipathFilter`). The current flags are
 `-O3 -ftree-vectorize`.
 
+Use only American English spelling for documentation.
+
 ## Testing
 
 There are no automated tests; correctness is verified by running the binary

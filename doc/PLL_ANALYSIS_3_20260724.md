@@ -34,7 +34,7 @@ The released loop is **stable with adequate but noticeably thinner margins than
 `dev`**: **PM = 46.2°** and **GM = 19.3 dB**, versus 51.6° / 21.9 dB after the
 retune. 46° is below the 45–60° band usually considered comfortable only at its
 very bottom edge — it is not marginal, but it is the least damped of the four
-loops analysed in this document series, and it is the open-loop face of the same
+loops analyzed in this document series, and it is the open-loop face of the same
 mildly-under-damped operating point that shows up as ζ = 0.568, +2.31 dB gain
 peaking and ≈ 29 % phase-step overshoot.
 
@@ -42,16 +42,16 @@ peaking and ≈ 29 % phase-step overshoot.
 
 ## Contents
 
-1. [The loop being analysed](#1-the-loop-being-analysed)
+1. [The loop being analyzed](#1-the-loop-being-analyzed)
 2. [Method](#2-method)
 3. [Open-loop data and margins](#3-open-loop-data-and-margins)
-4. [Comparison across the loops analysed to date](#4-comparison-across-the-loops-analysed-to-date)
+4. [Comparison across the loops analyzed to date](#4-comparison-across-the-loops-analyzed-to-date)
 5. [Conclusion](#5-conclusion)
 6. [Reproduction](#6-reproduction)
 
 ---
 
-## 1. The loop being analysed
+## 1. The loop being analyzed
 
 From the `PilotPhaseLock` constructor on `main` (`dbca134`):
 
@@ -155,9 +155,9 @@ adding 2.6 dB of gain margin.
 
 ---
 
-## 4. Comparison across the loops analysed to date
+## 4. Comparison across the loops analyzed to date
 
-All four loops analysed in this document series, on the same model and method:
+All four loops analyzed in this document series, on the same model and method:
 
 | Loop | ζ | f_gc | **PM** | f_pc | **GM** | Peaking | Step overshoot |
 |------|---|------|--------|------|--------|---------|----------------|
@@ -198,7 +198,7 @@ document makes at length.
 
 4. As established throughout this series, none of this is audible — the PLL's
    phase jitter sits ~100 dB below the stereo-separation floor in every one of
-   these loops. The margins matter for transient behaviour (acquisition ringing),
+   these loops. The margins matter for transient behavior (acquisition ringing),
    not for steady-state quality.
 
 ---

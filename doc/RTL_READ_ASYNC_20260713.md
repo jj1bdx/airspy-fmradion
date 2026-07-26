@@ -53,7 +53,7 @@ consumer so it can observe `stop_flag` and initiate `stop()`.
 
 - **`callback()` no longer checks `m_stop_flag`.** Samples keep
   flowing into the `DataBuffer` until the async loop is actually
-  cancelled; the next `push()` wakes the main loop, which observes
+  canceled; the next `push()` wakes the main loop, which observes
   `stop_flag`, exits, and calls `stop()`. (The bounded queue in
   `DataBuffer::push()` caps memory if shutdown is ever delayed.)
 - **`run()` calls `m_buf->push_end()` after `rtlsdr_read_async()`
@@ -135,7 +135,7 @@ SIGINT → process_signals() sets stop_flag
   2, see above).
 - `start()` spawns the thread as `std::thread(run, m_dev, stop_flag)`.
 - `run()` calls `rtlsdr_read_async(dev, rx_callback, nullptr, 0,
-  2 * m_block_length)` and blocks until cancelled. A negative return
+  2 * m_block_length)` and blocks until canceled. A negative return
   is reported via `fmt::println(stderr, ...)` and `m_error` **only
   when the stop flag is not set**, so the error return produced by a
   normal `rtlsdr_cancel_async()` shutdown is not misreported. After
@@ -151,7 +151,7 @@ SIGINT → process_signals() sets stop_flag
   `get_samples()` — offset-binary `uint8` (128 = DC zero) to
   `std::complex<float>` scaled by 1/128 — and pushes with
   `m_buf->push(std::move(iqsamples))`. It returns early only when
-  `len < 2` (empty/short cancelled transfer); it deliberately does
+  `len < 2` (empty/short canceled transfer); it deliberately does
   **not** check the stop flag (revision 2, see above).
   `m_buf->push()` is thread-safe (mutex + condition variable) and
   non-blocking, so calling it from the libusb event loop cannot stall
@@ -171,7 +171,7 @@ SIGINT → process_signals() sets stop_flag
    flowing while the previous block is converted and queued; the sync
    version could drop samples inside the kernel/libusb between
    consecutive `rtlsdr_read_sync()` calls.
-3. **End-of-stream is now signalled.** The sync `run()` exited on
+3. **End-of-stream is now signaled.** The sync `run()` exited on
    error without `push_end()`, which could strand the main loop in
    `pull()` on device failure. The async `run()` always calls
    `push_end()` when streaming ends, so the main loop terminates and

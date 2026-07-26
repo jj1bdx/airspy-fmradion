@@ -9,7 +9,7 @@ These tools measure how far an audio interface's sample clock actually
 sits from its nominal rate, in parts per million, for both the DAC
 (output) and the ADC (input) side, at 44.1, 48 and 96 kHz.
 
-They generalise the one-off calibration in
+They generalize the one-off calibration in
 [`LATENCY_MEASUREMENT_20260725.md`](LATENCY_MEASUREMENT_20260725.md) §3,
 which pinned the Rubix24 at −189.54 ppm so that a delay counted in
 recorded samples could be converted into a time. That script
@@ -39,7 +39,7 @@ Three estimators are computed, and the redundancy is the point.
 | **E3** | phase slope of the recorded tone | the other device |
 
 E1 and E2 read the host clock; E3 never does. E3 measures
-`p_dac − p_adc`: a tone synthesised at `f0` relative to the DAC's nominal
+`p_dac − p_adc`: a tone synthesized at `f0` relative to the DAC's nominal
 rate leaves the DAC at `f0·(1+d)`, and measuring it against the ADC's
 nominal rate divides by `(1+a)`, giving `d − a` to first order.
 
@@ -53,7 +53,7 @@ disagreement between them is real evidence that something is wrong.
 
 PortAudio's CoreAudio timestamps live in the `mach_absolute_time`
 domain, which free-runs on the Mac's own crystal; only `CLOCK_REALTIME`
-is steered towards UTC by NTP. E1 and E2 are therefore offsets against
+is steered toward UTC by NTP. E1 and E2 are therefore offsets against
 *that crystal*, not against absolute time.
 
 The tool samples `time.monotonic()` and `time.time()` throughout each run
@@ -219,7 +219,7 @@ python3 doc/clock_offset_measure.py --out-device 1 --in-device 2 --seconds 60
 Roughly five minutes for the default four-rate sweep. A tone is audible
 on the output device throughout.
 
-### 5.3 Re-analyse without the hardware
+### 5.3 Re-analyze without the hardware
 
 Every capture is saved as an `.npz`, so the estimators can be re-run
 later, on any machine:
@@ -239,7 +239,7 @@ python3 doc/clock_offset_analyze.py clock_offset_data/capture_*.npz
 | `--amplitude` | `0.1` | −20 dBFS |
 | `--latency` | `low` | `low`, `high`, or seconds |
 | `--blocksize` | `0` | 0 = host default, which is the least glitch-prone |
-| `--in-channel` | loudest | which recorded channel to analyse |
+| `--in-channel` | loudest | which recorded channel to analyze |
 | `--out-dir` | `clock_offset_data` | where captures are written |
 | `--save-audio` | off | also write the recording as a float WAV |
 | `--allow-virtual` | off | permit aggregate/virtual devices |
@@ -263,7 +263,7 @@ Three things are worth reading off this table.
 **Both offsets are rate-dependent, in the same direction.** The K7 sits
 at −7.2 ppm at 44.1 kHz but −12.1 ppm on the 48 kHz family; the Rubix24
 at −190.3 ppm versus −179.0 ppm. Those gaps — 5 ppm and 11 ppm — dwarf
-the error bars. Each interface synthesises the two families with a
+the error bars. Each interface synthesizes the two families with a
 different PLL divider, and the two dividers do not land in the same
 place. **A calibration taken at one rate does not transfer to the
 other**, which is the practical result of this whole exercise.
@@ -291,7 +291,7 @@ samples to time, and the K7 figure appeared as a cross-check.
 ### 6.1 Reproducibility
 
 Three independent 60 s runs at 48 kHz on the same pair, spread over about
-an hour, all re-analysed with the same code:
+an hour, all re-analyzed with the same code:
 
 | Run | K7 output | Rubix24 input | quoted error | Birge ratio |
 |---|---|---|---|---|
@@ -400,9 +400,9 @@ timestamp as the exact regressor, as `loopback_clock_cal.py` does —
 attenuates the slope by roughly `var(noise)/var(t)`, some 0.0003 to
 0.03 ppm here. Small, but free to eliminate.
 
-**Centre both axes.** Timestamps are seconds since an arbitrary epoch and
+**Center both axes.** Timestamps are seconds since an arbitrary epoch and
 reach 10⁴ s, whose squares lose about six decimal digits to cancellation
-against a 60 s span. Centring keeps every summed product `O(span²)`.
+against a 60 s span. Centering keeps every summed product `O(span²)`.
 With that done, float64 is not close to being the limiting factor.
 
 **Trim by time, not by block count.** With `blocksize=0` the host chooses
@@ -442,7 +442,7 @@ cannot approach π and break the unwrap.
 **No `CallbackStop`.** Both callbacks pad with silence past the end of
 the buffer and the main thread stops the streams with `abort()`. Raising
 `CallbackStop` while the main thread calls `stop()` is the classic way to
-wedge `Pa_StopStream` on the CoreAudio backend; not signalling completion
+wedge `Pa_StopStream` on the CoreAudio backend; not signaling completion
 from the callback at all makes the race unreachable rather than merely
 unlikely.
 
@@ -527,7 +527,7 @@ python3 doc/clock_offset_analyze.py clock_offset_data/capture_*.npz
 - `format_report()` — the per-rate report text.
 
 Imports nothing beyond NumPy and the standard library, so a capture taken
-on the Mac can be re-analysed anywhere, including on a machine with no
+on the Mac can be re-analyzed anywhere, including on a machine with no
 audio hardware at all.
 
 ### 9.3 `doc/coreaudio_rate.py` — CoreAudio device and rate control
@@ -622,7 +622,7 @@ python3 doc/loopback_clock_cal.py --out-device 1 --in-device 2 \
 | `--in-device N` | required | PortAudio index of the device to record on |
 | `--seconds` | `60` | capture length |
 | `--base` | `cal` | prefix for the three output files |
-| `--analyze-only` | off | re-analyse existing files; needs no device arguments |
+| `--analyze-only` | off | re-analyze existing files; needs no device arguments |
 
 Device selection now matches `clock_offset_measure.py`: PortAudio
 indices, the same numbering airspy-fmradion's `-P` takes. Before

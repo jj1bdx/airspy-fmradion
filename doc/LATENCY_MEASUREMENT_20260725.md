@@ -198,7 +198,7 @@ granted = B + R, R the request in frames, B the smallest power of two
 | 30 | 200.667 ms | **132.59 ms** | 132.57 ms | 6364 | −68.07 ms | 0.66 |
 | 40 | 210.667 ms | **151.15 ms** | 151.12 ms | 7255 | −59.52 ms | 0.72 |
 
-Within-run behaviour:
+Within-run behavior:
 
 | `-L` | Windows used | Min-max | Drift |
 |---|---|---|---|
@@ -239,7 +239,7 @@ history: a blocking-write producer fills the ring only as fast as its
 source supplies samples, and an SDR supplies them in true real time, so a
 deep ring is never filled. A FileSource, even when real-time paced, can
 hand over a burst while the output stream is still starting. The deeper
-the buffer, the more room there is for the two behaviours to diverge —
+the buffer, the more room there is for the two behaviors to diverge —
 hence 0.87, 0.66, 0.72 of capacity at `-L 20/30/40` versus over 1.0
 throughout the earlier ladder.
 
@@ -299,7 +299,7 @@ figure in §5 is if anything a slight **under**-estimate, by less than
 
 `-L 3` is the only setting whose delay does not settle. It starts at
 34.1 ms — already 20 ms above its 13.667 ms grant — and climbs at
-1.11 ms/s, reaching 45.7 ms after 11 s with no sign of levelling off,
+1.11 ms/s, reaching 45.7 ms after 11 s with no sign of leveling off,
 crossing `-L 5`'s delay just before t = 7 s. The climb is smooth on a 2 s
 window and resolves into 0.5-1.5 ms steps on a 0.5 s window; it is not the
 10.67 ms host-buffer quantum an ordinary output underrun would insert, so
@@ -308,7 +308,7 @@ that, when made to write in very small pieces, averages slightly slower
 than real time and lets the source queue grow. That mechanism is inferred
 from the step size, not measured here.
 
-Whatever the mechanism, the behaviour is decisive: at `-L 3` the delay
+Whatever the mechanism, the behavior is decisive: at `-L 3` the delay
 grows without bound over a recording, so the setting is worse than `-L 5`
 in both latency and stability. Note that `main.cpp` accepts `-L` down to
 1 ms.
