@@ -609,7 +609,7 @@ int main(int argc, char **argv) {
   std::unique_ptr<AudioOutput> audio_output;
 
   // Convert the user-supplied PortAudio latency from milliseconds (-L)
-  // to seconds (PaTime); -1.0 means "unset", signalling PortAudioOutput
+  // to seconds (PaTime); -1.0 means "unset", signaling PortAudioOutput
   // to fall back to its platform-default-plus-floor logic.
   PaTime portaudio_suggested_latency =
       (portaudio_latency_ms >= 0.0) ? (portaudio_latency_ms / 1000.0) : -1.0;

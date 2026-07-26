@@ -1,21 +1,24 @@
-# American English spelling pass over `doc/` (2026-07-26)
+# American English spelling pass (2026-07-26)
 
 CLAUDE.md gained the rule *"Use only American English spelling for
 documentation."* Several documents written earlier by Claude Code used British
 spelling. This pass corrects them. Done on branch `dev-doc-spelling`, cut from
-`dev` at `b486c58`.
+`dev` at `b486c58`, and extended afterwards to three source-code comments
+(§6) in a follow-up commit on `dev`.
 
 ## Executive summary
 
-- **Scope.** `doc/*.md`, plus the top-level `CHANGES.md`. 87 word occurrences
-  on 84 lines across 11 files.
+- **Scope.** `doc/*.md` and the top-level `CHANGES.md` — 87 word occurrences
+  on 84 lines across 11 files (§1, §2) — followed by 3 occurrences on 3 lines
+  in C++ comments (§6).
 - **Rule applied.** Spelling only. No word was substituted for a different
   word, no sentence was rewritten, and no code, identifier, filename, or
   command-line option was touched.
-- **Nothing else changed.** These are documentation files; no source file and
-  no build input is affected.
+- **No behavior change.** Everything outside §6 is documentation. §6 is
+  comment text alone: no statement, declaration, or literal was touched, and
+  `clang-format` reports no reflow.
 
-## 1. Files changed
+## 1. Documentation files changed
 
 | file | lines |
 |---|---|
@@ -33,7 +36,7 @@ spelling. This pass corrects them. Done on branch `dev-doc-spelling`, cut from
 
 Three lines carried two corrections each, hence 87 occurrences on 84 lines.
 
-## 2. Words corrected
+## 2. Words corrected in the documentation
 
 | British | American | n |
 |---|---|---|
@@ -131,14 +134,35 @@ British/American divergence classes, not a fixed word list alone:
   `spelt`, `mould`, `focussed`, …) — of these only `artefacts` was present.
 
 A repeat of the same scan after the edit reports no remaining hits other than
-the two `analyses` nouns noted in §3.
+the four `analyses` plural nouns noted in §3.
 
-## 6. Not changed
+## 6. Source-code comments
 
-- **Source comments.** `sfmbase/RtlSdrSource.cpp:383` and `:387` use
-  "cancelled" in comments. The CLAUDE.md rule names documentation, so they are
-  untouched.
+The same scan of §5 was run over `include/`, `sfmbase/`, and `main.cpp`. It
+found four hits, three of which were corrected in a follow-up commit:
+
+| file:line | British | American |
+|---|---|---|
+| `sfmbase/RtlSdrSource.cpp:383` | `cancelled` | `canceled` |
+| `sfmbase/RtlSdrSource.cpp:387` | `cancelled` | `canceled` |
+| `main.cpp:612` | `signalling` | `signaling` |
+
+All three are comment prose. No statement, declaration, string literal, or
+identifier was touched, so the binary is unchanged apart from recompilation.
+Both corrections shorten their line, and `clang-format --dry-run -Werror`
+reports no diff on either file, so no comment reflow was triggered.
+
+The fourth hit is **not** a defect and was left alone:
+`sfmbase/MultipathFilter.cpp:26` cites *"Automatic Cancelling of FM …"* by
+Mochizuki and Hatori. That is the published title of the paper, quoted
+verbatim, and a citation keeps its source's spelling regardless of house style.
+
+## 7. Not changed
+
 - **Top-level `README.md`.** Scanned; no British spelling found, so it is
   unchanged.
+- **The `analyses` plural nouns** of §3, and the paper title above.
 
-Committed together with the CLAUDE.md rule that prompted it.
+Sections 1–5 were committed together with the CLAUDE.md rule that prompted
+them; §6 followed once the rule's reach was extended past documentation to
+comments.

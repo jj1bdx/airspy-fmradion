@@ -380,11 +380,11 @@ void RtlSdrSource::rx_callback(unsigned char *buf, uint32_t len, void *ctx) {
 // Convert a block of raw offset-binary I/Q bytes and push it
 // to the output buffer.
 void RtlSdrSource::callback(const unsigned char *buf, std::size_t len) {
-  // Keep pushing until the async loop is cancelled: the consumer may be
+  // Keep pushing until the async loop is canceled: the consumer may be
   // blocked in DataBuffer::pull() and relies on these pushes (and the
   // final push_end() in run()) to wake up and observe the stop flag.
   //
-  // A cancelled in-flight transfer may deliver a short or empty buffer;
+  // A canceled in-flight transfer may deliver a short or empty buffer;
   // this is benign, not a device error.
   if (len < 2) {
     return;
