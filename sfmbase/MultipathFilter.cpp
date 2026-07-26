@@ -35,6 +35,13 @@
 
 #include "MultipathFilter.h"
 
+// Define this to print multipath filter messages
+// #undef DEBUG_MULTIPATH_FILTER
+
+#ifdef DEBUG_MULTIPATH_FILTER
+#include <fmt/format.h>
+#endif
+
 // Class MultipathFilter
 // Complex adaptive filter for reducing FM multipath.
 
@@ -90,6 +97,12 @@ MultipathFilter::MultipathFilter(unsigned int stages)
   assert(stages < (UINT_MAX / 4));
   reset_state();
   initialize_coefficients();
+#ifdef DEBUG_MULTIPATH_FILTER
+  fmt::println(
+      stderr,
+      "FM multipath filter configuration: filter_order: {}, alpha: {:.4g}",
+      m_filter_order, m_alpha);
+#endif // DEBUG_MULTIPATH_FILTER
 }
 
 // Clear the delay line and every quantity derived from it.
