@@ -1113,23 +1113,25 @@ int main(int argc, char **argv) {
           break;
         }
       }
+    }
 
 #ifdef COEFF_MONITOR
-      if ((modtype == ModType::FM) && (multipathfilter_stages > 0) &&
-          (block % (stat_rate * 10)) == 0) {
-        double mf_error = fm.get_multipath_error();
-        const MfCoeffVector &mf_coeff = fm.get_multipath_coefficients();
-        fmt::print(stderr, "block,{},mf_error,{:.9f},mf_coeff,", block,
-                   mf_error);
-        for (unsigned int i = 0; i < mf_coeff.size(); i++) {
-          MfCoeff val = mf_coeff[i];
-          fmt::print(stderr, "{},{:.9f},{:.9f},", i, val.real(), val.imag());
-        }
-        fmt::print(stderr, "\n");
-        fflush(stderr);
+    // Outside the quiet-mode branch on purpose: this is a debug dump with its
+    // own cadence and its own guards, not part of the per-block status
+    // display, and -q must not silence it.
+    if ((modtype == ModType::FM) && (multipathfilter_stages > 0) &&
+        (block % (stat_rate * 10)) == 0) {
+      double mf_error = fm.get_multipath_error();
+      const MfCoeffVector &mf_coeff = fm.get_multipath_coefficients();
+      fmt::print(stderr, "block,{},mf_error,{:.9f},mf_coeff,", block, mf_error);
+      for (unsigned int i = 0; i < mf_coeff.size(); i++) {
+        MfCoeff val = mf_coeff[i];
+        fmt::print(stderr, "{},{:.9f},{:.9f},", i, val.real(), val.imag());
       }
-#endif
+      fmt::print(stderr, "\n");
+      fflush(stderr);
     }
+#endif
 
     // Write PPS markers.
     if (ppsfile != nullptr) {

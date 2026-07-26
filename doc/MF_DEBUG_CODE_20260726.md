@@ -24,6 +24,10 @@ and merged to `dev` as `911c210`.
   `filter_order: 5, alpha: 0.003448` on every run without `-E` (§3).
 - **No release-build impact.** Everything involved is inside `#ifdef`; the
   default build is byte-for-byte unaffected apart from recompilation (§4).
+- **Defect 3, found while using the flags: `COEFF_MONITOR` was silenced by
+  `-q`.** Its `#ifdef` block sat inside the `if (!quietmode)` status-display
+  branch, so the usual way to run a file decode produced no coefficient dumps
+  at all. Moved out of that branch (§7).
 
 ## 1. What the flag does
 
@@ -177,3 +181,54 @@ than `DEBUG_MULTIPATH_FILTER` and are best enabled one at a time.
 - The dummy `stages = 1` construction at `FmDecode.cpp:81` is left alone. It is
   what makes `FmDecoder` hold the filter by value with no optional wrapper, and
   with the report moved it is no longer observable.
+
+## 7. Follow-up — `COEFF_MONITOR` was suppressed by `-q`
+
+Found while actually using the flags, in the measurement recorded in
+`doc/MF_ENERGY_20260726.md`: a `-E36 -q` decode built with
+`-DCOEFF_MONITOR=1` produced **zero** coefficient dumps.
+
+The cause is nesting rather than any of the block's own conditions. The
+`#ifdef COEFF_MONITOR` block sat inside
+
+```cpp
+// Show status messages for each block if not in quiet mode.
+if (!quietmode) {
+  if ((block % stat_rate) == 0) {
+    ...per-block status line...
+  }
+
+#ifdef COEFF_MONITOR
+  if ((modtype == ModType::FM) && (multipathfilter_stages > 0) &&
+      (block % (stat_rate * 10)) == 0) {
+```
+
+so `-q` silenced the debug dump along with the status display. Since `-q` is
+the normal form for a file decode — it is in every reproduction recipe in
+`doc/` — the monitor was effectively unusable in the case it is most wanted.
+
+Nothing about the dump belongs to the status display. It has its own cadence
+(`block % (stat_rate * 10)`, ten times slower than the status line), its own
+`modtype` and `multipathfilter_stages` guards, and it writes whole CSV lines
+whereas the status line rewrites one field with `\r`. Leaving them coupled
+also meant that with quiet mode off, the CSV lines interleaved with the
+`\r`-rewritten status field.
+
+The block therefore moved out of `if (!quietmode)`, keeping all three of its
+own guards and gaining a comment recording why it sits where it does. The
+closing brace of the quiet-mode branch moved up accordingly; nothing else in
+the loop changed.
+
+Verified on the same recording:
+
+| build | invocation | dumps |
+|---|---|---|
+| `-DCOEFF_MONITOR=1`, before | `-E36 -q`, 20 s | 0 |
+| `-DCOEFF_MONITOR=1`, after | `-E36 -q`, 20 s | 19 |
+| default (flag off), after | `-E36 -q` | 0 |
+
+The dumped values are unchanged — `block,200,mf_error,0.026603997` appears
+identically in the quiet run after the move and in the pre-move non-quiet run
+— so the change affects only whether the monitor prints, never what it prints.
+`clang-format --dry-run -Werror` is clean on `main.cpp`, and the default build
+compiles the block out as before.
