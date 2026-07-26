@@ -274,7 +274,7 @@ The mechanism is visible in the phase plot: moving the zero down from 3.46 to
 and stay broad**, so more of the lead is still present at the crossover, which
 has barely moved. That is 6.4° of extra phase margin bought purely by
 re-shaping, with no change in loop gain, no change in the LPF, and no change in
-ζ. The gain margin is essentially unchanged because the high-frequency behaviour
+ζ. The gain margin is essentially unchanged because the high-frequency behavior
 (phasor poles + NCO delay) is untouched.
 
 ![Open-loop Bode, PI zero 3.46 vs 1.73 Hz](PLL_EXPERIMENT_2_20260724_openloop.png)
@@ -307,7 +307,7 @@ and pushed the maximum past the ±0.02 rad the source comment quotes — this
 change leaves the phase error **slightly better** (−2 %), consistent with the
 loop noise bandwidth falling 37.6 → 32.5 Hz. The in-loop LPF was not touched, so
 the noise reaching the detector is identical; only the loop's own weighting of
-it changed, and it changed favourably.
+it changed, and it changed favorably.
 
 ### 4.2 Transient response measured on the live loop
 
@@ -455,7 +455,7 @@ cost 4 dB. The PLL remains ~50 dB clear of the real separation bottleneck.
    23.5 %.
 
 2. **The underlying goal is achievable, from one constant.** Halving Ki (PI zero
-   3.46 → 1.73 Hz, `b0` only) cuts the modelled phase-step overshoot 23.7 →
+   3.46 → 1.73 Hz, `b0` only) cuts the modeled phase-step overshoot 23.7 →
    14.5 % and the **measured live overshoot ≈ 26 → 15.1 %**, adds 6.4° of phase
    margin, and holds the gain crossover to −1.5 % and the −3 dB bandwidth to
    −4 %.

@@ -11,7 +11,7 @@ A design discussion proposed five improvements to the CMA multipath filter
 (Part I §5). The source was then read, the proposals were re-derived against
 what the code actually does, and everything testable was measured — first on
 off-air recordings using the filter's own cost function, then against a
-synthesised channel where the correct answer is known.
+synthesized channel where the correct answer is known.
 
 **Four things were changed in the source.** All are on `dev-multipath-exp`;
 `main` and `dev` are untouched. §0 lists the diff.
@@ -45,14 +45,14 @@ reception only: turn off if reception becomes unstable"*.
 wrong twice, in opposite directions — it undervalued the α scaling by a factor
 of six in dB terms and it recommended an α re-tune that ground truth rejects.
 Part I §6 predicted exactly this. Nothing here resting on `mf_error` alone
-should be treated as settled, which is why §17's synthesised-channel harness
+should be treated as settled, which is why §17's synthesized-channel harness
 matters more than any single result it produced.
 
-**A fading channel is where the filter is weakest.** Across nine synthesised
+**A fading channel is where the filter is weakest.** Across nine synthesized
 channels that cross `a = 1` while fading, `-E36` is a **net loss in 7 of 9
 cases**, by up to 10.2 dB. It is not instability — no divergence, ‖w‖ bounded
 throughout — and it is not tracking lag, since a faster α is worse at every
-fade rate. A CMA equaliser adapting on a moving channel simply injects more
+fade rate. A CMA equalizer adapting on a moving channel simply injects more
 misadjustment noise than the distortion it removes. With §17.2 this gives the
 README's *"turn off if reception becomes unstable"* a measured mechanism.
 
@@ -128,7 +128,7 @@ every update, so it could only ever return `1.0` — and a comment records why
 and what would bring it back. `get_error()` loses its meaningless return-type
 `const`; `get_coefficients()` becomes a `const` member. The stale
 `"maximum amplitude must be less than sqrt(2 / alpha)"` comment, which
-described unnormalised LMS, is replaced (§8.2).
+described unnormalized LMS, is replaced (§8.2).
 
 **7. Compile-time overrides for experiments only.** `MF_ALPHA` (default 0.1)
 and `MF_ALPHA_MAX` (default 0.5) exist so the sweeps in §15 and §17 can be
@@ -153,7 +153,7 @@ One line added to the `-E` help text: *"Size this to the echo delay spread"*
 
 ### New files, not part of the build
 
-- `doc/make_two_ray_channel.py` — synthesises `y[n] = x[n] + a·e^{jθ}·x[n−τ]`
+- `doc/make_two_ray_channel.py` — synthesizes `y[n] = x[n] + a·e^{jθ}·x[n−τ]`
   on a clean IQ recording, with windowed-sinc fractional delay.
 - `doc/eval_two_ray_snr.py` — scores a decode against the decode of the clean
   file via a least-squares FIR fit.
@@ -198,7 +198,7 @@ supersedes it wherever the two disagree. Items are tagged **[established]**
 **Provenance:** derived from a design discussion in July 2026. The reviewer
 read `include/MultipathFilter.h` on `main` plus the README and CHANGES
 descriptions of the filter; `MultipathFilter.cpp` was **not** read. Any claim
-below about the update equation is inferred from the documented behaviour, not
+below about the update equation is inferred from the documented behavior, not
 from the source.
 
 ---
@@ -271,7 +271,7 @@ rate, not twice whatever rate the receiver currently runs at.
 Arguments against moving to 768 kHz:
 
 1. **No gain in echo resolution.** An FIR at any rate above the signal's
-   Nyquist rate synthesises *exact* fractional delays within the band, because
+   Nyquist rate synthesizes *exact* fractional delays within the band, because
    sinc interpolation of a band-limited signal is exact. Sub-sample echo
    alignment already works at 384 kHz.
 2. **Conditioning gets worse.** At 384 kHz the signal fills most of the
@@ -279,7 +279,7 @@ Arguments against moving to 768 kHz:
    band with no signal energy to constrain the taps — larger eigenvalue
    spread, slower convergence, more tap drift.
 3. **Adjacent channels move in-band.** At 768 kHz the ±200 kHz first adjacents
-   fall inside the Nyquist span, and the filter will attempt to equalise
+   fall inside the Nyquist span, and the filter will attempt to equalize
    interference. At 384 kHz they are outside, needing only adequate channel
    filter rejection beyond ±192 kHz.
 4. **4× the cost for identical coverage.** Tap counts are set by inverse-tail
@@ -311,7 +311,7 @@ by someone who does not know why they are there.
   entirely.
 - **Why CMA works on FM at all.** Multipath on a constant-envelope carrier
   produces both AM and PM. The discriminator ignores AM and is corrupted by
-  PM. Minimising only the envelope error nevertheless forces the phase
+  PM. Minimizing only the envelope error nevertheless forces the phase
   correction, because for a constant-envelope source through a linear channel,
   restoring the envelope determines the channel inverse up to global phase,
   global delay, and carrier frequency offset — all three harmless for FM (a
@@ -339,7 +339,7 @@ constraint saves 2 of the 5 FFTs at the cost of some filter-length leakage.
 These are order-of-magnitude estimates, not measurements — benchmark before
 committing.
 
-**Conditioning.** Per-bin power normalisation approximately whitens the input,
+**Conditioning.** Per-bin power normalization approximately whitens the input,
 which directly cancels the eigenvalue-spread penalty that a band-limited,
 spectrally peaked FM signal otherwise imposes on gradient descent. Excluding
 out-of-band bins from adaptation (and forcing their response to zero) removes
@@ -369,18 +369,18 @@ the current sample-by-sample loop. Keep the time-domain path as a fallback.
 
 `std::complex<float>` gives ~1e-7 relative resolution. With coefficients of
 order 1 and near-converged updates that are small, `mu * gradient` can fall
-below the ULP and quantise to zero — the classic LMS stalling floor. This gets
+below the ULP and quantize to zero — the classic LMS stalling floor. This gets
 worse as tap count rises, since each individual tap's share of the update
 shrinks.
 
 Suggested split: hold `m_coeff` as `std::complex<double>` for accumulation,
 maintain a `std::complex<float>` shadow copy for the VOLK convolution,
 refreshed on each coefficient update. Since updates already happen only every
-4 samples, the conversion cost is amortised and SIMD throughput on the
+4 samples, the conversion cost is amortized and SIMD throughput on the
 convolution is preserved.
 
 **How to test:** run a fixed recorded IQ file through both, compare the
-steady-state `m_error` floor. If float32 quantisation is the limiter, the
+steady-state `m_error` floor. If float32 quantization is the limiter, the
 double-accumulation version should settle measurably lower.
 
 ### 5.3 Coefficient leakage — **[hypothesis]**
@@ -410,7 +410,7 @@ non-minimum-phase and the correct solution wants `|w[ref]| < 1` with the
 energy concentrated elsewhere — which the hard constraint forbids. The filter
 then has no reachable solution and thrashes.
 
-If this is the mechanism, a softer constraint — normalising the whole tap
+If this is the mechanism, a softer constraint — normalizing the whole tap
 vector, or fixing output power, rather than pinning one tap — would let the
 filter ride through fades.
 
@@ -520,13 +520,13 @@ on branch `dev-multipath-exp`; `main` and `dev` are untouched.
 | interfm | `test-files/interfm-20260724102822z-iq.wav` | 100.0 s | off-air InterFM, **real multipath** |
 
 The interfm recording changes several conclusions and is what most of the
-re-prioritisation in §16 rests on. Where a result predates it, that is stated.
+re-prioritization in §16 rests on. Where a result predates it, that is stated.
 
 ---
 
 ## 8. Corrections to Part I
 
-### 8.1 The step size is not fixed — this is normalised CMA, not fixed-α LMS
+### 8.1 The step size is not fixed — this is normalized CMA, not fixed-α LMS
 
 **[established]** Part I §1 lists "Step size `alpha = 0.1`, fixed". `alpha`
 (`MultipathFilter.h:44`) is indeed a fixed `constexpr double`, but it is *not*
@@ -557,7 +557,7 @@ w[ref]  ← 1 + 0j                                hard overwrite
 ```
 
 This is **Godard/CMA(2,2)** — gradient `e(n)·y(n)·conj(x(n))` with
-`e(n) = R₂ − |y(n)|²` — with NLMS power normalisation of the step. It is not
+`e(n) = R₂ − |y(n)|²` — with NLMS power normalization of the step. It is not
 decision-directed LMS. The header's citation of Treichler & Agee is correct;
 only Part I's description of the step size was wrong.
 
@@ -568,8 +568,8 @@ silently divides the per-tap adaptation rate.
 ### 8.2 The header's stability comment is wrong in its expression but right in spirit
 
 **[established]** `MultipathFilter.h:40-44` says *"maximum amplitude must be
-less than sqrt(2 / alpha)"*. That is the bound for **unnormalised** LMS, and
-the code is normalised, so the expression does not apply as written.
+less than sqrt(2 / alpha)"*. That is the bound for **unnormalized** LMS, and
+the code is normalized, so the expression does not apply as written.
 
 **[measured]** However, the obvious replacement — NLMS's amplitude-independent
 `0 < alpha < 2` — is also wrong here, and an earlier draft of this document
@@ -577,7 +577,7 @@ asserted it. Measured on interfm at `-E36`, `alpha = 0.6` is stable and
 `alpha = 1.0` **diverges** (§15.2). NLMS's `0 < alpha < 2` result is for a
 *linear* error `d − y`; CMA's error `R₂ − |y|²` is quadratic in the output, so
 the effective loop gain depends on the output amplitude and the clean
-normalised bound does not carry over. The header comment is therefore right
+normalized bound does not carry over. The header comment is therefore right
 that the bound is amplitude-dependent, and wrong only about the formula.
 The measured safe region on these recordings is `alpha ≲ 0.6`.
 
@@ -604,14 +604,14 @@ entire life of the process. It has no callers. It becomes meaningful only if
 gain and global phase — those are flat directions in which the tap vector would
 otherwise drift indefinitely". Half of that is wrong. The CM error is
 `e = R₂ − |y|²` with `R₂ = 1`: scaling the tap vector scales `|y|` and is
-penalised directly. **Gain is the one thing this cost function pins hardest.**
+penalized directly. **Gain is the one thing this cost function pins hardest.**
 
 The genuinely flat directions are global **phase** and global **delay** — the
-latter because a fractionally-spaced equaliser can shift its whole response in
+latter because a fractionally-spaced equalizer can shift its whole response in
 time without changing the envelope at all.
 
 This is not pedantry. It decided the outcome of §17.4: the first attempt at a
-softened reference-tap constraint normalised ‖w‖ as well as pinning the phase,
+softened reference-tap constraint normalized ‖w‖ as well as pinning the phase,
 on the strength of Part I's claim, and scored 34.87 dB against the hard pin's
 54.13 dB on a static channel — 19 dB worse, because the added norm constraint
 fights the cost function instead of complementing it. Re-doing it as a pure
@@ -635,7 +635,7 @@ Converged tap statistics, from the last `COEFF_MONITOR` dump of each run:
 | **interfm** | **100** | **401** | **0.3010** | **0.352** |
 | **interfm** | **200** | **801** | **0.2820** | **0.349** |
 
-piano and joak are effectively multipath-free — the equaliser settles with
+piano and joak are effectively multipath-free — the equalizer settles with
 under 1 % of its energy off the reference tap, implying echoes of order 5 %.
 **interfm is a genuine multipath channel**: 33 % peak echo and 35 % of the tap
 energy off the reference, 40× more than the other two. It is also
@@ -694,7 +694,7 @@ hardware.
 ## 11. §5.2 double-precision coefficients — **rejected by measurement**
 
 **[measured]** The hypothesis is that `mu·gradient` falls below the float32 ULP
-and quantises to zero. With the real NLMS step `mu ≈ alpha/N` the per-update
+and quantizes to zero. With the real NLMS step `mu ≈ alpha/N` the per-update
 tap increment is `|Δw| ≈ (alpha/N)·|e|`, and stalling needs
 `|Δw| < ULP(w) = |w|·2⁻²³`. Both `|e|` and `|w|` are measured, not assumed:
 
@@ -735,7 +735,7 @@ Two further points against §5.2 as written:
   double-precision replacement for `volk_32fc_x2_dot_prod_32fc`.
 - **[established]** `COEFF_MONITOR` prints coefficients with `{:.9f}`
   (`main.cpp:1125`); float32 carries ~7 significant decimal digits, so the last
-  two printed digits are formatting artefacts.
+  two printed digits are formatting artifacts.
 
 **Verdict: do not implement.**
 
@@ -780,7 +780,7 @@ on runtime alignment, so the technique is safe.
 
 **Result** — same protocol as §10:
 
-| `-E` | N | base | optimised | filter only, base → opt | speedup |
+| `-E` | N | base | optimized | filter only, base → opt | speedup |
 | --- | --- | --- | --- | --- | --- |
 | off | — | 1.28 | 1.28 | — | — |
 | 36 | 145 | 2.74 | 2.23 | 1.46 → 0.95 | **1.54×** |
@@ -791,13 +791,13 @@ on runtime alignment, so the technique is safe.
 **[measured]** A consistent ~1.6× across `-E36` to `-E200`. The gain collapses
 at `-E400`: the ring buffer doubles the delay-line footprint (25.6 kB at
 N = 1601), and past some point that costs more in cache traffic than the
-eliminated `memmove` saves. Optimised ns/sample/tap runs 0.85, 0.71, 0.67,
+eliminated `memmove` saves. Optimized ns/sample/tap runs 0.85, 0.71, 0.67,
 0.78 across `-E36/100/200/400` — improving, then turning around — whereas the
 baseline improves monotonically (1.31, 1.14, 1.07, 0.83). **[hypothesis]** If
 very large `-E` ever matters, replace the tail duplication with a two-segment
 dot product.
 
-**Numerical equivalence.** Decoded audio, baseline vs optimised:
+**Numerical equivalence.** Decoded audio, baseline vs optimized:
 
 | File | `-E` | difference / signal |
 | --- | --- | --- |
@@ -872,7 +872,7 @@ constraint before reproducing the failure — stands.
 ## 15. New: the `-E` knob silently detunes the loop
 
 This section did not exist before the interfm recording. It is the main
-re-prioritisation driver.
+re-prioritization driver.
 
 ### 15.1 More taps make the error floor worse, not better
 
@@ -1017,12 +1017,12 @@ change is a real but much smaller perturbation on top. Stereo difference (L−R)
 RMS rises from 0.1098 with the filter off to 0.1306 with it on, consistent
 with multipath suppression restoring separation — but without ground truth
 that is equally consistent with added noise. **A post-discriminator THD and
-separation measurement on the synthesised channel of §17 is required before
+separation measurement on the synthesized channel of §17 is required before
 changing the default.**
 
 **That measurement was subsequently made, and it rejects this section's
 recommendation.** Against ground truth (§17.1) α = 0.4 is 0.2–3.2 dB *worse*
-than α = 0.1 on all three synthesised channels, and the audio optimum is flat
+than α = 0.1 on all three synthesized channels, and the audio optimum is flat
 over 0.05–0.2. **α remains 0.1 in the code.** The 38 % CM-error improvement
 reported above is real and reproducible; it simply does not correspond to
 anything the listener receives. Read this section as a description of the CM
@@ -1113,7 +1113,7 @@ line*: `single_process()` inserts it (`:95-96`) before `process()` performs the
 window every sample, one poisoned entry makes every subsequent output
 non-finite until it ages out — up to N samples, ≈1 ms at `-E400`. Freshly
 reset identity coefficients are convolved against a still-poisoned delay line,
-so the expected behaviour is a *burst* of resets rather than one.
+so the expected behavior is a *burst* of resets rather than one.
 
 Fixed on `dev-multipath-exp` by adding `MultipathFilter::reset_state()` and
 calling it alongside `initialize_coefficients()` in the recovery path.
@@ -1147,7 +1147,7 @@ The comparisons are deliberately written as "not within the limit" rather than
 "greater than the limit", so NaN — which compares false against everything —
 is still rejected. This preserves the property that makes `-ffast-math`
 forbidden in this project, while no longer depending on it as the only line of
-defence.
+defense.
 
 **Headroom.** With the IF AGC holding the input at unity, `|y| ≈ 1` and the CM
 error sits near zero. The largest legitimate `|mf_error|` observed across every
@@ -1201,7 +1201,7 @@ of silent. It should not be sold as an audio improvement.
 `process()` is never called at all, so the delay line stays empty and the
 coefficients stay at construction values. At block 101 the filter switches on
 abruptly against a cold delay line, with no crossfade. Probably benign, but it
-is current behaviour rather than a documented design choice.
+is current behavior rather than a documented design choice.
 
 ### 16.4 `assert()` is live in the standard build
 
@@ -1239,12 +1239,12 @@ time as the α scaling went in.
 
 ---
 
-## 17. The synthesised two-ray channel — **built, and it changes the answers**
+## 17. The synthesized two-ray channel — **built, and it changes the answers**
 
 **Implemented.** `doc/make_two_ray_channel.py` applies
 `y[n] = x[n] + a·e^{jθ}·x[n−τ]` to a clean IQ recording, with a
 windowed-sinc fractional delay so that sub-sample echoes are exact for a
-band-limited signal, and renormalises the mean envelope to 1.0 to match what
+band-limited signal, and renormalizes the mean envelope to 1.0 to match what
 the IF AGC delivers. Three channels were generated from `piano_iqtest.wav`
 into `test-files/`:
 
@@ -1285,7 +1285,7 @@ flat over 0.05–0.2 and falls away above it. **The current default of 0.1 is
 correct and is not changed.**
 
 This is Part I §6's warning arriving in full: the CM cost is blind to the flat
-directions of its own cost function, and optimising it optimised the wrong
+directions of its own cost function, and optimizing it optimized the wrong
 thing. Every α conclusion in §15.3 that rests on `mf_error` alone should be
 read as a statement about the CM cost, not about the receiver.
 
@@ -1311,7 +1311,7 @@ Three things follow.
   mechanism behind the README's "turn off if reception becomes unstable".
 - **On a mild channel the filter is a net loss at every setting.** At a = 0.5
   the best filtered result is 3.8 dB below the unfiltered decode. FM is
-  robust to shallow echoes on its own, and the equaliser's misadjustment noise
+  robust to shallow echoes on its own, and the equalizer's misadjustment noise
   costs more than the distortion it removes.
 
 ### 17.3 The §15.1 α scaling is worth far more than the CM error showed
@@ -1392,7 +1392,7 @@ moving channel.
 **Why the pin helps more than it costs.** Part I §4 justifies it as removing
 the CM cost's two flat directions, global gain and global phase. §8.5 corrects
 that: gain is not flat. What the pin also suppresses is **global delay**, which
-for a fractionally-spaced equaliser is very nearly flat and which the
+for a fractionally-spaced equalizer is very nearly flat and which the
 phase-only constraint leaves wide open. On a static channel that does not
 matter — the filter settles somewhere on the flat direction and stays. On a
 fading channel the tap vector is free to drift along it while the channel
@@ -1412,7 +1412,7 @@ fading channel the filter is a net loss at `-E36` with either constraint**, in
 an over-provisioned `-E` costs 6.9 dB on a *static* channel — the README's
 "For stable reception only: turn off if reception becomes unstable" now has a
 measured mechanism, and it is not instability in any dynamical sense. It is
-that a CMA equaliser adapting on a moving channel injects more misadjustment
+that a CMA equalizer adapting on a moving channel injects more misadjustment
 noise than the multipath distortion it removes.
 
 **It is not tracking lag.** Raising α on the 6 dB cells makes it worse at every
@@ -1477,10 +1477,10 @@ compared and take minima.
     -E100 -W /tmp/out.wav
 ```
 
-**Ground-truth measurement** against a synthesised channel (§17):
+**Ground-truth measurement** against a synthesized channel (§17):
 
 ```sh
-# 1. synthesise the channel into test-files/ -- static,
+# 1. synthesize the channel into test-files/ -- static,
 ./doc/make_two_ray_channel.py --input test-files/piano_iqtest.wav \
     --amp 0.9 --delay 3.0 --phase 2.1 --outdir test-files
 
@@ -1509,7 +1509,7 @@ compared and take minima.
 
 Four revisions are marked: **(i)** the interfm recording, after which raising
 `-E` is no longer assumed to be good; **(ii)** adopting §15.1 in code;
-**(iii)** adopting §16.2; **(iv)** building the synthesised channel of §17,
+**(iii)** adopting §16.2; **(iv)** building the synthesized channel of §17,
 which produced the first ground truth in this document and overturned two
 earlier conclusions.
 
@@ -1526,7 +1526,7 @@ CM cost alone should be treated as settled.
 | 2 | §12 remove redundant O(N) passes | implemented — 1.6× | [measured] |
 | 3 | §15.1 scale α with the filter order | implemented — **+6.1 dB at `-E100`** | [measured, ground truth] |
 | 4 | §16.1 clear the delay line on divergence reset | implemented | [established] |
-| 5 | §17 synthesised channel + SNR harness, static and fading | implemented — `doc/make_two_ray_channel.py` (incl. `--fade-depth`/`--fade-rate`/`--doppler`), `doc/eval_two_ray_snr.py` | [measured] |
+| 5 | §17 synthesized channel + SNR harness, static and fading | implemented — `doc/make_two_ray_channel.py` (incl. `--fade-depth`/`--fade-rate`/`--doppler`), `doc/eval_two_ray_snr.py` | [measured] |
 | 6 | §8.2 / §16.6 header comment, dead getter, const-correctness | implemented | [established] |
 | 7 | §16.2 magnitude bound on the divergence guard | implemented — 36 orders of magnitude, no audio benefit | [measured] |
 | 8 | §5.1 frequency-domain adaptation | open | [hypothesis] |
@@ -1552,6 +1552,6 @@ genuinely dispersive off-air recording is ±50 µs (§9); and ground truth now
 shows `-E200` is not merely expensive but actively harmful on a short-delay
 channel (§17.2). Frequency-domain adaptation remains the right answer if a
 channel is ever found that genuinely needs hundreds of taps — its per-bin
-normalisation argument is still untested and may be its strongest feature —
+normalization argument is still untested and may be its strongest feature —
 but "the current `-E` ceiling is the problem" is not supported by any
 measurement here.
