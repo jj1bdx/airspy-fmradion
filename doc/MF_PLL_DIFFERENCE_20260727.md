@@ -54,9 +54,10 @@ events, and one of which is caused by the multipath filter switching itself on.
   away entirely. The dense trace resolves it (§7).
 - **Incidental finding, common to both builds:** the multipath filter is
   bypassed for the first 100 blocks and engages abruptly at t = 0.533333 s,
-  inserting its reference-tap group delay of 109 IF samples (284 µs, 5.4 pilot
-  cycles) as a step. That step kicks the PLL by **+22 Hz** and takes ~90 ms to
-  absorb. Decoding without `-E` leaves the loop within 1.5 Hz across the same
+  inserting its reference-tap group delay of `stages−1` = 35 IF samples
+  (91.1 µs, 0.732 pilot cycles, a −96.6° phase step) as a step. That step kicks
+  the PLL by **+22 Hz** and takes ~90 ms to absorb. (The delay figure here was
+  corrected on 2026-07-28; see §7.1.) Decoding without `-E` leaves the loop within 1.5 Hz across the same
   window (§7.1).
 
 ## 1. Method
@@ -417,9 +418,18 @@ IF samples = **0.533333 s**. Decoding the same file with `-E 36` and with no
 
 When the filter engages its coefficients are still the initial ones — reference
 tap `1+0j`, everything else zero — so the signal path acquires the reference
-tap's group delay of `stages*3+1` = 109 samples in one block boundary. At
-384 kHz that is 284 µs, or 5.4 cycles of the 19 kHz pilot, applied as a step.
-The loop sees a phase step and takes ~90 ms to absorb it.
+tap's group delay in one block boundary. In `single_process()` the window is
+ordered newest-last, `window[N−1]` holding the sample just written, so the
+delay of tap *i* is `N−1−i` and the reference tap at `stages*3+1` sits at
+`stages−1` samples: **35 samples = 91.1 µs** at `-E 36`, which is 0.732 cycles
+of the 19 kHz pilot, i.e. a phase step of −96.6° after wrapping. The loop sees
+that phase step and takes ~90 ms to absorb it.
+
+(Corrected 2026-07-28. This paragraph originally gave the delay as
+`stages*3+1` = 109 samples / 284 µs / 5.4 cycles, which misread the window
+ordering. `doc/MF_PLL_DIFFERENCE_20260728.md` §6 confirms the corrected figure
+empirically: across `-E` = 18…100 the kick is proportional to the *wrapped*
+phase step of a `stages−1` sample delay, R² = 0.99994.)
 
 This is present in both builds and is not part of the old-versus-new
 difference. It is worth recording anyway: it is the largest single disturbance
