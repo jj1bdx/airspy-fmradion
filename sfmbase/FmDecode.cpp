@@ -31,8 +31,8 @@ FmDecoder::FmDecoder(bool fmfilter_enable, IQSampleCoeff &fmfilter_coeff,
     : m_fmfilter_enable(fmfilter_enable), m_fmfilter_coeff(fmfilter_coeff),
       m_pilot_shift(pilot_shift),
       m_enable_multipath_filter((multipath_stages > 0)),
-      // Wait first 100 blocks to enable the multipath filter
-      m_wait_multipath_blocks(100), m_multipath_stages(multipath_stages),
+      // Wait first 20 blocks to enable the multipath filter
+      m_wait_multipath_blocks(20), m_multipath_stages(multipath_stages),
       m_stereo_enabled(stereo), m_stereo_detected(false), m_baseband_mean(0),
       m_baseband_level(0), m_if_rms(0.0)
 
