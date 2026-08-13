@@ -714,10 +714,11 @@ is where the cost is fully incurred.
 ```sh
 git worktree add --detach /tmp/mfqmm dev
 cp -R r8brain-free-src /tmp/mfqmm/ && rm -f /tmp/mfqmm/r8brain-free-src/.git
-# Apply the round-2 harness of doc/MULTIPATH_WAITING_20260812.md section 19 to
-# /tmp/mfqmm/sfmbase/FmDecode.cpp: initialize m_wait_multipath_blocks from a
-# once-parsed getenv("MF_WAIT_BLOCKS") (default 20 at de9dc0c), echo MFWAIT,<n>
-# to stderr, and add the DEBUG_MF_RESET / DEBUG_MF_ERR / DEBUG_AGC_TRACE prints.
+# The harness is doc/MULTIPATH_QMM_20260813_harness.diff: it initializes
+# m_wait_multipath_blocks from a once-parsed getenv("MF_WAIT_BLOCKS")
+# (default 20), echoes MFWAIT,<n> to stderr, and adds the DEBUG_MF_RESET /
+# DEBUG_MF_ERR / DEBUG_AGC_TRACE prints. Apply it in the worktree only.
+git -C /tmp/mfqmm apply doc/MULTIPATH_QMM_20260813_harness.diff
 
 cmake -S /tmp/mfqmm -B /tmp/mfqmm/build-dbg \
   -DEXTRA_FLAGS="-DCOEFF_MONITOR=1 -DDEBUG_MULTIPATH_FILTER=1 -DDEBUG_MF_RESET=1 -DDEBUG_MF_ERR=1 -DDEBUG_AGC_TRACE=1"

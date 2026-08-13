@@ -1,0 +1,185 @@
+Measurement harness for the multipath filter's startup wait
+(doc/MULTIPATH_WAITING_20260812.md and doc/MULTIPATH_QMM_20260813.md).
+
+Apply to a throwaway `git worktree` checkout, never to the main tree:
+
+    git worktree add --detach /tmp/mfwait dev
+    cp -R r8brain-free-src /tmp/mfwait/ && rm -f /tmp/mfwait/r8brain-free-src/.git
+    git -C /tmp/mfwait apply /path/to/this.diff
+    cmake -S /tmp/mfwait -B /tmp/mfwait/build-dbg \
+      -DEXTRA_FLAGS="-DCOEFF_MONITOR=1 -DDEBUG_MULTIPATH_FILTER=1 \
+                     -DDEBUG_MF_RESET=1 -DDEBUG_MF_ERR=1 -DDEBUG_AGC_TRACE=1"
+    cmake --build /tmp/mfwait/build-dbg --target airspy-fmradion -j
+
+It adds two things to sfmbase/FmDecode.cpp, both inert in a normal build:
+
+1. m_wait_multipath_blocks is read once from the MF_WAIT_BLOCKS environment
+   variable (default 20, the shipped value), so one binary covers every wait
+   under test instead of one build per value.  The value actually used is
+   echoed to stderr as `MFWAIT,<n>` so each run's log records its own setting.
+   This costs one function-local static read at construction and is otherwise
+   identical to the compiled-in constant; it was verified bit-exact against a
+   compile-time macro build before use.
+
+2. Three stderr-only, #ifdef-guarded traces, following the existing
+   COEFF_MONITOR / DEBUG_PLL_FILTER convention of doc/MF_DEBUG_CODE_20260726.md.
+   All default off; no DSP arithmetic is touched.
+
+     DEBUG_AGC_TRACE  AGCTRACE,<block>,<IF AGC gain>,<waiting?>   every block
+     DEBUG_MF_ERR     MFERR,<block>,<peak |output|>,<CMA error>   filtered blocks
+     DEBUG_MF_RESET   MFRESET,<block>                             divergence resets
+
+   <block> is the true FmDecoder::process() call index in all three, so traces
+   from runs with different wait lengths line up sample for sample.
+
+Verified 2026-08-13 against dev at 48f162c: applies cleanly, builds with the
+flags above, and MFERR first appears at exactly block <wait>.
+
+diff --git a/sfmbase/FmDecode.cpp b/sfmbase/FmDecode.cpp
+index 8af07fc..7a45c8e 100644
+--- a/sfmbase/FmDecode.cpp
++++ b/sfmbase/FmDecode.cpp
+@@ -18,10 +18,66 @@
+ // along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ 
+ #include <algorithm>
++#include <cerrno>
++#include <climits>
++#include <cstdlib>
++
++#include <fmt/format.h>
+ 
+ #include "FmDecode.h"
+ #include "Utility.h"
+ 
++// Define this to print one line per multipath-filter divergence reset
++// #define DEBUG_MF_RESET 1
++
++// Define this to print one line per filtered block with the block's peak
++// |output| and last CMA error value
++// #define DEBUG_MF_ERR 1
++
++// Define this to print one line per FmDecoder::process() call with the IF
++// AGC's current gain and the multipath filter's wait state
++// #define DEBUG_AGC_TRACE 1
++
++namespace {
++
++// Read the multipath filter's warm-up wait length, in blocks, from the
++// MF_WAIT_BLOCKS environment variable. Parsed exactly once per process
++// (function-local static), so every FmDecoder constructed in a run agrees
++// even though only one instance exists in practice. Falls back to the
++// compiled-in default on a missing variable, an empty string, non-numeric
++// or trailing-garbage input, a negative value, or a value judged
++// unrealistically large; the fallback and the value actually used are both
++// reported to stderr so a run's logs record it unambiguously.
++unsigned int mf_wait_blocks_from_env() {
++  constexpr unsigned int default_wait_blocks = 20;
++  // Generous sanity cap: far beyond any realistic wait (the shipped default
++  // is 20 blocks), but small enough to reject typos/garbage reliably.
++  constexpr long max_wait_blocks = 1000000;
++  static const unsigned int wait_blocks = [default_wait_blocks] {
++    unsigned int result = default_wait_blocks;
++    const char *env = std::getenv("MF_WAIT_BLOCKS");
++    if (env != nullptr && env[0] != '\0') {
++      char *endptr = nullptr;
++      errno = 0;
++      long parsed = std::strtol(env, &endptr, 10);
++      bool valid = (endptr != env) && (*endptr == '\0') && (errno == 0) &&
++                   (parsed >= 0) && (parsed <= max_wait_blocks);
++      if (valid) {
++        result = static_cast<unsigned int>(parsed);
++      } else {
++        fmt::println(stderr,
++                     "MF_WAIT_BLOCKS: invalid value '{}', falling back to {}",
++                     env, default_wait_blocks);
++      }
++    }
++    fmt::println(stderr, "MFWAIT,{}", result);
++    return result;
++  }();
++  return wait_blocks;
++}
++
++} // namespace
++
+ // class FmDecoder
+ 
+ FmDecoder::FmDecoder(bool fmfilter_enable, IQSampleCoeff &fmfilter_coeff,
+@@ -31,10 +87,13 @@ FmDecoder::FmDecoder(bool fmfilter_enable, IQSampleCoeff &fmfilter_coeff,
+     : m_fmfilter_enable(fmfilter_enable), m_fmfilter_coeff(fmfilter_coeff),
+       m_pilot_shift(pilot_shift),
+       m_enable_multipath_filter((multipath_stages > 0)),
+-      // Wait first 20 blocks to enable the multipath filter
+-      m_wait_multipath_blocks(20), m_multipath_stages(multipath_stages),
+-      m_stereo_enabled(stereo), m_stereo_detected(false), m_baseband_mean(0),
+-      m_baseband_level(0), m_if_rms(0.0)
++      // Wait this many blocks before enabling the multipath filter; the
++      // count is read once from MF_WAIT_BLOCKS (default 20 when unset or
++      // invalid; see mf_wait_blocks_from_env() above).
++      m_wait_multipath_blocks(mf_wait_blocks_from_env()),
++      m_multipath_stages(multipath_stages), m_stereo_enabled(stereo),
++      m_stereo_detected(false), m_baseband_mean(0), m_baseband_level(0),
++      m_if_rms(0.0)
+ 
+       // Construct FM narrow filter
+       ,
+@@ -86,6 +145,17 @@ FmDecoder::FmDecoder(bool fmfilter_enable, IQSampleCoeff &fmfilter_coeff,
+ 
+ void FmDecoder::process(IQSampleVector samples_in, SampleVector &audio) {
+ 
++#if defined(DEBUG_MF_RESET) || defined(DEBUG_MF_ERR) || defined(DEBUG_AGC_TRACE)
++  // True FmDecoder::process() call index, counting every invocation
++  // (including ones that return early on empty input). Only one FmDecoder
++  // instance exists in the program, so a function-local static is
++  // sufficient and avoids adding an ODR-sensitive member for debug-only
++  // state (see doc/MF_DEBUG_CODE_20260726.md section 3 for the same
++  // reasoning applied to a different flag).
++  static uint64_t debug_block_index = 0;
++  const uint64_t block_index = debug_block_index++;
++#endif // DEBUG_MF_RESET || DEBUG_MF_ERR || DEBUG_AGC_TRACE
++
+   // If no sampled baseband signal comes out,
+   // terminate and wait for next block,
+   if (samples_in.size() == 0) {
+@@ -106,6 +176,13 @@ void FmDecoder::process(IQSampleVector samples_in, SampleVector &audio) {
+   // Perform IF AGC.
+   m_ifagc.process(m_samples_in_iffiltered, m_samples_in_after_agc);
+ 
++#ifdef DEBUG_AGC_TRACE
++  // One line per FmDecoder::process() call that reaches this point,
++  // regardless of the multipath filter's wait state.
++  fmt::println(stderr, "AGCTRACE,{},{:.9g},{}", block_index,
++               m_ifagc.get_current_gain(), (m_wait_multipath_blocks > 0));
++#endif // DEBUG_AGC_TRACE
++
+   if (m_wait_multipath_blocks > 0) {
+     m_wait_multipath_blocks--;
+     // No multipath filter applied.
+@@ -115,8 +192,26 @@ void FmDecoder::process(IQSampleVector samples_in, SampleVector &audio) {
+       // Apply multipath filter.
+       bool done_ok = m_multipathfilter.process(m_samples_in_after_agc,
+                                                m_samples_in_multipathfiltered);
++#ifdef DEBUG_MF_ERR
++      // One line per filtered block, keyed by the true process() block
++      // index (not a count of filtered blocks, which would depend on the
++      // wait length). Peak |output| is read from the filter's own output
++      // vector before any divergence fallback substitutes it below, so a
++      // reset is still visible as a large peak here.
++      {
++        float peak = 0.0f;
++        for (const IQSample &s : m_samples_in_multipathfiltered) {
++          peak = std::max(peak, std::abs(s));
++        }
++        fmt::println(stderr, "MFERR,{},{:.9g},{:.9g}", block_index, peak,
++                     m_multipathfilter.get_error());
++      }
++#endif // DEBUG_MF_ERR
+       // Check if the error evaluation becomes invalid/infinite.
+       if (!done_ok) {
++#ifdef DEBUG_MF_RESET
++        fmt::println(stderr, "MFRESET,{}", block_index);
++#endif // DEBUG_MF_RESET
+         // Reset the filter coefficients and the delay line.
+         // The delay line must be cleared too: the non-finite sample which
+         // triggered the reset is already in it, and would keep the output
