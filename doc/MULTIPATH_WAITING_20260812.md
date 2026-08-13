@@ -657,6 +657,11 @@ cp -R r8brain-free-src /tmp/mfwait/ && rm -f /tmp/mfwait/r8brain-free-src/.git
 #   m_wait_multipath_blocks(MF_WAIT_BLOCKS), ...
 # and add DEBUG_MF_RESET / DEBUG_MF_ERR / DEBUG_AGC_TRACE prints as described
 # in §1.1 (stderr-only, #ifdef-guarded).
+#
+# This compile-time variant was not kept. To reproduce Part I, use the
+# round-2 harness of §19 (doc/MULTIPATH_QMM_20260813_harness.diff) and set
+# MF_WAIT_BLOCKS=0 or 100 instead: §13.1 verified that it reproduces this
+# part's outputs bit-exactly.
 
 cmake -S /tmp/mfwait -B /tmp/mfwait/build-w100
 cmake -S /tmp/mfwait -B /tmp/mfwait/build-w0 -DEXTRA_FLAGS="-DMF_WAIT_BLOCKS=0"
@@ -1140,10 +1145,12 @@ remains hypothetical on the available evidence.
 ```sh
 git worktree add --detach /tmp/mfwait2 dev
 cp -R r8brain-free-src /tmp/mfwait2/ && rm -f /tmp/mfwait2/r8brain-free-src/.git
-# In /tmp/mfwait2/sfmbase/FmDecode.cpp, initialize m_wait_multipath_blocks from
-# a once-parsed getenv("MF_WAIT_BLOCKS") (default 100), echoing MFWAIT,<n> to
-# stderr; add the DEBUG_MF_RESET / DEBUG_MF_ERR / DEBUG_AGC_TRACE prints of §1.1
-# (DEBUG_MF_ERR now carries the true FmDecoder::process() block index).
+# The harness is doc/MULTIPATH_QMM_20260813_harness.diff: it initializes
+# m_wait_multipath_blocks from a once-parsed getenv("MF_WAIT_BLOCKS"), echoes
+# MFWAIT,<n> to stderr, and adds the DEBUG_MF_RESET / DEBUG_MF_ERR /
+# DEBUG_AGC_TRACE prints of §1.1 (DEBUG_MF_ERR now carries the true
+# FmDecoder::process() block index).
+git -C /tmp/mfwait2 apply doc/MULTIPATH_QMM_20260813_harness.diff
 
 cmake -S /tmp/mfwait2 -B /tmp/mfwait2/build-dbg \
   -DEXTRA_FLAGS="-DCOEFF_MONITOR=1 -DDEBUG_MULTIPATH_FILTER=1 -DDEBUG_MF_RESET=1 -DDEBUG_MF_ERR=1 -DDEBUG_AGC_TRACE=1"
@@ -1151,6 +1158,12 @@ cmake -S /tmp/mfwait2 -B /tmp/mfwait2/build-pll -DEXTRA_FLAGS="-DDEBUG_PLL_FILTE
 cmake --build /tmp/mfwait2/build-dbg --target airspy-fmradion -j
 cmake --build /tmp/mfwait2/build-pll --target airspy-fmradion -j
 ```
+
+The saved harness defaults the wait to 20 rather than the 100 this round's
+build used, since it was regenerated against the tree after the change of
+`de9dc0c`. That does not affect anything below: every decode sets
+`MF_WAIT_BLOCKS` explicitly, and each run's log records the value actually
+used as `MFWAIT,<n>`.
 
 Each decode, per §1.2's file/frequency table:
 
