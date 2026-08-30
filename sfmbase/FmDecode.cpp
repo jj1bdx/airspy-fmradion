@@ -93,15 +93,15 @@ void FmDecoder::process(IQSampleVector samples_in, SampleVector &audio) {
     return;
   }
 
-  // Measure IF RMS level.
-  m_if_rms = Utility::rms_level_sample(samples_in);
-
   // Apply IF filter if IF resampler is enabled
   if (m_fmfilter_enable) {
     m_fmfilter.process(samples_in, m_samples_in_iffiltered);
   } else {
     m_samples_in_iffiltered = std::move(samples_in);
   }
+
+  // Measure IF RMS level.
+  m_if_rms = Utility::rms_level_sample(m_samples_in_iffiltered);
 
   // Perform IF AGC.
   m_ifagc.process(m_samples_in_iffiltered, m_samples_in_after_agc);
