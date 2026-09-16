@@ -17,7 +17,7 @@ The following Git repositories are required:
 
 ## Platforms tested
 
-* Mac mini 2023 Apple Silicon (M2 Pro), macOS 26.5.2, Apple clang version 21.0.0 (clang-2100.1.1.101)
+* Mac mini 2023 Apple Silicon (M2 Pro), macOS 27.0, Apple clang version 21.0.0 (clang-2100.3.34.2)
 * Ubuntu 26.04 LTS x86\_64, gcc 15.2.0
 * Raspberry Pi 5 with Raspberry Pi OS 64bit Lite (Debian Trixie 13.6), gcc 14.2.0
 
@@ -34,9 +34,9 @@ The following Git repositories are required:
 * The author observed anomalies of being unable to run PortAudio with the `snd_aloop` loopback device while testing on Raspberry Pi OS 32bit Debian *Bullseye*. Portaudio anomaly support is out of our development scope.
 * The measured end-to-end delay between an analog FM radio and airspy-fmradion FM `-E 100` stereo reception using USB DAC FiiO K7, macOS 26.5 on Mac mini 2023, is 151 milliseconds with the default output latency, 54 milliseconds with `-L 10`, and 37 milliseconds with `-L 5`; the PortAudio/CoreAudio output stage accounts for nearly all of it, while the Airspy HF+ and the entire decode chain contribute only 6 to 7 milliseconds. Values in the lowest CoreAudio grant bucket (`-L 3` and below) are unusable because the delay never settles and grows by about 1 millisecond per second; see doc/LATENCY_MEASUREMENT_20260725.md for the method and the full `-L` ladder.
 
-### Intel Mac support is dropped
+### Intel Mac is no longer supported
 
-Intel Mac hardware is no longer supported by airspy-fmradion, although the author makes the best effort to prevent introducing anything against the compilation on the Intel Macs. Please open an issue on the GitHub repository if you find anything incompatible on Intel Macs.
+Intel Mac hardware is no longer supported by airspy-fmradion, effective 20260914.
 
 ## Changes (including requirement changes)
 
