@@ -24,7 +24,7 @@
 
 // class AmDecoder
 
-AmDecoder::AmDecoder(IQSampleCoeff &amfilter_coeff, const ModType mode)
+AmDecoder::AmDecoder(const IQSampleCoeff &amfilter_coeff, const ModType mode)
     // Initialize member fields
     : m_amfilter_coeff(amfilter_coeff), m_mode(mode), m_baseband_mean(0),
       m_baseband_level(0), m_if_rms(0.0)
@@ -95,7 +95,7 @@ AmDecoder::AmDecoder(IQSampleCoeff &amfilter_coeff, const ModType mode)
   // Do nothing
 }
 
-void AmDecoder::process(IQSampleVector samples_in, SampleVector &audio) {
+void AmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
   switch (m_mode) {
   case ModType::AM:
   case ModType::DSB:
@@ -138,7 +138,9 @@ void AmDecoder::process(IQSampleVector samples_in, SampleVector &audio) {
       m_wspr_ssb_up_finetuner.process(m_buf_filtered1b, m_buf_filtered2);
       break;
     default:
-      m_buf_filtered2 = std::move(samples_in);
+      // Unreachable: m_mode is fixed at construction to one of the four
+      // cases above whenever this inner switch is entered.
+      m_buf_filtered2 = samples_in;
       break;
     }
     // If no upsampled signal comes out, terminate and wait for next block.
@@ -148,7 +150,9 @@ void AmDecoder::process(IQSampleVector samples_in, SampleVector &audio) {
     }
     break;
   default:
-    m_buf_filtered2 = std::move(samples_in);
+    // Unreachable: m_mode is fixed at construction from the caller's
+    // ModType, and the only call site only passes AM/DSB/USB/LSB/CW/WSPR.
+    m_buf_filtered2 = samples_in;
     break;
   }
 
@@ -181,7 +185,7 @@ void AmDecoder::process(IQSampleVector samples_in, SampleVector &audio) {
   }
 
   // If no decoded signal comes out, terminate and wait for next block,
-  size_t decoded_size = m_buf_decoded.size();
+  const size_t decoded_size = m_buf_decoded.size();
   if (decoded_size == 0) {
     audio.resize(0);
     return;
@@ -220,16 +224,17 @@ void AmDecoder::process(IQSampleVector samples_in, SampleVector &audio) {
 
 // Demodulate AM signal.
 inline void AmDecoder::demodulate_am(const IQSampleVector &samples_in,
-                                     IQSampleDecodedVector &samples_out) {
-  unsigned int n = samples_in.size();
+                                     IQSampleDecodedVector &samples_out) const {
+  const unsigned int n = samples_in.size();
   samples_out.resize(n);
   volk_32fc_magnitude_32f(samples_out.data(), samples_in.data(), n);
 }
 
 // Demodulate DSB signal.
-inline void AmDecoder::demodulate_dsb(const IQSampleVector &samples_in,
-                                      IQSampleDecodedVector &samples_out) {
-  unsigned int n = samples_in.size();
+inline void
+AmDecoder::demodulate_dsb(const IQSampleVector &samples_in,
+                          IQSampleDecodedVector &samples_out) const {
+  const unsigned int n = samples_in.size();
   samples_out.resize(n);
   volk_32fc_deinterleave_real_32f(samples_out.data(), samples_in.data(), n);
 }

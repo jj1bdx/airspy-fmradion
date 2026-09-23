@@ -60,8 +60,9 @@ public:
   // multipath_stages  :: Set >0 to enable multipath filter
   //                   :: (LMS adaptive filter stage number)
   //
-  FmDecoder(bool fmfilter_enable, IQSampleCoeff &fmfilter_coeff, bool stereo,
-            double deemphasis, bool pilot_shift, unsigned int multipath_stages);
+  FmDecoder(bool fmfilter_enable, const IQSampleCoeff &fmfilter_coeff,
+            bool stereo, double deemphasis, bool pilot_shift,
+            unsigned int multipath_stages);
   //
   // Process IQ samples and return audio samples.
   //
@@ -107,21 +108,21 @@ public:
 private:
   /// Demodulate stereo L-R signal.
   inline void demod_stereo(const SampleVector &samples_baseband,
-                           SampleVector &samples_stereo);
+                           SampleVector &samples_stereo) const;
 
   /// Duplicate mono signal in left/right channels.
   inline void mono_to_left_right(const SampleVector &samples_mono,
-                                 SampleVector &audio);
+                                 SampleVector &audio) const;
 
   /// Extract left/right channels from mono/stereo signals.
   inline void stereo_to_left_right(const SampleVector &samples_mono,
                                    const SampleVector &samples_stereo,
-                                   SampleVector &audio);
+                                   SampleVector &audio) const;
 
   // Fill zero signal in left/right channels.
   // (samples_mono used for the size determination only)
   inline void zero_to_left_right(const SampleVector &samples_mono,
-                                 SampleVector &audio);
+                                 SampleVector &audio) const;
 
   // Data members.
   const bool m_fmfilter_enable;

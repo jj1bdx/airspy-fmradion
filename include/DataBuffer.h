@@ -68,7 +68,7 @@ public:
   }
 
   // Return the total number of blocks dropped due to queue overflow.
-  inline std::uint64_t dropped_blocks() {
+  inline std::uint64_t dropped_blocks() const {
     {
       std::scoped_lock<std::mutex> lock(m_mutex);
       return m_dropped_blocks;
@@ -87,7 +87,7 @@ public:
   }
 
   // Return size of std::queue structure (for debugging).
-  inline std::size_t queue_size() {
+  inline std::size_t queue_size() const {
     {
       std::scoped_lock<std::mutex> lock(m_mutex);
       return (m_queue.size());
@@ -114,7 +114,7 @@ public:
   }
 
   // Return true if the end has been reached at the Pull side.
-  inline bool pull_end_reached() {
+  inline bool pull_end_reached() const {
     {
       std::scoped_lock<std::mutex> lock(m_mutex);
       return (m_queue.empty() && (m_end_marked));
@@ -126,7 +126,9 @@ private:
   bool m_end_marked;
   std::uint64_t m_dropped_blocks = 0;
   std::queue<std::vector<Element>> m_queue;
-  std::mutex m_mutex;
+  // mutable: locked from the const accessors above (dropped_blocks(),
+  // queue_size(), pull_end_reached()), which only read state under the lock.
+  mutable std::mutex m_mutex;
   std::condition_variable m_cond;
 };
 

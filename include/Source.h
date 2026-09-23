@@ -32,22 +32,22 @@ public:
   virtual ~Source() {}
 
   /// Configure device and prepare for streaming.
-  virtual bool configure(std::string configuration) = 0;
+  virtual bool configure(const std::string &configuration) = 0;
 
   /// Return current sample frequency in Hz.
-  virtual std::uint32_t get_sample_rate() = 0;
+  virtual std::uint32_t get_sample_rate() const = 0;
 
   /// Return device current center frequency in Hz.
-  virtual std::uint32_t get_frequency() = 0;
+  virtual std::uint32_t get_frequency() const = 0;
 
   /// Return if device is using Low-IF.
-  virtual bool is_low_if() = 0;
+  virtual bool is_low_if() const = 0;
 
   /// Return current configured center frequency in Hz.
   std::uint32_t get_configured_frequency() const { return m_confFreq; }
 
   /// Print current parameters specific to device type
-  virtual void print_specific_parms() = 0;
+  virtual void print_specific_parms() const = 0;
 
   /// start device before sampling loop.
   /// Give it a reference to the buffer of samples

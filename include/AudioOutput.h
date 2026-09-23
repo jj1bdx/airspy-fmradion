@@ -52,7 +52,7 @@ public:
   /// Return true if the stream is OK, return false if there is an error.
   operator bool() const { return (!m_zombie) && m_error.empty(); }
 
-  const std::string get_device_name() { return m_device_name; }
+  std::string get_device_name() const { return m_device_name; }
 
 protected:
   /// Constructor.

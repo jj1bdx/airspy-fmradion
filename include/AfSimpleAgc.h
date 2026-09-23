@@ -53,11 +53,11 @@ public:
   double get_current_gain() const { return m_current_gain; }
 
 private:
-  double m_initial_gain;
+  const double m_initial_gain;
   double m_current_gain;
-  double m_max_gain;
-  double m_reference;
-  double m_distortion_rate;
+  const double m_max_gain;
+  const double m_reference;
+  const double m_distortion_rate;
 };
 
 #endif

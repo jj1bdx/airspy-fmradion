@@ -82,10 +82,10 @@ private:
   // Keep the PLL state in double precision regardless of the Sample
   // type: m_phase/m_freq are live recursive accumulators, and float
   // rounding here directly becomes 38 kHz subcarrier phase noise.
-  double m_minfreq, m_maxfreq;
+  const double m_minfreq, m_maxfreq;
   double m_freq, m_phase;
   double m_pilot_level;
-  unsigned int m_lock_delay;
+  const unsigned int m_lock_delay;
   unsigned int m_lock_cnt;
   unsigned int m_pilot_periods;
   std::uint64_t m_pps_cnt;

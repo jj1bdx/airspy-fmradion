@@ -38,19 +38,19 @@ public:
   /// Close RTL-SDR device.
   virtual ~RtlSdrSource() override;
 
-  virtual bool configure(std::string configuration) override;
+  virtual bool configure(const std::string &configuration) override;
 
   /// Return current sample frequency in Hz.
-  virtual std::uint32_t get_sample_rate() override;
+  virtual std::uint32_t get_sample_rate() const override;
 
   /// Return device current center frequency in Hz.
-  virtual std::uint32_t get_frequency() override;
+  virtual std::uint32_t get_frequency() const override;
 
   /// Return if device is using Low-IF.
-  virtual bool is_low_if() override;
+  virtual bool is_low_if() const override;
 
   /// Print current parameters specific to device type
-  virtual void print_specific_parms() override;
+  virtual void print_specific_parms() const override;
 
   virtual bool start(DataBuffer<IQSample> *samples,
                      std::atomic_bool *stop_flag) override;
@@ -78,10 +78,10 @@ private:
                  bool agcmode = false, bool antbias = false);
 
   /// Return a list of supported tuner gain settings in units of 0.1 dB.
-  std::vector<int> get_tuner_gains();
+  std::vector<int> get_tuner_gains() const;
 
   /// Return current tuner gain in units of 0.1 dB.
-  int get_tuner_gain();
+  int get_tuner_gain() const;
 
   /// Convert a block of raw offset-binary I/Q bytes and push it
   /// to the output buffer.

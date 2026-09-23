@@ -38,7 +38,7 @@ AudioResampler::AudioResampler(const double input_rate,
 
 void AudioResampler::process(const SampleVector &samples_in,
                              SampleVector &samples_out) {
-  size_t input_size = samples_in.size();
+  const size_t input_size = samples_in.size();
 
   assert(input_size <= max_input_length);
 

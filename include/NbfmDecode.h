@@ -43,7 +43,7 @@ public:
   ///
   /// nbfmfilter_coeff  :: IQSample Filter Coefficients.
   /// freq_dev          :: full scale deviation in Hz.
-  NbfmDecoder(IQSampleCoeff &nbfmfilter_coeff, const double freq_dev);
+  NbfmDecoder(const IQSampleCoeff &nbfmfilter_coeff, const double freq_dev);
 
   /// Process IQ samples and return audio samples.
   void process(const IQSampleVector &samples_in, SampleVector &audio);

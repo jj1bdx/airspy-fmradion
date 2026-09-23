@@ -64,11 +64,11 @@ PilotPhaseLock::PilotPhaseLock(double freq)
 // Process samples and generate the 38kHz locked tone.
 void PilotPhaseLock::process(const SampleVector &samples_in,
                              SampleVector &samples_out, bool pilot_shift) {
-  unsigned int n = samples_in.size();
+  const unsigned int n = samples_in.size();
 
   samples_out.resize(n);
 
-  bool was_locked = (m_lock_cnt >= m_lock_delay);
+  const bool was_locked = (m_lock_cnt >= m_lock_delay);
   m_pps_events.clear();
 
   if (n > 0) {
@@ -84,8 +84,8 @@ void PilotPhaseLock::process(const SampleVector &samples_in,
     // Generate locked pilot tone.
     // The PLL recursion runs in double precision regardless of the
     // Sample type; only the samples_out[i] stores narrow to Sample.
-    double psin = std::sin(m_phase);
-    double pcos = std::cos(m_phase);
+    const double psin = std::sin(m_phase);
+    const double pcos = std::cos(m_phase);
 
     // Generate double-frequency output.
     if (pilot_shift) {
@@ -99,13 +99,13 @@ void PilotPhaseLock::process(const SampleVector &samples_in,
     }
 
     // Multiply locked tone with input.
-    double x = samples_in[i];
-    double phasor_i = psin * x;
-    double phasor_q = pcos * x;
+    const double x = samples_in[i];
+    const double phasor_i = psin * x;
+    const double phasor_q = pcos * x;
 
     // Run IQ phase error through biquad LPFs once.
-    double new_phasor_i = m_biquad_phasor_i1.process(phasor_i);
-    double new_phasor_q = m_biquad_phasor_q1.process(phasor_q);
+    const double new_phasor_i = m_biquad_phasor_i1.process(phasor_i);
+    const double new_phasor_q = m_biquad_phasor_q1.process(phasor_q);
 
     // Convert I/Q ratio to estimate of phase error.
     // Note: maximum phase error during the locked state is +- 0.02 radian.
@@ -113,7 +113,7 @@ void PilotPhaseLock::process(const SampleVector &samples_in,
     // For the performance and accuracy analysis,
     // see doc/CORE_MATH_ATAN2F_20260722.md and
     // doc/STD_ATAN2_X86_64_20260722.md.
-    double phase_err = std::atan2(new_phasor_q, new_phasor_i);
+    const double phase_err = std::atan2(new_phasor_q, new_phasor_i);
 
     // Calculate pilot level (accurate).
     m_pilot_level = std::sqrt((new_phasor_i * new_phasor_i) +
@@ -124,7 +124,7 @@ void PilotPhaseLock::process(const SampleVector &samples_in,
     // the frequency. Then the frequency is integrated to produce the phase.
     // These two integrators form the two remaining poles, both at z = 1.
 
-    double new_phase_err = m_first_phase_err.process(phase_err);
+    const double new_phase_err = m_first_phase_err.process(phase_err);
     m_freq_err = new_phase_err;
     m_freq += m_freq_err;
 

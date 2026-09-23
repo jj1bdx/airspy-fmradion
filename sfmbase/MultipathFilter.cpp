@@ -228,7 +228,7 @@ bool MultipathFilter::process(const IQSampleVector &samples_in,
         m_filter_order, m_alpha);
   }
 #endif // DEBUG_MULTIPATH_FILTER
-  unsigned int n = samples_in.size();
+  const unsigned int n = samples_in.size();
   if (n == 0) {
     // Do nothing, return as successful
     return true;

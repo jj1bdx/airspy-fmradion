@@ -45,8 +45,8 @@ private:
   IQSampleVector m_state;
   // Per-block scratch holding [m_state | samples_in] contiguously.
   volk::vector<IQSample> m_scratch;
-  unsigned int m_order;
-  unsigned int m_downsample;
+  const unsigned int m_order;
+  const unsigned int m_downsample;
   unsigned int m_pos;
 };
 
@@ -69,7 +69,7 @@ private:
   SampleVector m_state;
   // Per-block scratch holding [m_state | samples_in] contiguously.
   volk::vector<Sample> m_scratch;
-  unsigned int m_order;
+  const unsigned int m_order;
   unsigned int m_pos;
 };
 
@@ -89,7 +89,7 @@ public:
   double process(double input);
 
 private:
-  double m_b0, m_b1, m_a1;
+  const double m_b0, m_b1, m_a1;
   double m_x0, m_x1;
 };
 
@@ -117,9 +117,9 @@ public:
   void process_interleaved_inplace(SampleVector &samples);
 
 private:
-  double m_timeconst;
-  Sample m_a1;
-  Sample m_b0;
+  const double m_timeconst;
+  const Sample m_a1;
+  const Sample m_b0;
   FirstOrderIirFilter m_filter0;
   FirstOrderIirFilter m_filter1;
 };

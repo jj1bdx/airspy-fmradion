@@ -688,9 +688,9 @@ int main(int argc, char **argv) {
     exit(1);
   }
 
-  double freq = up_srcsdr->get_configured_frequency();
+  const double freq = up_srcsdr->get_configured_frequency();
   fmt::print(stderr, "tuned for {:.7g} [MHz]", freq * 1.0e-6);
-  double tuner_freq = up_srcsdr->get_frequency();
+  const double tuner_freq = up_srcsdr->get_frequency();
   if (std::fabs(tuner_freq - freq) > 1.0) {
     fmt::print(stderr, ", device tuned for {:.7g} [MHz]", tuner_freq * 1.0e-6);
   }
@@ -700,13 +700,13 @@ int main(int argc, char **argv) {
 
   unsigned int if_blocksize;
 
-  bool enable_fs_fourth_downconverter = !(up_srcsdr->is_low_if());
+  const bool enable_fs_fourth_downconverter = !(up_srcsdr->is_low_if());
 
   bool enable_downsampling = true;
   double if_decimation_ratio = 1.0;
-  double fm_target_rate = FmDecoder::sample_rate_if;
-  double am_target_rate = AmDecoder::internal_rate_pcm;
-  double nbfm_target_rate = NbfmDecoder::internal_rate_pcm;
+  const double fm_target_rate = FmDecoder::sample_rate_if;
+  const double am_target_rate = AmDecoder::internal_rate_pcm;
+  const double nbfm_target_rate = NbfmDecoder::internal_rate_pcm;
 
   // Configure blocksize.
   switch (devtype) {
@@ -727,7 +727,7 @@ int main(int argc, char **argv) {
 
   // Status refresh rate.
   // TODO: ~0.1sec / display (should be tuned)
-  unsigned int stat_rate =
+  const unsigned int stat_rate =
       std::max(1u, (unsigned int)((double)ifrate / (double)if_blocksize / 9.0));
   fmt::println(stderr, "stat_rate = {}", stat_rate);
 
@@ -767,9 +767,9 @@ int main(int argc, char **argv) {
                  20 * log10(squelch_level));
   }
 
-  double demodulator_rate = ifrate / if_decimation_ratio;
-  double total_decimation_ratio = ifrate / pcmrate;
-  double audio_decimation_ratio = demodulator_rate / pcmrate;
+  const double demodulator_rate = ifrate / if_decimation_ratio;
+  const double total_decimation_ratio = ifrate / pcmrate;
+  const double audio_decimation_ratio = demodulator_rate / pcmrate;
 
   // Guard the IF resampler against pathological upsampling ratios
   // (e.g. via extreme -r values): r8brain internal buffer sizes grow
@@ -972,8 +972,8 @@ int main(int argc, char **argv) {
     }
 
     // Downsample IF for the decoder.
-    size_t if_samples_size = if_samples.size();
-    bool if_exists = if_samples_size > 0;
+    const size_t if_samples_size = if_samples.size();
+    const bool if_exists = if_samples_size > 0;
     double if_rms = 0.0;
 
     if (!if_exists) {
@@ -997,7 +997,7 @@ int main(int argc, char **argv) {
     }
 
     // Add 1e-9 to log10() to prevent generating NaN
-    float if_level_db = 20 * log10(if_level + 1e-9);
+    const float if_level_db = 20 * log10(if_level + 1e-9);
 
     // Decode signal from if_samples.
     switch (modtype) {
@@ -1025,8 +1025,8 @@ int main(int argc, char **argv) {
     // Measure (unsigned int)the average IF level.
     if_level = 0.75 * if_level + 0.25 * if_rms;
 
-    size_t audiosamples_size = audiosamples.size();
-    bool audio_exists = audiosamples_size > 0;
+    const size_t audiosamples_size = audiosamples.size();
+    const bool audio_exists = audiosamples_size > 0;
 
     if (!audio_exists) {
       // go to the end of the for loop
@@ -1046,7 +1046,7 @@ int main(int argc, char **argv) {
     Utility::adjust_gain(audiosamples, if_rms >= squelch_level ? 0.5 : 0.0);
     // Write samples to output.
     // Treat a write failure as fatal and exit the main loop cleanly.
-    if (!audio_output->write(std::move(audiosamples))) {
+    if (!audio_output->write(audiosamples)) {
       fmt::println(stderr, "\nERROR: AudioOutput: {}", audio_output->error());
       stop_flag.store(true);
       break;
@@ -1058,9 +1058,9 @@ int main(int argc, char **argv) {
         // Stereo detection display
         // Use a state machine here
         if (modtype == ModType::FM) {
-          float pilot_level = fm.get_pilot_level();
+          const float pilot_level = fm.get_pilot_level();
           pilot_level_average.feed(pilot_level);
-          bool stereo_status = fm.stereo_detected();
+          const bool stereo_status = fm.stereo_detected();
           switch (pilot_status) {
           case PilotState::NotDetected:
             if (stereo_status) {
@@ -1079,7 +1079,7 @@ int main(int argc, char **argv) {
         }
         // Show per-block statistics.
         // Add 1e-9 to log10() to prevent generating NaN
-        float audio_level_db = 20 * log10(audio_level + 1e-9) + 3.01;
+        const float audio_level_db = 20 * log10(audio_level + 1e-9) + 3.01;
 
         switch (modtype) {
         case ModType::FM:
@@ -1104,7 +1104,7 @@ int main(int argc, char **argv) {
         case ModType::WSPR:
           // Show statistics without ppm offset.
           // Add 1e-9 to log10() to prevent generating NaN
-          double if_agc_gain_db =
+          const double if_agc_gain_db =
               20 * log10(am.get_if_agc_current_gain() + 1e-9);
           fmt::print(stderr,
                      "\rblk={:11}:IF={:+6.1f}dB:AGC={:+6.1f}dB:AF={:+6.1f}dB",

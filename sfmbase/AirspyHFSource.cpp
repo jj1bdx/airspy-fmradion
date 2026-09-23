@@ -160,13 +160,13 @@ void AirspyHFSource::get_device_names(std::vector<std::string> &devices) {
   }
 }
 
-std::uint32_t AirspyHFSource::get_sample_rate() { return m_sampleRate; }
+std::uint32_t AirspyHFSource::get_sample_rate() const { return m_sampleRate; }
 
-std::uint32_t AirspyHFSource::get_frequency() { return m_frequency; }
+std::uint32_t AirspyHFSource::get_frequency() const { return m_frequency; }
 
-bool AirspyHFSource::is_low_if() { return m_low_if; }
+bool AirspyHFSource::is_low_if() const { return m_low_if; }
 
-void AirspyHFSource::print_specific_parms() {}
+void AirspyHFSource::print_specific_parms() const {}
 
 bool AirspyHFSource::configure(int sampleRateIndex, uint8_t hfAttLevel,
                                uint32_t frequency) {
@@ -272,7 +272,7 @@ int32_t AirspyHFSource::check_sampleRateIndex(uint32_t sampleRate) {
   return -1;
 }
 
-bool AirspyHFSource::configure(std::string configurationStr) {
+bool AirspyHFSource::configure(const std::string &configurationStr) {
   int sampleRateIndex;
   uint32_t frequency = 100000000;
   uint8_t hfAttLevel = 0;

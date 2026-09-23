@@ -181,14 +181,14 @@ void AirspySource::get_device_names(std::vector<std::string> &devices) {
   }
 }
 
-std::uint32_t AirspySource::get_sample_rate() { return m_sampleRate; }
+std::uint32_t AirspySource::get_sample_rate() const { return m_sampleRate; }
 
-std::uint32_t AirspySource::get_frequency() { return m_frequency; }
+std::uint32_t AirspySource::get_frequency() const { return m_frequency; }
 
 // Airspy R2/Mini are always using Low-IF by definition
-bool AirspySource::is_low_if() { return true; }
+bool AirspySource::is_low_if() const { return true; }
 
-void AirspySource::print_specific_parms() {
+void AirspySource::print_specific_parms() const {
   fmt::println(stderr, "LNA/Mix/VGA gain: {}, {}, {} dB", m_lnaGain, m_mixGain,
                m_vgaGain);
   fmt::print(stderr, "Antenna bias: {}", m_biasAnt ? "on" : "off");
@@ -285,7 +285,7 @@ bool AirspySource::configure(int sampleRateIndex, uint32_t frequency,
   return true;
 }
 
-bool AirspySource::configure(std::string configurationStr) {
+bool AirspySource::configure(const std::string &configurationStr) {
   int sampleRateIndex = 0;
   uint32_t frequency = 100000000;
   int lnaGain = 8;

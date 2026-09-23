@@ -50,8 +50,8 @@ LowPassFilterFirIQ::LowPassFilterFirIQ(const IQSampleCoeff &coeff,
 // the previous warm-up loop, the j=0 tap (coeff[0] * x[p]) is always included.
 void LowPassFilterFirIQ::process(const IQSampleVector &samples_in,
                                  IQSampleVector &samples_out) {
-  unsigned int order = m_order;
-  unsigned int n = samples_in.size();
+  const unsigned int order = m_order;
+  const unsigned int n = samples_in.size();
 
   // Integer downsample factor, no linear interpolation.
 
@@ -107,8 +107,8 @@ LowPassFilterFirAudio::LowPassFilterFirAudio(const SampleCoeff &coeff)
 // index algebra; this is the real-valued, non-downsampling counterpart.
 void LowPassFilterFirAudio::process(const SampleVector &samples_in,
                                     SampleVector &samples_out) {
-  unsigned int order = m_order;
-  unsigned int n = samples_in.size();
+  const unsigned int order = m_order;
+  const unsigned int n = samples_in.size();
   unsigned int p = m_pos;
 
   // Empty input must short-circuit before the resize, otherwise unsigned
@@ -236,15 +236,16 @@ HighPassFilterIir::HighPassFilterIir(const double cutoff) {
   using CDbl = std::complex<double>;
 
   // Angular cutoff frequency.
-  double w = 2 * M_PI * cutoff;
+  const double w = 2 * M_PI * cutoff;
 
   // Poles 1 and 2 are a conjugate pair.
   // Continuous-domain:
   //   p_k = w / exp( (2*k + n - 1) / (2*n) * pi * j)
-  CDbl p1s = w / std::exp((2 * 1 + 2 - 1) / double(2 * 2) * CDbl(0, M_PI));
+  const CDbl p1s =
+      w / std::exp((2 * 1 + 2 - 1) / double(2 * 2) * CDbl(0, M_PI));
 
   // Map poles to discrete-domain via matched Z transform.
-  CDbl p1z = std::exp(p1s);
+  const CDbl p1z = std::exp(p1s);
 
   // Both zeros are located in s = 0, z = 1.
 
@@ -263,7 +264,7 @@ HighPassFilterIir::HighPassFilterIir(const double cutoff) {
   m_a2 = std::abs(p1z * p1z);
 
   // Adjust b coefficients to get unit gain at Nyquist frequency (z=-1).
-  double g = (m_b0 - m_b1 + m_b2) / (1 - m_a1 + m_a2);
+  const double g = (m_b0 - m_b1 + m_b2) / (1 - m_a1 + m_a2);
   m_b0 /= g;
   m_b1 /= g;
   m_b2 /= g;

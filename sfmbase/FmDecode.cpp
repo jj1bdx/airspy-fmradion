@@ -24,7 +24,7 @@
 
 // class FmDecoder
 
-FmDecoder::FmDecoder(bool fmfilter_enable, IQSampleCoeff &fmfilter_coeff,
+FmDecoder::FmDecoder(bool fmfilter_enable, const IQSampleCoeff &fmfilter_coeff,
                      bool stereo, double deemphasis, bool pilot_shift,
                      unsigned int multipath_stages)
     // Initialize member fields
@@ -108,8 +108,12 @@ void FmDecoder::process(IQSampleVector samples_in, SampleVector &audio) {
 
   if (m_wait_multipath_blocks > 0) {
     m_wait_multipath_blocks--;
-    // No multipath filter applied.
-    m_samples_in_multipathfiltered = std::move(m_samples_in_after_agc);
+    // No multipath filter applied. Swap rather than move: both buffers are
+    // persistent FmDecoder members, and IfSimpleAgc::process() always fully
+    // resizes and overwrites m_samples_in_after_agc before it is next read,
+    // so swapping (instead of moving, which would discard its capacity)
+    // does not change the result, only which side keeps which allocation.
+    std::swap(m_samples_in_multipathfiltered, m_samples_in_after_agc);
   } else {
     if (m_enable_multipath_filter) {
       // Apply multipath filter.
@@ -125,11 +129,11 @@ void FmDecoder::process(IQSampleVector samples_in, SampleVector &audio) {
         m_multipathfilter.reset_state();
         // Discard the invalid filter output, and
         // use the no-filter input after resetting the filter.
-        m_samples_in_multipathfiltered = std::move(m_samples_in_after_agc);
+        std::swap(m_samples_in_multipathfiltered, m_samples_in_after_agc);
       }
     } else {
-      // No multipath filter applied.
-      m_samples_in_multipathfiltered = std::move(m_samples_in_after_agc);
+      // No multipath filter applied. See the swap note above.
+      std::swap(m_samples_in_multipathfiltered, m_samples_in_after_agc);
     }
   }
 
@@ -138,7 +142,7 @@ void FmDecoder::process(IQSampleVector samples_in, SampleVector &audio) {
 
   // If no downsampled baseband signal comes out,
   // terminate and wait for next block,
-  size_t decoded_size = m_buf_decoded.size();
+  const size_t decoded_size = m_buf_decoded.size();
   if (decoded_size == 0) {
     audio.resize(0);
     return;
@@ -227,11 +231,11 @@ void FmDecoder::process(IQSampleVector samples_in, SampleVector &audio) {
 
 // Demodulate stereo L-R signal.
 inline void FmDecoder::demod_stereo(const SampleVector &samples_baseband,
-                                    SampleVector &samples_rawstereo) {
+                                    SampleVector &samples_rawstereo) const {
   // Multiply the baseband signal with the double-frequency pilot,
   // and multiply by 2.00 to get the full amplitude.
 
-  unsigned int n = samples_baseband.size();
+  const unsigned int n = samples_baseband.size();
   assert(n == samples_rawstereo.size());
 
   // libvolk equivalent function of the following loop:
@@ -245,8 +249,8 @@ inline void FmDecoder::demod_stereo(const SampleVector &samples_baseband,
 
 // Duplicate mono signal in left/right channels.
 inline void FmDecoder::mono_to_left_right(const SampleVector &samples_mono,
-                                          SampleVector &audio) {
-  size_t n = samples_mono.size();
+                                          SampleVector &audio) const {
+  const size_t n = samples_mono.size();
 
   audio.resize(2 * n);
   for (size_t i = 0; i < n; i++) {
@@ -259,8 +263,8 @@ inline void FmDecoder::mono_to_left_right(const SampleVector &samples_mono,
 // Extract left/right channels from (L+R) / (L-R) signals.
 inline void FmDecoder::stereo_to_left_right(const SampleVector &samples_mono,
                                             const SampleVector &samples_stereo,
-                                            SampleVector &audio) {
-  size_t n = samples_mono.size();
+                                            SampleVector &audio) const {
+  const size_t n = samples_mono.size();
   assert(n == samples_stereo.size());
 
   audio.resize(2 * n);
@@ -277,8 +281,8 @@ inline void FmDecoder::stereo_to_left_right(const SampleVector &samples_mono,
 // Fill zero signal in left/right channels.
 // (samples_mono used for the size determination only)
 inline void FmDecoder::zero_to_left_right(const SampleVector &samples_mono,
-                                          SampleVector &audio) {
-  size_t n = samples_mono.size();
+                                          SampleVector &audio) const {
+  const size_t n = samples_mono.size();
 
   audio.resize(2 * n);
   for (size_t i = 0; i < n; i++) {

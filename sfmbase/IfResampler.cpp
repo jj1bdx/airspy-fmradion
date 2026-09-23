@@ -38,7 +38,7 @@ IfResampler::IfResampler(const double input_rate, const double output_rate)
 
 void IfResampler::process(const IQSampleVector &samples_in,
                           IQSampleVector &samples_out) {
-  size_t input_size = samples_in.size();
+  const size_t input_size = samples_in.size();
 
   assert(input_size <= max_input_length);
 

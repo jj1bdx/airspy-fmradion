@@ -53,7 +53,7 @@ FileSource::~FileSource() {
   m_this = nullptr;
 }
 
-bool FileSource::configure(std::string configurationStr) {
+bool FileSource::configure(const std::string &configurationStr) {
   std::string filename;
   bool raw = false;
   FormatType format_type = FormatType::S16_LE;
@@ -161,9 +161,10 @@ bool FileSource::configure(std::string configurationStr) {
                    zero_offset, block_length);
 }
 
-bool FileSource::configure(std::string fname, bool raw, FormatType format_type,
-                           std::uint32_t sample_rate, std::uint32_t frequency,
-                           bool zero_offset, int block_length) {
+bool FileSource::configure(const std::string &fname, bool raw,
+                           FormatType format_type, std::uint32_t sample_rate,
+                           std::uint32_t frequency, bool zero_offset,
+                           int block_length) {
   m_devname = fname;
   m_sample_rate = sample_rate;
   m_frequency = frequency;
@@ -266,7 +267,7 @@ bool FileSource::configure(std::string fname, bool raw, FormatType format_type,
 }
 
 // round to power of 2
-std::uint32_t FileSource::round_power(int n) {
+std::uint32_t FileSource::round_power(int n) const {
   if (n <= 0) {
     return 0;
   }
@@ -284,13 +285,13 @@ std::uint32_t FileSource::round_power(int n) {
   return ret;
 }
 
-std::uint32_t FileSource::get_sample_rate() { return m_sample_rate; }
+std::uint32_t FileSource::get_sample_rate() const { return m_sample_rate; }
 
-std::uint32_t FileSource::get_frequency() { return m_frequency; }
+std::uint32_t FileSource::get_frequency() const { return m_frequency; }
 
-bool FileSource::is_low_if() { return !m_zero_offset; }
+bool FileSource::is_low_if() const { return !m_zero_offset; }
 
-void FileSource::print_specific_parms() {
+void FileSource::print_specific_parms() const {
   // nop
 }
 
@@ -300,7 +301,7 @@ void FileSource::get_device_names(std::vector<std::string> &devices) {
   devices.push_back("FileSource");
 }
 
-int FileSource::to_sf_format(FormatType format_type) {
+int FileSource::to_sf_format(FormatType format_type) const {
   int ret = 0;
 
   switch (format_type) {
@@ -327,7 +328,7 @@ int FileSource::to_sf_format(FormatType format_type) {
   return ret;
 }
 
-bool FileSource::get_major_format(int major_format, std::string &str) {
+bool FileSource::get_major_format(int major_format, std::string &str) const {
   bool ret = false;
   if (!m_sfp) {
     return ret;
@@ -351,7 +352,7 @@ bool FileSource::get_major_format(int major_format, std::string &str) {
   return ret;
 }
 
-bool FileSource::get_sub_type(int sub_type, std::string &str) {
+bool FileSource::get_sub_type(int sub_type, std::string &str) const {
   bool ret = false;
   if (!m_sfp) {
     return ret;
@@ -420,11 +421,11 @@ void FileSource::run() {
   frac_part = std::modf(d_expected, &int_part);
 
   // integer part of expected microseconds per block reading
-  auto expected = std::chrono::microseconds(long(int_part));
+  const auto expected = std::chrono::microseconds(long(int_part));
   // fmt::println(stderr, "{}", expected.count());
 
   // 1 microsecond
-  auto one_us = std::chrono::microseconds(1);
+  const auto one_us = std::chrono::microseconds(1);
 
   // delta for fraction part
   double delta = 0.0;

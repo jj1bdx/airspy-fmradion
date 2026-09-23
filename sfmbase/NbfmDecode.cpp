@@ -23,7 +23,8 @@
 
 // class NbfmDecoder
 
-NbfmDecoder::NbfmDecoder(IQSampleCoeff &nbfmfilter_coeff, const double freq_dev)
+NbfmDecoder::NbfmDecoder(const IQSampleCoeff &nbfmfilter_coeff,
+                         const double freq_dev)
     // Initialize member fields
     : m_nbfmfilter_coeff(nbfmfilter_coeff), m_freq_dev(freq_dev),
       m_baseband_mean(0), m_baseband_level(0), m_if_rms(0.0)
@@ -60,7 +61,7 @@ void NbfmDecoder::process(const IQSampleVector &samples_in,
 
   // Demodulate FM to audio signal.
   m_phasedisc.process(m_samples_in_after_agc, m_buf_decoded);
-  size_t decoded_size = m_buf_decoded.size();
+  const size_t decoded_size = m_buf_decoded.size();
   // If no downsampled decoded signal comes out,
   // terminate and wait for next block,
   if (decoded_size == 0) {

@@ -78,7 +78,7 @@ RtlSdrSource::~RtlSdrSource() {
   m_this = nullptr;
 }
 
-bool RtlSdrSource::configure(std::string configurationStr) {
+bool RtlSdrSource::configure(const std::string &configurationStr) {
 
   uint32_t sample_rate = 1152000;
   uint32_t frequency = 100000000;
@@ -271,18 +271,20 @@ bool RtlSdrSource::configure(uint32_t sample_rate, uint32_t frequency,
 }
 
 // Return current sample frequency in Hz.
-uint32_t RtlSdrSource::get_sample_rate() {
+uint32_t RtlSdrSource::get_sample_rate() const {
   return rtlsdr_get_sample_rate(m_dev);
 }
 
 // Return device current center frequency in Hz.
-uint32_t RtlSdrSource::get_frequency() { return rtlsdr_get_center_freq(m_dev); }
+uint32_t RtlSdrSource::get_frequency() const {
+  return rtlsdr_get_center_freq(m_dev);
+}
 
 // Do not assume low-IF for RTL-SDR (Zero-IF by definition)
-bool RtlSdrSource::is_low_if() { return false; }
+bool RtlSdrSource::is_low_if() const { return false; }
 
-void RtlSdrSource::print_specific_parms() {
-  int lnagain = get_tuner_gain();
+void RtlSdrSource::print_specific_parms() const {
+  const int lnagain = get_tuner_gain();
 
   if (lnagain == INT_MIN) {
     fmt::println(stderr, "LNA gain:          auto");
@@ -295,10 +297,12 @@ void RtlSdrSource::print_specific_parms() {
 }
 
 // Return current tuner gain in units of 0.1 dB.
-int RtlSdrSource::get_tuner_gain() { return rtlsdr_get_tuner_gain(m_dev); }
+int RtlSdrSource::get_tuner_gain() const {
+  return rtlsdr_get_tuner_gain(m_dev);
+}
 
 // Return a list of supported tuner gain settings in units of 0.1 dB.
-std::vector<int> RtlSdrSource::get_tuner_gains() {
+std::vector<int> RtlSdrSource::get_tuner_gains() const {
   int num_gains = rtlsdr_get_tuner_gains(m_dev, nullptr);
   if (num_gains <= 0) {
     return std::vector<int>();

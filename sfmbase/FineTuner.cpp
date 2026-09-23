@@ -53,8 +53,8 @@ void FineTuner::set_freq_shift(const int freq_shift) {
 void FineTuner::process(const IQSampleVector &samples_in,
                         IQSampleVector &samples_out) {
   unsigned int tblidx = m_index;
-  unsigned int tblsiz = m_table.size();
-  unsigned int n = samples_in.size();
+  const unsigned int tblsiz = m_table.size();
+  const unsigned int n = samples_in.size();
 
   samples_out.resize(n);
 

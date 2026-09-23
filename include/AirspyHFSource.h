@@ -39,19 +39,19 @@ public:
   /// Close Airspy device.
   virtual ~AirspyHFSource() override;
 
-  virtual bool configure(std::string configuration) override;
+  virtual bool configure(const std::string &configuration) override;
 
   /// Return current sample frequency in Hz.
-  virtual std::uint32_t get_sample_rate() override;
+  virtual std::uint32_t get_sample_rate() const override;
 
   /// Return device current center frequency in Hz.
-  virtual std::uint32_t get_frequency() override;
+  virtual std::uint32_t get_frequency() const override;
 
   /// Return if device is using Low-IF.
-  virtual bool is_low_if() override;
+  virtual bool is_low_if() const override;
 
   /// Print current parameters specific to device type
-  virtual void print_specific_parms() override;
+  virtual void print_specific_parms() const override;
 
   virtual bool start(DataBuffer<IQSample> *buf,
                      std::atomic_bool *stop_flag) override;

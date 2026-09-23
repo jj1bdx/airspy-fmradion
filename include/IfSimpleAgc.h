@@ -53,10 +53,10 @@ public:
   float get_current_gain() const { return m_current_gain; }
 
 private:
-  float m_initial_gain;
+  const float m_initial_gain;
   float m_current_gain;
-  float m_max_gain;
-  float m_distortion_rate;
+  const float m_max_gain;
+  const float m_distortion_rate;
 };
 
 #endif

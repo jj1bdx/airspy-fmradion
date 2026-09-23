@@ -74,7 +74,7 @@ SndfileOutput::SndfileOutput(const std::string &filename,
     return;
   }
 
-  int filetype = m_sndfile_sfinfo.format & SF_FORMAT_TYPEMASK;
+  const int filetype = m_sndfile_sfinfo.format & SF_FORMAT_TYPEMASK;
 
   // For RF64 file, downgrade to WAV if filesize is smaller than 4GB
   if (filetype == SF_FORMAT_RF64) {
@@ -157,7 +157,7 @@ bool SndfileOutput::write(const SampleVector &samples) {
     return false;
   }
 
-  sf_count_t size = samples.size();
+  const sf_count_t size = samples.size();
   // Write samples to file with items.
   sf_count_t k = sf_write_float(m_sndfile, samples.data(), size);
   if (k != size) {
@@ -171,15 +171,14 @@ bool SndfileOutput::write(const SampleVector &samples) {
 void SndfileOutput::add_error_log_info(SNDFILE *sf) {
   const int max_length = 8192;
   char buffer[max_length];
-  int length;
 
-  length = sf_command(sf, SFC_GET_LOG_INFO, buffer, max_length);
+  const int length = sf_command(sf, SFC_GET_LOG_INFO, buffer, max_length);
   if (length <= 0) {
     m_error.append("\n=== SFC_GET_LOG_INFO returned no data\n");
     m_zombie = true;
     return;
   }
-  std::string logmsg(buffer, static_cast<std::size_t>(length));
+  const std::string logmsg(buffer, static_cast<std::size_t>(length));
 
   m_error.append("\n=== SFC_GET_LOG_INFO output:\n");
   m_error.append(logmsg);
@@ -203,7 +202,7 @@ PortAudioOutput::PortAudioOutput(const PaDeviceIndex device_index,
   if (device_index == -1) {
     m_outputparams.device = Pa_GetDefaultOutputDevice();
   } else {
-    PaDeviceIndex index = static_cast<PaDeviceIndex>(device_index);
+    const PaDeviceIndex index = static_cast<PaDeviceIndex>(device_index);
     if (index >= Pa_GetDeviceCount()) {
       add_paerror("Device number out of range");
       return;
@@ -299,7 +298,7 @@ bool PortAudioOutput::write(const SampleVector &samples) {
     return false;
   }
 
-  unsigned long sample_size = samples.size();
+  const unsigned long sample_size = samples.size();
   m_floatbuf.resize(sample_size);
 
   // Copy float samples to the PortAudio buffer.
@@ -322,7 +321,7 @@ bool PortAudioOutput::write(const SampleVector &samples) {
 // then add PortAudio error string to m_error and set m_zombie flag.
 void PortAudioOutput::add_paerror(const std::string &premsg) {
   Pa_Terminate();
-  std::string addmsg =
+  const std::string addmsg =
       fmt::format("{}: PortAudio error: (number: {} message: {})", premsg,
                   m_paerror, Pa_GetErrorText(m_paerror));
   m_error.append(addmsg);

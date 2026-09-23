@@ -35,7 +35,7 @@ void AfSimpleAgc::reset_gain() { m_current_gain = m_initial_gain; }
 
 void AfSimpleAgc::process(const SampleVector &samples_in,
                           SampleVector &samples_out) {
-  unsigned int n = samples_in.size();
+  const unsigned int n = samples_in.size();
   samples_out.resize(n);
 
   for (unsigned int i = 0; i < n; i++) {

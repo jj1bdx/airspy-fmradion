@@ -32,7 +32,7 @@ PhaseDiscriminator::PhaseDiscriminator(double max_freq_dev)
 // Process samples.
 void PhaseDiscriminator::process(const IQSampleVector &samples_in,
                                  IQSampleDecodedVector &samples_out) {
-  unsigned int n = samples_in.size();
+  const unsigned int n = samples_in.size();
   samples_out.resize(n);
   m_phase.resize(n);
 
