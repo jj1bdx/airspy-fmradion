@@ -108,11 +108,7 @@ void FmDecoder::process(IQSampleVector samples_in, SampleVector &audio) {
 
   if (m_wait_multipath_blocks > 0) {
     m_wait_multipath_blocks--;
-    // No multipath filter applied. Swap rather than move: both buffers are
-    // persistent FmDecoder members, and IfSimpleAgc::process() always fully
-    // resizes and overwrites m_samples_in_after_agc before it is next read,
-    // so swapping (instead of moving, which would discard its capacity)
-    // does not change the result, only which side keeps which allocation.
+    // No multipath filter applied; swap to keep both buffers' allocations.
     std::swap(m_samples_in_multipathfiltered, m_samples_in_after_agc);
   } else {
     if (m_enable_multipath_filter) {
@@ -132,7 +128,7 @@ void FmDecoder::process(IQSampleVector samples_in, SampleVector &audio) {
         std::swap(m_samples_in_multipathfiltered, m_samples_in_after_agc);
       }
     } else {
-      // No multipath filter applied. See the swap note above.
+      // No multipath filter applied; swap to keep both buffers' allocations.
       std::swap(m_samples_in_multipathfiltered, m_samples_in_after_agc);
     }
   }
