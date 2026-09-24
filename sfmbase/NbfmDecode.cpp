@@ -93,13 +93,7 @@ void NbfmDecoder::process(const IQSampleVector &samples_in,
   const double audio_gain = std::pow(10.0, (-3.0 / 20.0));
   Utility::adjust_gain(m_buf_baseband_filtered, audio_gain);
 
-  // Just return mono channel. Swap rather than move:
-  // m_buf_baseband_filtered is fully resized and overwritten (via
-  // m_audiofilter.process()) on every call before this line is reached,
-  // so the previous contents handed back into it here are never read.
-  // Swapping keeps both this persistent member buffer and the caller's
-  // output buffer at a stable capacity instead of discarding one side's
-  // allocation every block (see doc/MAIN_CPP_SWAP_20260924.md).
+  // Just return mono channel; swap to keep both buffers' allocations.
   std::swap(audio, m_buf_baseband_filtered);
 }
 

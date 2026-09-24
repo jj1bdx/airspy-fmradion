@@ -919,15 +919,8 @@ int main(int argc, char **argv) {
 
   PilotState pilot_status = PilotState::NotDetected;
 
-  // Loop-body buffers, hoisted out of the loop so their heap allocation
-  // persists across iterations instead of being freed and reallocated
-  // every block. Each is fully overwritten before it is read in any
-  // given iteration of the loop below: either resize()-and-fill by the
-  // stage that produces it, or a full swap of an already fully computed
-  // buffer (see doc/MAIN_CPP_SWAP_20260924.md). `iqsamples` is
-  // deliberately NOT hoisted: it always arrives already allocated by
-  // source_buffer.pull() (which itself hands over the producer thread's
-  // block via a swap), so hoisting it would not save any allocation.
+  // Loop buffers, declared once so they keep their allocations across
+  // blocks (see doc/MAIN_CPP_SWAP_20260924.md).
   IQSampleVector if_shifted_samples;
   IQSampleVector if_samples;
   SampleVector audiosamples;
