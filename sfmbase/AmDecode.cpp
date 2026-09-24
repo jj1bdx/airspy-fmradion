@@ -218,8 +218,14 @@ void AmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
     m_deemph.process_inplace(m_buf_baseband);
   }
 
-  // Return mono channel.
-  audio = std::move(m_buf_baseband);
+  // Return mono channel. Swap rather than move: m_buf_baseband is fully
+  // resized and overwritten (via m_afagc.process()) on every call before
+  // this line is reached, so the previous contents handed back into it
+  // here are never read. Swapping keeps both this persistent member
+  // buffer and the caller's output buffer at a stable capacity instead
+  // of discarding one side's allocation every block (see
+  // doc/MAIN_CPP_SWAP_20260924.md).
+  std::swap(audio, m_buf_baseband);
 }
 
 // Demodulate AM signal.

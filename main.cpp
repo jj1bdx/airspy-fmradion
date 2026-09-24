@@ -919,6 +919,19 @@ int main(int argc, char **argv) {
 
   PilotState pilot_status = PilotState::NotDetected;
 
+  // Loop-body buffers, hoisted out of the loop so their heap allocation
+  // persists across iterations instead of being freed and reallocated
+  // every block. Each is fully overwritten before it is read in any
+  // given iteration of the loop below: either resize()-and-fill by the
+  // stage that produces it, or a full swap of an already fully computed
+  // buffer (see doc/MAIN_CPP_SWAP_20260924.md). `iqsamples` is
+  // deliberately NOT hoisted: it always arrives already allocated by
+  // source_buffer.pull() (which itself hands over the producer thread's
+  // block via a swap), so hoisting it would not save any allocation.
+  IQSampleVector if_shifted_samples;
+  IQSampleVector if_samples;
+  SampleVector audiosamples;
+
   ///////////////////////////////////////
   // NOTE: main processing loop from here
   ///////////////////////////////////////
@@ -934,12 +947,7 @@ int main(int argc, char **argv) {
     // Pull next block from source buffer.
     IQSampleVector iqsamples = source_buffer.pull();
 
-    IQSampleVector if_shifted_samples;
     IQSampleVector if_downsampled_samples;
-    IQSampleVector if_samples;
-
-    // Initialize audio samples
-    SampleVector audiosamples(0);
 
     // If no IF data is sent,
     // go back and wait again
