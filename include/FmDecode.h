@@ -70,9 +70,9 @@ public:
   // channels are interleaved in the output vector (even if no stereo
   // signal is detected). If the decoder is set in mono mode, the output
   // vector only contains samples for one channel.
-  // samples_in is taken by value so that std::move(samples_in) inside
-  // the body actually moves.
-  void process(IQSampleVector samples_in, SampleVector &audio);
+  // samples_in is taken by const reference: the no-IF-filter path selects
+  // it directly instead of copying into m_samples_in_iffiltered.
+  void process(const IQSampleVector &samples_in, SampleVector &audio);
 
   // Return true if a stereo signal is detected.
   bool stereo_detected() const { return m_stereo_detected; }

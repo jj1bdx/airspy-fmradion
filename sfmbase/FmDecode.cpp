@@ -84,7 +84,7 @@ FmDecoder::FmDecoder(bool fmfilter_enable, const IQSampleCoeff &fmfilter_coeff,
   // Do nothing
 }
 
-void FmDecoder::process(IQSampleVector samples_in, SampleVector &audio) {
+void FmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
 
   // If no sampled baseband signal comes out,
   // terminate and wait for next block,
@@ -93,18 +93,19 @@ void FmDecoder::process(IQSampleVector samples_in, SampleVector &audio) {
     return;
   }
 
-  // Apply IF filter if IF resampler is enabled
+  // Apply IF filter if enabled; otherwise use samples_in directly, with
+  // no copy into m_samples_in_iffiltered.
+  const IQSampleVector *if_filtered = &samples_in;
   if (m_fmfilter_enable) {
     m_fmfilter.process(samples_in, m_samples_in_iffiltered);
-  } else {
-    m_samples_in_iffiltered = std::move(samples_in);
+    if_filtered = &m_samples_in_iffiltered;
   }
 
   // Measure IF RMS level.
-  m_if_rms = Utility::rms_level_sample(m_samples_in_iffiltered);
+  m_if_rms = Utility::rms_level_sample(*if_filtered);
 
   // Perform IF AGC.
-  m_ifagc.process(m_samples_in_iffiltered, m_samples_in_after_agc);
+  m_ifagc.process(*if_filtered, m_samples_in_after_agc);
 
   if (m_wait_multipath_blocks > 0) {
     m_wait_multipath_blocks--;
