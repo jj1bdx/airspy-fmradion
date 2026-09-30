@@ -240,13 +240,10 @@ bool RtlSdrSource::configure(uint32_t sample_rate, uint32_t frequency,
     return false;
   }
 
-  // set block length
-  // Cap the block length at IfResampler::max_input_length (65536) so that
-  // a source block can never exceed what the resampler chain can process
-  // in one call. With the valid RTL-SDR sample rate range
-  // [900001, 3200000] Hz, the IF resampler always downsamples
-  // (ratio >= 900001/384000), so a 65536-sample block shrinks to at most
-  // ~27963 samples, within AudioResampler::max_input_length (32768).
+  // Set block length, capped at IfResampler::max_input_length (65536) so a
+  // block fits the resampler chain; at valid RTL-SDR rates it shrinks to <=
+  // ~27963 samples after the IF downsampler (limit: AudioResampler 32768). See
+  // doc/FIXES_CLAUDE_20260610.md (X1).
   m_block_length = (block_length < 4096) ? 4096
                    : (block_length > IfResampler::max_input_length)
                        ? IfResampler::max_input_length
@@ -334,10 +331,9 @@ bool RtlSdrSource::stop() {
   // Idempotent: only act when the source thread has not been joined yet,
   // so the destructor can call stop() unconditionally.
   if (m_thread) {
-    // Force the blocked rtlsdr_read_async() call in run() to return
-    // even if the caller did not already set *m_stop_flag,
-    // so join() cannot deadlock. A negative return here only means
-    // the async loop already ended, so it is not reported.
+    // Force the blocked rtlsdr_read_async() in run() to return even if
+    // *m_stop_flag was not set, so join() cannot deadlock; a negative return
+    // only means the loop already ended. See doc/RTL_READ_ASYNC_20260713.md.
     if (m_dev) {
       rtlsdr_cancel_async(m_dev);
     }
@@ -364,10 +360,9 @@ void RtlSdrSource::run(struct rtlsdr_dev *dev, std::atomic_bool *stop_flag) {
     self->m_error = "rtlsdr_read_async failed";
   }
 
-  // Streaming has ended (cancellation, device failure, or an immediate
-  // rtlsdr_read_async() error). Mark the end of the stream so a consumer
-  // blocked in DataBuffer::pull() always wakes up and the main loop can
-  // terminate and clean up.
+  // Streaming has ended: mark the end of the stream so a consumer blocked in
+  // DataBuffer::pull() wakes up and the main loop terminates. See
+  // doc/RTL_READ_ASYNC_20260713.md.
   if (self->m_buf) {
     self->m_buf->push_end();
   }
@@ -384,12 +379,9 @@ void RtlSdrSource::rx_callback(unsigned char *buf, uint32_t len, void *ctx) {
 // Convert a block of raw offset-binary I/Q bytes and push it
 // to the output buffer.
 void RtlSdrSource::callback(const unsigned char *buf, std::size_t len) {
-  // Keep pushing until the async loop is canceled: the consumer may be
-  // blocked in DataBuffer::pull() and relies on these pushes (and the
-  // final push_end() in run()) to wake up and observe the stop flag.
-  //
-  // A canceled in-flight transfer may deliver a short or empty buffer;
-  // this is benign, not a device error.
+  // Keep pushing until the async loop is canceled: the blocked consumer relies
+  // on these pushes (and the final push_end() in run()) to see the stop flag. A
+  // canceled transfer may deliver a short or empty buffer (benign).
   if (len < 2) {
     return;
   }

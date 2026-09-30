@@ -43,19 +43,13 @@ public:
     double block_position;
   };
 
-  //
-  // Construct phase-locked loop.
-  //
-  // freq        :: 19 kHz center frequency relative to sample freq
-  //                (0.5 is Nyquist)
+  // Construct phase-locked loop; freq: 19 kHz center frequency relative to the
+  // sample frequency (0.5 is Nyquist).
   PilotPhaseLock(double freq);
 
-  //
-  // Process samples and extract 19 kHz pilot tone.
-  // Generate phase-locked 38 kHz tone with unit amplitude.
-  // pilot_shift :: true to shift pilot phase by
-  //             :: using cos(2*x) instead of sin (2*x)
-  //             :: (for multipath distortion detection)
+  // Process samples and extract the 19 kHz pilot; generate a phase-locked 38
+  // kHz tone with unit amplitude. pilot_shift: true to use cos(2*x) instead of
+  // sin(2*x) (for multipath distortion detection).
   void process(const SampleVector &samples_in, SampleVector &samples_out,
                bool pilot_shift);
 

@@ -118,10 +118,9 @@ void FmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
                                                m_samples_in_multipathfiltered);
       // Check if the error evaluation becomes invalid/infinite.
       if (!done_ok) {
-        // Reset the filter coefficients and the delay line.
-        // The delay line must be cleared too: the non-finite sample which
-        // triggered the reset is already in it, and would keep the output
-        // non-finite until it aged out.
+        // Reset the filter coefficients and the delay line; the non-finite
+        // sample that triggered the reset is in the delay line and would keep
+        // the output non-finite.
         m_multipathfilter.initialize_coefficients();
         m_multipathfilter.reset_state();
         // Discard the invalid filter output, and
@@ -175,10 +174,8 @@ void FmDecoder::process(const IQSampleVector &samples_in, SampleVector &audio) {
       m_deemph_stereo.process_inplace(m_buf_rawstereo);
     }
 
-    // Downsample.
-    // NOTE: This MUST be done even if no stereo signal is detected yet,
-    // because the downsamplers for mono and stereo signal must be
-    // kept in sync.
+    // Downsample. MUST run even before a stereo signal is detected, to keep the
+    // mono and stereo downsamplers in sync.
     m_audioresampler_stereo.process(m_buf_rawstereo, m_buf_stereo_firstout);
   }
 

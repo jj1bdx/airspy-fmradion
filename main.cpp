@@ -313,10 +313,8 @@ int main(int argc, char **argv) {
   std::string filtertype_str("default");
   FilterType filtertype = FilterType::Default;
   std::vector<std::string> devnames;
-  // Source device ownership will be transferred to thread therefore the
-  // unique_ptr with move is convenient.
-  // If the pointer is to be shared with the main thread,
-  // use shared_ptr (and no move) instead.
+  // The source is moved into the thread (unique_ptr); to share it with the main
+  // thread, use shared_ptr without move.
   std::unique_ptr<Source> up_srcsdr = nullptr;
   int err;
   pthread_t sigmask_thread_id;
@@ -771,11 +769,9 @@ int main(int argc, char **argv) {
   const double total_decimation_ratio = ifrate / pcmrate;
   const double audio_decimation_ratio = demodulator_rate / pcmrate;
 
-  // Guard the IF resampler against pathological upsampling ratios
-  // (e.g. via extreme -r values): r8brain internal buffer sizes grow
-  // proportionally to the upsampling ratio and its internal (int) length
-  // arithmetic overflows for very large ratios. A 64x bound is far above
-  // any legitimate configuration.
+  // Guard the IF resampler against extreme upsampling ratios (e.g. -r): r8brain
+  // buffer sizes scale with the ratio and its int lengths overflow; 64x is far
+  // above any legitimate use. See doc/FIXES_CLAUDE_20260610.md (X2).
   constexpr double max_if_upsampling_ratio = 64.0;
   if (demodulator_rate / ifrate > max_if_upsampling_ratio) {
     fmt::println(stderr,

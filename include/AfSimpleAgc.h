@@ -35,11 +35,8 @@
 
 class AfSimpleAgc {
 public:
-  // Construct AF AGC.
-  // initial_gain :: Initial gain value.
-  // max_gain     :: Maximum gain value.
-  // reference    :: target output level.
-  // rate         :: rate factor for changing the gain value.
+  // Construct AF AGC: initial_gain and max_gain are gain values, reference is
+  // the target output level, rate is the gain-change rate factor.
   AfSimpleAgc(const double initial_gain, const double max_gain,
               const double reference, const double rate);
 

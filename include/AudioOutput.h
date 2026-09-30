@@ -33,10 +33,7 @@ public:
   /// Destructor.
   virtual ~AudioOutput() {}
 
-  /// Write audio data.
-  ///
-  /// Return true on success.
-  /// Return false if an error occurs.
+  /// Write audio data; return true on success, false if an error occurs.
   virtual bool write(const SampleVector &samples) = 0;
 
   // Close audio output.
@@ -71,12 +68,9 @@ private:
 // Output via libsndfile
 class SndfileOutput : public AudioOutput {
 public:
-  /// Construct libsndfile audio writer.
-  ///
-  /// filename     :: file name (including path) or "-" to write to stdout
-  /// samplerate   :: audio sample rate in Hz
-  /// stereo       :: true if the output stream contains stereo data
-  /// sf_info:     :: specify output format by SF_INFO.format
+  /// Construct libsndfile audio writer: filename (path, or "-" for stdout),
+  /// samplerate in Hz, stereo (true for stereo data), sf_info (SF_INFO.format
+  /// selects the output format).
   SndfileOutput(const std::string &filename, unsigned int samplerate,
                 bool stereo, int format);
 
@@ -101,26 +95,14 @@ public:
 
   // Minimum latency for audio output in seconds
 
-  // Values of m_outputparams.suggestedLatency from PortAudio:
-  // Mac mini 2023 with macOS 14.3.1: 0.014717
-  // Ubuntu 22.04.4 on x86_64: 0.034830
-  // Kenji's experiments show that
-  // 40ms (0.04) is sufficient for macOS, Ubuntu, and Raspberry Pi OS
-  // For lower latencies, use the -L/--portaudio-latency option
-  // (see suggested_latency_sec below)
+  // PortAudio suggestedLatency: 0.014717 (Mac mini 2023, macOS 14.3.1),
+  // 0.034830 (Ubuntu 22.04.4 x86_64); a 40 ms floor suffices on macOS, Ubuntu,
+  // Raspberry Pi OS (-L for less). See doc/LATENCY_OPTION_20260715.md.
   static constexpr PaTime minimum_latency_default = 0.04;
 
-  //
-  // Construct PortAudio output stream.
-  //
-  // device_index :: device index number
-  // samplerate   :: audio sample rate in Hz
-  // stereo       :: true if the output stream contains stereo data
-  // suggested_latency_sec :: user-requested suggestedLatency in seconds
-  //                 (PaTime); a negative value (the default) means
-  //                 "no user override" and falls back to the platform
-  //                 default (defaultHighOutputLatency), floored at
-  //                 minimum_latency_default.
+  // Construct PortAudio output stream: device_index, samplerate (Hz), stereo,
+  // suggested_latency_sec (PaTime; negative = no override, use
+  // defaultHighOutputLatency floored at minimum_latency_default).
   PortAudioOutput(const PaDeviceIndex device_index, unsigned int samplerate,
                   bool stereo, PaTime suggested_latency_sec = -1.0);
 

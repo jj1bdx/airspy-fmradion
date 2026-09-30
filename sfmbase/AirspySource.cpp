@@ -40,10 +40,8 @@ const std::vector<int> AirspySource::m_mgains({0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
 const std::vector<int> AirspySource::m_vgains({0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
                                                11, 12, 13, 14, 15});
 
-// Note:
-// The following code requires the following WIP functions:
-// * working airspy_open_sn()
-// * working airspy_list_devices()
+// Note: the following code requires working airspy_open_sn() and
+// airspy_list_devices() (WIP functions).
 
 // Open Airspy device.
 AirspySource::AirspySource(int dev_index)

@@ -36,11 +36,8 @@
 
 class IfSimpleAgc {
 public:
-  // Construct IF AGC.
-  // Target level = 1.0.
-  // initial_gain :: Initial gain value.
-  // max_gain     :: Maximum gain value.
-  // rate         :: rate factor for changing the gain value.
+  // Construct IF AGC (target level 1.0): initial_gain, max_gain, and rate, the
+  // gain-change rate factor.
   IfSimpleAgc(const float initial_gain, const float max_gain, const float rate);
 
   // Reset AGC gain to the initial_gain.

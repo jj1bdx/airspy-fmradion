@@ -42,10 +42,8 @@ public:
 private:
   // Split input string into a vector of multiple strings.
   std::vector<std::string> split_delimiter(const std::string &str) const;
-  // Parse input string as a pair of "key=value".
-  // Delimiter is "=".
-  // Only the leftmost "=" is parsed.
-  // If no "=" is contained, null value is set for the key.
+  // Parse input as "key=value" split at the leftmost "="; if no "=" is present,
+  // the value is null.
   pair_type split_equal_sign(const std::string &str) const;
 };
 

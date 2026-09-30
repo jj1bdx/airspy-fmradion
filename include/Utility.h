@@ -151,13 +151,9 @@ inline double get_time() {
   return tv.tv_sec + (1.0e-6 * tv.tv_usec);
 }
 
-// Remove NaNs and infinities from a SampleVector
-// by substituting them to zeros.
-// NOTE: this function is for post-processing
-// PhaseDiscriminator::Process(), specifically
-// the output of volk_32fc_s32f_atan2_32f()
-// so that no NaNs are contained in
-// the returning vector elements.
+// Replace NaNs and infinities in a SampleVector with zeros. For post-processing
+// the output of PhaseDiscriminator::Process() (volk_32fc_s32f_atan2_32f()) so
+// no NaNs reach downstream.
 inline void remove_nans(IQSampleDecodedVector &samples) {
   for (size_t i = 0; i < samples.size(); i++) {
     double v = samples[i];

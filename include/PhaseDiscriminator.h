@@ -25,10 +25,8 @@
 // Detect frequency by phase discrimination between successive samples.
 class PhaseDiscriminator {
 public:
-  /// Construct phase discriminator.
-  ///
-  /// max_freq_dev :: Full scale frequency deviation relative to the
-  ///                full sample frequency.
+  /// Construct phase discriminator; max_freq_dev: full scale frequency
+  /// deviation relative to the full sample frequency.
   PhaseDiscriminator(double max_freq_dev);
 
   /// Process samples.

@@ -63,16 +63,9 @@ public:
   static void get_device_names(std::vector<std::string> &devices);
 
 private:
-  /// Configure RTL-SDR tuner and prepare for streaming.
-  ///
-  /// sample_rate  :: desired sample rate in Hz.
-  /// frequency    :: desired center frequency in Hz.
-  /// tuner_gain   :: desired tuner gain in 0.1 dB, or INT_MIN for auto-gain.
-  /// block_length :: preferred number of samples per block.
-  /// agcmode      :: enable AGC mode.
-  /// antbias      :: enable antenna bias tee.
-  ///
-  /// Return true for success, false if an error occurred.
+  /// Configure RTL-SDR tuner and prepare for streaming; true on success.
+  /// sample_rate, frequency: Hz; tuner_gain: 0.1 dB units, INT_MIN = auto;
+  /// block_length: samples/block; agcmode, antbias: AGC, bias tee.
   bool configure(std::uint32_t sample_rate, std::uint32_t frequency,
                  int tuner_gain, int block_length = default_block_length,
                  bool agcmode = false, bool antbias = false);

@@ -25,19 +25,15 @@
 // Fine tuner which shifts the frequency of an IQ signal by a fixed offset.
 class FineTuner {
 public:
-  //
-  // Construct fine tuner.
-  // table_size :: Size of internal sin/cos tables, determines the resolution
-  //               of the frequency shift.
-  // freq_shift :: Frequency shift. Signal frequency will be shifted by
-  //               (sample_rate * freq_shift / table_size).
+  // Construct fine tuner. table_size: size of the internal sin/cos tables (sets
+  // the shift resolution); freq_shift: the signal is shifted by sample_rate *
+  // freq_shift / table_size.
   FineTuner(unsigned const int table_size, const int freq_shift);
   FineTuner(unsigned const int table_size) : FineTuner(table_size, 0) {}
 
-  // Initialize freq_shift table.
-  // The phase continuity with ongoing (i.e., phase != 0) table is guaranteed.
-  // freq_shift :: Frequency shift. Signal frequency will be shifted by
-  //               (sample_rate * freq_shift / table_size).
+  // Initialize freq_shift table, keeping phase continuity with the ongoing
+  // table (phase != 0). freq_shift: the signal is shifted by sample_rate *
+  // freq_shift / table_size.
   void set_freq_shift(const int freq_shift);
 
   // Process samples.

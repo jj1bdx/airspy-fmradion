@@ -79,18 +79,9 @@ private:
     Float = 6
   };
 
-  /// Configure IQ file for streaming.
-  ///
-  /// fname        :: file to read.
-  /// raw          :: true if file is raw format.
-  /// format_type  :: S8_LE, S16_LE, S24_LE, U8_LE or FLOAT.
-  ///                need to specify raw is true.
-  /// sample_rate  :: desired sample rate in Hz.
-  /// frequency    :: desired center frequency in Hz.
-  /// zero_offset  :: true if sample contain zero offset.
-  /// block_length :: preferred number of samples per block.
-  ///
-  /// Return true.
+  /// Configure IQ file streaming; returns true. format_type (S8_LE, S16_LE,
+  /// S24_LE, U8_LE, FLOAT) needs raw = true; sample_rate, frequency in Hz;
+  /// zero_offset: samples contain zero offset; block_length: samples/block.
   bool configure(const std::string &fname, bool raw = false,
                  FormatType format_type = FormatType::S16_LE,
                  std::uint32_t sample_rate = default_sample_rate,
@@ -98,10 +89,8 @@ private:
                  bool zero_offset = false,
                  int block_length = default_block_length);
 
-  /// Fetch a bunch of samples from the file.
-  ///
-  /// This function must be called regularly to maintain streaming.
-  /// Return true for success, false if an error occurred.
+  /// Fetch a bunch of samples; call regularly to maintain streaming. Return
+  /// true for success, false if an error occurred.
   static bool get_samples(IQSampleVector *samples);
 
   static bool get_sf_read_float(IQSampleVector *samples);

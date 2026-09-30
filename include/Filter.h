@@ -25,22 +25,17 @@
 // Low-pass filter for IQ samples.
 class LowPassFilterFirIQ {
 public:
-  //
-  // Construct low-pass filter.
-  //
-  // coeff        :: FIR filter coefficients.
-  // downsample   :: Integer downsampling rate (>= 1)
-  //
+  // Construct low-pass filter: coeff is the FIR coefficients, downsample the
+  // integer downsampling rate (>= 1).
   LowPassFilterFirIQ(const IQSampleCoeff &coeff, const unsigned int downsample);
 
   // Process samples.
   void process(const IQSampleVector &samples_in, IQSampleVector &samples_out);
 
 private:
-  // Coefficients stored reversed (m_coeff_reversed[i] = coeff[order - i]) so
-  // that each output is a single VOLK dot product over a chronological window;
-  // see the index algebra in Filter.cpp. VOLK-aligned because it is the fixed
-  // operand of every dot product.
+  // Coefficients stored reversed (m_coeff_reversed[i] = coeff[order - i]) for
+  // one VOLK dot product per output (see Filter.cpp, doc/LPF_VOLK_20260725.md);
+  // VOLK-aligned as the fixed operand.
   volk::vector<float> m_coeff_reversed;
   IQSampleVector m_state;
   // Per-block scratch holding [m_state | samples_in] contiguously.
@@ -53,11 +48,8 @@ private:
 // Low-pass filter for mono audio signal.
 class LowPassFilterFirAudio {
 public:
-  //
-  // Construct low-pass mono audio filter. No down/up-sampling.
-  //
-  // coeff        :: FIR filter coefficients.
-  //
+  // Construct low-pass mono audio filter (no down/up-sampling); coeff: FIR
+  // filter coefficients.
   LowPassFilterFirAudio(const SampleCoeff &coeff);
 
   // Process samples.
@@ -76,10 +68,7 @@ private:
 // Generic 1st-order Direct Form 2 IIR filter
 class FirstOrderIirFilter {
 public:
-  //
-  // Construct generic 1st-order Direct Form 2 IIR filter.
-  // b0, b1, a1 :: filter coefficients
-  // representing the following filter of the transfer function H(z):
+  // Construct generic 1st-order Direct Form 2 IIR filter (b0, b1, a1):
   // H(z) = (b0 + (b1 * z^(-1))) / (1  + (a1 * z^(-1)))
   FirstOrderIirFilter(const double b0, const double b1, const double a1);
   // Default constructor
@@ -96,11 +85,8 @@ private:
 // First order low-pass IIR filter for real-valued signals.
 class LowPassFilterRC {
 public:
-  //
-  // Construct 1st order low-pass IIR filter.
-  //
-  // timeconst :: RC time constant in seconds (1 / (2 * PI * cutoff_freq))
-  //
+  // Construct 1st order low-pass IIR filter; timeconst: RC time constant in
+  // seconds (1 / (2 * PI * cutoff_freq)).
   LowPassFilterRC(const double timeconst);
 
   // Process samples.
@@ -127,12 +113,8 @@ private:
 // Generic biquad (2nd-order) Direct Form 2 IIR filter
 class BiquadIirFilter {
 public:
-  //
-  // Construct generic 2nd-order Direct Form 2 IIR filter.
-  // b0, b1, b2, a1, a2:: filter coefficients
-  // representing the following filter of the transfer function H(z):
-  // H(z) = (b0 + (b1 * z^(-1)) + (b2 * z^(-2))) /
-  //        (1  + (a1 * z^(-1)) + (a2 * z^(-2)))
+  // Construct generic 2nd-order Direct Form 2 IIR filter (b0, b1, b2, a1, a2):
+  // H(z) = (b0 + b1 * z^(-1) + b2 * z^(-2)) / (1 + a1 * z^(-1) + a2 * z^(-2))
   BiquadIirFilter(const double b0, const double b1, const double b2,
                   const double a1, const double a2);
   // Default constructor
@@ -151,12 +133,8 @@ private:
 // High-pass filter for real-valued signals based on Butterworth IIR filter.
 class HighPassFilterIir : public BiquadIirFilter {
 public:
-  //
-  // Construct 2nd order high-pass IIR filter.
-  //
-  // cutoff   :: High-pass cutoff relative to the sample frequency
-  //             (valid range 0.0 .. 0.5, 0.5 = Nyquist)
-  //
+  // Construct 2nd order high-pass IIR filter; cutoff: relative to the sample
+  // frequency (0.0 .. 0.5, 0.5 = Nyquist).
   HighPassFilterIir(const double cutoff);
 
   // Process samples.

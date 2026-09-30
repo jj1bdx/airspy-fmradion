@@ -65,15 +65,9 @@ public:
 
 private:
   int32_t check_sampleRateIndex(uint32_t sampleRate);
-  /// Configure Airspy HF tuner and prepare for streaming.
-  ///
-  /// sampleRateIndex :: desired sample rate index in the sample rates
-  /// hfAttLevel      :: HF attenuation level and AGC control
-  ///                :: 0 (default): AGC turned on and no attenuation
-  ///                :: 1 ~ 8: AGC turned off, 6 ~ 48dB attenuation (6dB step)
-  /// enumeration list. frequency       :: desired center frequency in Hz.
-  ///
-  /// Return true for success, false if an error occurred.
+  /// Configure Airspy HF tuner and prepare for streaming; true on success.
+  /// sampleRateIndex: rate list index; frequency: center in Hz. hfAttLevel: 0 =
+  /// AGC on, no attenuation; 1-8 = AGC off, 6-48 dB (6 dB step).
   bool configure(int sampleRateIndex, uint8_t hfAttLevel, uint32_t frequency);
 
   void callback(const float *buf, std::size_t len);

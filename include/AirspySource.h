@@ -64,18 +64,9 @@ public:
   static void get_device_names(std::vector<std::string> &devices);
 
 private:
-  /// Configure Airspy tuner and prepare for streaming.
-  ///
-  /// sampleRateIndex :: desired sample rate index in the sample rates
-  /// enumeration list. frequency       :: desired center frequency in Hz.
-  /// bias_ant        :: antenna bias
-  /// lna_gain        :: desired LNA gain: 0 to 14 dB.
-  /// mix_gain        :: desired mixer gain: 0 to 15 dB.
-  /// vga_gain        :: desired VGA gain: 0 to 15 dB
-  /// lna_agc         :: LNA AGC
-  /// mix_agc         :: Mixer AGC
-  ///
-  /// Return true for success, false if an error occurred.
+  /// Configure tuner and prepare for streaming; true on success.
+  /// sampleRateIndex: rate list index; frequency: Hz; bias_ant: bias tee;
+  /// lna_gain 0-14, mix_gain 0-15, vga_gain 0-15 (dB); lna_agc, mix_agc: AGC.
   bool configure(int sampleRateIndex, uint32_t frequency, bool bias_ant,
                  int lna_gain, int mix_gain, int vga_gain, bool lna_agc,
                  bool mix_agc);

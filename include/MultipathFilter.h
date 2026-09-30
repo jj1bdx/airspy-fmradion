@@ -31,22 +31,14 @@ using MfCoeffVector = volk::vector<MfCoeff>;
 
 class MultipathFilter {
 public:
-  // IF AGC target level is 1.0
-  // Note: this constant is for memorandum use only,
-  // and the actual code of IfSimpleAGC
-  // ASSUMES the reference level is 1.0.
+  // IF AGC target level is 1.0. For memorandum only: IfSimpleAgc ASSUMES a
+  // reference level of 1.0.
   static constexpr double if_target_level = 1.0;
 
-  // NLMS step-size numerator, for the reference filter order below.
-  // The effective step is mu = alpha_effective / sum(|state|^2); since the IF
-  // AGC holds |state[i]| ~= 1, sum(|state|^2) ~= filter order, so the per-tap
-  // adaptation rate is alpha_effective / filter_order. Raising the order at
-  // fixed alpha therefore divides the adaptation rate, which measurably
-  // degrades tracking on a time-varying channel; alpha is scaled with the
-  // order to compensate. See doc/MULTIPATH_FILTER_DESIGN_20260724.md §15.
-  // Note: this is normalized CMA, not unnormalized LMS, so the classic
-  // 0 < alpha < 2 NLMS bound does NOT apply here -- the CMA error is
-  // quadratic in the output. Divergence was measured at alpha = 1.0.
+  // NLMS step numerator at the reference order: mu = alpha / sum(|state|^2) ~
+  // alpha / order (IF AGC keeps |state| ~ 1), so alpha scales with the order.
+  // Normalized CMA: the NLMS 0 < alpha < 2 bound does NOT apply; alpha = 1.0
+  // diverges. See doc/MULTIPATH_FILTER_DESIGN_20260724.md §15.
 #ifndef MF_ALPHA
 #define MF_ALPHA 0.1
 #endif
@@ -66,13 +58,9 @@ public:
   // incrementally-maintained state power sum.
   static constexpr unsigned int resync_interval = 65536;
 
-  // Divergence threshold for process(), applied to the filter output
-  // components and to the error value. With the IF AGC holding the input at
-  // unity, both quantities stay within a small neighbourhood of 1 and 0
-  // respectively; 10 is roughly a decade of headroom over anything
-  // legitimate. Bounding the magnitude rather than only testing isfinite()
-  // catches a diverging loop about six orders of magnitude earlier.
-  // See doc/MULTIPATH_FILTER_DESIGN_20260724.md §16.2.
+  // Divergence threshold for process() on the filter output components and the
+  // error value (near 1 and 0 with the IF AGC); 10 trips ~6 orders of magnitude
+  // before isfinite(). See doc/MULTIPATH_FILTER_DESIGN_20260724.md §16.2.
   static constexpr float divergence_limit = 10.0f;
 
   // Construct multipath filter.
@@ -88,11 +76,9 @@ public:
   // keeps poisoning the output until it ages out.
   void reset_state();
 
-  // Process IQ samples and return filtered IQ samples.
-  // Return true if the processing is successful
-  // (or the input length is zero);
-  // Return false if the processing fails, i.e. the output or the error value
-  // left the range allowed by divergence_limit (which includes NaN and inf).
+  // Process IQ samples and return filtered IQ samples. Return true on success
+  // (or empty input), false if the output or error left divergence_limit
+  // (including NaN and inf).
   bool process(const IQSampleVector &samples_in, IQSampleVector &samples_out);
 
   // Obtain the latest error value.

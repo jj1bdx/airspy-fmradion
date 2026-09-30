@@ -46,32 +46,16 @@ public:
   static constexpr double deemphasis_time_eu = 50; // Europe and Japan
   static constexpr double deemphasis_time_na = 75; // USA/Canada
 
-  //
-  // Construct FM decoder.
-  //
-  // fmfilter_enable   :: True to enable IQSample filter frontend.
-  // fmfilter_coeff    :: IQSample filter coefficients.
-  // stereo            :: True to enable stereo decoding.
-  // deemphasis        :: Time constant of de-emphasis filter in microseconds
-  //                      (50 us for broadcast FM, 0 to disable de-emphasis).
-  // pilot_shift       :: True to shift pilot signal phase
-  //                   :: (use cos(2*x) instead of sin (2*x))
-  //                   :: (for multipath distortion detection)
-  // multipath_stages  :: Set >0 to enable multipath filter
-  //                   :: (LMS adaptive filter stage number)
-  //
+  // Construct FM decoder. fmfilter_enable/coeff: IQ filter frontend; stereo:
+  // decode stereo; deemphasis: time constant in us (50 = broadcast, 0 = off);
+  // pilot_shift: cos(2*x) instead of sin(2*x) pilot (multipath detection);
+  // multipath_stages: > 0 enables the multipath filter (LMS stages).
   FmDecoder(bool fmfilter_enable, const IQSampleCoeff &fmfilter_coeff,
             bool stereo, double deemphasis, bool pilot_shift,
             unsigned int multipath_stages);
-  //
-  // Process IQ samples and return audio samples.
-  //
-  // If the decoder is set in stereo mode, samples for left and right
-  // channels are interleaved in the output vector (even if no stereo
-  // signal is detected). If the decoder is set in mono mode, the output
-  // vector only contains samples for one channel.
-  // samples_in is taken by const reference: the no-IF-filter path selects
-  // it directly instead of copying into m_samples_in_iffiltered.
+  // Process IQ samples and return audio: interleaved L/R in stereo mode (even
+  // without a stereo signal), one channel in mono. samples_in is const&; the
+  // no-IF-filter path uses it directly. See doc/DECODER_ARGS_20260928.md.
   void process(const IQSampleVector &samples_in, SampleVector &audio);
 
   // Return true if a stereo signal is detected.

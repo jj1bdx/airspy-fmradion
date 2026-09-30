@@ -46,12 +46,9 @@
 // Complex adaptive filter for reducing FM multipath.
 
 MultipathFilter::MultipathFilter(unsigned int stages)
-    : // Filter stages.
-      // Size this to the echo delay spread; more stages is
-      // not safer. Each stage adds 4 taps spanning 10.4us,
-      // 3:1 before/after the reference. Taps beyond the
-      // delay spread carry no signal and add gradient noise,
-      // which raises the residual error and costs CPU.
+    : // Filter stages: match the echo delay spread; more is not safer. Each
+      // stage adds 4 taps spanning 10.4us, 3:1 before/after the reference;
+      // taps beyond the spread add gradient noise and CPU cost.
       m_stages(stages)
 
       // Filter reference point position in the vector.
@@ -62,24 +59,17 @@ MultipathFilter::MultipathFilter(unsigned int stages)
       ,
       m_filter_order((m_stages * 4) + 1)
 
-      // Scale alpha with the filter order so that the per-tap adaptation
-      // rate mu ~= alpha_effective / m_filter_order stays at the value it has
-      // at the reference order, instead of falling as 1 / m_filter_order.
-      // Clamped because the stability limit of this loop is on alpha itself,
-      // not on mu: alpha = 1.0 diverges regardless of the order.
-      // See doc/MULTIPATH_FILTER_DESIGN_20260724.md §15.
+      // Scale alpha with the filter order to hold the per-tap rate mu =
+      // alpha_effective / m_filter_order at its reference value; clamped (alpha
+      // = 1.0 diverges). See doc/MULTIPATH_FILTER_DESIGN_20260724.md §15.
       ,
       m_alpha(std::min(alpha * static_cast<double>(m_filter_order) /
                            static_cast<double>(alpha_reference_order),
                        alpha_maximum))
 
-      // mu = alpha_effective / (sum of input signal state square norm).
-      // When the reference level = 1.0,
-      // estimated norm of the input state vector ~= m_filter_order
-      // * norm(input_signal) ~= 1.0 since abs(input_signal) ~= 1.0
-      // * measurement suggests that the error of mu to
-      //   the actually measureed mu is nominally +-10% or less
-      // Note: reference level is 1.0, therefore excluded from this expression.
+      // mu = alpha_effective / (sum of input state square norm) ~=
+      // alpha_effective / m_filter_order, since abs(input_signal) ~= 1.0 at
+      // reference level 1.0; measured error of mu is nominally +-10% or less.
       ,
       m_mu(m_alpha / m_filter_order)
 
@@ -123,10 +113,8 @@ void MultipathFilter::initialize_coefficients() {
   for (unsigned int i = 0; i < m_index_reference_point; i++) {
     m_coeff[i] = MfCoeff(0, 0);
   }
-  // Set the initial coefficient
-  // of the unity gain at the middle of the coefficient sequence
-  // where [0 ... m_filter_order] stands for
-  // [-(stages * 3) ... 0 ... +stages]
+  // Set the initial unity gain at the middle of the coefficients, where
+  // [0 ... m_filter_order] stands for [-(stages * 3) ... 0 ... +stages].
   m_coeff[m_index_reference_point] = MfCoeff(1, 0);
   for (unsigned int i = m_index_reference_point + 1; i < m_filter_order; i++) {
     m_coeff[i] = MfCoeff(0, 0);
@@ -165,10 +153,9 @@ inline void MultipathFilter::update_coeff(const IQSample result) {
   // error = [desired signal] - [filter output]
   const double error = if_target_level - env;
 
-  // Normalized LMS (NLMS) processing
-  // The square norm of the input data window is maintained incrementally in
-  // single_process(); recompute it exactly every resync_interval updates to
-  // bound the accumulated rounding drift of the running sum.
+  // Normalized LMS (NLMS) processing. The square norm of the input window is
+  // kept incrementally in single_process() and recomputed exactly every
+  // resync_interval updates to bound rounding drift.
   if (++m_resync_cnt >= resync_interval) {
     m_resync_cnt = 0;
     resync_state_power();
@@ -214,11 +201,9 @@ inline void MultipathFilter::update_coeff(const IQSample result) {
 bool MultipathFilter::process(const IQSampleVector &samples_in,
                               IQSampleVector &samples_out) {
 #ifdef DEBUG_MULTIPATH_FILTER
-  // Report the configuration from the first filtered block, not from the
-  // constructor: FmDecoder constructs this object even when the multipath
-  // filter is disabled (with a dummy stage count of 1), and process() is
-  // called only while it is enabled. Only one filter instance exists, so a
-  // function-local flag is enough.
+  // Report the configuration on the first filtered block: FmDecoder constructs
+  // this object even when disabled (dummy stage count 1). One instance, so a
+  // function-local flag suffices. See doc/MF_DEBUG_CODE_20260726.md.
   static bool config_reported = false;
   if (!config_reported) {
     config_reported = true;
@@ -241,14 +226,10 @@ bool MultipathFilter::process(const IQSampleVector &samples_in,
   const unsigned int filter_interval = 0x03;
   for (unsigned int i = 0; i < n; i++) {
     IQSample output = single_process(samples_in[i]);
-    // Note well: -ffast-math DISABLES NaN processing (-menable-no-nans)
-    // so DO NOT specify -ffast-math!
-    // Check the output magnitude against divergence_limit rather than
-    // against infinity: a diverging loop passes through many orders of
-    // magnitude of obviously-wrong output long before it overflows, and
-    // every one of those samples reaches the discriminator.
-    // The comparisons are written as "not within the limit" so that NaN,
-    // which compares false against everything, is rejected as well.
+    // Note well: -ffast-math DISABLES NaN processing (-menable-no-nans), so DO
+    // NOT specify it! Compare the output magnitude against divergence_limit,
+    // not infinity (divergence shows long before overflow); NaN is rejected
+    // too. See doc/MULTIPATH_FILTER_DESIGN_20260724.md §16.2.
     if (!(std::abs(output.real()) <= divergence_limit) ||
         !(std::abs(output.imag()) <= divergence_limit)) {
       return false;

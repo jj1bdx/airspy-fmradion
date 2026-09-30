@@ -30,11 +30,9 @@ FineTuner::FineTuner(unsigned const int table_size, const int freq_shift)
 
 // Set shift frequency table while maintaining the phase continuity.
 void FineTuner::set_freq_shift(const int freq_shift) {
-  // Get the current phase shigt value and set it to the offset,
-  // and if the offset > 2*M_PI, put in in the range of 0 <= offset <= 2*M_PI.
-  // When right after the FineTuner object is constructed,
-  // m_index == 0, and m_phase_table[0] == 0,
-  // so phase offset is set to zero and has no problem.
+  // Get the current phase value and set it as the offset, wrapped into 0 <=
+  // offset <= 2*M_PI. Right after construction m_index == 0 and
+  // m_phase_table[0] == 0, so the offset is zero.
   double phase_offset = std::fmod(m_phase_table[m_index], 2.0 * M_PI);
   m_index = 0;
   // Initialize the sin/cos and phase values.

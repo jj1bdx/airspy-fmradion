@@ -218,10 +218,8 @@ PortAudioOutput::PortAudioOutput(const PaDeviceIndex device_index,
   m_outputparams.channelCount = m_nchannels;
   m_outputparams.sampleFormat = paFloat32;
   if (suggested_latency_sec >= 0.0) {
-    // User-specified latency (-L / --portaudio-latency): use it verbatim.
-    // This intentionally bypasses minimum_latency_default floor below;
-    // main.cpp already range-checks
-    // the value to [1, 40] ms before conversion to seconds.
+    // User-specified latency (-L): used verbatim, bypassing the floor
+    // minimum_latency_default below; main.cpp range-checks it to [1, 40] ms.
     m_outputparams.suggestedLatency = suggested_latency_sec;
   } else {
     m_outputparams.suggestedLatency =

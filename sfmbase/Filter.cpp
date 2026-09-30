@@ -37,17 +37,9 @@ LowPassFilterFirIQ::LowPassFilterFirIQ(const IQSampleCoeff &coeff,
   m_state.resize(m_order);
 }
 
-// Process samples.
-//
-// Each output is a single VOLK dot product, replacing the former hand-rolled
-// warm-up and symmetry-folded steady-state loops. Build one contiguous history
-// buffer m_scratch = [m_state | samples_in], so ext[m] = x[m - order] where x
-// is the virtual stream (previous-block state followed by this block's input).
-// For output p, the oldest-to-newest window is ext[p ... p + order]. With the
-// convolution y[p] = sum_{j=0..order} coeff[j] * x[p-j], substituting i = order
-// - j gives y[p] = sum_{i=0..order} coeff[order-i] * ext[p+i], i.e. a dot
-// product of the window ext.data()+p against the reversed coefficients. Unlike
-// the previous warm-up loop, the j=0 tap (coeff[0] * x[p]) is always included.
+// Process samples: each output is one VOLK dot product, y[p] = sum_{i=0..order}
+// coeff[order-i] * ext[p+i], ext = [m_state | samples_in]; the j=0 tap is
+// always included. See doc/LPF_VOLK_20260725.md.
 void LowPassFilterFirIQ::process(const IQSampleVector &samples_in,
                                  IQSampleVector &samples_out) {
   const unsigned int order = m_order;
@@ -157,12 +149,9 @@ double FirstOrderIirFilter::process(double input) {
   return y;
 }
 
-// Class LowPassFilterRC
-// Construct 1st order low-pass IIR filter.
-// Continuous domain:
-//   H(s) = 1 / (1 - s * timeconst)
-// Discrete domain:
-//   H(z) = (1 - exp(-1/timeconst)) / (1 - exp(-1/timeconst) / z)
+// Class LowPassFilterRC: construct 1st order low-pass IIR filter.
+// Continuous domain: H(s) = 1 / (1 - s * timeconst)
+// Discrete domain: H(z) = (1 - exp(-1/timeconst)) / (1 - exp(-1/timeconst) / z)
 LowPassFilterRC::LowPassFilterRC(const double timeconst)
     : m_timeconst(timeconst), m_a1(-std::exp(-1 / m_timeconst)), m_b0(1 + m_a1),
       m_filter0(m_b0, 0, m_a1), m_filter1(m_b0, 0, m_a1) {}
@@ -249,12 +238,9 @@ HighPassFilterIir::HighPassFilterIir(const double cutoff) {
 
   // Both zeros are located in s = 0, z = 1.
 
-  // Discrete-domain transfer function:
-  //   H(z) = g * (1 - 1/z) * (1 - 1/z) / ( (1 - p1/z) * (1 - p2/z) )
-  //        = g * (1 - 2/z + 1/z**2) / (1 - (p1+p2)/z + (p1*p2)/z**2)
-  //
-  // Note that z2 = conj(z1).
-  // Therefore p1+p2 == 2*real(p1), p1*2 == abs(p1*p1), z4 = conj(z1)
+  // Discrete-domain H(z) = g * (1 - 1/z)^2 / ((1 - p1/z) * (1 - p2/z))
+  //  = g * (1 - 2/z + 1/z**2) / (1 - (p1+p2)/z + (p1*p2)/z**2)
+  // With p2 = conj(p1): p1+p2 == 2*real(p1), p1*p2 == abs(p1*p1).
 
   // Modify the values of parent BiquadIirFilter private variables
   m_b0 = 1;

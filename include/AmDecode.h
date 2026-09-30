@@ -39,10 +39,8 @@ public:
   // Deemphasis constant in microseconds.
   static constexpr double deemphasis_time = 100;
 
-  /// Construct AM decoder.
-  ///
-  /// amfilter_coeff    :: IQSample Filter Coefficients.
-  /// mode              :: ModType for decoding mode.
+  /// Construct AM decoder from IQ filter coefficients (amfilter_coeff) and the
+  /// decoding mode (mode, a ModType).
   AmDecoder(const IQSampleCoeff &amfilter_coeff, const ModType mode);
 
   // Process IQ samples and return audio samples.

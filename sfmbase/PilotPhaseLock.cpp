@@ -47,10 +47,9 @@ PilotPhaseLock::PilotPhaseLock(double freq)
       // Initialize PPS generator.
       m_pilot_periods(0), m_pps_cnt(0), m_sample_cnt(0), m_pps_events(0),
       // In-loop phasor LPF: 2nd-order all-pole IIR (real corners ~40/188 Hz),
-      // widened from the original ~34/160 Hz so the dominant closed-loop pole
-      // pair is damped at zeta ~= 0.71 (was ~0.57). Unity DC gain; 38 kHz image
-      // still suppressed by ~105 dB. Caution: use only once for stable locking.
-      // See doc/PLL_REDESIGN_20260723.md and doc/PLL_ANALYSIS_20260722.md.
+      // unity DC gain, 38 kHz image ~105 dB down, zeta ~= 0.71. Caution: use
+      // only once for stable locking. See doc/PLL_REDESIGN_20260723.md,
+      // doc/PLL_ANALYSIS_20260722.md.
       m_biquad_phasor_i1(2.037743564e-06, 0, 0, -1.996259818, 0.996261856),
       m_biquad_phasor_q1(2.037743564e-06, 0, 0, -1.996259818, 0.996261856),
       // PI-controller proportional term / stabilizing zero (with the m_freq
@@ -107,11 +106,8 @@ void PilotPhaseLock::process(const SampleVector &samples_in,
     const double new_phasor_i = m_biquad_phasor_i1.process(phasor_i);
     const double new_phasor_q = m_biquad_phasor_q1.process(phasor_q);
 
-    // Convert I/Q ratio to estimate of phase error.
-    // Note: maximum phase error during the locked state is +- 0.02 radian.
-    // Use double std::atan2 for the phase detector.
-    // For the performance and accuracy analysis,
-    // see doc/CORE_MATH_ATAN2F_20260722.md and
+    // Convert I/Q ratio to phase error (max +-0.02 radian when locked) with
+    // double std::atan2. See doc/CORE_MATH_ATAN2F_20260722.md and
     // doc/STD_ATAN2_X86_64_20260722.md.
     const double phase_err = std::atan2(new_phasor_q, new_phasor_i);
 
@@ -119,10 +115,8 @@ void PilotPhaseLock::process(const SampleVector &samples_in,
     m_pilot_level = std::sqrt((new_phasor_i * new_phasor_i) +
                               (new_phasor_q * new_phasor_q));
 
-    // Run phase error through loop filter and update frequency estimate.
-    // After the loop filter, the phase error is integrated to produce
-    // the frequency. Then the frequency is integrated to produce the phase.
-    // These two integrators form the two remaining poles, both at z = 1.
+    // Run phase error through the loop filter, integrate to frequency, then to
+    // phase; the two integrators are the remaining poles, both at z = 1.
 
     const double new_phase_err = m_first_phase_err.process(phase_err);
     m_freq_err = new_phase_err;

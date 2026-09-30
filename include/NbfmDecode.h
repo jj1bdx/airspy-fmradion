@@ -39,10 +39,8 @@ public:
   // for NOAA Satellites (Width: ~40kHz, deviation: +-17kHz)
   static constexpr double freq_dev_wide = 17000;
 
-  /// Construct Narrow Band FM decoder.
-  ///
-  /// nbfmfilter_coeff  :: IQSample Filter Coefficients.
-  /// freq_dev          :: full scale deviation in Hz.
+  /// Construct Narrow Band FM decoder from IQ filter coefficients
+  /// (nbfmfilter_coeff) and the full scale deviation freq_dev in Hz.
   NbfmDecoder(const IQSampleCoeff &nbfmfilter_coeff, const double freq_dev);
 
   /// Process IQ samples and return audio samples.

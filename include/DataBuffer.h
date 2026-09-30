@@ -30,22 +30,16 @@
 
 template <class Element> class DataBuffer {
 public:
-  // Maximum number of queued blocks before the oldest block is dropped.
-  // Normal real-time operation keeps the queue near empty (the consumer
-  // pulls one block per loop iteration), so this threshold is reached
-  // only when the consumer persistently cannot keep up with the source.
-  // At the supported sources' block rates (~100-400 blocks/s) this allows
-  // several seconds of buffering, and bounds the worst-case memory use
-  // (Airspy R2: 65536 samples * 8 bytes * 1024 blocks = 512 MiB).
+  // Queue bound: beyond this many blocks the oldest is dropped. Reached only
+  // when the consumer cannot keep up; worst case 512 MiB (Airspy R2: 65536
+  // samples * 8 bytes * 1024 blocks). See doc/FIXES_CLAUDE_20260610.md (X7).
   static constexpr std::size_t max_queue_blocks = 1024;
 
   // Constructor.
   DataBuffer() : m_end_marked(false) {}
 
-  // Add samples to the queue.
-  // If the queue is full, the oldest block is dropped and a warning is
-  // printed so memory use cannot grow without bound when
-  // the consumer cannot keep up with a real-time source.
+  // Add samples to the queue; if it is full, drop the oldest block and warn, so
+  // memory stays bounded when the consumer lags a real-time source.
   inline void push(std::vector<Element> &&samples) {
     if (!samples.empty()) {
       std::uint64_t dropped = 0;
@@ -95,10 +89,8 @@ public:
     }
   }
 
-  // If the queue is non-empty, remove a block from the queue and
-  // return the samples. If the end marker has been reached, return
-  // an empty vector. If the queue is empty, wait until more data is pushed
-  // or until the end marker is pushed.
+  // Remove and return one block, waiting while the queue is empty; return an
+  // empty vector once the end marker has been reached.
   inline std::vector<Element> pull() {
     std::vector<Element> ret;
     {
