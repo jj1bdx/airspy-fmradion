@@ -43,6 +43,7 @@ public:
     long capacity_frames = -1;
     long min_free_frames = -1; // lowest free space seen (-1: none yet)
     long last_free_frames = -1;
+    long prefill_frames = 0; // total silence prefill written
     unsigned int sample_rate = 0;
   };
 
@@ -121,9 +122,17 @@ public:
 
   // Construct PortAudio output stream: device_index, samplerate (Hz), stereo,
   // suggested_latency_sec (PaTime; negative = no override, use
-  // defaultHighOutputLatency floored at minimum_latency_default).
+  // defaultHighOutputLatency floored at minimum_latency_default),
+  // prefill_ms (silence written once before the first audio block; 0 = none),
+  // adapt_max_ms (if > 0, add one silence quantum per underflow until the
+  // total prefill reaches this cap; 0 = off). Both are clamped to the
+  // ring capacity minus one audio block at the first write().
   PortAudioOutput(const PaDeviceIndex device_index, unsigned int samplerate,
-                  bool stereo, PaTime suggested_latency_sec = -1.0);
+                  bool stereo, PaTime suggested_latency_sec = -1.0,
+                  double prefill_ms = 0.0, double adapt_max_ms = 0.0);
+
+  /// Silence quantum added per underflow by the adaptive prefill.
+  static constexpr double adapt_step_ms = 10.0;
 
   virtual ~PortAudioOutput() override;
   virtual bool write(const SampleVector &samples) override;
@@ -134,6 +143,16 @@ private:
   // Terminate PortAudio
   // then add PortAudio error string to m_error and set m_zombie flag.
   void add_paerror(const std::string &msg);
+
+  // Write silence_frames of silence; count an underflow report. Return success.
+  bool write_silence(long silence_frames);
+
+  // Apply the prefill once, before the first audio block of block_frames.
+  bool prime(long block_frames);
+
+  // Adaptive prefill: after an underflow, add one silence quantum if the
+  // ring has room and the cap is not reached. Return success.
+  bool adapt();
 
   unsigned int m_nchannels;
   PaStreamParameters m_outputparams{};
@@ -146,6 +165,13 @@ private:
   std::atomic<std::uint64_t> m_underflows{0};
   std::atomic<long> m_min_free_frames{-1};
   std::atomic<long> m_last_free_frames{-1};
+  std::atomic<long> m_prefill_total_frames{0};
+  // Prefill state: used by the writer thread only.
+  double m_prefill_ms = 0.0;
+  double m_adapt_max_ms = 0.0;
+  bool m_primed = false;
+  long m_max_block_frames = 0;
+  long m_adapt_cap_frames = 0;
 };
 
 #endif

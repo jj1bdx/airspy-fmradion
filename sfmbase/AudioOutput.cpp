@@ -24,6 +24,7 @@
 #include <fcntl.h>
 #include <fmt/format.h>
 #include <unistd.h>
+#include <vector>
 
 #include "AudioOutput.h"
 #include "SoftFM.h"
@@ -190,7 +191,9 @@ void SndfileOutput::add_error_log_info(SNDFILE *sf) {
 // Construct PortAudio output stream.
 PortAudioOutput::PortAudioOutput(const PaDeviceIndex device_index,
                                  unsigned int samplerate, bool stereo,
-                                 PaTime suggested_latency_sec) {
+                                 PaTime suggested_latency_sec,
+                                 double prefill_ms, double adapt_max_ms)
+    : m_prefill_ms(prefill_ms), m_adapt_max_ms(adapt_max_ms) {
   m_nchannels = stereo ? 2 : 1;
 
   m_paerror = Pa_Initialize();
@@ -304,6 +307,18 @@ bool PortAudioOutput::write(const SampleVector &samples) {
   }
 
   const unsigned long sample_size = samples.size();
+
+  // Prefill goes right before the first block, not at stream start: the
+  // source may take long to deliver it, and the ring would drain meanwhile.
+  const long block_frames = static_cast<long>(sample_size / m_nchannels);
+  m_max_block_frames = std::max(m_max_block_frames, block_frames);
+  const bool first_block = !m_primed;
+  if (first_block) {
+    if (!prime(block_frames)) {
+      return false;
+    }
+  }
+
   m_floatbuf.resize(sample_size);
 
   // Copy float samples to the PortAudio buffer.
@@ -313,7 +328,8 @@ bool PortAudioOutput::write(const SampleVector &samples) {
       Pa_WriteStream(m_stream, m_floatbuf.data(), sample_size / m_nchannels);
   if (m_paerror == paNoError || m_paerror == paOutputUnderflowed) {
     // Underflow is benign for the stream but is counted.
-    if (m_paerror == paOutputUnderflowed) {
+    const bool underflowed = (m_paerror == paOutputUnderflowed);
+    if (underflowed) {
       m_underflows.fetch_add(1, std::memory_order_relaxed);
     }
     // Free space right after a write is the ring's lowest, i.e. its fullest.
@@ -325,11 +341,91 @@ bool PortAudioOutput::write(const SampleVector &samples) {
         m_min_free_frames.store(avail, std::memory_order_relaxed);
       }
     }
+    // The start-up underflow of the first block is not a stall.
+    if (underflowed && !first_block && m_adapt_cap_frames > 0) {
+      return adapt();
+    }
     return true;
   } else {
     add_paerror("Pa_WriteStream()");
   }
   return false;
+}
+
+// Write silence_frames of silence.
+bool PortAudioOutput::write_silence(long silence_frames) {
+  const std::vector<float> silence(
+      static_cast<std::size_t>(silence_frames) * m_nchannels, 0.0f);
+  m_paerror = Pa_WriteStream(m_stream, silence.data(),
+                             static_cast<unsigned long>(silence_frames));
+  if (m_paerror == paOutputUnderflowed) {
+    m_underflows.fetch_add(1, std::memory_order_relaxed);
+  } else if (m_paerror != paNoError) {
+    add_paerror("Pa_WriteStream()");
+    return false;
+  }
+  return true;
+}
+
+// Apply the prefill once, before the first audio block.
+bool PortAudioOutput::prime(long block_frames) {
+  m_primed = true;
+  if (m_prefill_ms <= 0.0 && m_adapt_max_ms <= 0.0) {
+    return true;
+  }
+  if (m_capacity_frames < 0 || m_samplerate == 0) {
+    fmt::println(stderr, "WARNING: PortAudio ring capacity unknown, "
+                         "prefill disabled");
+    m_adapt_cap_frames = 0;
+    return true;
+  }
+  // The prefill plus one block must fit in the ring; otherwise the blocking
+  // write would only wait for the device to drain it, i.e. stall.
+  const long limit = m_capacity_frames - block_frames;
+  const auto to_frames = [this](double ms) {
+    return static_cast<long>(ms * m_samplerate / 1000.0);
+  };
+  long frames = to_frames(m_prefill_ms);
+  long cap = to_frames(m_adapt_max_ms);
+  if (frames > limit || cap > limit) {
+    fmt::println(stderr,
+                 "WARNING: PortAudio prefill clamped to ring capacity "
+                 "{:.1f} ms minus one block {:.1f} ms = {:.1f} ms",
+                 frames_to_ms(m_capacity_frames, m_samplerate),
+                 frames_to_ms(block_frames, m_samplerate),
+                 frames_to_ms(std::max(limit, 0L), m_samplerate));
+  }
+  frames = std::clamp(frames, 0L, std::max(limit, 0L));
+  m_adapt_cap_frames = std::clamp(cap, 0L, std::max(limit, 0L));
+  if (frames > 0) {
+    if (!write_silence(frames)) {
+      return false;
+    }
+    m_prefill_total_frames.store(frames, std::memory_order_relaxed);
+  }
+  return true;
+}
+
+// Adaptive prefill step, called after an underflow was reported.
+bool PortAudioOutput::adapt() {
+  const long total = m_prefill_total_frames.load(std::memory_order_relaxed);
+  // Keep one (largest seen) block of room, like prime().
+  const long cap =
+      std::min(m_adapt_cap_frames, m_capacity_frames - m_max_block_frames);
+  const long step = static_cast<long>(adapt_step_ms * m_samplerate / 1000.0);
+  const long add = std::min(step, cap - total);
+  if (add <= 0) {
+    return true;
+  }
+  // Never block: the ring must have room for the quantum.
+  if (Pa_GetStreamWriteAvailable(m_stream) < add) {
+    return true;
+  }
+  if (!write_silence(add)) {
+    return false;
+  }
+  m_prefill_total_frames.store(total + add, std::memory_order_relaxed);
+  return true;
 }
 
 // Return the output counters.
@@ -339,6 +435,7 @@ AudioOutput::Telemetry PortAudioOutput::telemetry() const {
   t.capacity_frames = m_capacity_frames;
   t.min_free_frames = m_min_free_frames.load(std::memory_order_relaxed);
   t.last_free_frames = m_last_free_frames.load(std::memory_order_relaxed);
+  t.prefill_frames = m_prefill_total_frames.load(std::memory_order_relaxed);
   t.sample_rate = m_samplerate;
   return t;
 }

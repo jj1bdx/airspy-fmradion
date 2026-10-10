@@ -114,6 +114,19 @@ static void usage() {
       "                 (default: floored at 40 milliseconds)\n"
       "                 (-L is ignored unless PortAudio output (-P) is "
       "used)\n"
+      "  --portaudio-prefill ms\n"
+      "                 Write ms of silence into the PortAudio output once,\n"
+      "                 before the first audio block (a fixed cushion\n"
+      "                 against stalls; adds ms of latency)\n"
+      "                 valid range: 0 to 40 (default: 0 = off)\n"
+      "                 clamped to the granted capacity minus one audio "
+      "block\n"
+      "                 (use with -L 8 to -L 10; ignored unless -P is used)\n"
+      "  --portaudio-prefill-adapt ms\n"
+      "                 On each PortAudio underflow, add 10 ms more silence\n"
+      "                 until the total prefill reaches ms (never shrinks)\n"
+      "                 valid range: 0 to 40 (default: 0 = off)\n"
+      "                 (ignored unless PortAudio output (-P) is used)\n"
       "  -T filename    Write pulse-per-second timestamps\n"
       "                 use filename '-' to write to stdout\n"
       "  -X             Shift pilot phase (for Quadrature Multipath Monitor)\n"
@@ -295,6 +308,9 @@ static void *process_signals(void *arg) {
   }
 }
 
+// Long-only option codes (no short option letter).
+enum { OPT_PA_PREFILL = 0x100, OPT_PA_PREFILL_ADAPT };
+
 // Print the one-line exit summary of the loss/underrun counters.
 static void print_summary(const AudioOutput &output,
                           const DataBuffer<IQSample> &buffer,
@@ -307,6 +323,10 @@ static void print_summary(const AudioOutput &output,
         t.underflows,
         frames_to_ms(t.capacity_frames - t.min_free_frames, t.sample_rate),
         frames_to_ms(t.capacity_frames, t.sample_rate));
+    if (t.prefill_frames > 0) {
+      fmt::print(stderr, "prefill={:.1f}ms; ",
+                 frames_to_ms(t.prefill_frames, t.sample_rate));
+    }
   }
   fmt::println(stderr,
                "DataBuffer queue={} max={} dropped blocks={}; "
@@ -336,6 +356,10 @@ int main(int argc, char **argv) {
   // Sentinel: no -L/--portaudio-latency given, use PortAudio's
   // platform-default suggestedLatency (computed inside PortAudioOutput).
   double portaudio_latency_ms = -1.0;
+  // PortAudio prefill (--portaudio-prefill) and its adaptive cap
+  // (--portaudio-prefill-adapt) in milliseconds; 0 = off.
+  double portaudio_prefill_ms = 0.0;
+  double portaudio_prefill_adapt_ms = 0.0;
   bool quietmode = false;
   bool verbosemode = false;
   std::string ppsfilename;
@@ -416,6 +440,9 @@ int main(int argc, char **argv) {
       {"wavfloat", required_argument, nullptr, 'G'},
       {"play", required_argument, nullptr, 'P'},
       {"portaudio-latency", required_argument, nullptr, 'L'},
+      {"portaudio-prefill", required_argument, nullptr, OPT_PA_PREFILL},
+      {"portaudio-prefill-adapt", required_argument, nullptr,
+       OPT_PA_PREFILL_ADAPT},
       {"pps", required_argument, nullptr, 'T'},
       {"pilotshift", no_argument, nullptr, 'X'},
       {"usa", no_argument, nullptr, 'U'},
@@ -494,6 +521,19 @@ int main(int argc, char **argv) {
       if (!Utility::parse_dbl(optarg, portaudio_latency_ms) ||
           portaudio_latency_ms < 1.0 || portaudio_latency_ms > 40.0) {
         badarg("-L");
+      }
+      break;
+    case OPT_PA_PREFILL:
+      if (!Utility::parse_dbl(optarg, portaudio_prefill_ms) ||
+          portaudio_prefill_ms < 0.0 || portaudio_prefill_ms > 40.0) {
+        badarg("--portaudio-prefill");
+      }
+      break;
+    case OPT_PA_PREFILL_ADAPT:
+      if (!Utility::parse_dbl(optarg, portaudio_prefill_adapt_ms) ||
+          portaudio_prefill_adapt_ms < 0.0 ||
+          portaudio_prefill_adapt_ms > 40.0) {
+        badarg("--portaudio-prefill-adapt");
       }
       break;
     case 'T':
@@ -693,7 +733,8 @@ int main(int argc, char **argv) {
     break;
   case OutputMode::PORTAUDIO:
     audio_output = std::make_unique<PortAudioOutput>(
-        portaudiodev, pcmrate, stereo, portaudio_suggested_latency);
+        portaudiodev, pcmrate, stereo, portaudio_suggested_latency,
+        portaudio_prefill_ms, portaudio_prefill_adapt_ms);
     if (portaudiodev == -1) {
       fmt::print(stderr, "playing audio to PortAudio default device: ");
     } else {

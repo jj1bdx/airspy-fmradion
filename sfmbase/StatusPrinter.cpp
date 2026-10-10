@@ -130,6 +130,10 @@ void StatusPrinter::print() {
           frames_to_ms(t.capacity_frames - t.last_free_frames, t.sample_rate),
           frames_to_ms(t.capacity_frames - t.min_free_frames, t.sample_rate),
           frames_to_ms(t.capacity_frames, t.sample_rate));
+      if (t.prefill_frames > 0) {
+        fmt::print(stderr, ":Pre={:.1f}ms",
+                   frames_to_ms(t.prefill_frames, t.sample_rate));
+      }
     }
     fmt::print(stderr, ":SDRdrop={}", m_source->dropped_samples());
   }
