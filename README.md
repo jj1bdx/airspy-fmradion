@@ -133,6 +133,7 @@ cmake --build build --target all
 * `-m devtype` is modulation type, one of `fm`, `nbfm`, `am`, `dsb`, `usb`, `lsb`, `cw`, `wspr` (default fm)
 * `-t devtype` is mandatory and must be `airspy` for Airspy R2 / Airspy Mini, `airspyhf` for Airspy HF+, `rtlsdr` for RTL-SDR, and `filesource` for the File Source driver.
 * `-q` Quiet mode.
+* `-v` Show output/queue/SDR drop counters on the status line (a summary is printed at exit unless `-q` is used)
 * `-c config` Comma separated list of configuration options as key=value pairs or just key for switches. Depends on device type (see next paragraph).
 * `-d devidx` Device index, 'list' to show device list (default 0)
 * `-M` Disable stereo decoding
@@ -142,7 +143,9 @@ cmake --build build --target all
 * `-G filename` Write audio data as RF64/WAV `FLOAT_LE` samples. Use filename `-` to write to stdout (_pipe is not supported_)
 * `-C filename`  Write audio data to MP3 file of VBR -V 1. Use filename '-' to write to stdout. (_This function is available when linked with supported libsndfile only._)
 * `-P device_num` Play audio via PortAudio device index number. Use string `-` to specify the default PortAudio device
-* `-L ms` Set PortAudio output suggested latency in milliseconds. Valid range: 1 to 40 (default: floored at 40 milliseconds) (`-L` is ignored unless PortAudio output (`-P`) is used). See [Output latency and the `-L` option](#output-latency-and-the--l-option) for the measured delays
+* `-L ms` Set PortAudio output suggested latency in milliseconds. Valid range: 1 to 100 (default: floored at 40 milliseconds) (`-L` is ignored unless PortAudio output (`-P`) is used). See [Output latency and the `-L` option](#output-latency-and-the--l-option) for the measured delays
+* `--portaudio-prefill ms` (_experimental_) Write ms of silence into the PortAudio output once, before the first audio block (a fixed cushion against stalls; adds ms of latency). Valid range: 0 to 100 (default: 0 = off). Clamped to the granted capacity minus one audio block (use with `-L 8` to `-L 10`; ignored unless `-P` is used)
+* `--portaudio-prefill-adapt ms` (_experimental_) On each PortAudio underflow, add 10 ms more silence until the total prefill reaches ms (never shrinks). Valid range: 0 to 100 (default: 0 = off) (ignored unless PortAudio output (`-P`) is used)
 * `-T filename` Write pulse-per-second timestamps. Use filename '-' to write to stdout
 * `-X` Shift pilot phase (for Quadrature Multipath Monitor) (-X is ignored under mono mode (-M))
 * `-U` Set deemphasis to 75 microseconds (default: 50)
