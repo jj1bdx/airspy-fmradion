@@ -222,7 +222,7 @@ PortAudioOutput::PortAudioOutput(const PaDeviceIndex device_index,
   m_outputparams.sampleFormat = paFloat32;
   if (suggested_latency_sec >= 0.0) {
     // User-specified latency (-L): used verbatim, bypassing the floor
-    // minimum_latency_default below; main.cpp range-checks it to [1, 40] ms.
+    // minimum_latency_default below; main.cpp range-checks it to [1, 100] ms.
     m_outputparams.suggestedLatency = suggested_latency_sec;
   } else {
     m_outputparams.suggestedLatency =

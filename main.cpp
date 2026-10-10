@@ -110,7 +110,7 @@ static void usage() {
       "device\n"
       "  -L ms          Set PortAudio output suggested latency in "
       "milliseconds\n"
-      "                 valid range: 1 to 40\n"
+      "                 valid range: 1 to 100\n"
       "                 (default: floored at 40 milliseconds)\n"
       "                 (-L is ignored unless PortAudio output (-P) is "
       "used)\n"
@@ -118,14 +118,14 @@ static void usage() {
       "                 Write ms of silence into the PortAudio output once,\n"
       "                 before the first audio block (a fixed cushion\n"
       "                 against stalls; adds ms of latency)\n"
-      "                 valid range: 0 to 40 (default: 0 = off)\n"
+      "                 valid range: 0 to 100 (default: 0 = off)\n"
       "                 clamped to the granted capacity minus one audio "
       "block\n"
       "                 (use with -L 8 to -L 10; ignored unless -P is used)\n"
       "  --portaudio-prefill-adapt ms\n"
       "                 On each PortAudio underflow, add 10 ms more silence\n"
       "                 until the total prefill reaches ms (never shrinks)\n"
-      "                 valid range: 0 to 40 (default: 0 = off)\n"
+      "                 valid range: 0 to 100 (default: 0 = off)\n"
       "                 (ignored unless PortAudio output (-P) is used)\n"
       "  -T filename    Write pulse-per-second timestamps\n"
       "                 use filename '-' to write to stdout\n"
@@ -519,20 +519,20 @@ int main(int argc, char **argv) {
       break;
     case 'L':
       if (!Utility::parse_dbl(optarg, portaudio_latency_ms) ||
-          portaudio_latency_ms < 1.0 || portaudio_latency_ms > 40.0) {
+          portaudio_latency_ms < 1.0 || portaudio_latency_ms > 100.0) {
         badarg("-L");
       }
       break;
     case OPT_PA_PREFILL:
       if (!Utility::parse_dbl(optarg, portaudio_prefill_ms) ||
-          portaudio_prefill_ms < 0.0 || portaudio_prefill_ms > 40.0) {
+          portaudio_prefill_ms < 0.0 || portaudio_prefill_ms > 100.0) {
         badarg("--portaudio-prefill");
       }
       break;
     case OPT_PA_PREFILL_ADAPT:
       if (!Utility::parse_dbl(optarg, portaudio_prefill_adapt_ms) ||
           portaudio_prefill_adapt_ms < 0.0 ||
-          portaudio_prefill_adapt_ms > 40.0) {
+          portaudio_prefill_adapt_ms > 100.0) {
         badarg("--portaudio-prefill-adapt");
       }
       break;
