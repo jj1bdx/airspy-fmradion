@@ -560,7 +560,7 @@ int main(int argc, char **argv) {
   const struct option longopts[] = {
       {"modtype", required_argument, nullptr, 'm'},
       {"devtype", required_argument, nullptr, 't'},
-      {"quiet", required_argument, nullptr, 'q'},
+      {"quiet", no_argument, nullptr, 'q'},
       {"verbose", no_argument, nullptr, 'v'},
       {"config", required_argument, nullptr, 'c'},
       {"dev", required_argument, nullptr, 'd'},
