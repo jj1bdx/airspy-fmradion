@@ -234,7 +234,7 @@ PortAudioOutput::PortAudioOutput(const PaDeviceIndex device_index,
     }
   }
 
-  fmt::println(stderr, "suggestedLatency = {:f} [ms]",
+  fmt::println(stderr, "suggestedLatency = {} [ms]",
                m_outputparams.suggestedLatency * 1000);
 
   m_paerror =
