@@ -19,9 +19,7 @@
 
 #include <algorithm>
 #include <atomic>
-#include <chrono>
 #include <cmath>
-#include <condition_variable>
 #include <csignal>
 #include <cstdio>
 #include <cstdlib>
@@ -30,10 +28,8 @@
 #include <fmt/format.h>
 #include <getopt.h>
 #include <memory>
-#include <mutex>
 #include <signal.h>
 #include <sys/time.h>
-#include <thread>
 #include <unistd.h>
 
 #ifdef __APPLE__
@@ -55,6 +51,7 @@
 #include "NbfmDecode.h"
 #include "RtlSdrSource.h"
 #include "SoftFM.h"
+#include "StatusPrinter.h"
 #include "Utility.h"
 #include "git.h"
 
@@ -297,158 +294,6 @@ static void *process_signals(void *arg) {
     }
   }
 }
-
-// Convert a frame count to milliseconds.
-static double frames_to_ms(long frames, unsigned int rate) {
-  return (rate > 0) ? (1000.0 * frames / rate) : 0.0;
-}
-
-// Status values published by the decode loop (one consistent snapshot).
-struct StatusSnapshot {
-  uint64_t block = 0;
-  float ppm = 0.0f;
-  float if_db = 0.0f;
-  float af_db = 0.0f;
-  float pilot = 0.0f;
-  float agc_db = 0.0f;
-  // Number of stereo detected/lost transitions so far.
-  uint32_t stereo_events = 0;
-};
-
-// Prints the status line from its own thread so that a blocked stderr never
-// stalls the decode loop. The decode loop never blocks on this object.
-class StatusPrinter {
-public:
-  static constexpr std::chrono::milliseconds interval{100};
-
-  StatusPrinter(ModType modtype, bool verbose, const AudioOutput *output,
-                const DataBuffer<IQSample> *buffer, const Source *source)
-      : m_modtype(modtype), m_verbose(verbose), m_output(output),
-        m_buffer(buffer), m_source(source),
-        m_thread(&StatusPrinter::run, this) {}
-
-  ~StatusPrinter() { stop(); }
-
-  // Publish a snapshot unless the printer holds the lock; return success.
-  bool try_publish(const StatusSnapshot &snap) {
-    std::unique_lock<std::mutex> lock(m_mutex, std::try_to_lock);
-    if (!lock.owns_lock()) {
-      return false;
-    }
-    m_snap = snap;
-    m_fresh = true;
-    return true;
-  }
-
-  // Publish a snapshot, waiting for the lock (used once at exit).
-  void publish(const StatusSnapshot &snap) {
-    std::scoped_lock<std::mutex> lock(m_mutex);
-    m_snap = snap;
-    m_fresh = true;
-  }
-
-  // Print the last snapshot and join the thread; safe to call twice.
-  void stop() {
-    {
-      std::scoped_lock<std::mutex> lock(m_mutex);
-      m_stop = true;
-    }
-    m_cond.notify_all();
-    if (m_thread.joinable()) {
-      m_thread.join();
-    }
-  }
-
-private:
-  void run() {
-#ifdef __APPLE__
-    pthread_set_qos_class_self_np(QOS_CLASS_UTILITY, 0);
-#endif // __APPLE__
-    for (;;) {
-      bool stopping;
-      {
-        std::unique_lock<std::mutex> lock(m_mutex);
-        m_cond.wait_for(lock, interval, [this] { return m_stop; });
-        stopping = m_stop;
-      }
-      print();
-      if (stopping) {
-        break;
-      }
-    }
-  }
-
-  void print() {
-    StatusSnapshot s;
-    {
-      std::scoped_lock<std::mutex> lock(m_mutex);
-      if (!m_fresh) {
-        return;
-      }
-      s = m_snap;
-      m_fresh = false;
-    }
-    // Replay stereo transitions that happened since the last print.
-    for (uint32_t n = s.stereo_events - m_printed_events; n > 0; n--) {
-      m_stereo = !m_stereo;
-      fmt::println(stderr, "\n{} stereo signal", m_stereo ? "got" : "lost");
-    }
-    m_printed_events = s.stereo_events;
-
-    switch (m_modtype) {
-    case ModType::FM:
-      fmt::print(stderr,
-                 "\rblk={:11}:ppm={:+7.3f}:IF={:+6.1f}dB:AF={:+6.1f}dB:"
-                 "Pilot= {:8.6f}",
-                 s.block, s.ppm, s.if_db, s.af_db, s.pilot);
-      break;
-    case ModType::NBFM:
-      fmt::print(stderr, "\rblk={:11}:ppm={:+7.3f}:IF={:+6.1f}dB:AF={:+6.1f}dB",
-                 s.block, s.ppm, s.if_db, s.af_db);
-      break;
-    case ModType::AM:
-    case ModType::DSB:
-    case ModType::USB:
-    case ModType::LSB:
-    case ModType::CW:
-    case ModType::WSPR:
-      fmt::print(stderr,
-                 "\rblk={:11}:IF={:+6.1f}dB:AGC={:+6.1f}dB:AF={:+6.1f}dB",
-                 s.block, s.if_db, s.agc_db, s.af_db);
-      break;
-    }
-    if (m_verbose) {
-      fmt::print(stderr, ":Q={}/{}:DBlk={}", m_buffer->queue_size(),
-                 m_buffer->max_queue_size(), m_buffer->dropped_blocks());
-      const AudioOutput::Telemetry t = m_output->telemetry();
-      if (t.capacity_frames >= 0 && t.min_free_frames >= 0) {
-        fmt::print(
-            stderr, ":UF={}:Ring={:.1f}/{:.1f}/{:.1f}ms", t.underflows,
-            frames_to_ms(t.capacity_frames - t.last_free_frames, t.sample_rate),
-            frames_to_ms(t.capacity_frames - t.min_free_frames, t.sample_rate),
-            frames_to_ms(t.capacity_frames, t.sample_rate));
-      }
-      fmt::print(stderr, ":SDRdrop={}", m_source->dropped_samples());
-    }
-    fflush(stderr);
-  }
-
-  const ModType m_modtype;
-  const bool m_verbose;
-  const AudioOutput *m_output;
-  const DataBuffer<IQSample> *m_buffer;
-  const Source *m_source;
-  std::mutex m_mutex;
-  std::condition_variable m_cond;
-  StatusSnapshot m_snap;
-  bool m_fresh = false;
-  bool m_stop = false;
-  // Printer-thread state only.
-  uint32_t m_printed_events = 0;
-  bool m_stereo = false;
-  // Declared last: started after the other members are initialized.
-  std::thread m_thread;
-};
 
 // Print the one-line exit summary of the loss/underrun counters.
 static void print_summary(const AudioOutput &output,

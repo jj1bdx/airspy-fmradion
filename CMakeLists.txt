@@ -252,7 +252,8 @@ set(sfmbase_SOURCES
     sfmbase/NbfmDecode.cpp
     sfmbase/PhaseDiscriminator.cpp
     sfmbase/PilotPhaseLock.cpp
-    sfmbase/RtlSdrSource.cpp)
+    sfmbase/RtlSdrSource.cpp
+    sfmbase/StatusPrinter.cpp)
 
 set(sfmbase_HEADERS
     include/AfSimpleAgc.h
@@ -280,6 +281,7 @@ set(sfmbase_HEADERS
     include/RtlSdrSource.h
     include/Source.h
     include/SoftFM.h
+    include/StatusPrinter.h
     include/Utility.h)
 
 # cmake-format: off
