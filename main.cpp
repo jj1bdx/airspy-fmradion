@@ -742,6 +742,13 @@ int main(int argc, char **argv) {
                  "playing audio to PortAudio device {}: ", portaudiodev);
     }
     fmt::println(stderr, "name '{}'", audio_output->get_device_name());
+    if (portaudio_prefill_ms > 0) {
+      fmt::println(stderr, "PortAudio prefill: {} [ms]", portaudio_prefill_ms);
+    }
+    if (portaudio_prefill_ms > 0) {
+      fmt::println(stderr, "PortAudio prefill adapt: {} [ms]",
+                   portaudio_prefill_adapt_ms);
+    }
     break;
 #if defined(LIBSNDFILE_MP3_ENABLED)
   case OutputMode::MP3_FMAUDIO:
