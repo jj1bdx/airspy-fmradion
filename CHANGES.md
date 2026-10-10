@@ -109,7 +109,6 @@ Intel Mac hardware is no longer supported by airspy-fmradion, effective 20260914
 * 20250929-0: Made the following changes:
   * Changed PortAudioOutput to use the own callback code instead of the stock blocking stream, for shorter output latency. See 20230923 in this changelog.
   * PortAudio minimum latency is no longer explicitly set, and is now set to defaultHighOutputLatency. Note: this behavior can be changed by setting compilation flag `PA_LOW_LATENCY` to defaultLowOutputLatency. Practically in many cases the low output latency setting works fine, but is not the default value, for safety.
-  * Minimal `pa_ringbuffer` library code for handling the PortAudio callback was duplicated and included from PortAudio under PortAudio V19 License. Note: the ringbuffer code is *not* a Git submodule.
   * CMake minimum version is now 3.25.
 * 20250714-0: no major functionality changes from 20241208-0.
 * 20241208-0: [Use {fmt} as the output library.](https://github.com/jj1bdx/airspy-fmradion/pull/83)
