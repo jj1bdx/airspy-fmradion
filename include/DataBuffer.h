@@ -20,6 +20,7 @@
 #ifndef INCLUDE_DATABUFFER_H
 #define INCLUDE_DATABUFFER_H
 
+#include <algorithm>
 #include <condition_variable>
 #include <cstdint>
 #include <fmt/format.h>
@@ -46,6 +47,7 @@ public:
       {
         std::scoped_lock<std::mutex> lock(m_mutex);
         m_queue.push(std::move(samples));
+        m_max_queue_size = std::max(m_max_queue_size, m_queue.size());
         while (m_queue.size() > max_queue_blocks) {
           m_queue.pop();
           m_dropped_blocks++;
@@ -68,6 +70,12 @@ public:
       return m_dropped_blocks;
       // unlock m_mutex here by getting out of scope
     }
+  }
+
+  // Return the largest queue size seen (high-water mark).
+  inline std::size_t max_queue_size() const {
+    std::scoped_lock<std::mutex> lock(m_mutex);
+    return m_max_queue_size;
   }
 
   // Mark the end of the data stream.
@@ -117,6 +125,7 @@ public:
 private:
   bool m_end_marked;
   std::uint64_t m_dropped_blocks = 0;
+  std::size_t m_max_queue_size = 0;
   std::queue<std::vector<Element>> m_queue;
   // mutable: locked from the const accessors above (dropped_blocks(),
   // queue_size(), pull_end_reached()), which only read state under the lock.

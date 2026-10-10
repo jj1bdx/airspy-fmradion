@@ -20,6 +20,8 @@
 #ifndef INCLUDE_AUDIOOUTPUT_H
 #define INCLUDE_AUDIOOUTPUT_H
 
+#include <atomic>
+#include <cstdint>
 #include <string>
 
 #include "SoftFM.h"
@@ -30,6 +32,15 @@
 /// Base class for writing audio data to file or playback.
 class AudioOutput {
 public:
+  /// Output-side counters; capacity_frames < 0 means the output has no ring.
+  struct Telemetry {
+    std::uint64_t underflows = 0;
+    long capacity_frames = -1;
+    long min_free_frames = -1; // lowest free space seen (-1: none yet)
+    long last_free_frames = -1;
+    unsigned int sample_rate = 0;
+  };
+
   /// Destructor.
   virtual ~AudioOutput() {}
 
@@ -50,6 +61,9 @@ public:
   operator bool() const { return (!m_zombie) && m_error.empty(); }
 
   std::string get_device_name() const { return m_device_name; }
+
+  /// Return output counters (callable from any thread); default: none.
+  virtual Telemetry telemetry() const { return Telemetry{}; }
 
 protected:
   /// Constructor.
@@ -109,6 +123,7 @@ public:
   virtual ~PortAudioOutput() override;
   virtual bool write(const SampleVector &samples) override;
   virtual void output_close() override;
+  virtual Telemetry telemetry() const override;
 
 private:
   // Terminate PortAudio
@@ -120,6 +135,12 @@ private:
   PaStream *m_stream = nullptr;
   PaError m_paerror = paNoError;
   volk::vector<float> m_floatbuf;
+  // Telemetry: written by the writer thread, read by any thread.
+  unsigned int m_samplerate = 0;
+  long m_capacity_frames = -1;
+  std::atomic<std::uint64_t> m_underflows{0};
+  std::atomic<long> m_min_free_frames{-1};
+  std::atomic<long> m_last_free_frames{-1};
 };
 
 #endif

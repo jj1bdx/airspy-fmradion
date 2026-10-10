@@ -407,6 +407,9 @@ int AirspyHFSource::rx_callback(airspyhf_transfer_t *transfer) {
 
   AirspyHFSource *self = m_this.load();
   if (self) {
+    // Accumulate the device-reported dropped samples (never reported before).
+    self->m_dropped_samples.fetch_add(transfer->dropped_samples,
+                                      std::memory_order_relaxed);
     self->callback((float *)transfer->samples, len);
   }
 

@@ -252,6 +252,13 @@ PortAudioOutput::PortAudioOutput(const PaDeviceIndex device_index,
     add_paerror("Pa_StartStream()");
     return;
   }
+
+  // Ring capacity estimate: reported output latency times the sample rate.
+  m_samplerate = samplerate;
+  const PaStreamInfo *info = Pa_GetStreamInfo(m_stream);
+  if (info != nullptr) {
+    m_capacity_frames = static_cast<long>(info->outputLatency * samplerate);
+  }
 }
 
 // Output closing method.
@@ -304,15 +311,36 @@ bool PortAudioOutput::write(const SampleVector &samples) {
 
   m_paerror =
       Pa_WriteStream(m_stream, m_floatbuf.data(), sample_size / m_nchannels);
-  if (m_paerror == paNoError) {
-    return true;
-  } else if (m_paerror == paOutputUnderflowed) {
-    // This error is benign
+  if (m_paerror == paNoError || m_paerror == paOutputUnderflowed) {
+    // Underflow is benign for the stream but is counted.
+    if (m_paerror == paOutputUnderflowed) {
+      m_underflows.fetch_add(1, std::memory_order_relaxed);
+    }
+    // Free space right after a write is the ring's lowest, i.e. its fullest.
+    const long avail = Pa_GetStreamWriteAvailable(m_stream);
+    if (avail >= 0) {
+      m_last_free_frames.store(avail, std::memory_order_relaxed);
+      const long prev = m_min_free_frames.load(std::memory_order_relaxed);
+      if (prev < 0 || avail < prev) {
+        m_min_free_frames.store(avail, std::memory_order_relaxed);
+      }
+    }
     return true;
   } else {
     add_paerror("Pa_WriteStream()");
   }
   return false;
+}
+
+// Return the output counters.
+AudioOutput::Telemetry PortAudioOutput::telemetry() const {
+  Telemetry t;
+  t.underflows = m_underflows.load(std::memory_order_relaxed);
+  t.capacity_frames = m_capacity_frames;
+  t.min_free_frames = m_min_free_frames.load(std::memory_order_relaxed);
+  t.last_free_frames = m_last_free_frames.load(std::memory_order_relaxed);
+  t.sample_rate = m_samplerate;
+  return t;
 }
 
 // Terminate PortAudio

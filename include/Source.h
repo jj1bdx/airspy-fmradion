@@ -21,6 +21,7 @@
 #define INCLUDE_SOURCE_H
 
 #include <atomic>
+#include <cstdint>
 #include <string>
 
 #include "DataBuffer.h"
@@ -63,6 +64,11 @@ public:
   /// Return name of opened RTL-SDR device.
   std::string get_device_name() const { return m_devname; }
 
+  /// Return the total samples the device reported dropped (0 if unsupported).
+  std::uint64_t dropped_samples() const {
+    return m_dropped_samples.load(std::memory_order_relaxed);
+  }
+
   /// Return the last error, or return an empty string if there is no error.
   std::string error() {
     std::string ret(m_error);
@@ -76,6 +82,7 @@ protected:
   uint32_t m_confFreq;
   DataBuffer<IQSample> *m_buf;
   std::atomic_bool *m_stop_flag;
+  std::atomic<std::uint64_t> m_dropped_samples{0};
 };
 
 #endif // INCLUDE_SOURCE_H_
