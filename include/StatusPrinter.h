@@ -48,7 +48,8 @@ struct StatusSnapshot {
 class StatusPrinter {
 public:
   /// Interval between prints.
-  static constexpr std::chrono::milliseconds interval{100};
+  /// Set to 50msec for smooth updates.
+  static constexpr std::chrono::milliseconds interval{50};
 
   /// Start the printer thread.
   StatusPrinter(ModType modtype, bool verbose, const AudioOutput *output,
