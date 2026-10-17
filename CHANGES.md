@@ -40,6 +40,16 @@ Intel Mac hardware is no longer supported by airspy-fmradion, effective 20260914
 
 ## Changes (including requirement changes)
 
+* 20261017-0: PortAudio output telemetry and experimental prefill options, a separate status printer thread, a shorter multipath filter startup wait, and C++ cleanups. Decoded audio changes only for FM with `-E`, through the shorter wait. The PortAudio (`-P`) path has been build-verified only and still needs a field test. The changes include:
+  * New `-v`/`--verbose` option showing output, queue, and SDR drop counters, with a summary at exit (dev-status-thread 20261010)
+  * The status line and stereo lock messages are printed by a separate thread, so a stalled terminal no longer stalls decoding (dev-status-thread 20261010)
+  * Raised the `-L` maximum from 40 to 100 milliseconds
+  * Experimental `--portaudio-prefill` and `--portaudio-prefill-adapt` options (dev-status-thread 20261010)
+  * Shortened the multipath filter startup wait from 100 to 20 IF blocks (dev 20260812)
+  * The displayed FM IF level is now measured after the IF filter
+  * Fixed `-P` argument parsing, PortAudio option warnings, ring fill telemetry, and `DataBuffer` overflow reporting; see doc/BUGS_20261017.md
+  * Fewer heap allocations, and `const` and reference cleanup (dev 20260923 to dev 20260930)
+  * Dropped Intel Mac support
 * dev-status-thread 20261010: First steps against PortAudio output disruption on macOS under heavy host load (the known limitation above). This implements proposals P1 to P3, plus P4 as experimental options, of doc/PORTAUDIO_DISRUPTION_20261010.md, which reviews the causes and ranks the remedies. Decoded audio is unchanged: verified bit-exact against the previous build for FM (default, `-E 36`), AM, and NBFM file decodes. The PortAudio (`-P`) path has been build-verified only and still needs a field test.
   * New `-v`/`--verbose` option: the status line also shows the `DataBuffer` queue size and its high-water mark, dropped queue blocks, PortAudio output underflows, the estimated output ring fill (current/maximum/capacity in milliseconds), and the samples the Airspy R2 or Airspy HF+ device reported dropped. PortAudio underflows (`paOutputUnderflowed`) were previously discarded without a trace.
   * A one-line summary of these counters is printed at exit unless `-q` is given.
