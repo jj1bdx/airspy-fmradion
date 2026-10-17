@@ -206,7 +206,7 @@ PortAudioOutput::PortAudioOutput(const PaDeviceIndex device_index,
     m_outputparams.device = Pa_GetDefaultOutputDevice();
   } else {
     const PaDeviceIndex index = static_cast<PaDeviceIndex>(device_index);
-    if (index >= Pa_GetDeviceCount()) {
+    if (index < 0 || index >= Pa_GetDeviceCount()) {
       add_paerror("Device number out of range");
       return;
     }

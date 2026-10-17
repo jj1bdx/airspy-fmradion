@@ -510,7 +510,7 @@ int main(int argc, char **argv) {
       break;
     case 'P':
       outmode = OutputMode::PORTAUDIO;
-      if (0 == strncmp(optarg, "-", 1)) {
+      if (0 == strcmp(optarg, "-")) {
         portaudiodev = -1;
       } else if (!Utility::parse_int(optarg, portaudiodev) ||
                  portaudiodev < 0) {
@@ -748,6 +748,11 @@ int main(int argc, char **argv) {
     if (portaudio_prefill_adapt_ms > 0) {
       fmt::println(stderr, "PortAudio prefill adapt: {} [ms]",
                    portaudio_prefill_adapt_ms);
+      if (portaudio_prefill_adapt_ms <= portaudio_prefill_ms) {
+        fmt::println(stderr, "WARNING: --portaudio-prefill-adapt is not above "
+                             "--portaudio-prefill; no silence will be added on "
+                             "underflow");
+      }
     }
     break;
 #if defined(LIBSNDFILE_MP3_ENABLED)

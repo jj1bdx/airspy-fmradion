@@ -47,7 +47,8 @@ struct StatusSnapshot {
 /// stalls the decode loop. The decode loop never blocks on this object.
 class StatusPrinter {
 public:
-  /// Interval between prints.
+  /// Interval between checks for a new snapshot; a print happens only when
+  /// one was published since the last print.
   /// Set to 50msec for smooth updates.
   static constexpr std::chrono::milliseconds interval{50};
 

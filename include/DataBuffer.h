@@ -26,6 +26,7 @@
 #include <fmt/format.h>
 #include <mutex>
 #include <queue>
+#include <vector>
 
 // Buffer to move sample data between threads.
 
@@ -47,12 +48,12 @@ public:
       {
         std::scoped_lock<std::mutex> lock(m_mutex);
         m_queue.push(std::move(samples));
-        m_max_queue_size = std::max(m_max_queue_size, m_queue.size());
         while (m_queue.size() > max_queue_blocks) {
           m_queue.pop();
           m_dropped_blocks++;
           dropped = m_dropped_blocks;
         }
+        m_max_queue_size = std::max(m_max_queue_size, m_queue.size());
         // unlock m_mutex here by getting out of scope
       }
       if (dropped > 0) {
