@@ -89,8 +89,8 @@ private:
 class SndfileOutput : public AudioOutput {
 public:
   /// Construct libsndfile audio writer: filename (path, or "-" for stdout),
-  /// samplerate in Hz, stereo (true for stereo data), sf_info (SF_INFO.format
-  /// selects the output format).
+  /// samplerate in Hz, stereo (true for stereo data), format (SF_INFO.format
+  /// value selecting the output format).
   SndfileOutput(const std::string &filename, unsigned int samplerate,
                 bool stereo, int format);
 

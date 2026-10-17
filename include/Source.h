@@ -61,7 +61,7 @@ public:
   /// Return true if the device is OK, return false if there is an error.
   virtual operator bool() const = 0;
 
-  /// Return name of opened RTL-SDR device.
+  /// Return name of the opened device.
   std::string get_device_name() const { return m_devname; }
 
   /// Return the total samples the device reported dropped (0 if unsupported).

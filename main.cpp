@@ -735,6 +735,10 @@ int main(int argc, char **argv) {
     audio_output = std::make_unique<PortAudioOutput>(
         portaudiodev, pcmrate, stereo, portaudio_suggested_latency,
         portaudio_prefill_ms, portaudio_prefill_adapt_ms);
+    if (!(*audio_output)) {
+      // The device name is empty here; the error is reported after the switch.
+      break;
+    }
     if (portaudiodev == -1) {
       fmt::print(stderr, "playing audio to PortAudio default device: ");
     } else {

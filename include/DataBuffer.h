@@ -41,17 +41,25 @@ public:
   DataBuffer() : m_end_marked(false) {}
 
   // Add samples to the queue; if it is full, drop the oldest block and warn, so
-  // memory stays bounded when the consumer lags a real-time source.
+  // memory stays bounded when the consumer lags a real-time source. The warning
+  // is printed only at the first drop of each overflow episode (a run of
+  // consecutive pushes that each drop a block), to avoid flooding stderr from
+  // the source callback thread. It shows the running total at that time.
   inline void push(std::vector<Element> &&samples) {
     if (!samples.empty()) {
       std::uint64_t dropped = 0;
       {
         std::scoped_lock<std::mutex> lock(m_mutex);
         m_queue.push(std::move(samples));
+        const bool episode_continues = m_overflowing;
+        m_overflowing = false;
         while (m_queue.size() > max_queue_blocks) {
           m_queue.pop();
           m_dropped_blocks++;
-          dropped = m_dropped_blocks;
+          m_overflowing = true;
+          if (!episode_continues) {
+            dropped = m_dropped_blocks;
+          }
         }
         m_max_queue_size = std::max(m_max_queue_size, m_queue.size());
         // unlock m_mutex here by getting out of scope
@@ -125,6 +133,7 @@ public:
 
 private:
   bool m_end_marked;
+  bool m_overflowing = false; // the previous push dropped a block
   std::uint64_t m_dropped_blocks = 0;
   std::size_t m_max_queue_size = 0;
   std::queue<std::vector<Element>> m_queue;
