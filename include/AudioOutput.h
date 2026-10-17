@@ -29,11 +29,6 @@
 #include "portaudio.h"
 #include <sndfile.h>
 
-/// Convert a frame count at the given sample rate to milliseconds.
-inline double frames_to_ms(long frames, unsigned int rate) {
-  return (rate > 0) ? (1000.0 * frames / rate) : 0.0;
-}
-
 /// Base class for writing audio data to file or playback.
 class AudioOutput {
 public:
@@ -46,6 +41,11 @@ public:
     long prefill_frames = 0; // total silence prefill written
     unsigned int sample_rate = 0;
   };
+
+  /// Convert a frame count at the given sample rate to milliseconds.
+  inline static double frames_to_ms(long frames, unsigned int rate) {
+    return (rate > 0) ? (1000.0 * frames / rate) : 0.0;
+  }
 
   /// Destructor.
   virtual ~AudioOutput() {}

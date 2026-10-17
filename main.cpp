@@ -318,14 +318,15 @@ static void print_summary(const AudioOutput &output,
   fmt::print(stderr, "Summary: ");
   const AudioOutput::Telemetry t = output.telemetry();
   if (t.capacity_frames >= 0 && t.min_free_frames >= 0) {
-    fmt::print(
-        stderr, "PortAudio underflows={} max ring fill={:.1f}/{:.1f}ms; ",
-        t.underflows,
-        frames_to_ms(t.capacity_frames - t.min_free_frames, t.sample_rate),
-        frames_to_ms(t.capacity_frames, t.sample_rate));
+    fmt::print(stderr,
+               "PortAudio underflows={} max ring fill={:.1f}/{:.1f}ms; ",
+               t.underflows,
+               AudioOutput::frames_to_ms(t.capacity_frames - t.min_free_frames,
+                                         t.sample_rate),
+               AudioOutput::frames_to_ms(t.capacity_frames, t.sample_rate));
     if (t.prefill_frames > 0) {
       fmt::print(stderr, "prefill={:.1f}ms; ",
-                 frames_to_ms(t.prefill_frames, t.sample_rate));
+                 AudioOutput::frames_to_ms(t.prefill_frames, t.sample_rate));
     }
   }
   fmt::println(stderr,

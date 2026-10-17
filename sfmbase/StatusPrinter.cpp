@@ -125,14 +125,15 @@ void StatusPrinter::print() {
                m_buffer->max_queue_size(), m_buffer->dropped_blocks());
     const AudioOutput::Telemetry t = m_output->telemetry();
     if (t.capacity_frames >= 0 && t.min_free_frames >= 0) {
-      fmt::print(
-          stderr, ":UF={}:Ring={:.1f}/{:.1f}/{:.1f}ms", t.underflows,
-          frames_to_ms(t.capacity_frames - t.last_free_frames, t.sample_rate),
-          frames_to_ms(t.capacity_frames - t.min_free_frames, t.sample_rate),
-          frames_to_ms(t.capacity_frames, t.sample_rate));
+      fmt::print(stderr, ":UF={}:Ring={:.1f}/{:.1f}/{:.1f}ms", t.underflows,
+                 AudioOutput::frames_to_ms(
+                     t.capacity_frames - t.last_free_frames, t.sample_rate),
+                 AudioOutput::frames_to_ms(
+                     t.capacity_frames - t.min_free_frames, t.sample_rate),
+                 AudioOutput::frames_to_ms(t.capacity_frames, t.sample_rate));
       if (t.prefill_frames > 0) {
         fmt::print(stderr, ":Pre={:.1f}ms",
-                   frames_to_ms(t.prefill_frames, t.sample_rate));
+                   AudioOutput::frames_to_ms(t.prefill_frames, t.sample_rate));
       }
     }
     fmt::print(stderr, ":SDRdrop={}", m_source->dropped_samples());

@@ -406,9 +406,9 @@ bool PortAudioOutput::prime(long block_frames) {
     fmt::println(stderr,
                  "WARNING: PortAudio {} clamped to ring capacity "
                  "{:.1f} ms minus one block {:.1f} ms = {:.1f} ms",
-                 names, frames_to_ms(capacity, m_samplerate),
-                 frames_to_ms(block_frames, m_samplerate),
-                 frames_to_ms(std::max(limit, 0L), m_samplerate));
+                 names, AudioOutput::frames_to_ms(capacity, m_samplerate),
+                 AudioOutput::frames_to_ms(block_frames, m_samplerate),
+                 AudioOutput::frames_to_ms(std::max(limit, 0L), m_samplerate));
   }
   frames = std::clamp(frames, 0L, std::max(limit, 0L));
   m_adapt_cap_frames = std::clamp(cap, 0L, std::max(limit, 0L));
