@@ -161,7 +161,9 @@ private:
   volk::vector<float> m_floatbuf;
   // Telemetry: written by the writer thread, read by any thread.
   unsigned int m_samplerate = 0;
-  long m_capacity_frames = -1;
+  // Estimate from outputLatency, raised by the writer thread to the largest
+  // free space observed.
+  std::atomic<long> m_capacity_frames{-1};
   std::atomic<std::uint64_t> m_underflows{0};
   std::atomic<long> m_min_free_frames{-1};
   std::atomic<long> m_last_free_frames{-1};

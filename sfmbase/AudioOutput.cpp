@@ -260,7 +260,8 @@ PortAudioOutput::PortAudioOutput(const PaDeviceIndex device_index,
   m_samplerate = samplerate;
   const PaStreamInfo *info = Pa_GetStreamInfo(m_stream);
   if (info != nullptr) {
-    m_capacity_frames = static_cast<long>(info->outputLatency * samplerate);
+    m_capacity_frames.store(static_cast<long>(info->outputLatency * samplerate),
+                            std::memory_order_relaxed);
   }
 }
 
@@ -335,6 +336,12 @@ bool PortAudioOutput::write(const SampleVector &samples) {
     // Free space right after a write is the ring's lowest, i.e. its fullest.
     const long avail = Pa_GetStreamWriteAvailable(m_stream);
     if (avail >= 0) {
+      // Free space cannot exceed the ring size, so a larger observed value
+      // raises the estimate. telemetry() keeps the reported fill >= 0.
+      const long cap = m_capacity_frames.load(std::memory_order_relaxed);
+      if (cap >= 0 && avail > cap) {
+        m_capacity_frames.store(avail, std::memory_order_relaxed);
+      }
       m_last_free_frames.store(avail, std::memory_order_relaxed);
       const long prev = m_min_free_frames.load(std::memory_order_relaxed);
       if (prev < 0 || avail < prev) {
@@ -373,7 +380,8 @@ bool PortAudioOutput::prime(long block_frames) {
   if (m_prefill_ms <= 0.0 && m_adapt_max_ms <= 0.0) {
     return true;
   }
-  if (m_capacity_frames < 0 || m_samplerate == 0) {
+  const long capacity = m_capacity_frames.load(std::memory_order_relaxed);
+  if (capacity < 0 || m_samplerate == 0) {
     fmt::println(stderr, "WARNING: PortAudio ring capacity unknown, "
                          "prefill disabled");
     m_adapt_cap_frames = 0;
@@ -381,17 +389,24 @@ bool PortAudioOutput::prime(long block_frames) {
   }
   // The prefill plus one block must fit in the ring; otherwise the blocking
   // write would only wait for the device to drain it, i.e. stall.
-  const long limit = m_capacity_frames - block_frames;
+  const long limit = capacity - block_frames;
   const auto to_frames = [this](double ms) {
     return static_cast<long>(ms * m_samplerate / 1000.0);
   };
   long frames = to_frames(m_prefill_ms);
   long cap = to_frames(m_adapt_max_ms);
-  if (frames > limit || cap > limit) {
+  const bool prefill_clamped = m_prefill_ms > 0.0 && frames > limit;
+  const bool adapt_clamped = m_adapt_max_ms > 0.0 && cap > limit;
+  if (prefill_clamped || adapt_clamped) {
+    const char *names =
+        !adapt_clamped ? "--portaudio-prefill"
+        : !prefill_clamped
+            ? "--portaudio-prefill-adapt"
+            : "--portaudio-prefill and --portaudio-prefill-adapt";
     fmt::println(stderr,
-                 "WARNING: PortAudio prefill clamped to ring capacity "
+                 "WARNING: PortAudio {} clamped to ring capacity "
                  "{:.1f} ms minus one block {:.1f} ms = {:.1f} ms",
-                 frames_to_ms(m_capacity_frames, m_samplerate),
+                 names, frames_to_ms(capacity, m_samplerate),
                  frames_to_ms(block_frames, m_samplerate),
                  frames_to_ms(std::max(limit, 0L), m_samplerate));
   }
@@ -410,8 +425,9 @@ bool PortAudioOutput::prime(long block_frames) {
 bool PortAudioOutput::adapt() {
   const long total = m_prefill_total_frames.load(std::memory_order_relaxed);
   // Keep one (largest seen) block of room, like prime().
-  const long cap =
-      std::min(m_adapt_cap_frames, m_capacity_frames - m_max_block_frames);
+  const long cap = std::min(m_adapt_cap_frames,
+                            m_capacity_frames.load(std::memory_order_relaxed) -
+                                m_max_block_frames);
   const long step = static_cast<long>(adapt_step_ms * m_samplerate / 1000.0);
   const long add = std::min(step, cap - total);
   if (add <= 0) {
@@ -432,9 +448,14 @@ bool PortAudioOutput::adapt() {
 AudioOutput::Telemetry PortAudioOutput::telemetry() const {
   Telemetry t;
   t.underflows = m_underflows.load(std::memory_order_relaxed);
-  t.capacity_frames = m_capacity_frames;
   t.min_free_frames = m_min_free_frames.load(std::memory_order_relaxed);
   t.last_free_frames = m_last_free_frames.load(std::memory_order_relaxed);
+  // The relaxed loads may see a new free value with the old capacity.
+  t.capacity_frames = m_capacity_frames.load(std::memory_order_relaxed);
+  if (t.capacity_frames >= 0) {
+    t.capacity_frames =
+        std::max({t.capacity_frames, t.min_free_frames, t.last_free_frames});
+  }
   t.prefill_frames = m_prefill_total_frames.load(std::memory_order_relaxed);
   t.sample_rate = m_samplerate;
   return t;
