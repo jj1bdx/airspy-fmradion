@@ -88,6 +88,7 @@ private:
   // Printer-thread state only.
   uint32_t m_printed_events = 0;
   bool m_stereo = false;
+  bool m_iobuf_warned = false;
   // Declared last: started after the other members are initialized.
   std::thread m_thread;
 };

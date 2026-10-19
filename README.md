@@ -146,6 +146,7 @@ cmake --build build --target all
 * `-L ms` Set PortAudio output suggested latency in milliseconds. Valid range: 1 to 100 (default: floored at 40 milliseconds) (`-L` is ignored unless PortAudio output (`-P`) is used). See [Output latency and the `-L` option](#output-latency-and-the--l-option) for the measured delays
 * `--portaudio-prefill ms` (_experimental_) Write ms of silence into the PortAudio output once, before the first audio block (a fixed cushion against stalls; adds ms of latency). Valid range: 0 to 100 (default: 0 = off). Clamped to the granted capacity minus one audio block (use with `-L 8` to `-L 10`; ignored unless `-P` is used)
 * `--portaudio-prefill-adapt ms` (_experimental_) On each PortAudio underflow, add 10 ms more silence until the total prefill reaches ms (never shrinks). Valid range: 0 to 100 (default: 0 = off) (ignored unless PortAudio output (`-P`) is used)
+* `--realtime` (_experimental_, macOS only) Give the decode thread a time-constraint scheduling policy and an interval workgroup, so that other applications, such as Web browsers, delay it less. Default: off (ignored with a warning on other platforms)
 * `-T filename` Write pulse-per-second timestamps. Use filename '-' to write to stdout
 * `-X` Shift pilot phase (for Quadrature Multipath Monitor) (-X is ignored under mono mode (-M))
 * `-U` Set deemphasis to 75 microseconds (default: 50)

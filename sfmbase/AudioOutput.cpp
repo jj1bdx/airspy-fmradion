@@ -18,6 +18,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <algorithm>
+#include <bit>
 #include <cerrno>
 #include <cstdio>
 #include <cstring>
@@ -25,10 +26,39 @@
 #include <fmt/format.h>
 #include <unistd.h>
 #include <vector>
+#ifdef __APPLE__
+#include <CoreAudio/CoreAudio.h>
+#include <pa_mac_core.h>
+#endif // __APPLE__
 
 #include "AudioOutput.h"
 #include "SoftFM.h"
 #include "sndfile.h"
+
+#ifdef __APPLE__
+// Return the IO buffer size in frames of an output device, or -1 on failure.
+static long mac_device_buffer_frames(AudioDeviceID device) {
+  const AudioObjectPropertyAddress address = {
+      kAudioDevicePropertyBufferFrameSize, kAudioDevicePropertyScopeOutput,
+      kAudioObjectPropertyElementMain};
+  UInt32 frames = 0;
+  UInt32 size = sizeof(frames);
+  if (AudioObjectGetPropertyData(device, &address, 0, nullptr, &size,
+                                 &frames) != noErr) {
+    return -1;
+  }
+  return static_cast<long>(frames);
+}
+
+// Blocking ring size of PortAudio 19.7.0: computeRingBufferSize() in
+// pa_mac_core_utilities.c. Mirrors library internals; recheck on upgrade.
+static long mac_ring_frames(double latency_sec, double rate,
+                            long device_frames) {
+  const long size = std::max(
+      {static_cast<long>(latency_sec * rate * 2 + 0.5), 3 * device_frames, 4L});
+  return static_cast<long>(std::bit_ceil(static_cast<unsigned long>(size)));
+}
+#endif // __APPLE__
 
 // class SndfileOutput
 
@@ -250,19 +280,37 @@ PortAudioOutput::PortAudioOutput(const PaDeviceIndex device_index,
     return;
   }
 
+#ifdef __APPLE__
+  // Read the device IO buffer size now, as PortAudio did when sizing its ring.
+  const PaHostApiInfo *api =
+      Pa_GetHostApiInfo(Pa_GetDeviceInfo(m_outputparams.device)->hostApi);
+  if (api != nullptr && api->type == paCoreAudio) {
+    m_mac_device = PaMacCore_GetStreamOutputDevice(m_stream);
+    m_device_buffer_start_frames = mac_device_buffer_frames(m_mac_device);
+  }
+#endif // __APPLE__
+
   m_paerror = Pa_StartStream(m_stream);
   if (m_paerror != paNoError) {
     add_paerror("Pa_StartStream()");
     return;
   }
 
-  // Ring capacity estimate: reported output latency times the sample rate.
+  // Ring capacity estimate: reported output latency times the sample rate,
+  // which overstates the ring by the device buffer and fixed latency.
   m_samplerate = samplerate;
+  long capacity = -1;
   const PaStreamInfo *info = Pa_GetStreamInfo(m_stream);
   if (info != nullptr) {
-    m_capacity_frames.store(static_cast<long>(info->outputLatency * samplerate),
-                            std::memory_order_relaxed);
+    capacity = static_cast<long>(info->outputLatency * samplerate);
   }
+#ifdef __APPLE__
+  if (m_device_buffer_start_frames > 0) {
+    capacity = mac_ring_frames(m_outputparams.suggestedLatency, samplerate,
+                               m_device_buffer_start_frames);
+  }
+#endif // __APPLE__
+  m_capacity_frames.store(capacity, std::memory_order_relaxed);
 }
 
 // Output closing method.
@@ -325,23 +373,30 @@ bool PortAudioOutput::write(const SampleVector &samples) {
   // Copy float samples to the PortAudio buffer.
   std::copy_n(samples.data(), sample_size, m_floatbuf.data());
 
+  // Free space just before a write is the ring's highest, i.e. its trough.
+  if (!first_block) {
+    const long pre_avail = Pa_GetStreamWriteAvailable(m_stream);
+    if (pre_avail >= 0) {
+      raise_capacity(pre_avail);
+      if (pre_avail > m_max_pre_free_frames.load(std::memory_order_relaxed)) {
+        m_max_pre_free_frames.store(pre_avail, std::memory_order_relaxed);
+      }
+    }
+  }
+
   m_paerror =
       Pa_WriteStream(m_stream, m_floatbuf.data(), sample_size / m_nchannels);
   if (m_paerror == paNoError || m_paerror == paOutputUnderflowed) {
     // Underflow is benign for the stream but is counted.
     const bool underflowed = (m_paerror == paOutputUnderflowed);
     if (underflowed) {
-      m_underflows.fetch_add(1, std::memory_order_relaxed);
+      (first_block ? m_startup_underflows : m_underflows)
+          .fetch_add(1, std::memory_order_relaxed);
     }
     // Free space right after a write is the ring's lowest, i.e. its fullest.
     const long avail = Pa_GetStreamWriteAvailable(m_stream);
     if (avail >= 0) {
-      // Free space cannot exceed the ring size, so a larger observed value
-      // raises the estimate. telemetry() keeps the reported fill >= 0.
-      const long cap = m_capacity_frames.load(std::memory_order_relaxed);
-      if (cap >= 0 && avail > cap) {
-        m_capacity_frames.store(avail, std::memory_order_relaxed);
-      }
+      raise_capacity(avail);
       m_last_free_frames.store(avail, std::memory_order_relaxed);
       const long prev = m_min_free_frames.load(std::memory_order_relaxed);
       if (prev < 0 || avail < prev) {
@@ -359,14 +414,24 @@ bool PortAudioOutput::write(const SampleVector &samples) {
   return false;
 }
 
+// Free space cannot exceed the ring size, so a larger observed value raises
+// the estimate. telemetry() keeps the reported fill >= 0.
+void PortAudioOutput::raise_capacity(long avail) {
+  const long cap = m_capacity_frames.load(std::memory_order_relaxed);
+  if (cap >= 0 && avail > cap) {
+    m_capacity_frames.store(avail, std::memory_order_relaxed);
+  }
+}
+
 // Write silence_frames of silence.
-bool PortAudioOutput::write_silence(long silence_frames) {
+bool PortAudioOutput::write_silence(long silence_frames, bool startup) {
   const std::vector<float> silence(
       static_cast<std::size_t>(silence_frames) * m_nchannels, 0.0f);
   m_paerror = Pa_WriteStream(m_stream, silence.data(),
                              static_cast<unsigned long>(silence_frames));
   if (m_paerror == paOutputUnderflowed) {
-    m_underflows.fetch_add(1, std::memory_order_relaxed);
+    (startup ? m_startup_underflows : m_underflows)
+        .fetch_add(1, std::memory_order_relaxed);
   } else if (m_paerror != paNoError) {
     add_paerror("Pa_WriteStream()");
     return false;
@@ -413,7 +478,7 @@ bool PortAudioOutput::prime(long block_frames) {
   frames = std::clamp(frames, 0L, std::max(limit, 0L));
   m_adapt_cap_frames = std::clamp(cap, 0L, std::max(limit, 0L));
   if (frames > 0) {
-    if (!write_silence(frames)) {
+    if (!write_silence(frames, true)) {
       return false;
     }
     m_prefill_total_frames.store(frames, std::memory_order_relaxed);
@@ -437,7 +502,7 @@ bool PortAudioOutput::adapt() {
   if (Pa_GetStreamWriteAvailable(m_stream) < add) {
     return true;
   }
-  if (!write_silence(add)) {
+  if (!write_silence(add, false)) {
     return false;
   }
   m_prefill_total_frames.store(total + add, std::memory_order_relaxed);
@@ -448,16 +513,25 @@ bool PortAudioOutput::adapt() {
 AudioOutput::Telemetry PortAudioOutput::telemetry() const {
   Telemetry t;
   t.underflows = m_underflows.load(std::memory_order_relaxed);
+  t.startup_underflows = m_startup_underflows.load(std::memory_order_relaxed);
   t.min_free_frames = m_min_free_frames.load(std::memory_order_relaxed);
+  t.max_pre_free_frames = m_max_pre_free_frames.load(std::memory_order_relaxed);
   t.last_free_frames = m_last_free_frames.load(std::memory_order_relaxed);
   // The relaxed loads may see a new free value with the old capacity.
   t.capacity_frames = m_capacity_frames.load(std::memory_order_relaxed);
   if (t.capacity_frames >= 0) {
-    t.capacity_frames =
-        std::max({t.capacity_frames, t.min_free_frames, t.last_free_frames});
+    t.capacity_frames = std::max({t.capacity_frames, t.min_free_frames,
+                                  t.last_free_frames, t.max_pre_free_frames});
   }
   t.prefill_frames = m_prefill_total_frames.load(std::memory_order_relaxed);
   t.sample_rate = m_samplerate;
+  t.device_buffer_start_frames = m_device_buffer_start_frames;
+#ifdef __APPLE__
+  // Read here (the printer thread), never on the decode thread per block.
+  if (m_mac_device != 0) {
+    t.device_buffer_frames = mac_device_buffer_frames(m_mac_device);
+  }
+#endif // __APPLE__
   return t;
 }
 
