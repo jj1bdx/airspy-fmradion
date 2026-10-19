@@ -35,9 +35,17 @@ public:
   /// Output-side counters; capacity_frames < 0 means the output has no ring.
   struct Telemetry {
     std::uint64_t underflows = 0;
+    // Underflows reported while starting up (prime and first block).
+    std::uint64_t startup_underflows = 0;
     long capacity_frames = -1;
     long min_free_frames = -1; // lowest free space seen (-1: none yet)
+    // Highest free space seen just before a write, i.e. the ring trough
+    // (-1: none yet; the first block is excluded).
+    long max_pre_free_frames = -1;
     long last_free_frames = -1;
+    // Device IO buffer size in frames now and at stream start (-1: unknown).
+    long device_buffer_frames = -1;
+    long device_buffer_start_frames = -1;
     long prefill_frames = 0; // total silence prefill written
     unsigned int sample_rate = 0;
   };
@@ -144,8 +152,12 @@ private:
   // then add PortAudio error string to m_error and set m_zombie flag.
   void add_paerror(const std::string &msg);
 
-  // Write silence_frames of silence; count an underflow report. Return success.
-  bool write_silence(long silence_frames);
+  // Write silence_frames of silence; count an underflow report (as a
+  // start-up underflow if startup is true). Return success.
+  bool write_silence(long silence_frames, bool startup);
+
+  // Raise the capacity estimate to avail if avail is larger.
+  void raise_capacity(long avail);
 
   // Apply the prefill once, before the first audio block of block_frames.
   bool prime(long block_frames);
@@ -161,11 +173,13 @@ private:
   volk::vector<float> m_floatbuf;
   // Telemetry: written by the writer thread, read by any thread.
   unsigned int m_samplerate = 0;
-  // Estimate from outputLatency, raised by the writer thread to the largest
-  // free space observed.
+  // Ring size estimate (macOS: PortAudio's formula; else from outputLatency),
+  // raised by the writer thread to the largest free space observed.
   std::atomic<long> m_capacity_frames{-1};
   std::atomic<std::uint64_t> m_underflows{0};
+  std::atomic<std::uint64_t> m_startup_underflows{0};
   std::atomic<long> m_min_free_frames{-1};
+  std::atomic<long> m_max_pre_free_frames{-1};
   std::atomic<long> m_last_free_frames{-1};
   std::atomic<long> m_prefill_total_frames{0};
   // Prefill state: used by the writer thread only.
@@ -174,6 +188,9 @@ private:
   bool m_primed = false;
   long m_max_block_frames = 0;
   long m_adapt_cap_frames = 0;
+  // macOS: output AudioDeviceID (0 = none) and its IO buffer size at start.
+  std::uint32_t m_mac_device = 0;
+  long m_device_buffer_start_frames = -1;
 };
 
 #endif

@@ -252,6 +252,7 @@ set(sfmbase_SOURCES
     sfmbase/NbfmDecode.cpp
     sfmbase/PhaseDiscriminator.cpp
     sfmbase/PilotPhaseLock.cpp
+    sfmbase/RealtimeThread.cpp
     sfmbase/RtlSdrSource.cpp
     sfmbase/StatusPrinter.cpp)
 
@@ -278,6 +279,7 @@ set(sfmbase_HEADERS
     include/NbfmDecode.h
     include/PhaseDiscriminator.h
     include/PilotPhaseLock.h
+    include/RealtimeThread.h
     include/RtlSdrSource.h
     include/Source.h
     include/SoftFM.h
@@ -331,6 +333,12 @@ target_link_libraries(
 target_link_libraries(
   sfmbase ${SNDFILE_LIBRARY} ${AIRSPY_LIBRARY} ${AIRSPYHF_LIBRARY}
   ${RTLSDR_LIBRARY} ${LIBUSB_LIBRARY})
+
+# CoreAudio (device buffer size) and AudioToolbox (work interval)
+if(APPLE)
+  target_link_libraries(sfmbase "-framework CoreAudio"
+                        "-framework AudioToolbox")
+endif()
 
 # Installation
 
