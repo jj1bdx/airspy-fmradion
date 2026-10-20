@@ -8,7 +8,8 @@ The shell scripts hard-code the paths used on the Pi: the repository at
 `/home/kenji/src/airspy-fmradion`, the tools in `work-linux/tools/`, the
 builds in `work-linux/build-f236638/` and `work-linux/build-t7/`, and the
 run data in `work-linux/runs/`. None of these directories is in the
-repository. Change the paths before running the scripts elsewhere.
+repository, and the builds and the run data were deleted on 2026-10-20.
+Change the paths before running the scripts elsewhere.
 
 `run_pa.sh` plays with `-P` to an `snd-aloop` loopback card or to
 PipeWire. The scripts use the Airspy HF+, `sudo` (for `prlimit` and
