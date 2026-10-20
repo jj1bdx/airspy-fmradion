@@ -1,0 +1,763 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 6122657..ec4c556 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -240,6 +240,7 @@ set(sfmbase_SOURCES
+     sfmbase/AmDecode.cpp
+     sfmbase/AudioResampler.cpp
+     sfmbase/AudioOutput.cpp
++    sfmbase/BlockTrace.cpp
+     sfmbase/ConfigParser.cpp
+     sfmbase/FileSource.cpp
+     sfmbase/Filter.cpp
+@@ -263,6 +264,7 @@ set(sfmbase_HEADERS
+     include/AmDecode.h
+     include/AudioResampler.h
+     include/AudioOutput.h
++    include/BlockTrace.h
+     include/ConfigParser.h
+     include/DataBuffer.h
+     include/FileSource.h
+diff --git a/include/DataBuffer.h b/include/DataBuffer.h
+index 0687bae..afe2d5a 100644
+--- a/include/DataBuffer.h
++++ b/include/DataBuffer.h
+@@ -28,6 +28,8 @@
+ #include <queue>
+ #include <vector>
+ 
++#include "BlockTrace.h"
++
+ // Buffer to move sample data between threads.
+ 
+ template <class Element> class DataBuffer {
+@@ -38,7 +40,7 @@ public:
+   static constexpr std::size_t max_queue_blocks = 1024;
+ 
+   // Constructor.
+-  DataBuffer() : m_end_marked(false) {}
++  DataBuffer() : m_end_marked(false), m_trace(blocktrace::enabled()) {}
+ 
+   // Add samples to the queue; if it is full, drop the oldest block and warn, so
+   // memory stays bounded when the consumer lags a real-time source. The warning
+@@ -51,10 +53,16 @@ public:
+       {
+         std::scoped_lock<std::mutex> lock(m_mutex);
+         m_queue.push(std::move(samples));
++        if (m_trace) {
++          m_push_ns.push(blocktrace::now_ns());
++        }
+         const bool episode_continues = m_overflowing;
+         m_overflowing = false;
+         while (m_queue.size() > max_queue_blocks) {
+           m_queue.pop();
++          if (m_trace) {
++            m_push_ns.pop();
++          }
+           m_dropped_blocks++;
+           m_overflowing = true;
+           if (!episode_continues) {
+@@ -114,6 +122,11 @@ public:
+       std::unique_lock<std::mutex> lock(m_mutex);
+       m_cond.wait(lock, [&] { return !(m_queue.empty() && (!m_end_marked)); });
+       if (!m_queue.empty()) {
++        if (m_trace) {
++          m_last_pull_queue_len = static_cast<std::int64_t>(m_queue.size());
++          m_last_pull_push_ns = m_push_ns.front();
++          m_push_ns.pop();
++        }
+         std::swap(ret, m_queue.front());
+         m_queue.pop();
+       }
+@@ -122,6 +135,15 @@ public:
+     }
+   }
+ 
++  // Block trace (see BlockTrace.h), valid only for the thread that called
++  // pull(), right after a pull() that returned a block: the CLOCK_MONOTONIC
++  // time at which that block was pushed, and the queue size before it was
++  // removed. Both are -1 unless tracing is enabled.
++  inline std::int64_t last_pull_push_ns() const { return m_last_pull_push_ns; }
++  inline std::int64_t last_pull_queue_len() const {
++    return m_last_pull_queue_len;
++  }
++
+   // Return true if the end has been reached at the Pull side.
+   inline bool pull_end_reached() const {
+     {
+@@ -133,6 +155,11 @@ public:
+ 
+ private:
+   bool m_end_marked;
++  // Block trace: m_push_ns parallels m_queue (same length) when m_trace is set.
++  const bool m_trace;
++  std::queue<std::int64_t> m_push_ns;
++  std::int64_t m_last_pull_push_ns = -1;
++  std::int64_t m_last_pull_queue_len = -1;
+   bool m_overflowing = false; // the previous push dropped a block
+   std::uint64_t m_dropped_blocks = 0;
+   std::size_t m_max_queue_size = 0;
+diff --git a/main.cpp b/main.cpp
+index 696a03a..02ae304 100644
+--- a/main.cpp
++++ b/main.cpp
+@@ -41,6 +41,7 @@
+ #include "AirspySource.h"
+ #include "AmDecode.h"
+ #include "AudioOutput.h"
++#include "BlockTrace.h"
+ #include "DataBuffer.h"
+ #include "FileSource.h"
+ #include "FilterParameters.h"
+@@ -442,6 +443,18 @@ int main(int argc, char **argv) {
+   } else {
+     fmt::println(stderr, "Git commit unknown");
+   }
++  // Measurement-only block trace, enabled by the environment variable
++  // AFM_TRACE (see BlockTrace.h).
++  std::string git_info("unknown");
++  if (git::IsPopulated()) {
++    git_info.assign(git::CommitSHA1().data(), git::CommitSHA1().length());
++    if (git::AnyUncommittedChanges()) {
++      git_info.append(" with uncommitted changes");
++    }
++  }
++  if (!blocktrace::init(argc, argv, git_info)) {
++    exit(1);
++  }
+   fmt::println(stderr, "VOLK Version = {}.{}.{}", VOLK_VERSION_MAJOR,
+                VOLK_VERSION_MINOR, VOLK_VERSION_MAINT);
+ #if defined(LIBSNDFILE_MP3_ENABLED)
+@@ -1086,6 +1099,7 @@ int main(int argc, char **argv) {
+ 
+     // Pull next block from source buffer.
+     IQSampleVector iqsamples = source_buffer.pull();
++    blocktrace::block_pulled(block, source_buffer);
+ 
+     IQSampleVector if_downsampled_samples;
+ 
+@@ -1197,6 +1211,7 @@ int main(int argc, char **argv) {
+     // set to zero volume if the squelch is closed.
+     Utility::adjust_gain(audiosamples, if_rms >= squelch_level ? 0.5 : 0.0);
+     cycle.finish();
++    blocktrace::before_write(audiosamples_size / (stereo ? 2 : 1));
+     // Write samples to output.
+     // Treat a write failure as fatal and exit the main loop cleanly.
+     if (!audio_output->write(audiosamples)) {
+@@ -1204,6 +1219,7 @@ int main(int argc, char **argv) {
+       stop_flag.store(true);
+       break;
+     }
++    blocktrace::after_write();
+ 
+     // Publish status values for the printer thread if not in quiet mode.
+     if (up_printer) {
+@@ -1341,6 +1357,7 @@ int main(int argc, char **argv) {
+   if (!quietmode) {
+     print_summary(*audio_output, source_buffer, *up_srcsdr);
+   }
++  blocktrace::shutdown();
+   fmt::println(stderr, "airspy-fmradion terminated");
+ 
+   // Destructors of the source driver and other objects
+diff --git a/sfmbase/AudioOutput.cpp b/sfmbase/AudioOutput.cpp
+index d9967ee..bbb9437 100644
+--- a/sfmbase/AudioOutput.cpp
++++ b/sfmbase/AudioOutput.cpp
+@@ -32,6 +32,7 @@
+ #endif // __APPLE__
+ 
+ #include "AudioOutput.h"
++#include "BlockTrace.h"
+ #include "SoftFM.h"
+ #include "sndfile.h"
+ 
+@@ -60,6 +61,39 @@ static long mac_ring_frames(double latency_sec, double rate,
+ }
+ #endif // __APPLE__
+ 
++// Report the stream facts once to the block trace (see BlockTrace.h); call it
++// right after Pa_StartStream().
++static void trace_stream_facts(PaStream *stream,
++                               const PaStreamParameters &params,
++                               unsigned int samplerate) {
++  const PaDeviceInfo *device = Pa_GetDeviceInfo(params.device);
++  const PaHostApiInfo *api = Pa_GetHostApiInfo(device->hostApi);
++  const PaStreamInfo *info = Pa_GetStreamInfo(stream);
++  blocktrace::note(
++      fmt::format("pa_version={}", Pa_GetVersionInfo()->versionText));
++  blocktrace::note(fmt::format("pa_host_api={}", api->name));
++  blocktrace::note(
++      fmt::format("pa_host_api_type={}", static_cast<int>(api->type)));
++  blocktrace::note(fmt::format("pa_device_index={}", params.device));
++  blocktrace::note(fmt::format("pa_device_name={}", device->name));
++  blocktrace::note(fmt::format("pa_device_default_low_output_latency_ms={:.3f}",
++                               device->defaultLowOutputLatency * 1000));
++  blocktrace::note(
++      fmt::format("pa_device_default_high_output_latency_ms={:.3f}",
++                  device->defaultHighOutputLatency * 1000));
++  blocktrace::note(fmt::format("pa_suggested_latency_ms={:.3f}",
++                               params.suggestedLatency * 1000));
++  blocktrace::note(
++      fmt::format("pa_output_latency_ms={:.3f}", info->outputLatency * 1000));
++  blocktrace::note(fmt::format("pa_requested_sample_rate_hz={}", samplerate));
++  blocktrace::note(
++      fmt::format("pa_stream_sample_rate_hz={:.1f}", info->sampleRate));
++  blocktrace::note(fmt::format("pa_channels={}", params.channelCount));
++  // The ring is empty on ALSA at this point, so this is its size B.
++  blocktrace::note(fmt::format("pa_write_available_after_start_frames={}",
++                               Pa_GetStreamWriteAvailable(stream)));
++}
++
+ // class SndfileOutput
+ 
+ // Constructor
+@@ -311,6 +345,10 @@ PortAudioOutput::PortAudioOutput(const PaDeviceIndex device_index,
+   }
+ #endif // __APPLE__
+   m_capacity_frames.store(capacity, std::memory_order_relaxed);
++
++  if (blocktrace::enabled() && info != nullptr) {
++    trace_stream_facts(m_stream, m_outputparams, samplerate);
++  }
+ }
+ 
+ // Output closing method.
+@@ -374,8 +412,9 @@ bool PortAudioOutput::write(const SampleVector &samples) {
+   std::copy_n(samples.data(), sample_size, m_floatbuf.data());
+ 
+   // Free space just before a write is the ring's highest, i.e. its trough.
++  long pre_avail = -1;
+   if (!first_block) {
+-    const long pre_avail = Pa_GetStreamWriteAvailable(m_stream);
++    pre_avail = Pa_GetStreamWriteAvailable(m_stream);
+     if (pre_avail >= 0) {
+       raise_capacity(pre_avail);
+       if (pre_avail > m_max_pre_free_frames.load(std::memory_order_relaxed)) {
+@@ -384,8 +423,10 @@ bool PortAudioOutput::write(const SampleVector &samples) {
+     }
+   }
+ 
++  const std::int64_t t_write_start = blocktrace::stamp();
+   m_paerror =
+       Pa_WriteStream(m_stream, m_floatbuf.data(), sample_size / m_nchannels);
++  const std::int64_t t_write_end = blocktrace::stamp();
+   if (m_paerror == paNoError || m_paerror == paOutputUnderflowed) {
+     // Underflow is benign for the stream but is counted.
+     const bool underflowed = (m_paerror == paOutputUnderflowed);
+@@ -403,6 +444,11 @@ bool PortAudioOutput::write(const SampleVector &samples) {
+         m_min_free_frames.store(avail, std::memory_order_relaxed);
+       }
+     }
++    if (blocktrace::enabled()) {
++      blocktrace::pa_write(t_write_start, t_write_end,
++                           sample_size / m_nchannels, pre_avail, avail,
++                           underflowed);
++    }
+     // The start-up underflow of the first block is not a stall.
+     if (underflowed && !first_block && m_adapt_cap_frames > 0) {
+       return adapt();
+@@ -427,8 +473,18 @@ void PortAudioOutput::raise_capacity(long avail) {
+ bool PortAudioOutput::write_silence(long silence_frames, bool startup) {
+   const std::vector<float> silence(
+       static_cast<std::size_t>(silence_frames) * m_nchannels, 0.0f);
++  const bool tracing = blocktrace::enabled();
++  const long pre_avail = tracing ? Pa_GetStreamWriteAvailable(m_stream) : -1;
++  const std::int64_t t_start = blocktrace::stamp();
+   m_paerror = Pa_WriteStream(m_stream, silence.data(),
+                              static_cast<unsigned long>(silence_frames));
++  const std::int64_t t_end = blocktrace::stamp();
++  if (tracing) {
++    // 'P' for the prefill in prime(), 'A' for a step in adapt().
++    blocktrace::pa_silence(startup ? 'P' : 'A', t_start, t_end, silence_frames,
++                           pre_avail, Pa_GetStreamWriteAvailable(m_stream),
++                           m_paerror == paOutputUnderflowed);
++  }
+   if (m_paerror == paOutputUnderflowed) {
+     (startup ? m_startup_underflows : m_underflows)
+         .fetch_add(1, std::memory_order_relaxed);
+diff --git a/include/BlockTrace.h b/include/BlockTrace.h
+new file mode 100644
+index 0000000..0b116c3
+--- /dev/null
++++ b/include/BlockTrace.h
+@@ -0,0 +1,118 @@
++// airspy-fmradion
++// Software decoder for FM broadcast radio with Airspy
++//
++// Copyright (C) 2015 Edouard Griffiths, F4EXB
++// Copyright (C) 2019-2026 Kenji Rikitake, JJ1BDX
++//
++// This program is free software: you can redistribute it and/or modify
++// it under the terms of the GNU General Public License as published by
++// the Free Software Foundation, either version 3 of the License, or
++// (at your option) any later version.
++//
++// This program is distributed in the hope that it will be useful,
++// but WITHOUT ANY WARRANTY; without even the implied warranty of
++// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++// GNU General Public License for more details.
++//
++// You should have received a copy of the GNU General Public License
++// along with this program.  If not, see <https://www.gnu.org/licenses/>.
++
++#ifndef INCLUDE_BLOCKTRACE_H
++#define INCLUDE_BLOCKTRACE_H
++
++#include <cstddef>
++#include <cstdint>
++#include <ctime>
++#include <string>
++
++// Measurement-only timing trace of the decode thread, for underflow
++// measurements. It is enabled only when the environment variable AFM_TRACE
++// names an output file; otherwise each hook is one not-taken branch.
++//
++// The decode thread stores fixed-size records in a preallocated ring. A
++// separate writer thread appends them to the file as CSV. The decode thread
++// does no I/O, no allocation, and takes no lock. All timestamps are
++// CLOCK_MONOTONIC nanoseconds. The format is described in
++// doc/LINUX_UNDERFLOW_RESULTS_20261020_trace_format.md.
++
++namespace blocktrace {
++
++namespace detail {
++// Set once by init() before any other thread exists; read-only afterwards.
++inline bool g_enabled = false;
++
++void block_pulled(std::uint64_t block, std::int64_t t_push,
++                  std::int64_t queue_len);
++void before_write(std::int64_t frames);
++void after_write();
++} // namespace detail
++
++/// Return true if tracing is enabled.
++inline bool enabled() { return detail::g_enabled; }
++
++/// Return the time of a clock in nanoseconds.
++inline std::int64_t clock_ns(clockid_t clock) {
++  timespec ts;
++  clock_gettime(clock, &ts);
++  return static_cast<std::int64_t>(ts.tv_sec) * 1000000000 + ts.tv_nsec;
++}
++
++/// Return the CLOCK_MONOTONIC time in nanoseconds.
++inline std::int64_t now_ns() { return clock_ns(CLOCK_MONOTONIC); }
++
++/// Return now_ns() if tracing is enabled, or 0 if not.
++inline std::int64_t stamp() { return enabled() ? now_ns() : 0; }
++
++/// Read AFM_TRACE and, if it is set, open the trace file, write the header,
++/// and start the writer thread. Call it first in main(), on the decode
++/// thread, before any other thread is created. Return false on failure to
++/// open the file; return true if tracing is off.
++bool init(int argc, char **argv, const std::string &git_info);
++
++/// Write a one-time line to the trace header, and echo it to stderr.
++void note(const std::string &line);
++
++/// Drain the ring, write the end line, and close the file. Call it once,
++/// after the decode loop. It prints the record counts to stderr.
++void shutdown();
++
++/// Decode thread: a block was pulled from buffer. The buffer provides
++/// last_pull_push_ns() and last_pull_queue_len() (see DataBuffer).
++template <class Buffer>
++inline void block_pulled(std::uint64_t block, const Buffer &buffer) {
++  if (enabled()) {
++    detail::block_pulled(block, buffer.last_pull_push_ns(),
++                         buffer.last_pull_queue_len());
++  }
++}
++
++/// Decode thread: the decode of the block is done, and the write of frames
++/// audio frames is about to start.
++inline void before_write(std::int64_t frames) {
++  if (enabled()) {
++    detail::before_write(frames);
++  }
++}
++
++/// Decode thread: the write returned; store the record of the block.
++inline void after_write() {
++  if (enabled()) {
++    detail::after_write();
++  }
++}
++
++/// PortAudioOutput: refine the record of the block being written with the
++/// times around Pa_WriteStream() and the free frames (-1: unknown) before and
++/// after the write.
++void pa_write(std::int64_t t_start, std::int64_t t_end, std::int64_t frames,
++              std::int64_t pre_avail, std::int64_t post_avail, bool underflow);
++
++/// PortAudioOutput: store a record of a silence write; kind is 'P' for the
++/// prefill (prime) or 'A' for an adaptive prefill step.
++void pa_silence(char kind, std::int64_t t_start, std::int64_t t_end,
++                std::int64_t frames, std::int64_t pre_avail,
++                std::int64_t post_avail, bool underflow);
++
++} // namespace blocktrace
++
++#endif // INCLUDE_BLOCKTRACE_H
+diff --git a/sfmbase/BlockTrace.cpp b/sfmbase/BlockTrace.cpp
+new file mode 100644
+index 0000000..e286a59
+--- /dev/null
++++ b/sfmbase/BlockTrace.cpp
+@@ -0,0 +1,355 @@
++// airspy-fmradion
++// Software decoder for FM broadcast radio with Airspy
++//
++// Copyright (C) 2015 Edouard Griffiths, F4EXB
++// Copyright (C) 2019-2026 Kenji Rikitake, JJ1BDX
++//
++// This program is free software: you can redistribute it and/or modify
++// it under the terms of the GNU General Public License as published by
++// the Free Software Foundation, either version 3 of the License, or
++// (at your option) any later version.
++//
++// This program is distributed in the hope that it will be useful,
++// but WITHOUT ANY WARRANTY; without even the implied warranty of
++// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++// GNU General Public License for more details.
++//
++// You should have received a copy of the GNU General Public License
++// along with this program.  If not, see <https://www.gnu.org/licenses/>.
++
++#include <algorithm>
++#include <atomic>
++#include <cerrno>
++#include <chrono>
++#include <condition_variable>
++#include <cstdio>
++#include <cstdlib>
++#include <cstring>
++#include <fmt/format.h>
++#include <iterator>
++#include <memory>
++#include <mutex>
++#include <string>
++#include <thread>
++#include <unistd.h>
++#include <vector>
++#ifdef __linux__
++#include <sys/resource.h>
++#endif // __linux__
++
++#include "BlockTrace.h"
++
++namespace blocktrace {
++namespace {
++
++// Ring size in records; a power of two. At about 190 records per second,
++// the writer thread may stall for about 340 seconds before records are lost.
++constexpr std::size_t ring_records = 65536;
++constexpr std::chrono::milliseconds drain_interval{200};
++constexpr int writer_nice_increment = 10;
++
++// One trace record: a decoded block ('B'), the prefill write ('P'), or an
++// adaptive prefill write ('A'). A field that does not apply is -1.
++struct Record {
++  std::int64_t t_push = -1;
++  std::int64_t t_pull = -1;
++  std::int64_t t_decode_end = -1;
++  std::int64_t t_write_start = -1;
++  std::int64_t t_write_end = -1;
++  std::int64_t cpu_pull = -1;
++  std::int64_t cpu_decode_end = -1;
++  std::int64_t queue_len = -1;
++  std::int64_t frames = -1;
++  std::int64_t pre_avail = -1;
++  std::int64_t post_avail = -1;
++  std::uint64_t block = 0;
++  std::uint64_t dropped = 0; // records lost before this one
++  char type = 'B';
++  bool underflow = false;
++};
++
++// Single-producer single-consumer ring of records. The slots are touched at
++// construction, so the producer never takes a page fault on first use.
++class Ring {
++public:
++  Ring() : m_slots(ring_records) {}
++
++  // Producer only. If the ring is full, count the record as dropped.
++  void push(Record &rec) {
++    const std::uint64_t head = m_head.load(std::memory_order_relaxed);
++    const std::uint64_t dropped = m_dropped.load(std::memory_order_relaxed);
++    if (head - m_tail.load(std::memory_order_acquire) >= ring_records) {
++      m_dropped.store(dropped + 1, std::memory_order_relaxed);
++      return;
++    }
++    rec.dropped = dropped;
++    m_slots[head % ring_records] = rec;
++    m_head.store(head + 1, std::memory_order_release);
++  }
++
++  // Consumer only. Call fn for each stored record, then free the slots.
++  template <class Fn> std::size_t drain(Fn fn) {
++    const std::uint64_t tail = m_tail.load(std::memory_order_relaxed);
++    const std::uint64_t head = m_head.load(std::memory_order_acquire);
++    for (std::uint64_t i = tail; i < head; i++) {
++      fn(m_slots[i % ring_records]);
++    }
++    m_tail.store(head, std::memory_order_release);
++    return static_cast<std::size_t>(head - tail);
++  }
++
++  std::uint64_t dropped() const {
++    return m_dropped.load(std::memory_order_relaxed);
++  }
++
++private:
++  std::vector<Record> m_slots;
++  alignas(64) std::atomic<std::uint64_t> m_head{0};
++  alignas(64) std::atomic<std::uint64_t> m_tail{0};
++  alignas(64) std::atomic<std::uint64_t> m_dropped{0};
++};
++
++// A free-frames value from PortAudio; a negative value is an error code.
++std::int64_t avail_or_unknown(std::int64_t avail) {
++  return avail >= 0 ? avail : -1;
++}
++
++// The ring, the output file, and the writer thread.
++class Tracer {
++public:
++  explicit Tracer(FILE *file, const std::string &path)
++      : m_file(file), m_path(path) {}
++
++  ~Tracer() { stop(); }
++
++  Tracer(const Tracer &) = delete;
++  Tracer &operator=(const Tracer &) = delete;
++
++  void start() {
++    m_thread = std::thread([this] { run(); });
++  }
++
++  // Join the writer thread, write the remaining records and the end line,
++  // and close the file; safe to call twice.
++  void stop() {
++    if (m_file == nullptr) {
++      return;
++    }
++    {
++      std::scoped_lock<std::mutex> lock(m_mutex);
++      m_stop = true;
++    }
++    m_cond.notify_all();
++    if (m_thread.joinable()) {
++      m_thread.join();
++    }
++    drain();
++    fmt::println(m_file, "# end_monotonic_ns={}", now_ns());
++    fmt::println(m_file, "# records_written={}", m_written);
++    fmt::println(m_file, "# records_dropped={}", ring.dropped());
++    std::fclose(m_file);
++    m_file = nullptr;
++  }
++
++  // Write a header line to the file only.
++  void header(const std::string &line) {
++    if (m_file != nullptr) {
++      fmt::println(m_file, "# {}", line);
++    }
++  }
++
++  const std::string &path() const { return m_path; }
++  std::uint64_t written() const { return m_written; }
++
++  Ring ring;
++  // Record being assembled for the current block; decode thread only.
++  Record pending;
++  bool pa_seen = false;
++
++private:
++  void run() {
++#ifdef __linux__
++    // On Linux, the nice value applies to the calling thread only.
++    const id_t tid = static_cast<id_t>(gettid());
++    setpriority(
++        PRIO_PROCESS, tid,
++        std::min(getpriority(PRIO_PROCESS, tid) + writer_nice_increment, 19));
++#endif // __linux__
++    std::unique_lock<std::mutex> lock(m_mutex);
++    while (!m_stop) {
++      m_cond.wait_for(lock, drain_interval, [this] { return m_stop; });
++      lock.unlock();
++      drain();
++      lock.lock();
++    }
++  }
++
++  // Append the stored records to the file.
++  void drain() {
++    m_line.clear();
++    const std::size_t count = ring.drain([this](const Record &r) {
++      if (m_written == 0 && m_line.empty()) {
++        m_line = "type,block,t_push_ns,t_pull_ns,t_decode_end_ns,"
++                 "t_write_start_ns,t_write_end_ns,cpu_pull_ns,"
++                 "cpu_decode_end_ns,queue_len,frames,pre_avail,post_avail,"
++                 "underflow,dropped\n";
++      }
++      fmt::format_to(std::back_inserter(m_line),
++                     "{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}\n", r.type,
++                     r.block, r.t_push, r.t_pull, r.t_decode_end,
++                     r.t_write_start, r.t_write_end, r.cpu_pull,
++                     r.cpu_decode_end, r.queue_len, r.frames, r.pre_avail,
++                     r.post_avail, r.underflow ? 1 : 0, r.dropped);
++    });
++    if (count > 0) {
++      std::fwrite(m_line.data(), 1, m_line.size(), m_file);
++      std::fflush(m_file);
++      m_written += count;
++    }
++  }
++
++  FILE *m_file;
++  const std::string m_path;
++  std::uint64_t m_written = 0; // writer thread, then stop()
++  std::string m_line;
++  std::mutex m_mutex; // writer thread control only
++  std::condition_variable m_cond;
++  bool m_stop = false;
++  std::thread m_thread;
++};
++
++std::unique_ptr<Tracer> g_tracer;
++
++} // namespace
++
++bool init(int argc, char **argv, const std::string &git_info) {
++  const char *path = std::getenv("AFM_TRACE");
++  if (path == nullptr || *path == '\0') {
++    return true;
++  }
++  FILE *file = std::fopen(path, "w");
++  if (file == nullptr) {
++    fmt::println(stderr, "ERROR: AFM_TRACE: can not open '{}' ({})", path,
++                 std::strerror(errno));
++    return false;
++  }
++  g_tracer = std::make_unique<Tracer>(file, path);
++  detail::g_enabled = true;
++
++  // The mid point of two CLOCK_MONOTONIC readings pairs with CLOCK_REALTIME.
++  const std::int64_t mono_before = now_ns();
++  const std::int64_t realtime = clock_ns(CLOCK_REALTIME);
++  const std::int64_t mono_after = now_ns();
++  std::string command_line;
++  for (int i = 0; i < argc; i++) {
++    command_line.append(i == 0 ? "" : " ").append(argv[i]);
++  }
++  Tracer &t = *g_tracer;
++  t.header("airspy-fmradion block trace, format version 1");
++  t.header(fmt::format("clock_realtime_ns={}", realtime));
++  t.header(
++      fmt::format("clock_monotonic_ns={}", (mono_before + mono_after) / 2));
++  t.header(
++      fmt::format("clock_pair_uncertainty_ns={}", mono_after - mono_before));
++  t.header(fmt::format("git={}", git_info));
++  t.header(fmt::format("command_line={}", command_line));
++  t.header(fmt::format("pid={}", getpid()));
++#ifdef __linux__
++  // The caller is the decode thread (the main thread).
++  t.header(fmt::format("decode_tid={}", gettid()));
++#endif // __linux__
++  t.header(fmt::format("ring_records={}", ring_records));
++  t.header(fmt::format("drain_interval_ms={}", drain_interval.count()));
++  t.start();
++  fmt::println(stderr, "AFM_TRACE: writing block trace to '{}'", path);
++  return true;
++}
++
++void note(const std::string &line) {
++  if (enabled()) {
++    g_tracer->header(line);
++    fmt::println(stderr, "AFM_TRACE: {}", line);
++  }
++}
++
++void shutdown() {
++  if (enabled()) {
++    g_tracer->stop();
++    fmt::println(stderr, "AFM_TRACE: {} records written to '{}', {} dropped",
++                 g_tracer->written(), g_tracer->path(),
++                 g_tracer->ring.dropped());
++  }
++}
++
++namespace detail {
++
++void block_pulled(std::uint64_t block, std::int64_t t_push,
++                  std::int64_t queue_len) {
++  const std::int64_t t_pull = now_ns();
++  Tracer &t = *g_tracer;
++  t.pending = Record{};
++  t.pending.block = block;
++  t.pending.t_push = t_push;
++  t.pending.t_pull = t_pull;
++  t.pending.cpu_pull = clock_ns(CLOCK_THREAD_CPUTIME_ID);
++  t.pending.queue_len = queue_len;
++  t.pa_seen = false;
++}
++
++void before_write(std::int64_t frames) {
++  const std::int64_t t_decode_end = now_ns();
++  Record &r = g_tracer->pending;
++  r.t_decode_end = t_decode_end;
++  r.cpu_decode_end = clock_ns(CLOCK_THREAD_CPUTIME_ID);
++  // Overwritten by pa_write() for PortAudio.
++  r.t_write_start = t_decode_end;
++  r.frames = frames;
++}
++
++void after_write() {
++  Tracer &t = *g_tracer;
++  if (!t.pa_seen) {
++    t.pending.t_write_end = now_ns();
++  }
++  t.ring.push(t.pending);
++}
++
++} // namespace detail
++
++void pa_write(std::int64_t t_start, std::int64_t t_end, std::int64_t frames,
++              std::int64_t pre_avail, std::int64_t post_avail, bool underflow) {
++  if (!enabled()) {
++    return;
++  }
++  Tracer &t = *g_tracer;
++  Record &r = t.pending;
++  r.t_write_start = t_start;
++  r.t_write_end = t_end;
++  r.frames = frames;
++  r.pre_avail = avail_or_unknown(pre_avail);
++  r.post_avail = avail_or_unknown(post_avail);
++  r.underflow = underflow;
++  t.pa_seen = true;
++}
++
++void pa_silence(char kind, std::int64_t t_start, std::int64_t t_end,
++                std::int64_t frames, std::int64_t pre_avail,
++                std::int64_t post_avail, bool underflow) {
++  if (!enabled()) {
++    return;
++  }
++  Tracer &t = *g_tracer;
++  Record r;
++  r.type = kind;
++  // The block whose write caused the silence write.
++  r.block = t.pending.block;
++  r.t_write_start = t_start;
++  r.t_write_end = t_end;
++  r.frames = frames;
++  r.pre_avail = avail_or_unknown(pre_avail);
++  r.post_avail = avail_or_unknown(post_avail);
++  r.underflow = underflow;
++  t.ring.push(r);
++}
++
++} // namespace blocktrace
