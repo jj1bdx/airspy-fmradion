@@ -4,8 +4,8 @@ Measurement-only instrumentation for the underflow measurement campaign
 (`doc/LINUX_UNDERFLOW_MEASUREMENT_PLAN_20261020.md`, tool T7). The change
 is `doc/LINUX_UNDERFLOW_RESULTS_20261020_trace.diff`, applied to `f236638`;
 it is not part of the source tree. On the Pi it was built from a worktree
-in `work-linux/wt-t7` into `work-linux/build-t7/`, which are not in the
-repository.
+in `work-linux/wt-t7` into `work-linux/build-t7/`. Neither is in the
+repository, and the build was deleted on 2026-10-20.
 
 ## Enabling
 

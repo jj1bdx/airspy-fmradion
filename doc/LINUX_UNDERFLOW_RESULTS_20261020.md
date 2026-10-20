@@ -3,8 +3,9 @@
 Status: measurements finished on 2026-10-20. Plan:
 `doc/LINUX_UNDERFLOW_MEASUREMENT_PLAN_20261020.md`. Tools:
 `doc/linux-underflow-tools/`. The run data (captures, logs, and traces,
-5.1 GB) and the builds stay on the Pi in `work-linux/`, which is not in
-the repository; each run is in `work-linux/runs/<UTC time>-<label>/`.
+5.1 GB, one directory per run named `<UTC time>-<label>`) and the builds
+were kept on the Pi outside the repository and were deleted on
+2026-10-20.
 
 ## Setup
 
