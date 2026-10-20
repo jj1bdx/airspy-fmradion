@@ -1,21 +1,24 @@
 # Linux underflow measurements on the Raspberry Pi 5 (2026-10-20)
 
-Status: measurements finished on 2026-10-20. Plan: `work-linux/UNDERFLOW_MEASUREMENT_PLAN_20261020.md`.
-Run data: `work-linux/runs/<UTC time>-<label>/`. Tools: `work-linux/tools/`.
+Status: measurements finished on 2026-10-20. Plan:
+`doc/LINUX_UNDERFLOW_MEASUREMENT_PLAN_20261020.md`. Tools:
+`doc/linux-underflow-tools/`. The run data (captures, logs, and traces,
+5.1 GB) and the builds stay on the Pi in `work-linux/`, which is not in
+the repository; each run is in `work-linux/runs/<UTC time>-<label>/`.
 
 ## Setup
 
 - Raspberry Pi 5, Debian Trixie, kernel `6.18.50+rpt-rpi-2712` (`SMP
   PREEMPT`), governor `ondemand`, PortAudio 19.6.0 (Debian 19.6.0-1.2+b3).
-- Binaries:
-  - `work-linux/build-f236638/airspy-fmradion` (f236638, unmodified).
-  - `work-linux/build-t7/airspy-fmradion` (f236638 plus the
-    measurement-only trace, `work-linux/t7-trace-20261020.diff`; format in
-    `work-linux/T7_TRACE_FORMAT.md`). Decoded audio is byte-identical to
-    the unmodified build.
+- Binaries, each in its own build directory:
+  - f236638, unmodified.
+  - f236638 plus the measurement-only trace
+    (`doc/LINUX_UNDERFLOW_RESULTS_20261020_trace.diff`; format in
+    `doc/LINUX_UNDERFLOW_RESULTS_20261020_trace_format.md`). Decoded audio
+    is byte-identical to the unmodified build.
 - Output: PortAudio device 4, `Loopback: PCM (hw:2,0)` (ALSA, card
   Loopback_2). The capture side `plughw:2,1,0` is recorded with `arecord`
-  as FLOAT_LE and compared with a `-F` decode of the same file (gapscan),
+  as FLOAT_LE and compared with a `-F` decode of the same file (`gapscan`),
   so every inserted or lost frame is found exactly.
 - Background processes always running: `dump1090-fa` (RTL-SDR, nice -5,
   about 7% CPU), `fr24feed`, PipeWire 1.4.2 with wireplumber and
@@ -148,8 +151,8 @@ comparison is the ground truth for gaps.
 
 ### Phase 2a: static check (idle; file 20 s, HF+ 60 s per run)
 
-`tools/summarize.sh` output, condensed [M]. "Fill" is the fill before a
-write (the margin when the block arrives). "Events" are capture
+`doc/linux-underflow-tools/summarize.sh` output, condensed [M]. "Fill"
+is the fill before a write (the margin when the block arrives). "Events" are capture
 insertions (file source, against the reference) or zero runs and exact
 repeats (HF+).
 
@@ -196,7 +199,8 @@ decode thread stops (ptrace), so the source keeps delivering and a
 backlog forms. "process": `SIGSTOP` on the whole process; the file source
 drops the missed time, so no backlog forms. The HF+ keeps its USB data
 in kernel and library buffers, so it gets a backlog even in process
-mode. Per-stall results are from `tools/stall_eval.py` [M].
+mode. Per-stall results are from
+`doc/linux-underflow-tools/stall_eval.py` [M].
 
 | Run | Largest stall with no gap (before the first event) | After the first event |
 |---|---|---|
@@ -402,7 +406,8 @@ Findings:
 Method [M]: one HF+ run at `-L 40` for 150 s on the idle system (no load
 other than `dump1090-fa`, `fr24feed`, and this Claude Code session).
 `trace-cmd record -e sched:sched_switch -e sched:sched_wakeup` recorded
-120 s of it. `tools/wake_latency.py` measured, for each wake-up of the
+120 s of it. `doc/linux-underflow-tools/wake_latency.py` measured, for
+each wake-up of the
 decode thread, the time until it ran, and listed the tasks that held the
 CPU in between. The trace clock differs from `CLOCK_MONOTONIC` by a fixed
 1.9937 s. With that offset, 1999 of 2000 sampled pulls from the T7 trace
