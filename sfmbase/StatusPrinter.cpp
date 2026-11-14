@@ -25,15 +25,17 @@
 
 #include "AudioOutput.h"
 #include "DataBuffer.h"
+#include "DecodeStats.h"
 #include "Source.h"
 #include "StatusPrinter.h"
 
 StatusPrinter::StatusPrinter(ModType modtype, bool verbose,
                              const AudioOutput *output,
                              const DataBuffer<IQSample> *buffer,
-                             const Source *source)
+                             const Source *source, const DecodeStats *decode)
     : m_modtype(modtype), m_verbose(verbose), m_output(output),
-      m_buffer(buffer), m_source(source), m_thread(&StatusPrinter::run, this) {}
+      m_buffer(buffer), m_source(source), m_decode(decode),
+      m_thread(&StatusPrinter::run, this) {}
 
 StatusPrinter::~StatusPrinter() { stop(); }
 
@@ -99,6 +101,17 @@ void StatusPrinter::print() {
   }
   m_printed_events = s.stereo_events;
 
+  // Reported here so that the decode thread never writes to stderr.
+  const DecodeStats::Snapshot decode = m_decode->snapshot();
+  if (decode.policy_lost && !m_policy_warned) {
+    m_policy_warned = true;
+    fmt::println(
+        stderr,
+        "\nWARNING: --realtime: decode thread lost its time-constraint "
+        "policy (noticed at block {})",
+        decode.policy_lost_block);
+  }
+
   switch (m_modtype) {
   case ModType::FM:
     fmt::print(stderr,
@@ -156,6 +169,23 @@ void StatusPrinter::print() {
                      "frames",
                      t.device_buffer_start_frames, t.device_buffer_frames);
       }
+    }
+    // Wake: worst push-to-pull latency (blocks > 1 ms); Gap: worst push-to-push
+    // gap (gaps > 1.5 blocks); Dec: mean/max decode time (blocks over the
+    // block period), DecC: blocks over the kernel computation (--realtime).
+    const DataBufferStats b = m_buffer->stats();
+    fmt::print(stderr, ":Wake={}({}):Gap={}({})", format_ns(b.wake_max_ns),
+               b.wake_over[0], format_ns(b.gap_max_ns), b.gap_over_1_5);
+    if (decode.blocks > 0) {
+      fmt::print(stderr, ":Dec={}/{}({})",
+                 format_ns(decode.total_ns / decode.blocks),
+                 format_ns(decode.max_ns), decode.over_period);
+      if (decode.computation_ns > 0) {
+        fmt::print(stderr, ":DecC={}", decode.over_computation);
+      }
+    }
+    if (decode.policy_lost) {
+      fmt::print(stderr, ":RT=LOST");
     }
     fmt::print(stderr, ":SDRdrop={}", m_source->dropped_samples());
   }

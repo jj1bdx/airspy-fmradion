@@ -370,6 +370,10 @@ before and after starting audio in a browser.
   the `DataBuffer` mutex three times per print
   (`sfmbase/StatusPrinter.cpp:124-125`) [C]. Each hold is a few
   instructions, so the risk is low.
+  Correction (2026-11-14): libpthread raises the priority of a mutex
+  owner while a higher-priority thread waits for it, so this is a
+  smaller risk than stated. Which of the two libpthread mutex
+  implementations `std::mutex` uses was not confirmed.
 
 ## 5. Telling the reasons apart with the current build
 
@@ -438,6 +442,12 @@ which goes under `#ifdef __APPLE__`. None of them touches
 | 8 | Preallocated IQ block pool and hoisted `IfResampler`/`AudioResampler` scratch buffers | Removes per-block large allocations (R4) | Medium; changes `DataBuffer` and all sources | Mainly for the Airspy R2 and RTL-SDR |
 | 9 | Backlog trimming (old P5) | Bounds the delay that accumulates after stalls | Medium; a second discontinuity | Does not prevent underflows |
 
+Correction (2026-11-14), rank 3: on Darwin 27.2, `os_workgroup_join()`
+succeeds without the time-constraint policy, so the join does not need
+the policy first. Rank 2: the kernel does not demote a thread that
+exceeds its declared computation; the thread stays real-time and sorts
+last among real-time threads until it blocks.
+
 Rejected again: `mlock`/`mlockall`, `-ffast-math` (forbidden), smaller
 write sizes, and a separate output thread (it helps only with a
 stronger scheduling class than the decode thread, which rank 2 gives
@@ -464,9 +474,17 @@ without `--realtime`. The `-P` path is build-verified only.
   - The decode thread gets `THREAD_TIME_CONSTRAINT_POLICY` with period
     and constraint equal to one IF block and computation a quarter of
     it (1.333 ms of 5.333 ms for 2048 samples at 384 kHz), preemptible.
+    Correction (2026-11-14): the kernel raises a computation below half
+    the constraint to that value, so the computation in effect was
+    2.667 ms, not 1.333 ms, and the 0.25 fraction never took effect.
+    `preemptible` is ignored by the kernel. Since then the code requests
+    half the constraint and prints the values read back from the
+    kernel.
   - It then joins an interval workgroup made with
     `AudioWorkIntervalCreate()`. One option covers both, since the join
-    needs the policy.
+    needs the policy. Correction (2026-11-14): on Darwin 27.2 the join
+    succeeds without the policy (see the correction in section 7); one
+    option still covers both.
   - Each interval starts when a block is received and finishes before
     the output write, not after it: the write can sleep in PortAudio's
     5 ms poll while the ring is full, which is not computation.
@@ -474,7 +492,8 @@ without `--realtime`. The `-P` path is build-verified only.
     errors.
 
 Not covered: the USB-side thread does not get the policy, and for a
-file source with a custom `blklen` the declared period is wrong. The
+file source with a custom `blklen` the declared period is wrong (fixed
+2026-11-14: the period now comes from the first received block). The
 corrected capacity formula predicts that `-L 8` may give a 1024-frame
 ring instead of the 2048 assumed in section 3.2, since PortAudio
 subtracts the device's fixed latency from the request; the earlier

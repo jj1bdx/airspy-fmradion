@@ -19,16 +19,17 @@
 #ifndef INCLUDE_REALTIMETHREAD_H
 #define INCLUDE_REALTIMETHREAD_H
 
+#include <cstdint>
 #include <memory>
 
 /// Real-time scheduling of the decode thread (macOS only): a time-constraint
 /// policy, and an interval workgroup that is started and finished once per
-/// block. On other platforms start() only prints a warning.
+/// block. The constraint equals the block period; the computation is half the
+/// constraint (the kernel's minimum), clamped to 50 ms. On other platforms
+/// start() only prints a warning.
+/// start(), stop(), policy_held() and Cycle must all run on one thread.
 class RealtimeThread {
 public:
-  /// Declared computation time as a fraction of the block period.
-  static constexpr double computation_fraction = 0.25;
-
   /// Prepare for a block period of period_sec; quiet suppresses the info line.
   RealtimeThread(double period_sec, bool quiet);
 
@@ -42,8 +43,17 @@ public:
   /// Return false if the policy failed; a workgroup failure only warns.
   bool start();
 
-  /// Leave and release the workgroup; safe to call twice.
+  /// Leave and release the workgroup, restore normal scheduling of the thread
+  /// that called start(), and print the workgroup error count. Call it on that
+  /// thread; safe to call twice.
   void stop();
+
+  /// Computation time in ns that the kernel reports after start(); else 0.
+  std::uint64_t computation_ns() const;
+
+  /// Every few seconds, check that the calling thread still has the
+  /// time-constraint policy; return false once it has been lost.
+  bool policy_held();
 
   /// Mark one block cycle: begin on construction, finish on destruction or
   /// finish(). A null RealtimeThread makes this a no-op.

@@ -28,6 +28,7 @@
 #include "SoftFM.h"
 
 class AudioOutput;
+class DecodeStats;
 class Source;
 template <class Element> class DataBuffer;
 
@@ -54,7 +55,8 @@ public:
 
   /// Start the printer thread.
   StatusPrinter(ModType modtype, bool verbose, const AudioOutput *output,
-                const DataBuffer<IQSample> *buffer, const Source *source);
+                const DataBuffer<IQSample> *buffer, const Source *source,
+                const DecodeStats *decode);
 
   /// Destructor; stops the thread.
   ~StatusPrinter();
@@ -80,6 +82,7 @@ private:
   const AudioOutput *m_output;
   const DataBuffer<IQSample> *m_buffer;
   const Source *m_source;
+  const DecodeStats *m_decode;
   std::mutex m_mutex;
   std::condition_variable m_cond;
   StatusSnapshot m_snap;
@@ -89,6 +92,7 @@ private:
   uint32_t m_printed_events = 0;
   bool m_stereo = false;
   bool m_iobuf_warned = false;
+  bool m_policy_warned = false;
   // Declared last: started after the other members are initialized.
   std::thread m_thread;
 };
