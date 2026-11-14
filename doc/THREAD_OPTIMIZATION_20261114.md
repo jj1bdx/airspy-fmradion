@@ -1,9 +1,11 @@
 # Plan: optimizing the `--realtime` thread code for macOS (2026-11-14)
 
 Status: steps 1 to 3 and the document corrections of section 5 are
-implemented in `43f0a26` (see the `dev 20261114` entry in CHANGES.md).
-Steps 4 to 6 are not implemented. The text below is the plan as written
-before that commit, against `1a9e26e`.
+implemented in `43f0a26`, and step 4 in the commit after `852c880`
+(option B with a fallback to option A; see the notes under step 4 and
+the `dev 20261114` entry in CHANGES.md). Steps 5 and 6 are not
+implemented. Apart from those notes, the text below is the plan as
+written before `43f0a26`, against `1a9e26e`.
 Branch: `dev-macos-realtime-thread`.
 Scope: `include/RealtimeThread.h`, `sfmbase/RealtimeThread.cpp`, the
 decode loop in `main.cpp`, `include/DataBuffer.h`, `StatusPrinter`, and
@@ -259,6 +261,33 @@ test round.
 - This needs a way to pass the `--realtime` setting and the block period
   to the source classes, for example through the existing `Source`
   configuration path.
+
+Implementation notes (2026-11-14, added with the implementation):
+
+- Implemented: B, gated and with A as the fallback. `ProducerPolicy` in
+  `RealtimeThread.h` takes a `task_threads()` snapshot before and after
+  the start call and applies the policy to the new threads only if there
+  are exactly two (libairspyhf and libairspy each create a consumer and
+  a transfer thread with `pthread_create()` before the start call
+  returns). Any other count applies the policy to none of them; the first
+  `rx_callback` then applies it to the consumer thread only (option A).
+- The start call itself takes milliseconds before it creates the
+  threads (`airspyhf_start()` and `airspy_start_rx()` first do USB
+  control transfers). With `--realtime`, `main()` therefore calls
+  `Source::wait_realtime_ready()` after a successful `start()` and waits
+  at most 2 s for the source thread to finish deciding, so that it
+  creates no thread (`StatusPrinter`) inside the snapshot window. Every
+  source thread calls `ProducerPolicy::mark_ready()` after its decision,
+  also when the start call or the policy failed. A timeout only prints a
+  warning. Without `--realtime` there is no wait.
+- `Source::set_realtime()` passes the flag before `start()`. Each source
+  computes its own block period: block length divided by sample rate.
+- FileSource also gets the policy, for timing tests (the blocks marked
+  `--realtime` in `FileSource.cpp` can be deleted).
+- Known limits: the libusb run-loop thread is not covered. A thread that
+  an unrelated component creates in the same window makes the count
+  differ and selects the fallback (for example CoreAudio or libdispatch
+  threads with `-P`).
 
 ### Step 5: workgroup scope (small, with step 4 or later)
 

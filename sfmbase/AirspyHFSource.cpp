@@ -358,6 +358,11 @@ bool AirspyHFSource::start(DataBuffer<IQSample> *buf,
     fmt::println(stderr, "AirspyHFSource::start: starting");
 #endif
     m_running = true;
+    // --realtime: period of one library block (airspyhf_get_output_size()).
+    const double rate = static_cast<double>(m_sampleRate);
+    make_producer("Airspy HF", (m_dev && rate > 0.0)
+                                   ? airspyhf_get_output_size(m_dev) / rate
+                                   : 0.0);
     m_thread = std::make_unique<std::thread>(run, m_dev, m_stop_flag);
     return true;
   } else {
@@ -371,11 +376,31 @@ void AirspyHFSource::run(airspyhf_device *dev, std::atomic_bool *stop_flag) {
 #ifdef DEBUG_AIRSPYHFSOURCE
   fmt::println(stderr, "AirspyHFSource::run");
 #endif
+  AirspyHFSource *self = m_this.load();
+  ProducerPolicy *policy = self ? self->m_producer.get() : nullptr;
+
+  // --realtime: airspyhf_start() creates exactly two threads (consumer and
+  // transfer) before it returns; give them the policy.
+  ProducerPolicy::ThreadSet before =
+      policy ? ProducerPolicy::snapshot() : ProducerPolicy::ThreadSet();
   airspyhf_error rc = (airspyhf_error)airspyhf_start(dev, rx_callback, nullptr);
+  if (policy && rc == AIRSPYHF_SUCCESS) {
+    ProducerPolicy::ThreadSet after = ProducerPolicy::snapshot();
+    policy->apply_new(before, after, 2);
+  }
+  if (policy) {
+    policy->mark_ready(); // also when the start call failed
+  }
 
   if (rc == AIRSPYHF_SUCCESS) {
     while (!stop_flag->load() && (airspyhf_is_streaming(dev) == true)) {
       Utility::millisleep(100);
+      if (policy) {
+        policy->tick();
+      }
+    }
+    if (policy) {
+      policy->check(); // the library threads are still running
     }
   } else {
     fmt::println(stderr, "AirspyHFSource::run: Cannot start Airspy HF Rx: {}",
@@ -387,6 +412,9 @@ bool AirspyHFSource::stop() {
 #ifdef DEBUG_AIRSPYHFSOURCE
   fmt::println(stderr, "AirspyHFSource::stop");
 #endif
+  if (m_producer) {
+    m_producer->check(); // last check before the library threads end
+  }
   if (m_dev) {
     airspyhf_error rc = (airspyhf_error)airspyhf_stop(m_dev);
     if (rc != AIRSPYHF_SUCCESS) {
@@ -407,6 +435,9 @@ int AirspyHFSource::rx_callback(airspyhf_transfer_t *transfer) {
 
   AirspyHFSource *self = m_this.load();
   if (self) {
+    if (self->m_producer) {
+      self->m_producer->on_callback();
+    }
     // Accumulate the device-reported dropped samples (never reported before).
     self->m_dropped_samples.fetch_add(transfer->dropped_samples,
                                       std::memory_order_relaxed);

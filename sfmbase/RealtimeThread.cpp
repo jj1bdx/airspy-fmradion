@@ -17,10 +17,15 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <algorithm>
+#include <chrono>
+#include <condition_variable>
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
 #include <fmt/format.h>
+#include <mutex>
+#include <string>
+#include <vector>
 #ifdef __APPLE__
 #include <AudioToolbox/AudioWorkInterval.h>
 #include <mach/mach.h>
@@ -41,8 +46,75 @@ constexpr double max_period_abs = 4294967295.0;
 // Computation limits accepted by the kernel.
 constexpr double min_computation_ns = 50.0e3;
 constexpr double max_computation_ns = 50.0e6;
-// Interval between policy checks in policy_held().
+// Interval between policy checks in policy_held() and ProducerPolicy::tick().
 constexpr double policy_check_interval_ns = 2.0e9;
+
+std::uint32_t ns_to_abs(const mach_timebase_info_data_t &tb, double ns) {
+  return static_cast<std::uint32_t>(ns * tb.denom / tb.numer);
+}
+
+double abs_to_ns(const mach_timebase_info_data_t &tb, std::uint64_t abs) {
+  return static_cast<double>(abs) * tb.numer / tb.denom;
+}
+
+// Build the policy for a block period: constraint = period, computation =
+// half the constraint (the kernel's minimum) clamped to the kernel's limits.
+// Return false if the period or the timebase is unusable.
+bool make_time_constraint(double period_sec, mach_timebase_info_data_t &tb,
+                          thread_time_constraint_policy_data_t &policy) {
+  const double period_ns = period_sec * 1.0e9;
+  if (!(period_sec > 0.0) || mach_timebase_info(&tb) != KERN_SUCCESS ||
+      tb.numer == 0 || tb.denom == 0 ||
+      !(period_ns * tb.denom / tb.numer <= max_period_abs)) {
+    return false;
+  }
+  // The kernel raises a computation below constraint / 2 to that value, so
+  // request it explicitly. Above 100 ms the computation is clamped to the
+  // kernel's 50 ms limit and the constraint stays at the period.
+  const double computation_ns =
+      std::clamp(period_ns / 2.0, min_computation_ns, max_computation_ns);
+  policy.period = ns_to_abs(tb, period_ns);
+  policy.computation = ns_to_abs(tb, computation_ns);
+  policy.constraint = policy.period;
+  policy.preemptible = TRUE; // ignored by the kernel
+  return true;
+}
+
+// Read the stored time-constraint policy. Return false if the thread has none
+// or the query failed (kr is then not KERN_SUCCESS).
+bool get_time_constraint(mach_port_t thread,
+                         thread_time_constraint_policy_data_t &out,
+                         kern_return_t &kr) {
+  mach_msg_type_number_t count = THREAD_TIME_CONSTRAINT_POLICY_COUNT;
+  boolean_t get_default = FALSE;
+  kr = thread_policy_get(thread, THREAD_TIME_CONSTRAINT_POLICY,
+                         reinterpret_cast<thread_policy_t>(&out), &count,
+                         &get_default);
+  return kr == KERN_SUCCESS && !get_default;
+}
+
+// Set the policy on a thread and read back what the kernel stored. readback is
+// false if the read failed; applied then holds the requested values.
+kern_return_t set_time_constraint(mach_port_t thread,
+                                  thread_time_constraint_policy_data_t policy,
+                                  thread_time_constraint_policy_data_t &applied,
+                                  bool &readback) {
+  const kern_return_t kr =
+      thread_policy_set(thread, THREAD_TIME_CONSTRAINT_POLICY,
+                        reinterpret_cast<thread_policy_t>(&policy),
+                        THREAD_TIME_CONSTRAINT_POLICY_COUNT);
+  applied = policy;
+  readback = false;
+  if (kr == KERN_SUCCESS) {
+    thread_time_constraint_policy_data_t got;
+    kern_return_t gkr;
+    if (get_time_constraint(thread, got, gkr)) {
+      applied = got;
+      readback = true;
+    }
+  }
+  return kr;
+}
 } // namespace
 
 struct RealtimeThread::Impl {
@@ -73,12 +145,10 @@ struct RealtimeThread::Impl {
   }
 
   double abs_to_ns(std::uint64_t abs) const {
-    return static_cast<double>(abs) * timebase.numer / timebase.denom;
+    return ::abs_to_ns(timebase, abs);
   }
 
-  std::uint32_t ns_to_abs(double ns) const {
-    return static_cast<std::uint32_t>(ns * timebase.denom / timebase.numer);
-  }
+  std::uint32_t ns_to_abs(double ns) const { return ::ns_to_abs(timebase, ns); }
 };
 
 RealtimeThread::RealtimeThread(double period_sec, bool quiet)
@@ -91,34 +161,21 @@ RealtimeThread::~RealtimeThread() { stop(); }
 
 bool RealtimeThread::start() {
   Impl &d = *m_impl;
-  const double period_ns = d.period_sec * 1.0e9;
-  if (!(d.period_sec > 0.0) ||
-      mach_timebase_info(&d.timebase) != KERN_SUCCESS ||
-      d.timebase.numer == 0 || d.timebase.denom == 0 ||
-      !(period_ns * d.timebase.denom / d.timebase.numer <= max_period_abs)) {
+  thread_time_constraint_policy_data_t policy;
+  if (!make_time_constraint(d.period_sec, d.timebase, policy)) {
     fmt::println(stderr, "WARNING: --realtime: invalid block period or "
                          "timebase; running without it");
     return false;
   }
-  // The kernel raises a computation below constraint / 2 to that value, so
-  // request it explicitly. Above 100 ms the computation is clamped to the
-  // kernel's 50 ms limit and the constraint stays at the period.
-  const double computation_ns =
-      std::clamp(period_ns / 2.0, min_computation_ns, max_computation_ns);
-  thread_time_constraint_policy_data_t policy;
-  policy.period = d.ns_to_abs(period_ns);
-  policy.computation = d.ns_to_abs(computation_ns);
-  policy.constraint = policy.period;
-  policy.preemptible = TRUE; // ignored by the kernel
   d.period_abs = policy.period;
   d.check_interval_abs = d.ns_to_abs(policy_check_interval_ns);
   d.owner = pthread_self();
 
   const mach_port_t thread = pthread_mach_thread_np(d.owner);
+  thread_time_constraint_policy_data_t applied;
+  bool readback = false;
   const kern_return_t kr =
-      thread_policy_set(thread, THREAD_TIME_CONSTRAINT_POLICY,
-                        reinterpret_cast<thread_policy_t>(&policy),
-                        THREAD_TIME_CONSTRAINT_POLICY_COUNT);
+      set_time_constraint(thread, policy, applied, readback);
   if (kr != KERN_SUCCESS) {
     fmt::println(stderr,
                  "WARNING: --realtime: thread_policy_set() failed ({}); "
@@ -128,20 +185,10 @@ bool RealtimeThread::start() {
   }
   d.policy_set = true;
 
-  // Read back what the kernel stored.
-  thread_time_constraint_policy_data_t applied = policy;
-  mach_msg_type_number_t count = THREAD_TIME_CONSTRAINT_POLICY_COUNT;
-  boolean_t get_default = FALSE;
-  bool readback = true;
-  if (thread_policy_get(thread, THREAD_TIME_CONSTRAINT_POLICY,
-                        reinterpret_cast<thread_policy_t>(&applied), &count,
-                        &get_default) != KERN_SUCCESS ||
-      get_default) {
+  if (!readback) {
     fmt::println(stderr,
                  "WARNING: --realtime: thread_policy_get() did not return the "
                  "applied policy; showing requested values");
-    applied = policy;
-    readback = false;
   }
   d.computation_ns =
       static_cast<std::uint64_t>(d.abs_to_ns(applied.computation));
@@ -230,15 +277,12 @@ bool RealtimeThread::policy_held() {
   }
   d.next_check_abs = now + d.check_interval_abs;
   thread_time_constraint_policy_data_t current;
-  mach_msg_type_number_t count = THREAD_TIME_CONSTRAINT_POLICY_COUNT;
-  boolean_t get_default = FALSE;
-  if (thread_policy_get(pthread_mach_thread_np(pthread_self()),
-                        THREAD_TIME_CONSTRAINT_POLICY,
-                        reinterpret_cast<thread_policy_t>(&current), &count,
-                        &get_default) != KERN_SUCCESS) {
-    return true; // unknown; do not report a loss
+  kern_return_t kr;
+  if (get_time_constraint(pthread_mach_thread_np(pthread_self()), current,
+                          kr)) {
+    return true;
   }
-  return !get_default;
+  return kr != KERN_SUCCESS; // a failed query is unknown, not a loss
 }
 
 // The interval covers the decode work of one block. It starts when the block
@@ -274,6 +318,311 @@ void RealtimeThread::end_cycle() {
   }
 }
 
+// ProducerPolicy: time-constraint policy for SDR producer threads.
+
+namespace {
+// Unique id of a thread given its port; 0 if the thread is gone.
+std::uint64_t thread_unique_id(mach_port_t thread) {
+  thread_identifier_info_data_t info;
+  mach_msg_type_number_t count = THREAD_IDENTIFIER_INFO_COUNT;
+  if (thread_info(thread, THREAD_IDENTIFIER_INFO,
+                  reinterpret_cast<thread_info_t>(&info),
+                  &count) != KERN_SUCCESS) {
+    return 0;
+  }
+  return info.thread_id;
+}
+
+std::uint64_t current_unique_id() {
+  std::uint64_t id = 0;
+  pthread_threadid_np(nullptr, &id);
+  return id;
+}
+} // namespace
+
+struct ProducerPolicy::Impl {
+  struct Entry {
+    mach_port_t port; // owned send right
+    std::uint64_t id;
+    int state; // 0 not checked, 1 held, 2 lost
+  };
+
+  std::string name;
+  bool quiet = false;
+  bool valid = false;
+  mach_timebase_info_data_t timebase{};
+  thread_time_constraint_policy_data_t policy{};
+  std::uint64_t check_interval_abs = 0;
+
+  std::mutex ready_mutex; // guards ready
+  std::condition_variable ready_cv;
+  bool ready = false;
+
+  std::mutex mutex; // guards everything below
+  std::vector<Entry> entries;
+  thread_time_constraint_policy_data_t applied{};
+  bool readback = false;
+  const char *how = "";
+  std::string warning;     // set by apply_self(); printed by tick()
+  bool report_due = false; // a result is ready to be printed by tick()
+  std::uint64_t callback_id = 0;
+  std::uint64_t next_check_abs = 0;
+};
+
+ProducerPolicy::ProducerPolicy(const char *name, double period_sec, bool quiet)
+    : m_impl(std::make_unique<Impl>()) {
+  Impl &d = *m_impl;
+  d.name = name;
+  d.quiet = quiet;
+  d.valid = make_time_constraint(period_sec, d.timebase, d.policy);
+  if (!d.valid) {
+    fmt::println(stderr,
+                 "WARNING: --realtime: {}: invalid block period or timebase; "
+                 "producer threads run without it",
+                 d.name);
+    d.ready = true; // nothing to wait for
+    return;
+  }
+  d.check_interval_abs = ns_to_abs(d.timebase, policy_check_interval_ns);
+  d.next_check_abs = mach_absolute_time() + d.check_interval_abs;
+}
+
+ProducerPolicy::~ProducerPolicy() {
+  for (const Impl::Entry &e : m_impl->entries) {
+    mach_port_deallocate(mach_task_self(), e.port);
+  }
+}
+
+void ProducerPolicy::ThreadSet::release() {
+  for (const std::uint32_t port : m_ports) {
+    if (port != MACH_PORT_NULL) {
+      mach_port_deallocate(mach_task_self(), port);
+    }
+  }
+  m_ports.clear();
+  m_ids.clear();
+}
+
+bool ProducerPolicy::apply_self(const char *how) {
+  Impl &d = *m_impl;
+  if (!d.valid) {
+    return false;
+  }
+  // The send right from mach_thread_self() is kept for later checks.
+  const mach_port_t self = mach_thread_self();
+  thread_time_constraint_policy_data_t applied;
+  bool readback = false;
+  const kern_return_t kr =
+      set_time_constraint(self, d.policy, applied, readback);
+  const std::lock_guard<std::mutex> lock(d.mutex);
+  if (kr != KERN_SUCCESS) {
+    mach_port_deallocate(mach_task_self(), self);
+    d.warning = fmt::format(
+        "WARNING: --realtime: {}: thread_policy_set() failed ({}); the "
+        "thread runs without it",
+        d.name, mach_error_string(kr));
+    d.report_due = true;
+    return false;
+  }
+  d.entries.push_back({self, current_unique_id(), 0});
+  d.applied = applied;
+  d.readback = readback;
+  d.how = how;
+  d.report_due = true;
+  return true;
+}
+
+ProducerPolicy::ThreadSet ProducerPolicy::snapshot() {
+  ThreadSet set;
+  thread_act_array_t list = nullptr;
+  mach_msg_type_number_t count = 0;
+  if (task_threads(mach_task_self(), &list, &count) != KERN_SUCCESS) {
+    return set;
+  }
+  for (mach_msg_type_number_t i = 0; i < count; i++) {
+    const std::uint64_t id = thread_unique_id(list[i]);
+    if (id == 0) {
+      mach_port_deallocate(mach_task_self(), list[i]); // already exited
+    } else {
+      set.m_ports.push_back(list[i]);
+      set.m_ids.push_back(id);
+    }
+  }
+  vm_deallocate(mach_task_self(), reinterpret_cast<vm_address_t>(list),
+                count * sizeof(thread_act_t));
+  return set;
+}
+
+bool ProducerPolicy::apply_new(const ThreadSet &before, ThreadSet &after,
+                               std::size_t expected) {
+  Impl &d = *m_impl;
+  bool ok = false;
+  if (d.valid) {
+    std::vector<std::size_t> fresh;
+    for (std::size_t i = 0; i < after.m_ids.size(); i++) {
+      if (std::find(before.m_ids.begin(), before.m_ids.end(), after.m_ids[i]) ==
+          before.m_ids.end()) {
+        fresh.push_back(i);
+      }
+    }
+    if (fresh.size() != expected) {
+      fmt::println(stderr,
+                   "WARNING: --realtime: {}: {} new threads after the start "
+                   "call (expected {}); using the callback thread only",
+                   d.name, fresh.size(), expected);
+    } else {
+      std::size_t done = 0;
+      for (const std::size_t i : fresh) {
+        thread_time_constraint_policy_data_t applied;
+        bool readback = false;
+        const kern_return_t kr =
+            set_time_constraint(after.m_ports[i], d.policy, applied, readback);
+        if (kr != KERN_SUCCESS) {
+          fmt::println(stderr,
+                       "WARNING: --realtime: {}: thread_policy_set() failed "
+                       "({}) on a library thread",
+                       d.name, mach_error_string(kr));
+          continue;
+        }
+        const std::lock_guard<std::mutex> lock(d.mutex);
+        d.entries.push_back({after.m_ports[i], after.m_ids[i], 0});
+        after.m_ports[i] = MACH_PORT_NULL; // ownership moved to the entry
+        d.applied = applied;
+        d.readback = readback;
+        done++;
+      }
+      ok = (done == expected);
+      if (done > 0) {
+        const std::lock_guard<std::mutex> lock(d.mutex);
+        d.how = "threads created by the start call";
+        d.report_due = true;
+      }
+    }
+  }
+  // Without a full result, the first callback thread gets the policy.
+  m_fallback.store(!ok, std::memory_order_release);
+  m_decided.store(true, std::memory_order_release);
+  return ok;
+}
+
+void ProducerPolicy::mark_ready() {
+  Impl &d = *m_impl;
+  {
+    const std::lock_guard<std::mutex> lock(d.ready_mutex);
+    d.ready = true;
+  }
+  d.ready_cv.notify_all();
+}
+
+bool ProducerPolicy::wait_ready(std::chrono::milliseconds timeout) {
+  Impl &d = *m_impl;
+  std::unique_lock<std::mutex> lock(d.ready_mutex);
+  if (d.ready_cv.wait_for(lock, timeout, [&d] { return d.ready; })) {
+    return true;
+  }
+  lock.unlock();
+  fmt::println(stderr,
+               "WARNING: --realtime: {}: the source did not finish starting "
+               "within {} ms; continuing",
+               d.name, timeout.count());
+  return false;
+}
+
+void ProducerPolicy::first_callback() {
+  Impl &d = *m_impl;
+  if (!m_decided.load(std::memory_order_acquire)) {
+    return; // apply_new() has not finished; try again on the next block
+  }
+  const std::uint64_t id = current_unique_id();
+  if (m_fallback.load(std::memory_order_acquire) && d.valid) {
+    apply_self("callback thread, fallback");
+  }
+  {
+    const std::lock_guard<std::mutex> lock(d.mutex);
+    d.callback_id = id;
+  }
+  m_callback_seen.store(true, std::memory_order_release);
+}
+
+void ProducerPolicy::check() {
+  Impl &d = *m_impl;
+  const std::lock_guard<std::mutex> lock(d.mutex);
+  for (Impl::Entry &e : d.entries) {
+    thread_time_constraint_policy_data_t current;
+    kern_return_t kr;
+    if (get_time_constraint(e.port, current, kr)) {
+      e.state = 1;
+    } else if (kr == KERN_SUCCESS) {
+      e.state = 2; // the thread has the default policy: lost
+    } // a failed query (exited thread) keeps the previous state
+  }
+}
+
+void ProducerPolicy::tick() {
+  Impl &d = *m_impl;
+  if (!d.valid) {
+    return;
+  }
+  bool due = false;
+  std::string message;
+  {
+    const std::lock_guard<std::mutex> lock(d.mutex);
+    const std::uint64_t now = mach_absolute_time();
+    due = now >= d.next_check_abs;
+    if (due) {
+      d.next_check_abs = now + d.check_interval_abs;
+    }
+    if (d.report_due) {
+      d.report_due = false;
+      if (!d.warning.empty()) {
+        message = std::move(d.warning);
+        d.warning.clear();
+      } else if (!d.quiet) {
+        message = fmt::format(
+            "realtime: {}: policy on {} thread(s) ({}): constraint {:.3f} ms "
+            "({} abs), computation {:.3f} ms ({} abs), {} values",
+            d.name, d.entries.size(), d.how,
+            abs_to_ns(d.timebase, d.applied.constraint) * 1.0e-6,
+            d.applied.constraint,
+            abs_to_ns(d.timebase, d.applied.computation) * 1.0e-6,
+            d.applied.computation, d.readback ? "kernel" : "requested");
+      }
+    }
+  }
+  // Print outside the lock: a blocked stderr must not hold up the callback.
+  if (!message.empty()) {
+    fmt::println(stderr, "{}", message);
+  }
+  if (due) {
+    check();
+  }
+}
+
+std::string ProducerPolicy::summary() {
+  Impl &d = *m_impl;
+  const std::lock_guard<std::mutex> lock(d.mutex);
+  if (d.entries.empty()) {
+    return std::string();
+  }
+  int held = 0;
+  int lost = 0;
+  bool callback_listed = (d.callback_id == 0);
+  for (const Impl::Entry &e : d.entries) {
+    held += (e.state == 1);
+    lost += (e.state == 2);
+    callback_listed = callback_listed || (e.id == d.callback_id);
+  }
+  const int unchecked = static_cast<int>(d.entries.size()) - held - lost;
+  std::string line = fmt::format(
+      "Summary: {} producer threads: time-constraint policy on {}, held at "
+      "last check={}, lost={}, not checked={}",
+      d.name, d.entries.size(), held, lost, unchecked);
+  if (!callback_listed) {
+    line += "; WARNING: the callback thread is not among them";
+  }
+  return line;
+}
+
 #else // __APPLE__
 
 struct RealtimeThread::Impl {};
@@ -297,6 +646,34 @@ bool RealtimeThread::policy_held() { return true; }
 void RealtimeThread::begin_cycle() {}
 
 void RealtimeThread::end_cycle() {}
+
+struct ProducerPolicy::Impl {};
+
+ProducerPolicy::ProducerPolicy(const char *, double, bool) {}
+
+ProducerPolicy::~ProducerPolicy() = default;
+
+void ProducerPolicy::ThreadSet::release() {}
+
+bool ProducerPolicy::apply_self(const char *) { return false; }
+
+ProducerPolicy::ThreadSet ProducerPolicy::snapshot() { return ThreadSet(); }
+
+bool ProducerPolicy::apply_new(const ThreadSet &, ThreadSet &, std::size_t) {
+  return false;
+}
+
+void ProducerPolicy::mark_ready() {}
+
+bool ProducerPolicy::wait_ready(std::chrono::milliseconds) { return true; }
+
+void ProducerPolicy::first_callback() {}
+
+void ProducerPolicy::check() {}
+
+void ProducerPolicy::tick() {}
+
+std::string ProducerPolicy::summary() { return std::string(); }
 
 #endif // __APPLE__
 

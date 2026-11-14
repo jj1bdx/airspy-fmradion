@@ -131,7 +131,8 @@ static void usage() {
       "                 valid range: 0 to 100 (default: 0 = off)\n"
       "                 (ignored unless PortAudio output (-P) is used)\n"
       "  --realtime     Give the decode thread a time-constraint scheduling\n"
-      "                 policy and an interval workgroup (experimental,\n"
+      "                 policy and an interval workgroup, and the SDR source\n"
+      "                 threads a time-constraint policy (experimental,\n"
       "                 macOS only; ignored on other platforms)\n"
       "  -T filename    Write pulse-per-second timestamps\n"
       "                 use filename '-' to write to stdout\n"
@@ -978,7 +979,12 @@ int main(int argc, char **argv) {
   DataBuffer<IQSample> source_buffer;
 
   // Start reading from device in separate thread.
-  up_srcsdr->start(&source_buffer, &stop_flag);
+  up_srcsdr->set_realtime(realtime, quietmode);
+  if (up_srcsdr->start(&source_buffer, &stop_flag)) {
+    // --realtime: no thread may be created until the source has applied
+    // its policy; a failed start is handled below.
+    up_srcsdr->wait_realtime_ready();
+  }
 
   // Reported by GitHub @bstalk: (!up_srcadr) doesn't work for gcc of Debian.
   if (!(*up_srcsdr)) {
@@ -1420,6 +1426,10 @@ int main(int argc, char **argv) {
 
   if (!quietmode) {
     print_summary(*audio_output, source_buffer, *up_srcsdr, decode_stats);
+    const std::string producer_line = up_srcsdr->producer_policy_summary();
+    if (!producer_line.empty()) {
+      fmt::println(stderr, "{}", producer_line);
+    }
   } else if (policy_lost) {
     fmt::println(stderr,
                  "WARNING: --realtime: decode thread lost its time-constraint "

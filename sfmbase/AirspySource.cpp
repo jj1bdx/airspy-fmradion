@@ -426,6 +426,9 @@ bool AirspySource::start(DataBuffer<IQSample> *buf,
     fmt::println(stderr, "AirspySource::start: starting");
 #endif
     m_running = true;
+    // --realtime: libairspy delivers 65536 complex samples per callback
+    // (262144-byte transfers, 16-bit I/Q, no packing).
+    make_producer("Airspy", m_sampleRate > 0 ? 65536.0 / m_sampleRate : 0.0);
     m_thread = std::make_unique<std::thread>(run, m_dev, stop_flag);
     return true;
   } else {
@@ -439,11 +442,31 @@ void AirspySource::run(airspy_device *dev, std::atomic_bool *stop_flag) {
 #ifdef DEBUG_AIRSPYSOURCE
   fmt::println(stderr, "AirspySource::run");
 #endif
+  AirspySource *self = m_this.load();
+  ProducerPolicy *policy = self ? self->m_producer.get() : nullptr;
+
+  // --realtime: airspy_start_rx() creates exactly two threads (consumer and
+  // transfer) before it returns; give them the policy.
+  ProducerPolicy::ThreadSet before =
+      policy ? ProducerPolicy::snapshot() : ProducerPolicy::ThreadSet();
   airspy_error rc = (airspy_error)airspy_start_rx(dev, rx_callback, 0);
+  if (policy && rc == AIRSPY_SUCCESS) {
+    ProducerPolicy::ThreadSet after = ProducerPolicy::snapshot();
+    policy->apply_new(before, after, 2);
+  }
+  if (policy) {
+    policy->mark_ready(); // also when the start call failed
+  }
 
   if (rc == AIRSPY_SUCCESS) {
     while (!stop_flag->load() && (airspy_is_streaming(dev) == AIRSPY_TRUE)) {
       Utility::millisleep(100);
+      if (policy) {
+        policy->tick();
+      }
+    }
+    if (policy) {
+      policy->check(); // before airspy_stop_rx() ends the library threads
     }
 
     rc = (airspy_error)airspy_stop_rx(dev);
@@ -465,6 +488,9 @@ bool AirspySource::stop() {
 #endif
   // Force the run() loop to fall through even if the caller did not
   // already set *m_stop_flag, so join() cannot deadlock.
+  if (m_producer) {
+    m_producer->check(); // last check before the library threads end
+  }
   if (m_dev) {
     airspy_error rc = (airspy_error)airspy_stop_rx(m_dev);
     if (rc != AIRSPY_SUCCESS) {
@@ -485,6 +511,9 @@ int AirspySource::rx_callback(airspy_transfer_t *transfer) {
 
   AirspySource *self = m_this.load();
   if (self) {
+    if (self->m_producer) {
+      self->m_producer->on_callback();
+    }
     // Accumulate the device-reported dropped samples (never reported before).
     self->m_dropped_samples.fetch_add(transfer->dropped_samples,
                                       std::memory_order_relaxed);
