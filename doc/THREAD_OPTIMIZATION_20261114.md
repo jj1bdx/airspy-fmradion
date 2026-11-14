@@ -4,8 +4,9 @@ Status: steps 1 to 3 and the document corrections of section 5 are
 implemented in `43f0a26`, and step 4 in the commit after `852c880`
 (option B with a fallback to option A; see the notes under step 4 and
 the `dev 20261114` entry in CHANGES.md). Steps 5 and 6 are not
-implemented. Apart from those notes, the text below is the plan as
-written before `43f0a26`, against `1a9e26e`.
+implemented. Apart from those notes and section 8, the text below is
+the plan as written before `43f0a26`, against `1a9e26e`. Section 8
+explains the timing summary printed at exit, as of `f14bf4c`.
 Branch: `dev-macos-realtime-thread`.
 Scope: `include/RealtimeThread.h`, `sfmbase/RealtimeThread.cpp`, the
 decode loop in `main.cpp`, `include/DataBuffer.h`, `StatusPrinter`, and
@@ -373,3 +374,158 @@ The sources read were the GitHub `main` or `master` branches of
 `apple-oss-distributions/xnu`, `apple-oss-distributions/libpthread`,
 `libusb/libusb`, `airspy/airspyhf`, `airspy/airspyone_host`, and
 librtlsdr, as of 2026-11-14. No copy is kept.
+
+## 8. Reading the timing summary printed at exit
+
+At exit the program prints `Summary:` lines to stderr unless `-q` is
+given; `-v` is not needed. The first line (PortAudio underflows, ring
+fill, `DataBuffer` queue, dropped blocks and samples) existed before
+this work. The lines below were added by steps 1 and 4. The first three
+are printed with and without `--realtime`, so a run with the option can
+be compared with a run without it.
+
+Example, from a file decode of `test-files/piano_iqtest.wav` with
+`-v --realtime` on the Mac mini (M2 Pro) at `f14bf4c`:
+
+```
+Summary: DataBuffer queue=0 max=15 dropped blocks=0; SDR dropped samples=0
+Summary: wake latency n=3733 max=82us >1ms=0 >2ms=0 >5ms=0 >10ms=0 >20ms=0; histogram [us): 2-4:37 4-8:399 8-16:917 16-32:1821 32-64:542 64-128:17
+Summary: backlog pulls=17 max age=79.6ms; push gap max=5.6ms >1.5x period=0 >3x period=0
+Summary: decode blocks=3750 period=5.3ms mean=0.3ms max=3.3ms >period=0 >computation(2.7ms)=1; realtime policy held
+Summary: FileSource producer threads: time-constraint policy on 1, held at last check=1, lost=0, not checked=0
+```
+
+Times are shown in microseconds (`us`, rounded) below 0.1 ms and in
+milliseconds with one decimal otherwise. All times are wall-clock times
+from `std::chrono::steady_clock`. All counts cover the whole run.
+
+### 8.1 `wake latency`
+
+This line covers the blocks that arrived while the decode thread was
+blocked in `DataBuffer::pull()` on an empty queue. For each such block
+the latency is the time from the source thread's `push()` call to the
+moment `pull()` is about to return the block. It contains the
+condition-variable wake-up and the time the decode thread waited to be
+scheduled. This is the delay that `--realtime` on the decode thread is
+meant to shorten.
+
+| Field | Meaning |
+| ----- | ------- |
+| `n` | Number of blocks measured this way |
+| `max` | Longest wake latency |
+| `>1ms` to `>20ms` | Number of blocks whose latency exceeded 1, 2, 5, 10, and 20 ms. Each count includes the ones after it |
+| `histogram [us)` | Number of blocks per latency range in microseconds, as `low-high:count`. Each range includes its lower limit and excludes its upper limit, and is twice as wide as the one before. Only ranges with at least one block are printed. The first range is `0-1`, and the last is `16384+` (16.4 ms and above) |
+
+How to read it: on an idle machine the values are tens of microseconds.
+A late wake-up takes time from the output ring, whose tolerance is about
+10 to 65 ms depending on `-L` (section 3.2 of
+doc/UNDERFLOW_RESEARCH_20261019.md). Counts in `>5ms` and above that
+appear together with `UF=` increases point to a late decode thread. If
+`UF=` rises while these counts stay at zero, the cause is elsewhere:
+the source side (section 8.2) or the CoreAudio IO thread.
+
+### 8.2 `backlog pulls` and `push gap`
+
+| Field | Meaning |
+| ----- | ------- |
+| `backlog pulls` | Number of blocks that were pushed while the decode thread was not waiting, so they sat in the queue. These blocks are not in the wake latency line |
+| `max age` | Longest time such a block spent between `push()` and the return of `pull()` |
+| `push gap max` | Longest time between two consecutive `push()` calls of the source |
+| `>1.5x period` | Number of gaps longer than 1.5 block periods |
+| `>3x period` | Number of gaps longer than 3 block periods |
+
+The block period is the length of the first received block divided by
+the device sample rate; it is the `period` value on the decode line.
+The two gap counters start when the decode thread has received the
+first block. `push gap max` covers all pushes.
+
+How to read it:
+
+- A backlog means the decode thread was busy or stalled when blocks
+  arrived. With `--realtime` a backlog of 15 to 30 blocks and a `max
+  age` of 80 to 150 ms appear at start, because the first block sets up
+  the thread policy and the workgroup while the source keeps producing.
+  This start-up effect also shows as `max=` on the `DataBuffer` line.
+  Backlog pulls that keep increasing during a run (visible only by
+  comparing runs of different length, since `-v` does not show this
+  field) mean stalls after the start.
+- The push gap shows the source side: the SDR, the USB transfer, and
+  the vendor library threads, or the pacing sleep of the file source. A
+  source that delivers evenly has a `push gap max` close to one period.
+  Gaps above 1.5 or 3 periods mean the source threads ran late or the
+  device delivered late; with an Airspy device, compare with `SDR
+  dropped samples`. Step 4 gives these threads the policy to reduce
+  such gaps. For the file source, two runs each gave 8.0 to 12.0 ms
+  without `--realtime` and 5.4 ms with it.
+
+### 8.3 `decode`
+
+The decode time of a block runs from the return of `pull()` to the
+point just before the audio output write. It covers the same span as
+the workgroup interval. It is wall-clock time, so it includes any time
+during which the decode thread was preempted. The line is omitted if no
+block was decoded.
+
+| Field | Meaning |
+| ----- | ------- |
+| `blocks` | Number of decoded blocks |
+| `period` | Block period, as defined in section 8.2 |
+| `mean`, `max` | Mean and longest decode time per block |
+| `>period` | Number of blocks whose decode time exceeded one block period |
+| `>computation(X)` | Only with `--realtime`. Number of blocks whose decode time exceeded X, the computation value of the thread policy as read back from the kernel (half the constraint) |
+| `realtime policy held` or `LOST (noticed at block N)` | Only with `--realtime`. Result of the check, made every 2 seconds on the decode thread, that the thread still has the time-constraint policy |
+
+How to read it:
+
+- `mean` against `period` is the load of the decode thread: 0.3 ms of
+  5.3 ms is about 6 %.
+- `>period` above zero means decoding was slower than real time for
+  those blocks, either from load (for example a long multipath filter
+  on a slow machine) or from preemption.
+- A thread that uses more CPU time than its computation value within
+  one wake-up is ranked last among real-time threads until it blocks
+  (section 1.1). `>computation` counts wall-clock time, so it is an
+  upper limit for the number of such events. One count per run has
+  appeared in every file decode so far and is probably the first block;
+  this is not confirmed. A count that grows during the run means the
+  computation value is too small for the decode settings.
+- `LOST` means the kernel removed the policy. This has not been
+  observed. The status printer also prints one warning when it happens,
+  and with `-q` the warning is printed at exit.
+
+### 8.4 `<source> producer threads`
+
+Printed only with `--realtime`, and only if at least one source thread
+received the policy. The name is `Airspy HF`, `Airspy`, `RTL-SDR`, or
+`FileSource`.
+
+| Field | Meaning |
+| ----- | ------- |
+| `time-constraint policy on N` | Number of source threads that received the policy. Expected: 2 for the Airspy HF+ and Airspy R2/Mini (the library's consumer and transfer threads), 1 for RTL-SDR and the file source |
+| `held at last check` | Number of those threads that still had the policy at the last check. Checks run every 2 seconds and once more just before the source stops |
+| `lost` | Number of those threads found without the policy |
+| `not checked` | Number of those threads that were never checked successfully, for example because the thread had already ended |
+| `WARNING: the callback thread is not among them` | Printed only if the thread that runs the data callback is not one of the N threads. It means the thread enumeration selected the wrong threads |
+
+How to read it: for an Airspy device, `policy on 1` means the fallback
+was used and only the consumer thread has the policy; the startup line
+then says `(callback thread, fallback)`, and a warning at start gives
+the number of new threads that was found. `held` should equal N and
+`lost` should be 0.
+
+### 8.5 Other lines at exit
+
+- `realtime: N workgroup interval errors (first: ...)`: printed before
+  the summary, unless `-q`, if a workgroup interval call failed during
+  the run. The decode thread only counts these errors.
+- With `-q` no summary is printed. Only the warning about a lost decode
+  thread policy is printed, if that happened.
+
+### 8.6 The same values during the run
+
+With `-v` the status line shows a subset: `Wake=max(n)` with the count
+above 1 ms, `Gap=max(n)` with the count above 1.5 periods,
+`Dec=mean/max(n)` with the count above one period, `DecC=n` (above the
+computation value, `--realtime` only), and `RT=LOST`. The histogram,
+the other threshold counts, the backlog fields, and the producer thread
+line appear only in the summary.
