@@ -131,9 +131,10 @@ static void usage() {
       "                 valid range: 0 to 100 (default: 0 = off)\n"
       "                 (ignored unless PortAudio output (-P) is used)\n"
       "  --realtime     Give the decode thread a time-constraint scheduling\n"
-      "                 policy and an interval workgroup, and the SDR source\n"
-      "                 threads a time-constraint policy (experimental,\n"
-      "                 macOS only; ignored on other platforms)\n"
+      "                 policy, and an interval workgroup with PortAudio\n"
+      "                 output (-P), and the SDR source threads a\n"
+      "                 time-constraint policy (experimental, macOS only;\n"
+      "                 ignored on other platforms)\n"
       "  -T filename    Write pulse-per-second timestamps\n"
       "                 use filename '-' to write to stdout\n"
       "  -X             Shift pilot phase (for Quadrature Multipath Monitor)\n"
@@ -1160,7 +1161,9 @@ int main(int argc, char **argv) {
       source_buffer.set_nominal_period_ns(
           static_cast<std::uint64_t>(period_sec * 1.0e9));
       if (realtime) {
-        up_realtime = std::make_unique<RealtimeThread>(period_sec, quietmode);
+        // The workgroup is joined only for PortAudio output.
+        up_realtime = std::make_unique<RealtimeThread>(
+            period_sec, outmode == OutputMode::PORTAUDIO, quietmode);
         if (!up_realtime->start()) {
           up_realtime.reset();
         }
@@ -1173,8 +1176,9 @@ int main(int argc, char **argv) {
     // Decode time starts here, as for the workgroup interval.
     const auto decode_start = std::chrono::steady_clock::now();
 
-    // Workgroup interval of the decode work; ends before the output write,
-    // which may wait for the output ring and is not computation.
+    // Workgroup interval of the decode work (PortAudio output only); ends
+    // before the output write, which may wait for the output ring and is not
+    // computation.
     RealtimeThread::Cycle cycle(up_realtime.get());
 
     double prev_block_time = block_time;

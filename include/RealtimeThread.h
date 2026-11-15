@@ -28,15 +28,17 @@
 #include <vector>
 
 /// Real-time scheduling of the decode thread (macOS only): a time-constraint
-/// policy, and an interval workgroup that is started and finished once per
-/// block. The constraint equals the block period; the computation is half the
-/// constraint (the kernel's minimum), clamped to 50 ms. On other platforms
-/// start() only prints a warning.
+/// policy and, if requested, an interval workgroup that is started and
+/// finished once per block. The constraint equals the block period; the
+/// computation is half the constraint (the kernel's minimum), clamped to
+/// 50 ms. On other platforms start() only prints a warning.
 /// start(), stop(), policy_held() and Cycle must all run on one thread.
 class RealtimeThread {
 public:
-  /// Prepare for a block period of period_sec; quiet suppresses the info line.
-  RealtimeThread(double period_sec, bool quiet);
+  /// Prepare for a block period of period_sec. use_workgroup also creates and
+  /// joins the interval workgroup; without it Cycle does nothing. quiet
+  /// suppresses the info line.
+  RealtimeThread(double period_sec, bool use_workgroup, bool quiet);
 
   /// Leave the workgroup if joined.
   ~RealtimeThread();
@@ -44,8 +46,9 @@ public:
   RealtimeThread(const RealtimeThread &) = delete;
   RealtimeThread &operator=(const RealtimeThread &) = delete;
 
-  /// Apply the policy to the calling thread, then join the workgroup.
-  /// Return false if the policy failed; a workgroup failure only warns.
+  /// Apply the policy to the calling thread, then join the workgroup if it
+  /// was requested. Return false if the policy failed; a workgroup failure
+  /// only warns.
   bool start();
 
   /// Leave and release the workgroup, restore normal scheduling of the thread
@@ -61,7 +64,8 @@ public:
   bool policy_held();
 
   /// Mark one block cycle: begin on construction, finish on destruction or
-  /// finish(). A null RealtimeThread makes this a no-op.
+  /// finish(). A null RealtimeThread, or one without a joined workgroup,
+  /// makes this a no-op.
   class Cycle {
   public:
     explicit Cycle(RealtimeThread *rt) : m_rt(rt) {

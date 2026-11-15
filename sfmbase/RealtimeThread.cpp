@@ -119,6 +119,7 @@ kern_return_t set_time_constraint(mach_port_t thread,
 
 struct RealtimeThread::Impl {
   double period_sec = 0.0;
+  bool use_workgroup = false;
   bool quiet = false;
   mach_timebase_info_data_t timebase{};
   std::uint64_t period_abs = 0;     // Mach absolute time units
@@ -151,9 +152,11 @@ struct RealtimeThread::Impl {
   std::uint32_t ns_to_abs(double ns) const { return ::ns_to_abs(timebase, ns); }
 };
 
-RealtimeThread::RealtimeThread(double period_sec, bool quiet)
+RealtimeThread::RealtimeThread(double period_sec, bool use_workgroup,
+                               bool quiet)
     : m_impl(std::make_unique<Impl>()) {
   m_impl->period_sec = period_sec;
+  m_impl->use_workgroup = use_workgroup;
   m_impl->quiet = quiet;
 }
 
@@ -194,10 +197,17 @@ bool RealtimeThread::start() {
       static_cast<std::uint64_t>(d.abs_to_ns(applied.computation));
   d.next_check_abs = mach_absolute_time() + d.check_interval_abs;
 
-  bool wg_joined = false;
-  d.workgroup = AudioWorkIntervalCreate("airspy-fmradion decode",
-                                        OS_CLOCK_MACH_ABSOLUTE_TIME, nullptr);
-  if (d.workgroup == nullptr) {
+  // The workgroup is for audio device output only; see section 3, step 5 of
+  // doc/THREAD_OPTIMIZATION_20261114.md.
+  const char *wg_state = "not used";
+  if (d.use_workgroup) {
+    wg_state = "not joined";
+    d.workgroup = AudioWorkIntervalCreate("airspy-fmradion decode",
+                                          OS_CLOCK_MACH_ABSOLUTE_TIME, nullptr);
+  }
+  if (!d.use_workgroup) {
+    // Time-constraint policy alone.
+  } else if (d.workgroup == nullptr) {
     fmt::println(stderr,
                  "WARNING: --realtime: AudioWorkIntervalCreate() failed; "
                  "running without a workgroup");
@@ -210,7 +220,7 @@ bool RealtimeThread::start() {
     d.workgroup = nullptr;
   } else {
     d.joined = true;
-    wg_joined = true;
+    wg_state = "joined";
   }
 
   if (!d.quiet) {
@@ -221,7 +231,7 @@ bool RealtimeThread::start() {
         readback ? "kernel" : "requested", d.abs_to_ns(applied.period) * 1.0e-6,
         applied.period, d.abs_to_ns(applied.computation) * 1.0e-6,
         applied.computation, d.abs_to_ns(applied.constraint) * 1.0e-6,
-        applied.constraint, wg_joined ? "joined" : "not joined");
+        applied.constraint, wg_state);
   }
   return true;
 }
@@ -627,7 +637,7 @@ std::string ProducerPolicy::summary() {
 
 struct RealtimeThread::Impl {};
 
-RealtimeThread::RealtimeThread(double, bool) {}
+RealtimeThread::RealtimeThread(double, bool, bool) {}
 
 RealtimeThread::~RealtimeThread() = default;
 
