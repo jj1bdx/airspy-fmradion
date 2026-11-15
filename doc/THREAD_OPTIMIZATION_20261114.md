@@ -549,3 +549,110 @@ above 1 ms, `Gap=max(n)` with the count above 1.5 periods,
 computation value, `--realtime` only), and `RT=LOST`. The histogram,
 the other threshold counts, the backlog fields, and the producer thread
 line appear only in the summary.
+
+### 8.7 Expected values with `--realtime`
+
+This section states, for each summary value, what a run with
+`--realtime` should show if the option works as intended, and which
+values mean that it does not. It was written on 2026-11-15 against
+`02797a9`.
+
+The limits come from two sources: the file decodes of sections 4 and 8,
+and the probe measurements of section 1.5. No run with `-P` or with an
+SDR device has been made, so the limits for those cases are what the
+design intends, not measured results. Revise them after the field test.
+
+Two rules apply to all values:
+
+- Compare a run with `--realtime` against a run without it, with the
+  same source, the same `-L`, the same load, and the same length.
+- `--realtime` changes when threads run, not how much work they do. A
+  value that depends only on the amount of work (`decode mean`) should
+  not change. The decoded audio must not change either.
+
+#### `DataBuffer` and `SDR dropped samples`
+
+| Value | Expected with `--realtime` | Not as intended |
+| ----- | -------------------------- | --------------- |
+| `queue` | 0 or a few blocks at exit | A value near `max`: the decode thread was behind at the end |
+| `max` | The start-up backlog, 15 to 30 blocks (section 8.2), and no more | A higher value, or one that grows with the length of the run |
+| `dropped blocks` | 0 | Any other value: the queue reached 1024 blocks |
+| `SDR dropped samples` | 0, or no more than without the option | More than without the option |
+
+#### `wake latency`
+
+| Value | Expected with `--realtime` | Not as intended |
+| ----- | -------------------------- | --------------- |
+| `n` | `decode blocks` minus `backlog pulls` | Much lower: many blocks were pulled from a backlog |
+| `max` | Below 1 ms, with and without load. The file decodes gave 82 us, and the probe 27 to 46 us under 10 to 14 busy threads | 1 ms or more |
+| `>1ms` to `>20ms` | All 0 | Any count above 0. A count in `>5ms` or above is long enough to matter against the output ring (10 to 65 ms) |
+| `histogram` | Most blocks in the ranges from 8 to 64 us, and the same shape under load as on an idle machine | Blocks moving to higher ranges when load is added. Without the option this shift is expected (section 1.5) |
+
+The main criterion of the decode thread policy is that `max` and the
+histogram do not change when load is added. Idle values with and
+without the option are about equal, so an idle comparison shows
+nothing.
+
+#### `backlog pulls` and `push gap`
+
+| Value | Expected with `--realtime` | Not as intended |
+| ----- | -------------------------- | --------------- |
+| `backlog pulls` | About the `DataBuffer` `max` value: only the blocks queued during the start-up. The same in a short and in a long run | A value that grows with the length of the run |
+| `max age` | The start-up value, 80 to 150 ms | A higher value. It means a stall after the start, since the start-up backlog is the oldest one that the setup itself causes |
+| `push gap max` | Below 1.5 block periods. The file source gave 5.4 ms for a 5.3 ms period | 1.5 periods or more |
+| `>1.5x period` | 0, or no more than without the option | More than without the option |
+| `>3x period` | 0 | Any count above 0 |
+
+The start-up backlog is a known cost of `--realtime`, not a failure:
+the policy is set at the first block while the source keeps producing.
+With file output it has no effect on the result. Whether it stays as
+added latency with `-P` is an open field test item.
+
+The push gap of a file source is set by its pacing sleep. For a device
+it also depends on the USB transfer size and the vendor library, which
+have not been measured; use the run without the option as the
+reference.
+
+#### `decode`
+
+| Value | Expected with `--realtime` | Not as intended |
+| ----- | -------------------------- | --------------- |
+| `blocks` | The same as without the option for a file source. Equal to wake latency `n` plus `backlog pulls` | A lower count for the same file |
+| `period` | The source block length divided by the sample rate; 5.3 ms for the Airspy HF+ at 384 kHz and for the default file source | A value that differs from the run without the option |
+| `mean` | The same as without the option, and below the computation value | Above the computation value: the decode settings need more CPU time than the policy requests |
+| `max` | Below `period` | `period` or more |
+| `>period` | 0 | Any count above 0 |
+| `>computation(X)` | 0 or 1. One count has appeared in every FM file decode and is probably the first block | A count that grows during the run |
+| X in `>computation(X)` | Half of `period` (2.7 ms for 5.3 ms), up to the 50 ms limit | Another value: the kernel changed the request |
+| policy state | `realtime policy held` | `LOST (noticed at block N)` |
+
+`max` is wall-clock time and includes preemption. Without the option,
+`max` under load can approach or exceed `period` while `mean` stays the
+same; with the option it should stay close to the idle value.
+
+#### `<source> producer threads`
+
+| Value | Expected with `--realtime` | Not as intended |
+| ----- | -------------------------- | --------------- |
+| The line itself | Present | Absent: no source thread received the policy |
+| `time-constraint policy on N` | 2 for the Airspy HF+ and Airspy R2/Mini, 1 for RTL-SDR and the file source | 1 for an Airspy device: the fallback was used |
+| `held at last check` | Equal to N | Lower than N |
+| `lost` | 0 | Any other value |
+| `not checked` | 0 | Any other value, unless the source ended by itself before the last check |
+| `WARNING: the callback thread is not among them` | Absent | Present |
+
+#### Other output
+
+| Output | Expected with `--realtime` | Not as intended |
+| ------ | -------------------------- | --------------- |
+| Startup line `realtime: ... workgroup` | `joined` with `-P`, `not used` with any other output (step 5) | `not joined`, or `not used` with `-P` |
+| `realtime: N workgroup interval errors` | Absent | Present |
+| `PortAudio underflows` (first `Summary:` line, `-P` only) | No more underflows after the start than without the option under the same load. Fewer under load is the purpose of the option | More than without the option |
+| Decoded audio (file output) | Byte for byte the same as without the option | Any difference |
+
+The underflow count is the result that the option exists for, and it is
+the one value here that no test has measured yet. The other values show
+whether the threads were scheduled as requested. If they all meet the
+limits above and underflows still occur, the cause is outside the
+threads that the option covers: the libusb run-loop thread, the device,
+or the CoreAudio IO thread (section 6, question 4).
