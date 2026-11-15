@@ -45,6 +45,10 @@ public:
 private:
   std::unique_ptr<r8b::CDSPResampler> m_cdspr_re;
   std::unique_ptr<r8b::CDSPResampler> m_cdspr_im;
+  // Deinterleaved input of process(); members so that the capacity is reused
+  // and no allocation happens per block.
+  DoubleVector m_samples_in_re;
+  DoubleVector m_samples_in_im;
 };
 
 #endif
