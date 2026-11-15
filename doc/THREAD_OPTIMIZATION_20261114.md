@@ -3,8 +3,10 @@
 Status: steps 1 to 3 and the document corrections of section 5 are
 implemented in `43f0a26`, and step 4 in the commit after `852c880`
 (option B with a fallback to option A; see the notes under step 4 and
-the `dev 20261114` entry in CHANGES.md). Steps 5 and 6 are not
-implemented. Apart from those notes and section 8, the text below is
+the `dev 20261114` entry in CHANGES.md). The first item of step 5 is
+implemented in `009123f` (see the note under step 5). The second item
+of step 5 and step 6 are not implemented. Apart from those notes and
+section 8, the text below is
 the plan as written before `43f0a26`, against `1a9e26e`. Section 8
 explains the timing summary printed at exit, as of `f14bf4c`.
 Branch: `dev-macos-realtime-thread`.
@@ -297,6 +299,14 @@ Implementation notes (2026-11-14, added with the implementation):
 - Keep the workgroup as it is for `-P` until a System Trace shows
   whether it changes core placement. If it shows nothing, consider
   removing it.
+- Implemented (2026-11-15, `009123f`): the first item. `RealtimeThread`
+  takes a `use_workgroup` argument, and `main.cpp` sets it only when
+  the output mode is PortAudio. Otherwise `start()` does not create or
+  join the workgroup, `Cycle` does nothing, and the startup line ends
+  with `workgroup not used`; the other states are `joined` and
+  `not joined` (the create or join call failed). File decodes are
+  bit-exact with and without `--realtime`. The `-P` path was not run.
+  The second item is open: it needs a System Trace taken with `-P`.
 
 ### Step 6: deferred
 
