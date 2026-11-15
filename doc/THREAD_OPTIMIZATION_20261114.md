@@ -4,8 +4,10 @@ Status: steps 1 to 3 and the document corrections of section 5 are
 implemented in `43f0a26`, and step 4 in the commit after `852c880`
 (option B with a fallback to option A; see the notes under step 4 and
 the `dev 20261114` entry in CHANGES.md). The first item of step 5 is
-implemented in `009123f` (see the note under step 5). The second item
-of step 5 and step 6 are not implemented. Apart from those notes and
+implemented in `009123f` (see the note under step 5), and the
+`IfResampler` part of step 6 in `81adf89` (see the note under step 6).
+The second item of step 5 and the rest of step 6 are not implemented.
+Apart from those notes and
 section 8, the text below is
 the plan as written before `43f0a26`, against `1a9e26e`. Section 8
 explains the timing summary printed at exit, as of `f14bf4c`.
@@ -317,6 +319,14 @@ Implementation notes (2026-11-14, added with the implementation):
   and small, low value.
 - No change to the mutex type. `os_unfair_lock` gives nothing that could
   be verified over `std::mutex`.
+- Implemented (2026-11-15, `81adf89`): the `IfResampler` temporaries.
+  The two deinterleaved input vectors of `IfResampler::process()` are
+  class members, so `resize()` allocates only when a block is larger
+  than any before it. AM and NBFM file decodes of a 384 kHz recording,
+  which resample to 48 kHz, are bit-exact. FM at 384 kHz bypasses the
+  resampler, and FM at another source rate was not run. No change in
+  decode time was visible in the file decodes. Block-vector recycling
+  and the printer lock are not implemented.
 
 ## 4. Verification
 
