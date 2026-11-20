@@ -25,6 +25,8 @@ IfSimpleAgc::IfSimpleAgc(const float initial_gain, const float max_gain,
     // Initialize member fields
     : m_initial_gain(initial_gain), m_max_gain(max_gain),
       m_distortion_rate(rate) {
+  // A positive gain stays positive only if the ratio floor is positive.
+  assert(m_initial_gain > 0.0f);
   reset_gain();
 }
 
@@ -43,7 +45,13 @@ void IfSimpleAgc::process(const IQSampleVector &samples_in,
     IQSample x = samples_in[i];
     IQSample x2 = x * m_current_gain;
     samples_out[i] = x2;
-    float z = 1.0 + (m_distortion_rate * (1.0 - std::norm(x2)));
+    float z = 1.0f + (m_distortion_rate * (1.0f - std::norm(x2)));
+    // Lower limit of z: the first-order Taylor approximation of
+    // exp(d * (1 - |y|^2)) is only valid for small d * |1 - |y|^2|.
+    // Without the limit, a large overshoot makes z <= 0.
+    if (z < min_ratio) {
+      z = min_ratio;
+    }
     m_current_gain *= z;
     // Check if m_current_gain is finite
     if (!std::isfinite(m_current_gain)) {

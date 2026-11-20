@@ -37,8 +37,14 @@
 class IfSimpleAgc {
 public:
   // Construct IF AGC (target level 1.0): initial_gain, max_gain, and rate, the
-  // gain-change rate factor.
+  // gain-change rate factor (d = Ts / (2 * tau) in the paper).
   IfSimpleAgc(const float initial_gain, const float max_gain, const float rate);
+
+  // Lower limit of the per-sample gain ratio z = 1 + rate * (1 - |y|^2).
+  // Without this limit, z becomes zero or negative when
+  // |y|^2 >= 1 + 1 / rate, which makes the gain zero, negative, or divergent.
+  // 0.1 limits the gain drop to 20 dB per sample.
+  static constexpr float min_ratio = 0.1f;
 
   // Reset AGC gain to the initial_gain.
   void reset_gain();

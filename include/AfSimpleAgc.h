@@ -36,9 +36,16 @@
 class AfSimpleAgc {
 public:
   // Construct AF AGC: initial_gain and max_gain are gain values, reference is
-  // the target output level, rate is the gain-change rate factor.
+  // the target output level, rate is the gain-change rate factor
+  // (d = Ts / (2 * tau) in the paper).
   AfSimpleAgc(const double initial_gain, const double max_gain,
               const double reference, const double rate);
+
+  // Lower limit of the per-sample gain ratio z = 1 + rate * (1 - y^2).
+  // Without this limit, z becomes zero or negative when
+  // y^2 >= 1 + 1 / rate, which makes the gain zero, negative, or divergent.
+  // 0.1 limits the gain drop to 20 dB per sample.
+  static constexpr double min_ratio = 0.1;
 
   // Reset AGC gain to the initial_gain.
   void reset_gain();

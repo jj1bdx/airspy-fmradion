@@ -40,6 +40,11 @@ Intel Mac hardware is no longer supported by airspy-fmradion, effective 20260914
 
 ## Changes (including requirement changes)
 
+* dev-agc-fix 20261120: Lower limit on the per-sample gain ratio of the IF and AF AGCs (`IfSimpleAgc`, `AfSimpleAgc`). The first-order Taylor form of the Tisserand–Berviller gain update, z = 1 + rate × (1 − y²), becomes zero or negative when y² ≥ 1 + 1/rate, that is, when the input rises suddenly by about 1/√rate in amplitude above the level the gain had settled for. The gain then becomes zero, changes sign, or alternates in sign without end; a simulation with the FM IF AGC settings (rate 1e-4, maximum gain 1e5) after silence showed a limit cycle that never ends. See doc/AGC_Z_FLOOR_REVIEW_20261120.md for the review and simulations.
+  * z is now limited to at least 0.1 (`min_ratio`), so the gain drops by at most 20 dB per sample and stays positive. Normal operation, the settled level, and the rise rate are unchanged.
+  * The constructors assert that the initial gain is positive.
+  * The `IfSimpleAgc` gain ratio is now computed in float (`1.0f` literals) instead of double narrowed to float.
+  * Decoded audio: FM is byte-identical to the previous build. AM and NBFM differ by 1 LSB on 42 and 14 of 2.88 million 16-bit samples, from the float computation of z; a build with only the lower limit is byte-identical, so the limit did not take effect on the test recordings.
 * 20261017-0: PortAudio output telemetry and experimental prefill options, a separate status printer thread, a shorter multipath filter startup wait, and C++ cleanups. Decoded audio changes only for FM with `-E`, through the shorter wait. The PortAudio (`-P`) path has been build-verified only and still needs a field test. The changes include:
   * New `-v`/`--verbose` option showing output, queue, and SDR drop counters, with a summary at exit (dev-status-thread 20261010)
   * The status line and stereo lock messages are printed by a separate thread, so a stalled terminal no longer stalls decoding (dev-status-thread 20261010)

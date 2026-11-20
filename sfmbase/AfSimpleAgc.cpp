@@ -25,6 +25,8 @@ AfSimpleAgc::AfSimpleAgc(const double initial_gain, const double max_gain,
     // Initialize member fields
     : m_initial_gain(initial_gain), m_max_gain(max_gain),
       m_reference(reference), m_distortion_rate(rate) {
+  // A positive gain stays positive only if the ratio floor is positive.
+  assert(m_initial_gain > 0.0);
   reset_gain();
 }
 
@@ -43,6 +45,12 @@ void AfSimpleAgc::process(const SampleVector &samples_in,
     Sample x2 = x * m_current_gain;
     samples_out[i] = x2 * m_reference;
     double z = 1.0 + (m_distortion_rate * (1.0 - (x2 * x2)));
+    // Lower limit of z: the first-order Taylor approximation of
+    // exp(d * (1 - y^2)) is only valid for small d * |1 - y^2|.
+    // Without the limit, a large overshoot makes z <= 0.
+    if (z < min_ratio) {
+      z = min_ratio;
+    }
     m_current_gain *= z;
     // Check if m_current_gain is finite
     if (!std::isfinite(m_current_gain)) {
