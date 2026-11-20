@@ -1,16 +1,22 @@
 # Plan: optimizing the `--realtime` thread code for macOS (2026-11-14)
 
+Note (2026-11-20): the commit hashes in this document were changed to
+those of the commits rebased onto `dev` at `e277d87` (the AGC gain-ratio
+limit). Each rebased commit has the original's changes plus that AGC
+change; the work recorded here ran on the original commits, before it.
+`e277d87` leaves FM file decodes byte-identical.
+
 Status: steps 1 to 3 and the document corrections of section 5 are
-implemented in `43f0a26`, and step 4 in the commit after `852c880`
+implemented in `72120b4`, and step 4 in the commit after `61fcab3`
 (option B with a fallback to option A; see the notes under step 4 and
 the `dev 20261114` entry in CHANGES.md). The first item of step 5 is
-implemented in `009123f` (see the note under step 5), and the
-`IfResampler` part of step 6 in `81adf89` (see the note under step 6).
+implemented in `e5c7c56` (see the note under step 5), and the
+`IfResampler` part of step 6 in `4e05786` (see the note under step 6).
 The second item of step 5 and the rest of step 6 are not implemented.
 Apart from those notes and
 section 8, the text below is
-the plan as written before `43f0a26`, against `1a9e26e`. Section 8
-explains the timing summary printed at exit, as of `f14bf4c`.
+the plan as written before `72120b4`, against `700c3d1`. Section 8
+explains the timing summary printed at exit, as of `533b6c5`.
 Branch: `dev-macos-realtime-thread`.
 Scope: `include/RealtimeThread.h`, `sfmbase/RealtimeThread.cpp`, the
 decode loop in `main.cpp`, `include/DataBuffer.h`, `StatusPrinter`, and
@@ -301,7 +307,7 @@ Implementation notes (2026-11-14, added with the implementation):
 - Keep the workgroup as it is for `-P` until a System Trace shows
   whether it changes core placement. If it shows nothing, consider
   removing it.
-- Implemented (2026-11-15, `009123f`): the first item. `RealtimeThread`
+- Implemented (2026-11-15, `e5c7c56`): the first item. `RealtimeThread`
   takes a `use_workgroup` argument, and `main.cpp` sets it only when
   the output mode is PortAudio. Otherwise `start()` does not create or
   join the workgroup, `Cycle` does nothing, and the startup line ends
@@ -319,7 +325,7 @@ Implementation notes (2026-11-14, added with the implementation):
   and small, low value.
 - No change to the mutex type. `os_unfair_lock` gives nothing that could
   be verified over `std::mutex`.
-- Implemented (2026-11-15, `81adf89`): the `IfResampler` temporaries.
+- Implemented (2026-11-15, `4e05786`): the `IfResampler` temporaries.
   The two deinterleaved input vectors of `IfResampler::process()` are
   class members, so `resize()` allocates only when a block is larger
   than any before it. AM and NBFM file decodes of a 384 kHz recording,
@@ -405,7 +411,7 @@ are printed with and without `--realtime`, so a run with the option can
 be compared with a run without it.
 
 Example, from a file decode of `test-files/piano_iqtest.wav` with
-`-v --realtime` on the Mac mini (M2 Pro) at `f14bf4c`:
+`-v --realtime` on the Mac mini (M2 Pro) at `533b6c5`:
 
 ```
 Summary: DataBuffer queue=0 max=15 dropped blocks=0; SDR dropped samples=0
@@ -555,7 +561,7 @@ line appear only in the summary.
 This section states, for each summary value, what a run with
 `--realtime` should show if the option works as intended, and which
 values mean that it does not. It was written on 2026-11-15 against
-`02797a9`.
+`737be99`.
 
 The limits come from two sources: the file decodes of sections 4 and 8,
 and the probe measurements of section 1.5. No run with `-P` or with an

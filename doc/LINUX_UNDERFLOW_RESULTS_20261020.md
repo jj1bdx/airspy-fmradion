@@ -1,5 +1,11 @@
 # Linux underflow measurements on the Raspberry Pi 5 (2026-10-20)
 
+Note (2026-11-20): the commit hashes in this document were changed to
+those of the commits rebased onto `dev` at `e277d87` (the AGC gain-ratio
+limit). Each rebased commit has the original's changes plus that AGC
+change; the work recorded here ran on the original commits, before it.
+`e277d87` leaves FM file decodes byte-identical.
+
 Status: measurements finished on 2026-10-20. Plan:
 `doc/LINUX_UNDERFLOW_MEASUREMENT_PLAN_20261020.md`. Tools:
 `doc/linux-underflow-tools/`. The run data (captures, logs, and traces,
@@ -12,8 +18,8 @@ were kept on the Pi outside the repository and were deleted on
 - Raspberry Pi 5, Debian Trixie, kernel `6.18.50+rpt-rpi-2712` (`SMP
   PREEMPT`), governor `ondemand`, PortAudio 19.6.0 (Debian 19.6.0-1.2+b3).
 - Binaries, each in its own build directory:
-  - f236638, unmodified.
-  - f236638 plus the measurement-only trace
+  - 808cf62, unmodified.
+  - 808cf62 plus the measurement-only trace
     (`doc/LINUX_UNDERFLOW_RESULTS_20261020_trace.diff`; format in
     `doc/LINUX_UNDERFLOW_RESULTS_20261020_trace_format.md`). Decoded audio
     is byte-identical to the unmodified build.
@@ -555,7 +561,7 @@ That error matches the access-type mismatch found in the `-dual` runs
 described for these tests (`-P` straight into a loopback card that a
 streaming program reads) does not pass through PipeWire.
 
-**Why the program hangs** (static reading of f236638 by the cpp-expert
+**Why the program hangs** (static reading of 808cf62 by the cpp-expert
 agent; file and line references are in its report):
 
 - The signal thread only sets `stop_flag`. The main thread is the decode

@@ -1,8 +1,14 @@
 # T7 block trace format (2026-10-20)
 
+Note (2026-11-20): the commit hashes in this document were changed to
+those of the commits rebased onto `dev` at `e277d87` (the AGC gain-ratio
+limit). Each rebased commit has the original's changes plus that AGC
+change; the work recorded here ran on the original commits, before it.
+`e277d87` leaves FM file decodes byte-identical.
+
 Measurement-only instrumentation for the underflow measurement campaign
 (`doc/LINUX_UNDERFLOW_MEASUREMENT_PLAN_20261020.md`, tool T7). The change
-is `doc/LINUX_UNDERFLOW_RESULTS_20261020_trace.diff`, applied to `f236638`;
+is `doc/LINUX_UNDERFLOW_RESULTS_20261020_trace.diff`, applied to `808cf62`;
 it is not part of the source tree. On the Pi it was built from a worktree
 in `work-linux/wt-t7` into `work-linux/build-t7/`. Neither is in the
 repository, and the build was deleted on 2026-10-20.

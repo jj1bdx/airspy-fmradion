@@ -1,9 +1,16 @@
 # Plan: measuring and evaluating PortAudio underflow risk on Linux (2026-10-20)
 
+Note (2026-11-20): the commit hashes in this document were changed to
+those of the commits rebased onto `dev` at `e277d87` (the AGC gain-ratio
+limit). Each rebased commit has the original's changes plus that AGC
+change; the work recorded here ran on the original commits, before it.
+`e277d87` leaves FM file decodes byte-identical. Directory names such as
+`build-f236638` keep the old hash.
+
 Status: plan only. Nothing in this memo has been run with `-P`, and no
 tracked file has been changed. Machine: Raspberry Pi 5, Debian Trixie
 (Raspberry Pi OS 64-bit), kernel `6.18.50+rpt-rpi-2712`. Tree: branch
-`dev-macos-realtime-thread` at `f236638`.
+`dev-macos-realtime-thread` at `808cf62`.
 
 Results: `doc/LINUX_UNDERFLOW_RESULTS_20261020.md`. This plan is kept as
 written before the runs, except for this paragraph and the notes on moved
@@ -179,7 +186,7 @@ All tools go in `work-linux/tools/`, and run outputs go in
 
 | Tool | Purpose | Notes |
 |---|---|---|
-| T1 separate build | `f236638` built in `work-linux/build-f236638/` following the `build` skill | Leaves `build/` (possibly in use) alone. CMake fetches dependencies over the network. |
+| T1 separate build | `808cf62` built in `work-linux/build-f236638/` following the `build` skill | Leaves `build/` (possibly in use) alone. CMake fetches dependencies over the network. |
 | T2 `pa_devs.c` | Lists PortAudio device index, name, host API, max output channels, and default low and high output latency | The program cannot list devices [C]; `-P` takes an index. |
 | T3 status logger (python) | Reads stderr, splits on `\r` and `\n`, and prefixes each line with `CLOCK_MONOTONIC` time; writes a TSV | The status line has no timestamp; `-v` prints about every 107 ms (file) or 213 ms (HF+) [M]. |
 | T4 stall injector (C) | Mode `thread`: `PTRACE_SEIZE` the decode thread (TID = PID), then repeat `PTRACE_INTERRUPT`, sleep D ms, `PTRACE_CONT`. Mode `process`: `SIGSTOP`/`SIGCONT`. Logs each stall's start and end time. | ptrace stops one thread only, needs no root (same uid, no Yama), and avoids the fair-server problem: with a `SCHED_FIFO` busy loop the starved thread still gets 50 ms/s. |

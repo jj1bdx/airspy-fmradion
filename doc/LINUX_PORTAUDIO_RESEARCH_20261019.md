@@ -1,12 +1,18 @@
 # PortAudio output underflows on Linux (2026-10-19)
 
+Note (2026-11-20): the commit hashes in this document were changed to
+those of the commits rebased onto `dev` at `e277d87` (the AGC gain-ratio
+limit). Each rebased commit has the original's changes plus that AGC
+change; the work recorded here ran on the original commits, before it.
+`e277d87` leaves FM file decodes byte-identical.
+
 Companion to `doc/UNDERFLOW_RESEARCH_20261019.md` (the "macOS report"),
 which covers macOS. This report covers Linux: Ubuntu 26.04 LTS x86_64
 and Raspberry Pi 5 with Raspberry Pi OS 64-bit Lite (Debian Trixie).
 
 Scope and method:
 
-- Source tree: branch `dev-macos-realtime-thread` at `f6dbde3`. The code
+- Source tree: branch `dev-macos-realtime-thread` at `9ffd47b`. The code
   analysis was done by the cpp-expert agent, reading only. I re-checked
   the key PortAudio claims and the Ubuntu packaging claims myself.
 - PortAudio source read: v19.6.0 (tag `pa_stable_v190600_20161030`,
@@ -79,7 +85,7 @@ Evidence tags:
    it on equal terms (`SCHED_OTHER`).
 7. **The branch builds and decodes correctly on both distributions** [M]:
    no warnings with gcc 14.2 (Debian) and gcc 15.2 (Ubuntu), and file
-   decodes of `9570a05`, `f6dbde3`, and `f6dbde3 --realtime` are
+   decodes of `9570a05`, `9ffd47b`, and `9ffd47b --realtime` are
    byte-identical (section 2).
 
 Most useful actions, in order:
@@ -117,11 +123,11 @@ Package versions [M]:
 
 Results [M]:
 
-- Both `9570a05` and `f6dbde3` build with no warnings on both images.
+- Both `9570a05` and `9ffd47b` build with no warnings on both images.
   CMake found VOLK, libsndfile 1.2.2 with MP3 support, and PortAudio.
 - Three real-time decodes of `test-files/piano_iqtest.wav`
   (`-m fm -t filesource -c filename=... -R <out>.raw`) on each image:
-  `9570a05 -q`, `f6dbde3 -q`, and `f6dbde3 -v --realtime`. All outputs
+  `9570a05 -q`, `9ffd47b -q`, and `9ffd47b -v --realtime`. All outputs
   are 3839596 bytes and `cmp` reports them identical.
 - `--realtime` prints `WARNING: --realtime is supported on macOS only;
   ignored` and the run continues. The `-v` status line works for a file
