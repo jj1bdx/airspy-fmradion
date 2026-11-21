@@ -299,9 +299,11 @@ doc/AGC_STEP_TEST_RESULTS_20261121.md.
   original failure happens in practice: without the limit, a +50 dB
   step, or a signal of −40 dBFS or more after silence, starts the
   sign-changing limit cycle. In AM it did not happen in any test.
-- Effect of the 20 dB step: measured, not yet checked by listening.
-  The limit of 0.1 gives the same output as a limit of 0.5, except in
-  FM with the multipath filter after single-sample impulses of +40 dB
-  or more, where the output differs from the reference by 2.8 to
-  4.4 dB more and for about 2 s longer. The listening clips are
-  prepared; the listening test is still open.
+- Effect of the 20 dB step: measured, and checked by listening on a
+  reduced set of 64 clips. The limit of 0.1 gives the same output as a
+  limit of 0.5, except in FM with the multipath filter after
+  single-sample impulses of +40 dB or more, where the output differs
+  from the reference by 2.8 to 4.4 dB more and for about 2 s longer.
+  The listener heard that difference in all 4 impulse-train pairs and
+  no difference in the 24 pairs of steps and AM impulses. No case was
+  found where 0.5 is worse than 0.1.

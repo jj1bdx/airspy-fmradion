@@ -1,15 +1,16 @@
 # Results: tests of the AGC gain-ratio limit under sudden level changes (2026-11-21)
 
 Plan: doc/AGC_STEP_TEST_PLAN_20261121.md (steps 0 to 6 of its section
-7). Branch: `dev-macos-realtime-thread` at `f012f95` (the same code as
+7, and its section 5.3 on a reduced set). Branch: `dev-macos-realtime-thread` at `f012f95` (the same code as
 `6725655`, which contains the AGC change `e277d87`).
 Open item addressed: doc/AGC_Z_FLOOR_REVIEW_20261120.md, section 9,
 "The effect of the 20 dB per sample gain step on AF has not been checked
 by listening tests."
 
-Status: the file decodes and the measurements are done. The listening
-test (plan section 5.3) has not been done; the clips are prepared
-(section 8). The results below are from measurements only.
+Status: the file decodes and the measurements are done. The user did
+the listening test (plan section 5.3) on a reduced set of 64 clips on
+2026-11-21; its results are in section 8.2. The full set of 736 clips
+has not been listened to.
 
 Variants (plan section 2.6, option A):
 
@@ -35,7 +36,8 @@ Variants (plan section 2.6, option A):
    (V2: about 6 dB). The difference from the reference is 2.8 to 4.4 dB
    higher in rms and lasts 4.3 to 5.0 s, against 0.3 to 2.7 s for V2.
    This is the only measured case where the 0.1 limit is worse than
-   0.5. It is the main item for the listening test.
+   0.5. The listening test confirmed it: V1 was judged worse than V2 in
+   all 4 impulse-train pairs (section 8.2).
 4. V0 shows the limit cycle the fix prevents: from the event to the end
    of the clip, z ≤ 0 on every sample, and the multipath filter resets
    on every block (938 resets in 5 s). The sign changes reach the audio
@@ -52,6 +54,11 @@ Variants (plan section 2.6, option A):
    often than the thresholds in plan section 1 predict (section 6.2),
    and VF is not a usable reference for `-E 36` or for AM at levels
    other than 0 dBFS (section 6.1).
+7. Listening test (64 clips, one listener): V1 and V2 got the same
+   answers in all 24 pairs of level steps (FM and AM) and AM impulses.
+   In the 4 pairs of FM `-E 36` impulse trains, V1 had a click or a
+   period of multipath distortion that V2 did not have. No case was
+   found where 0.5 is worse than 0.1 (section 8.3).
 
 ## 2. What was run
 
@@ -304,21 +311,24 @@ step over several samples, so that no single sample reaches the
 threshold. This has not been checked in the code. The plan's
 predictions for FM, where the IF AGC runs at the input rate, held.
 
-## 7. Answers to the plan's questions (measurements only)
+## 7. Answers to the plan's questions
 
 - Is the 20 dB per sample step (V1) worse than V2 or VF at the same
   event? In FM without the multipath filter, and in AM: no measurable
-  difference. In FM with `-E 36`, for steps: no difference. In FM with
-  `-E 36`, for single-sample impulses of +40 dB or more: yes, V1 gives
-  a 2.8 to 4.4 dB larger difference from the reference, lasting about
-  2 s longer. Whether this is audible is for the listening test.
+  difference. In FM with `-E 36`, for steps: no difference, measured or
+  heard. In FM with `-E 36`, for single-sample impulses of +40 dB or
+  more: yes, V1 gives a 2.8 to 4.4 dB larger difference from the
+  reference, lasting about 2 s longer, and the difference was heard in
+  all 4 pairs tested (section 8.2). VF was not in the listening set.
 - Impulse noise (A4, F4): in AM, impulses of +60 dB dip the AF level by
   up to 9 dB in every variant. In FM with `-E 36`, every impulse of
   +30 dB or more resets the multipath filter in every variant. These
   are effects of the AGC and multipath filter design, not of the
   choice of limit.
 
-## 8. Listening package
+## 8. Listening test
+
+### 8.1 Packages
 
 - Location: work/agc-test/listen/ (untracked). 736 clips of 5 s
   (61.3 minutes): the case 2 events for V0, V1, V2, and VF, plus the
@@ -331,19 +341,80 @@ predictions for FM, where the IF AGC runs at the input rate, held.
   `key/answers.csv` (do not open before listening). The file names are
   random (seed 20261121).
 - `make_listening.py` has filters (`--sources`, `--settings`,
-  `--variants`, `--cases`, `--programs`) to build a smaller set. A
-  suggested first set for the main question: piano and interfm, `-E 36`,
-  V1 and V2, cases F1, F4, and A2, A4.
+  `--variants`, `--cases`, `--programs`) to build a smaller set.
+- Reduced set, the one listened to: work/agc-test/listen-small/
+  (untracked), built with `--sources piano,interfm --programs
+  tone,music --settings E36,am --variants v1,v2 --cases F1,F4,A2,A4
+  --seed 1121`. 64 clips (5.3 minutes): FM `-E 36` F1 (1b +40, +60,
+  +80 dB) and F4 (impulse trains of +40 and +60 dB), AM A2 (steps of
+  +20 to +60 dB) and A4 (impulse trains of +20 to +60 dB), and the
+  matching reference clips, each for V1 and V2. 24 clips were scaled
+  to a −1 dBFS peak (the AM step clips, by 6.5 to 11.3 dB); none was
+  marked loud. The seed differs from the full set, so names cannot be
+  looked up in the full set's key.
+
+### 8.2 Results
+
+The user listened once to all 64 clips, with the file names
+randomized and without the key, and filled in
+`listen-small/questions.csv`. The answers, matched with the key:
+
+| Group | V1 | V2 | Same answer for V1 and V2 |
+|---|---|---|---|
+| Reference clips (8) | no click, no dip, no distortion | the same | yes |
+| AM A2, steps +20 to +60 dB (10 pairs) | click in all | click in all | 10 of 10 |
+| AM A4, impulses +20 to +60 dB (8 pairs) | click in all | click in all | 8 of 8 |
+| FM F1, steps, piano (3 pairs) | click | click | 3 of 3 |
+| FM F1, steps, interfm (3 pairs) | nothing heard | nothing heard | 3 of 3 |
+| FM F4, impulses, interfm +40 and +60 dB (2 pairs) | click | nothing heard | 0 of 2 |
+| FM F4, impulses, piano +40 and +60 dB (2 pairs) | click, and multipath distortion for 0.1 s | click | 0 of 2 |
+
+No dip or pumping was reported in any clip.
+
+### 8.3 Evaluation
+
+- The controls were clean: no answer for the 8 reference clips
+  reported anything, so the clicks heard come from the events.
+- Level steps (FM F1, AM A2) and AM impulses (A4): V1 and V2 got the
+  same answers in all 24 pairs. This agrees with the measurements, in
+  which V1 and V2 give the same output for steps with `-E 36` and
+  nearly the same AF level in AM. For level steps, the 20 dB per
+  sample step is not audibly worse than the 0.5 limit.
+- FM `-E 36` impulse trains (F4): V1 was judged worse in all 4 pairs,
+  either with a click that V2 did not have (interfm) or with a period
+  of multipath distortion that V2 did not have (piano). In these clips
+  the measured rms of the V1 difference from the reference is 2.7 to
+  4.6 dB higher than for V2 (section 3.4). The measured difference is
+  audible.
+- The AM clicks at steps and impulses occur in both variants, so they
+  do not come from the limit. The measured AF level dips after AM
+  steps (up to −7 to −9 dB, 20 to 40 ms) were not reported as dips;
+  they are probably too short to be heard apart from the click.
+- No measurement or answer showed 0.5 worse than 0.1. Both limits keep
+  the gain from changing sign. With 0.5 the limit acts on about three
+  times as many samples after a large step, with no measurable effect
+  on the audio at `-E 0`, the same multipath filter reset count at
+  `-E 36`, and the same AM output. On this evidence, raising
+  `min_ratio` to 0.5, at least in `IfSimpleAgc`, is justified. The AF
+  AGC limit almost never acts, so its value matters little. The
+  choice is the user's.
+- Limits of this evidence: one listener, one pass, no repeated or ABX
+  trials; only 4 pairs show the V1/V2 difference; the impulses are
+  synthetic single samples at 384 kHz, not recorded impulse noise; no
+  limit between 0.1 and 0.5 was tested; V0 and VF were not in the
+  listening set.
 
 ## 9. Not done and limitations
 
-- The listening test (plan section 5.3).
+- Listening to the full set of 736 clips (V0, VF, `-E 0`, the
+  airspy897 source, cases F2, F3, F5, A1, A3, A5, A6, A2m30).
+- A test with recorded impulse noise and `-E 36`, and a limit between
+  0.1 and 0.5.
 - Stereo pilot loss (`-v` events).
 - Real hardware (plan section 6).
 - Steps between +11 and +20 dB with `-E 36`.
 - The cause given in section 6.2 is not confirmed in the code.
 - CW (optional in the plan) was not tested.
-- doc/AGC_Z_FLOOR_REVIEW_20261120.md section 9 has not been updated.
 
 ## 10. Files
 
@@ -357,7 +428,8 @@ All untracked, in work/agc-test/:
 - `analyze.py`: the analysis; output in `results/metrics.csv` (one row
   per decode) and `results/summary.md` (tables and the automated
   checks).
-- `make_listening.py` and `listen/`: the listening package.
+- `make_listening.py`, `listen/`, and `listen-small/`: the listening
+  packages; `listen-small/questions.csv` holds the user's answers.
 
 The builds, the 190 signal clips (4.4 GB), and the decodes are in the
 session scratchpad, which is not kept. They can be rebuilt from the
