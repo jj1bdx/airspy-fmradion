@@ -289,3 +289,19 @@ Apply with `patch -p1` or `git apply` from the directory containing the files.
 
 - The `rate` and `max_gain` values used at the call sites in airspy-fmradion were not part of this review. Whether the original failure could happen in practice depends on them (section 4).
 - The effect of the 20 dB per sample gain step on AF has not been checked by listening tests.
+
+Update (2026-11-21): both items were tested with file decodes; see
+doc/AGC_STEP_TEST_PLAN_20261121.md and
+doc/AGC_STEP_TEST_RESULTS_20261121.md.
+
+- Call-site values: section 1 of the plan lists `rate` and `max_gain`
+  at each call site and the resulting limit thresholds. In FM the
+  original failure happens in practice: without the limit, a +50 dB
+  step, or a signal of −40 dBFS or more after silence, starts the
+  sign-changing limit cycle. In AM it did not happen in any test.
+- Effect of the 20 dB step: measured, not yet checked by listening.
+  The limit of 0.1 gives the same output as a limit of 0.5, except in
+  FM with the multipath filter after single-sample impulses of +40 dB
+  or more, where the output differs from the reference by 2.8 to
+  4.4 dB more and for about 2 s longer. The listening clips are
+  prepared; the listening test is still open.

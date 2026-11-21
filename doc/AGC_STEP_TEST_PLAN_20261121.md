@@ -15,6 +15,10 @@ Decision (the user, 2026-11-21): option A of section 2.6. V3 is left
 out; the variants are V0, V1, V2, and VF. Section 2 is kept as the
 record of why.
 
+Status (2026-11-21): steps 1 to 6 of section 7 are done, with the
+departures listed in section 2 of the results document; the listening
+test of section 5.3 is not. Results: doc/AGC_STEP_TEST_RESULTS_20261121.md.
+
 Goals:
 
 1. Case 1: how extreme changes of the IF signal level affect the IF AGC
