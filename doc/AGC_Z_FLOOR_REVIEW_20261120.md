@@ -307,3 +307,8 @@ doc/AGC_STEP_TEST_RESULTS_20261121.md.
   The listener heard that difference in all 4 impulse-train pairs and
   no difference in the 24 pairs of steps and AM impulses. No case was
   found where 0.5 is worse than 0.1.
+- As a result, `IfSimpleAgc::min_ratio` is now 0.5 (`5322f09`, the
+  user's decision of 2026-11-21), so the IF gain drops by at most 6 dB
+  per sample. `AfSimpleAgc::min_ratio` stays at 0.1 (20 dB per
+  sample). Sections 1 to 8 above describe the 0.1 limit as first
+  implemented in `e277d87`.

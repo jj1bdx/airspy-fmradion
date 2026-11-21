@@ -12,6 +12,10 @@ the listening test (plan section 5.3) on a reduced set of 64 clips on
 2026-11-21; its results are in section 8.2. The full set of 736 clips
 has not been listened to.
 
+Decision (the user, 2026-11-21): `IfSimpleAgc::min_ratio` is raised
+from 0.1 to 0.5 in `5322f09`; `AfSimpleAgc::min_ratio` stays at 0.1.
+See section 8.4.
+
 Variants (plan section 2.6, option A):
 
 - V0: no limit (the AGC code of `9570a05`).
@@ -397,12 +401,35 @@ No dip or pumping was reported in any clip.
   `-E 36`, and the same AM output. On this evidence, raising
   `min_ratio` to 0.5, at least in `IfSimpleAgc`, is justified. The AF
   AGC limit almost never acts, so its value matters little. The
-  choice is the user's.
+  choice was the user's; see section 8.4.
 - Limits of this evidence: one listener, one pass, no repeated or ABX
   trials; only 4 pairs show the V1/V2 difference; the impulses are
   synthetic single samples at 384 kHz, not recorded impulse noise; no
   limit between 0.1 and 0.5 was tested; V0 and VF were not in the
   listening set.
+
+### 8.4 Decision and the change
+
+- The user decided to raise `IfSimpleAgc::min_ratio` from 0.1 to 0.5.
+  The change is `5322f09` "IfSimpleAgc: raise min_ratio from 0.1 to
+  0.5", with a CHANGES.md entry. `AfSimpleAgc::min_ratio` stays at
+  0.1.
+- Checks of `5322f09`, on a separate build (no warnings,
+  `clang-format` clean):
+  - `piano_iqtest.wav` decodes with FM, FM `-E 36`, AM, and NBFM are
+    byte-identical to the build of `6725655`, since the limit does not
+    act on that recording.
+  - Ten FM decodes of clips where the limit acts (`fm_piano_1b_+80`,
+    `fm_interfm_F4_+60`, `fm_piano_F4_+40`, `fm_airspy897_1a_+0`,
+    `fm_interfm_1d_1000`, each with `-E 0` and `-E 36`) are
+    byte-identical to V2 and differ from V1. FM has no AF AGC, so the
+    FM results of V2 in this document apply to the new code.
+  - Five AM decodes (`am_tone_A2_+60`, `am_music_A2_+40`,
+    `am_tone_A1_-40`, `am_tone_A4_+60`, `am_tone_A3_1000`) each equal
+    V2 or V1: they equal V2 except where the V2 AF limit (0.5) acted,
+    as in `am_music_A2_+40`, which equals V1. This matches a change of
+    the IF limit only.
+- NBFM also uses `IfSimpleAgc`. No NBFM event clip was tested.
 
 ## 9. Not done and limitations
 
