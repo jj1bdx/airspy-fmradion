@@ -381,6 +381,10 @@ bool FileSource::start(DataBuffer<IQSample> *buf, std::atomic_bool *stop_flag) {
 
   // Start thread.
   if (m_thread == 0) {
+    // --realtime for FileSource (optional, for timing tests; delete with the
+    // other "--realtime" blocks in this file to drop it).
+    make_producer("FileSource",
+                  static_cast<double>(m_block_length) / m_sample_rate);
     m_thread = std::make_unique<std::thread>(run);
     return true;
   } else {
@@ -406,6 +410,13 @@ void FileSource::run() {
   FileSource *self = m_this.load();
   if (!self) {
     return;
+  }
+
+  // --realtime: the policy makes the pacing sleep wake up on time.
+  if (self->m_producer) {
+    self->m_producer->apply_self("source thread");
+    self->m_producer->mark_ready();
+    self->m_producer->tick();
   }
 
   // expected microseconds per block reading
@@ -464,6 +475,12 @@ void FileSource::run() {
       begin += one_us;
       delta -= 1.0;
     }
+  }
+
+  // --realtime: check before this thread ends.
+  if (self->m_producer) {
+    self->m_producer->tick();
+    self->m_producer->check();
   }
 
   // Push end.

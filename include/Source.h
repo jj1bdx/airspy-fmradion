@@ -21,10 +21,13 @@
 #define INCLUDE_SOURCE_H
 
 #include <atomic>
+#include <chrono>
 #include <cstdint>
+#include <memory>
 #include <string>
 
 #include "DataBuffer.h"
+#include "RealtimeThread.h"
 #include "SoftFM.h"
 
 class Source {
@@ -69,6 +72,27 @@ public:
     return m_dropped_samples.load(std::memory_order_relaxed);
   }
 
+  /// Request a time-constraint policy for the producer threads (--realtime;
+  /// macOS only). Call before start(); the source computes the block period.
+  void set_realtime(bool enable, bool quiet) {
+    m_realtime = enable;
+    m_realtime_quiet = quiet;
+  }
+
+  /// With --realtime, wait (at most 2 s) until the source thread has applied
+  /// the policy, so that main() creates no thread meanwhile. Call it after a
+  /// successful start(). Does nothing without --realtime.
+  void wait_realtime_ready() {
+    if (m_producer) {
+      m_producer->wait_ready(std::chrono::milliseconds(2000));
+    }
+  }
+
+  /// One exit-summary line about the producer-thread policy; empty if none.
+  std::string producer_policy_summary() {
+    return m_producer ? m_producer->summary() : std::string();
+  }
+
   /// Return the last error, or return an empty string if there is no error.
   std::string error() {
     std::string ret(m_error);
@@ -77,12 +101,24 @@ public:
   }
 
 protected:
+  /// Replace m_producer with a policy for a given block period, if requested.
+  void make_producer(const char *name, double period_sec) {
+    m_producer.reset();
+    if (m_realtime) {
+      m_producer =
+          std::make_unique<ProducerPolicy>(name, period_sec, m_realtime_quiet);
+    }
+  }
+
   std::string m_devname;
   std::string m_error;
   uint32_t m_confFreq;
   DataBuffer<IQSample> *m_buf;
   std::atomic_bool *m_stop_flag;
   std::atomic<std::uint64_t> m_dropped_samples{0};
+  bool m_realtime = false;
+  bool m_realtime_quiet = false;
+  std::unique_ptr<ProducerPolicy> m_producer;
 };
 
 #endif // INCLUDE_SOURCE_H_

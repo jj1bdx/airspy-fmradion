@@ -43,8 +43,10 @@ public:
   // Lower limit of the per-sample gain ratio z = 1 + rate * (1 - |y|^2).
   // Without this limit, z becomes zero or negative when
   // |y|^2 >= 1 + 1 / rate, which makes the gain zero, negative, or divergent.
-  // 0.1 limits the gain drop to 20 dB per sample.
-  static constexpr float min_ratio = 0.1f;
+  // 0.5 limits the gain drop to 6 dB per sample. A limit of 0.1 (20 dB per
+  // sample) made the FM multipath filter output worse after single-sample
+  // impulses; see doc/AGC_STEP_TEST_RESULTS_20261121.md.
+  static constexpr float min_ratio = 0.5f;
 
   // Reset AGC gain to the initial_gain.
   void reset_gain();

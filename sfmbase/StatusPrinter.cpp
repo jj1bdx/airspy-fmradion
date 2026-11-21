@@ -25,15 +25,17 @@
 
 #include "AudioOutput.h"
 #include "DataBuffer.h"
+#include "DecodeStats.h"
 #include "Source.h"
 #include "StatusPrinter.h"
 
 StatusPrinter::StatusPrinter(ModType modtype, bool verbose,
                              const AudioOutput *output,
                              const DataBuffer<IQSample> *buffer,
-                             const Source *source)
+                             const Source *source, const DecodeStats *decode)
     : m_modtype(modtype), m_verbose(verbose), m_output(output),
-      m_buffer(buffer), m_source(source), m_thread(&StatusPrinter::run, this) {}
+      m_buffer(buffer), m_source(source), m_decode(decode),
+      m_thread(&StatusPrinter::run, this) {}
 
 StatusPrinter::~StatusPrinter() { stop(); }
 
@@ -99,6 +101,17 @@ void StatusPrinter::print() {
   }
   m_printed_events = s.stereo_events;
 
+  // Reported here so that the decode thread never writes to stderr.
+  const DecodeStats::Snapshot decode = m_decode->snapshot();
+  if (decode.policy_lost && !m_policy_warned) {
+    m_policy_warned = true;
+    fmt::println(
+        stderr,
+        "\nWARNING: --realtime: decode thread lost its time-constraint "
+        "policy (noticed at block {})",
+        decode.policy_lost_block);
+  }
+
   switch (m_modtype) {
   case ModType::FM:
     fmt::print(stderr,
@@ -125,16 +138,54 @@ void StatusPrinter::print() {
                m_buffer->max_queue_size(), m_buffer->dropped_blocks());
     const AudioOutput::Telemetry t = m_output->telemetry();
     if (t.capacity_frames >= 0 && t.min_free_frames >= 0) {
-      fmt::print(stderr, ":UF={}:Ring={:.1f}/{:.1f}/{:.1f}ms", t.underflows,
+      fmt::print(stderr, ":UF={}", t.underflows);
+      if (t.startup_underflows > 0) {
+        fmt::print(stderr, "(+{})", t.startup_underflows);
+      }
+      fmt::print(stderr, ":Ring={:.1f}/{:.1f}/{:.1f}ms",
                  AudioOutput::frames_to_ms(
                      t.capacity_frames - t.last_free_frames, t.sample_rate),
                  AudioOutput::frames_to_ms(
                      t.capacity_frames - t.min_free_frames, t.sample_rate),
                  AudioOutput::frames_to_ms(t.capacity_frames, t.sample_rate));
+      if (t.max_pre_free_frames >= 0) {
+        fmt::print(
+            stderr, ":Trough={:.1f}ms",
+            AudioOutput::frames_to_ms(t.capacity_frames - t.max_pre_free_frames,
+                                      t.sample_rate));
+      }
       if (t.prefill_frames > 0) {
         fmt::print(stderr, ":Pre={:.1f}ms",
                    AudioOutput::frames_to_ms(t.prefill_frames, t.sample_rate));
       }
+    }
+    if (t.device_buffer_frames >= 0) {
+      fmt::print(stderr, ":IOBuf={}fr", t.device_buffer_frames);
+      if (!m_iobuf_warned && t.device_buffer_start_frames >= 0 &&
+          t.device_buffer_frames != t.device_buffer_start_frames) {
+        m_iobuf_warned = true;
+        fmt::println(stderr,
+                     "\nWARNING: device IO buffer size changed from {} to {} "
+                     "frames",
+                     t.device_buffer_start_frames, t.device_buffer_frames);
+      }
+    }
+    // Wake: worst push-to-pull latency (blocks > 1 ms); Gap: worst push-to-push
+    // gap (gaps > 1.5 blocks); Dec: mean/max decode time (blocks over the
+    // block period), DecC: blocks over the kernel computation (--realtime).
+    const DataBufferStats b = m_buffer->stats();
+    fmt::print(stderr, ":Wake={}({}):Gap={}({})", format_ns(b.wake_max_ns),
+               b.wake_over[0], format_ns(b.gap_max_ns), b.gap_over_1_5);
+    if (decode.blocks > 0) {
+      fmt::print(stderr, ":Dec={}/{}({})",
+                 format_ns(decode.total_ns / decode.blocks),
+                 format_ns(decode.max_ns), decode.over_period);
+      if (decode.computation_ns > 0) {
+        fmt::print(stderr, ":DecC={}", decode.over_computation);
+      }
+    }
+    if (decode.policy_lost) {
+      fmt::print(stderr, ":RT=LOST");
     }
     fmt::print(stderr, ":SDRdrop={}", m_source->dropped_samples());
   }

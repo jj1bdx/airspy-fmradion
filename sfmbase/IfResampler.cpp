@@ -43,22 +43,22 @@ void IfResampler::process(const IQSampleVector &samples_in,
   assert(input_size <= max_input_length);
 
   // Use two independent sample rate converters in sync.
-  DoubleVector samples_in_re;
-  DoubleVector samples_in_im;
-  samples_in_re.resize(input_size);
-  samples_in_im.resize(input_size);
+  // The input vectors are members: resize() allocates only when a block is
+  // larger than any before it.
+  m_samples_in_re.resize(input_size);
+  m_samples_in_im.resize(input_size);
 
   // See lv_cmake() definition for VOLK complex processing.
-  volk_32fc_deinterleave_64f_x2(samples_in_re.data(), samples_in_im.data(),
+  volk_32fc_deinterleave_64f_x2(m_samples_in_re.data(), m_samples_in_im.data(),
                                 samples_in.data(), input_size);
 
   size_t output_length_re, output_length_im;
   double *output0_re, *output0_im;
 
   output_length_re =
-      m_cdspr_re->process(samples_in_re.data(), input_size, output0_re);
+      m_cdspr_re->process(m_samples_in_re.data(), input_size, output0_re);
   output_length_im =
-      m_cdspr_im->process(samples_in_im.data(), input_size, output0_im);
+      m_cdspr_im->process(m_samples_in_im.data(), input_size, output0_im);
   assert(output_length_re == output_length_im);
 
   // Copy CDSPReampler24 internal buffers to given output buffer

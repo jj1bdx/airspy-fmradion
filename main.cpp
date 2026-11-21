@@ -19,6 +19,7 @@
 
 #include <algorithm>
 #include <atomic>
+#include <chrono>
 #include <cmath>
 #include <csignal>
 #include <cstdio>
@@ -42,6 +43,7 @@
 #include "AmDecode.h"
 #include "AudioOutput.h"
 #include "DataBuffer.h"
+#include "DecodeStats.h"
 #include "FileSource.h"
 #include "FilterParameters.h"
 #include "FineTuner.h"
@@ -49,6 +51,7 @@
 #include "FourthConverterIQ.h"
 #include "MovingAverage.h"
 #include "NbfmDecode.h"
+#include "RealtimeThread.h"
 #include "RtlSdrSource.h"
 #include "SoftFM.h"
 #include "StatusPrinter.h"
@@ -127,6 +130,11 @@ static void usage() {
       "                 until the total prefill reaches ms (never shrinks)\n"
       "                 valid range: 0 to 100 (default: 0 = off)\n"
       "                 (ignored unless PortAudio output (-P) is used)\n"
+      "  --realtime     Give the decode thread a time-constraint scheduling\n"
+      "                 policy, and an interval workgroup with PortAudio\n"
+      "                 output (-P), and the SDR source threads a\n"
+      "                 time-constraint policy (experimental, macOS only;\n"
+      "                 ignored on other platforms)\n"
       "  -T filename    Write pulse-per-second timestamps\n"
       "                 use filename '-' to write to stdout\n"
       "  -X             Shift pilot phase (for Quadrature Multipath Monitor)\n"
@@ -309,21 +317,36 @@ static void *process_signals(void *arg) {
 }
 
 // Long-only option codes (no short option letter).
-enum { OPT_PA_PREFILL = 0x100, OPT_PA_PREFILL_ADAPT };
+enum { OPT_PA_PREFILL = 0x100, OPT_PA_PREFILL_ADAPT, OPT_REALTIME };
 
 // Print the one-line exit summary of the loss/underrun counters.
 static void print_summary(const AudioOutput &output,
                           const DataBuffer<IQSample> &buffer,
-                          const Source &source) {
+                          const Source &source, const DecodeStats &decode) {
   fmt::print(stderr, "Summary: ");
   const AudioOutput::Telemetry t = output.telemetry();
   if (t.capacity_frames >= 0 && t.min_free_frames >= 0) {
-    fmt::print(stderr,
-               "PortAudio underflows={} max ring fill={:.1f}/{:.1f}ms; ",
-               t.underflows,
+    fmt::print(stderr, "PortAudio underflows={}", t.underflows);
+    if (t.startup_underflows > 0) {
+      fmt::print(stderr, " (+{} at start)", t.startup_underflows);
+    }
+    fmt::print(stderr, " max ring fill={:.1f}/{:.1f}ms; ",
                AudioOutput::frames_to_ms(t.capacity_frames - t.min_free_frames,
                                          t.sample_rate),
                AudioOutput::frames_to_ms(t.capacity_frames, t.sample_rate));
+    if (t.max_pre_free_frames >= 0) {
+      fmt::print(stderr, "min ring fill={:.1f}ms; ",
+                 AudioOutput::frames_to_ms(
+                     t.capacity_frames - t.max_pre_free_frames, t.sample_rate));
+    }
+    if (t.device_buffer_start_frames >= 0) {
+      fmt::print(stderr, "device IO buffer={} frames; ",
+                 t.device_buffer_start_frames);
+      if (t.device_buffer_frames >= 0 &&
+          t.device_buffer_frames != t.device_buffer_start_frames) {
+        fmt::print(stderr, "(now {}) ", t.device_buffer_frames);
+      }
+    }
     if (t.prefill_frames > 0) {
       fmt::print(stderr, "prefill={:.1f}ms; ",
                  AudioOutput::frames_to_ms(t.prefill_frames, t.sample_rate));
@@ -334,6 +357,52 @@ static void print_summary(const AudioOutput &output,
                "SDR dropped samples={}",
                buffer.queue_size(), buffer.max_queue_size(),
                buffer.dropped_blocks(), source.dropped_samples());
+
+  // Timing: the wake latency is push to pull return for blocks that arrived
+  // while the decode thread was waiting; the backlog age is the same for
+  // blocks that were already queued.
+  const DataBufferStats b = buffer.stats();
+  const DecodeStats::Snapshot d = decode.snapshot();
+  fmt::print(stderr, "Summary: wake latency n={} max={}", b.wake_count,
+             format_ns(b.wake_max_ns));
+  for (std::size_t i = 0; i < b.wake_over.size(); i++) {
+    fmt::print(stderr, " >{}ms={}", DataBufferStats::wake_thresholds_ms[i],
+               b.wake_over[i]);
+  }
+  fmt::print(stderr, "; histogram [us):");
+  for (std::size_t i = 0; i < b.wake_hist.size(); i++) {
+    if (b.wake_hist[i] == 0) {
+      continue;
+    }
+    const std::uint64_t lo = (i == 0) ? 0 : (1ULL << (i - 1));
+    if (i + 1 == b.wake_hist.size()) {
+      fmt::print(stderr, " {}+:{}", lo, b.wake_hist[i]);
+    } else {
+      fmt::print(stderr, " {}-{}:{}", lo, 1ULL << i, b.wake_hist[i]);
+    }
+  }
+  fmt::println(stderr, "");
+  fmt::println(stderr,
+               "Summary: backlog pulls={} max age={}; push gap max={} "
+               ">1.5x period={} >3x period={}",
+               b.backlog_count, format_ns(b.backlog_max_ns),
+               format_ns(b.gap_max_ns), b.gap_over_1_5, b.gap_over_3);
+  if (d.blocks > 0) {
+    fmt::print(stderr,
+               "Summary: decode blocks={} period={} mean={} max={} "
+               ">period={}",
+               d.blocks, format_ns(d.period_ns),
+               format_ns(d.total_ns / d.blocks), format_ns(d.max_ns),
+               d.over_period);
+    if (d.computation_ns > 0) {
+      fmt::print(stderr, " >computation({})={}; realtime policy {}",
+                 format_ns(d.computation_ns), d.over_computation,
+                 d.policy_lost ? fmt::format("LOST (noticed at block {})",
+                                             d.policy_lost_block)
+                               : std::string("held"));
+    }
+    fmt::println(stderr, "");
+  }
 }
 
 // Main program.
@@ -361,6 +430,8 @@ int main(int argc, char **argv) {
   // (--portaudio-prefill-adapt) in milliseconds; 0 = off.
   double portaudio_prefill_ms = 0.0;
   double portaudio_prefill_adapt_ms = 0.0;
+  // Real-time scheduling of the decode thread (--realtime); macOS only.
+  bool realtime = false;
   bool quietmode = false;
   bool verbosemode = false;
   std::string ppsfilename;
@@ -444,6 +515,7 @@ int main(int argc, char **argv) {
       {"portaudio-prefill", required_argument, nullptr, OPT_PA_PREFILL},
       {"portaudio-prefill-adapt", required_argument, nullptr,
        OPT_PA_PREFILL_ADAPT},
+      {"realtime", no_argument, nullptr, OPT_REALTIME},
       {"pps", required_argument, nullptr, 'T'},
       {"pilotshift", no_argument, nullptr, 'X'},
       {"usa", no_argument, nullptr, 'U'},
@@ -536,6 +608,9 @@ int main(int argc, char **argv) {
           portaudio_prefill_adapt_ms > 100.0) {
         badarg("--portaudio-prefill-adapt");
       }
+      break;
+    case OPT_REALTIME:
+      realtime = true;
       break;
     case 'T':
       ppsfilename = optarg;
@@ -799,6 +874,8 @@ int main(int argc, char **argv) {
   fmt::println(stderr, "");
 
   double ifrate = up_srcsdr->get_sample_rate();
+  // Rate of the arriving blocks, before the ppm adjustment below.
+  const double source_rate = ifrate;
 
   unsigned int if_blocksize;
 
@@ -903,7 +980,12 @@ int main(int argc, char **argv) {
   DataBuffer<IQSample> source_buffer;
 
   // Start reading from device in separate thread.
-  up_srcsdr->start(&source_buffer, &stop_flag);
+  up_srcsdr->set_realtime(realtime, quietmode);
+  if (up_srcsdr->start(&source_buffer, &stop_flag)) {
+    // --realtime: no thread may be created until the source has applied
+    // its policy; a failed start is handled below.
+    up_srcsdr->wait_realtime_ready();
+  }
 
   // Reported by GitHub @bstalk: (!up_srcadr) doesn't work for gcc of Debian.
   if (!(*up_srcsdr)) {
@@ -1021,14 +1103,22 @@ int main(int argc, char **argv) {
 
   // Status line and stereo messages are printed by a separate thread
   // (not started in quiet mode).
+  DecodeStats decode_stats;
   std::unique_ptr<StatusPrinter> up_printer;
   if (!quietmode) {
     up_printer = std::make_unique<StatusPrinter>(
         modtype, verbosemode, audio_output.get(), &source_buffer,
-        up_srcsdr.get());
+        up_srcsdr.get(), &decode_stats);
   }
   StatusSnapshot status_snapshot;
   bool status_pending = false;
+
+  // Real-time scheduling of this (decode) thread (--realtime). It starts at
+  // the first block, because the block period comes from the size of that
+  // block. A failure leaves the thread as it was.
+  std::unique_ptr<RealtimeThread> up_realtime;
+  bool first_block = true;
+  bool policy_lost = false;
 
   // Loop buffers, declared once so they keep their allocations across
   // blocks (see doc/MAIN_CPP_SWAP_20260924.md).
@@ -1059,6 +1149,37 @@ int main(int argc, char **argv) {
       // go to the end of the for loop
       continue;
     }
+
+    // The block period is the duration of the first block at the source
+    // rate. Blocks of the sources have a fixed length (a shorter last block
+    // of a file does not matter). The source rate is the device rate, not
+    // the ppm-adjusted ifrate.
+    if (first_block) {
+      first_block = false;
+      const double period_sec =
+          static_cast<double>(iqsamples.size()) / source_rate;
+      source_buffer.set_nominal_period_ns(
+          static_cast<std::uint64_t>(period_sec * 1.0e9));
+      if (realtime) {
+        // The workgroup is joined only for PortAudio output.
+        up_realtime = std::make_unique<RealtimeThread>(
+            period_sec, outmode == OutputMode::PORTAUDIO, quietmode);
+        if (!up_realtime->start()) {
+          up_realtime.reset();
+        }
+      }
+      decode_stats.set_thresholds(
+          static_cast<std::uint64_t>(period_sec * 1.0e9),
+          up_realtime ? up_realtime->computation_ns() : 0);
+    }
+
+    // Decode time starts here, as for the workgroup interval.
+    const auto decode_start = std::chrono::steady_clock::now();
+
+    // Workgroup interval of the decode work (PortAudio output only); ends
+    // before the output write, which may wait for the output ring and is not
+    // computation.
+    RealtimeThread::Cycle cycle(up_realtime.get());
 
     double prev_block_time = block_time;
     block_time = Utility::get_time();
@@ -1156,6 +1277,16 @@ int main(int argc, char **argv) {
     // Set nominal audio volume (-6dB) when IF squelch is open,
     // set to zero volume if the squelch is closed.
     Utility::adjust_gain(audiosamples, if_rms >= squelch_level ? 0.5 : 0.0);
+    decode_stats.record(static_cast<std::uint64_t>(
+        std::chrono::duration_cast<std::chrono::nanoseconds>(
+            std::chrono::steady_clock::now() - decode_start)
+            .count()));
+    cycle.finish();
+    // Report a lost policy through the status printer and the summary.
+    if (up_realtime && !policy_lost && !up_realtime->policy_held()) {
+      policy_lost = true;
+      decode_stats.mark_policy_lost(block);
+    }
     // Write samples to output.
     // Treat a write failure as fatal and exit the main loop cleanly.
     if (!audio_output->write(audiosamples)) {
@@ -1276,6 +1407,9 @@ int main(int argc, char **argv) {
   }
 
   // Exit and cleanup
+  if (up_realtime) {
+    up_realtime->stop();
+  }
   // Join the printer before anything else is written to stderr.
   if (up_printer) {
     if (status_pending) {
@@ -1295,7 +1429,15 @@ int main(int argc, char **argv) {
   up_srcsdr->stop();
 
   if (!quietmode) {
-    print_summary(*audio_output, source_buffer, *up_srcsdr);
+    print_summary(*audio_output, source_buffer, *up_srcsdr, decode_stats);
+    const std::string producer_line = up_srcsdr->producer_policy_summary();
+    if (!producer_line.empty()) {
+      fmt::println(stderr, "{}", producer_line);
+    }
+  } else if (policy_lost) {
+    fmt::println(stderr,
+                 "WARNING: --realtime: decode thread lost its time-constraint "
+                 "policy");
   }
   fmt::println(stderr, "airspy-fmradion terminated");
 

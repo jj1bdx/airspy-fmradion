@@ -319,6 +319,9 @@ bool RtlSdrSource::start(DataBuffer<IQSample> *buf,
   m_stop_flag = stop_flag;
 
   if (m_thread == 0) {
+    // --realtime: policy for the source thread, which runs the libusb loop.
+    const double rate = static_cast<double>(get_sample_rate());
+    make_producer("RTL-SDR", rate > 0.0 ? m_block_length / rate : 0.0);
     m_thread = std::make_unique<std::thread>(run, m_dev, stop_flag);
     return true;
   } else {
@@ -331,6 +334,10 @@ bool RtlSdrSource::stop() {
   // Idempotent: only act when the source thread has not been joined yet,
   // so the destructor can call stop() unconditionally.
   if (m_thread) {
+    // Last policy check while the source thread is still running.
+    if (m_producer) {
+      m_producer->check();
+    }
     // Force the blocked rtlsdr_read_async() in run() to return even if
     // *m_stop_flag was not set, so join() cannot deadlock; a negative return
     // only means the loop already ended. See doc/RTL_READ_ASYNC_20260713.md.
@@ -347,7 +354,18 @@ bool RtlSdrSource::stop() {
 void RtlSdrSource::run(struct rtlsdr_dev *dev, std::atomic_bool *stop_flag) {
   RtlSdrSource *self = m_this.load();
   if (!self || !dev) {
+    if (self && self->m_producer) {
+      self->m_producer->mark_ready(); // release main()
+    }
     return;
+  }
+
+  // --realtime: this thread runs the libusb loop and the callback. Print
+  // here, before streaming starts, not from the callback.
+  if (self->m_producer) {
+    self->m_producer->apply_self("source thread");
+    self->m_producer->mark_ready();
+    self->m_producer->tick();
   }
 
   // rtlsdr_read_async() blocks this thread inside the libusb event loop,
