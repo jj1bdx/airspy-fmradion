@@ -7,7 +7,7 @@ Detailed guidance lives in project skills under `.claude/skills/`, loaded on
 demand:
 
 - `build` — CMake build commands, optimization flags, optional MP3 feature,
-  CMake-fetched dependencies
+  submodule dependencies and the `check_submodules` target
 - `format` — clang-format / cmake-format usage and style files
 - `architecture` — signal flow, key type aliases, Source abstraction,
   FM decoder pipeline

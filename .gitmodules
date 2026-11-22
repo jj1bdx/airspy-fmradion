@@ -1,3 +1,9 @@
 [submodule "r8brain-free-src"]
 	path = r8brain-free-src
 	url = https://github.com/avaneev/r8brain-free-src
+[submodule "fmt"]
+	path = fmt
+	url = https://github.com/fmtlib/fmt
+[submodule "cmake-git-version-tracking"]
+	path = cmake-git-version-tracking
+	url = https://github.com/jj1bdx/cmake-git-version-tracking.git

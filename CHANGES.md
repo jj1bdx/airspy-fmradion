@@ -4,14 +4,9 @@
 
 ## Git submodules required
 
-The following submodule is required:
+The following submodules are required:
 
 * [r8brain-free-src](https://github.com/avaneev/r8brain-free-src)
-
-## External version control code required
-
-The following Git repositories are required:
-
 * [{fmt}](https://github.com/fmtlib/fmt)
 * [jj1bdx's fork of cmake-git-version-tracking](https://github.com/jj1bdx/cmake-git-version-tracking)
 
@@ -40,6 +35,7 @@ Intel Mac hardware is no longer supported by airspy-fmradion, effective 20260914
 
 ## Changes (including requirement changes)
 
+* dev 20261122: {fmt} and cmake-git-version-tracking are now git submodules at the repository root, in `fmt/` and `cmake-git-version-tracking/`, instead of being downloaded by CMake FetchContent at configure time. The pinned commits are unchanged ({fmt} 12.2.1, cmake-git-version-tracking `6c0cb87`). In an existing clone, run `git submodule update --init --recursive` after pulling this change, and remove the old build directory, which contains the FetchContent copies under `_deps`. CMake now stops with an error when a submodule is missing, and warns when a submodule is not at its pinned commit or has local changes. The new target `check_submodules` (`cmake --build build --target check_submodules`) fails in those cases. It is not part of `all`. The FM decode of `test-files/piano_iqtest.wav` is byte-identical to the decode with the FetchContent build.
 * dev 20261122: Updated {fmt} from 12.2.0 to 12.2.1, a bug-fix release. None of its three fixes applies to the code here: a buffer size overflow on 32-bit targets, an out-of-bounds read when parsing `std::error_code` format specifiers, and formatting `nullptr` with `FMT_COMPILE` or `fmt::to_string()`. The FM decode of `test-files/piano_iqtest.wav` is byte-identical to the decode with 12.2.0.
 * dev 20261122: Updated r8brain-free-src from Version 7.1 to Version 7.7. The upstream changes include faster filter design on 64-bit platforms (7.6) and a closed-form LPF design function (7.7).
   * FM decode of `test-files/piano_iqtest.wav`, compared with the same `dev` commit built with 7.1: the outputs are sample-aligned (lag 0) with the same gain, and after the first 0.5 s they match within float32 rounding (-140 dB rms difference). In the first 0.5 s the difference is -28.5 dB rms, with a peak of 0.081 at 0.19 s. The 7.7 output is 127 samples (2.6 ms) shorter, and all of the missing samples are at the end.

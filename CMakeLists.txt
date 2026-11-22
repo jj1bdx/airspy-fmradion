@@ -11,24 +11,41 @@ endif(COMMAND cmake_policy)
 # Enable compile_commands.json as default
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# Use cmake-git-version-tracking
-include(FetchContent)
-FetchContent_Declare(
-  cmake_git_version_tracking
-  GIT_REPOSITORY
-    https://github.com/jj1bdx/cmake-git-version-tracking.git
-  GIT_TAG 6c0cb87edd029ddfb403a8e24577c144a03605a6)
-FetchContent_MakeAvailable(cmake_git_version_tracking)
+# Git submodules: r8brain-free-src, fmt, cmake-git-version-tracking
+foreach(submodule_file
+        r8brain-free-src/CDSPResampler.h fmt/CMakeLists.txt
+        cmake-git-version-tracking/CMakeLists.txt)
+  if(NOT EXISTS "${CMAKE_SOURCE_DIR}/${submodule_file}")
+    message(FATAL_ERROR "${submodule_file} not found. "
+                        "Run: git submodule update --init --recursive")
+  endif()
+endforeach()
+
+# Check the submodule status: a warning at configure time, and an error
+# from the check_submodules target
+find_package(Git QUIET)
+if(GIT_FOUND AND EXISTS "${CMAKE_SOURCE_DIR}/.git")
+  set(CHECK_SUBMODULES_ARGS
+      -DGIT_EXECUTABLE=${GIT_EXECUTABLE}
+      -DSOURCE_DIR=${CMAKE_SOURCE_DIR} -P
+      ${CMAKE_SOURCE_DIR}/cmake/CheckSubmodules.cmake)
+  execute_process(COMMAND ${CMAKE_COMMAND} -DSEVERITY=WARNING
+                          ${CHECK_SUBMODULES_ARGS})
+  add_custom_target(
+    check_submodules
+    COMMAND ${CMAKE_COMMAND} ${CHECK_SUBMODULES_ARGS}
+    COMMENT "Checking git submodule status"
+    VERBATIM)
+endif()
+
+# Use cmake-git-version-tracking (git submodule)
+add_subdirectory(cmake-git-version-tracking)
 
 # cmake-format: off
-# Use local {fmt} 12.2.1
+# Use {fmt} 12.2.1 (git submodule)
 # By default, fmt builds the static library only
 # cmake-format: on
-FetchContent_Declare(
-  fmt
-  GIT_REPOSITORY https://github.com/fmtlib/fmt
-  GIT_TAG 208219daff58f2a7438f6931cc2ddc358acf33ef)
-FetchContent_MakeAvailable(fmt)
+add_subdirectory(fmt)
 
 # EXPORT_COMPILE_COMMANDS is supported for CMake version 3.20 or later
 # only
@@ -313,7 +330,7 @@ add_executable(airspy-fmradion main.cpp)
 include_directories(
   ${CMAKE_SOURCE_DIR}/include
   ${CMAKE_SOURCE_DIR}/r8brain-free-src
-  ${fmt_SOURCE_DIR}/include
+  ${CMAKE_SOURCE_DIR}/fmt/include
   ${AIRSPYHF_INCLUDE_DIRS}
   ${AIRSPY_INCLUDE_DIRS}
   ${RTLSDR_INCLUDE_DIRS}

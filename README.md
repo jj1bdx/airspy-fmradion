@@ -61,14 +61,11 @@ Required libraries:
 * [VOLK](https://www.libvolk.org/)
 * [PortAudio](http://www.portaudio.com)
 
-The following repository is fetched as a git submodule:
+The following repositories are included as git submodules:
 
 * [r8brain-free-src](https://github.com/avaneev/r8brain-free-src), a sample rate converter designed by Aleksey Vaneev of Voxengo
-
-Repositories in the following list are automatically fetched from CMake during the build process:
-
-* [jj1bdx's fork of cmake-git-version-tracking](https://github.com/jj1bdx/cmake-git-version-tracking)
 * [{fmt}](https://fmt.dev/)
+* [jj1bdx's fork of cmake-git-version-tracking](https://github.com/jj1bdx/cmake-git-version-tracking)
 
 ### Git branches and tags
 
@@ -106,7 +103,6 @@ brew install rtl-sdr
 brew install airspy --HEAD
 brew install airspyhf --HEAD
 brew install volk
-brew install fmt
 ```
 
 ### Install the supported libvolk
@@ -127,6 +123,14 @@ git submodule update --init --recursive
 cmake -S . -B build
 cmake --build build --target all
 ```
+
+To check that all submodules are at their pinned commits and have no local changes:
+
+```sh
+cmake --build build --target check_submodules
+```
+
+CMake also prints a warning at configure time when a submodule is not at its pinned commit. After pulling changes that move a submodule pin, run `git submodule update --init --recursive` again.
 
 ## Basic command options
 
